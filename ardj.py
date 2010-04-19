@@ -124,7 +124,7 @@ class ardj:
 		sys.exit(1)
 
 	def log_track(self, filename):
-		f = open(os.path.join(self.path, 'ardj.log'), 'a').write('%s %s\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), filename))
+		f = open(os.path.join(self.path, 'ardj.log'), 'a').write('%s %s\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), filename.encode('utf-8')))
 
 	def update_db(self):
 		"""
@@ -142,7 +142,7 @@ class ardj:
 					cur.execute('INSERT INTO playlists (name, last_played) VALUES (?, 0)', (dir, ))
 				for file in self.get_files_in_folder(dir):
 					try:
-						file = unicode(file)
+						file = file.decode('utf-8')
 						if file.lower().endswith('.mp3'):
 							if os.path.join(dir, file) not in existing:
 								cur.execute('INSERT INTO tracks (playlist, name, count, last_played, queue) VALUES (?, ?, ?, ?, ?)', (dir, file, 0, 0, 0, ))
@@ -184,7 +184,7 @@ def main(argv):
 		if '-u' in argv:
 			a.update_db()
 		elif '-n' in argv:
-			print a.pick_track()
+			print a.pick_track().encode('utf-8')
 		else:
 			usage()
 	except Exception, e:
