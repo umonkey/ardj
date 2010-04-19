@@ -135,7 +135,7 @@ class ardj:
 				if cur.execute('SELECT id FROM playlists WHERE name = ?', (dir, )).fetchone() is None:
 					print '+ %s/' % dir
 					cur.execute('INSERT INTO playlists (name, last_played) VALUES (?, 0)', (dir, ))
-				for file in os.listdir(os.path.join(self.path, dir)):
+				for file in self.get_files_in_folder(dir):
 					if file.lower().endswith('.mp3'):
 						if os.path.join(dir, file) not in existing:
 							cur.execute('INSERT INTO tracks (playlist, name, count, last_played) VALUES (?, ?, ?, ?)', (dir, file, 0, 0, ))
@@ -146,6 +146,14 @@ class ardj:
 				cur.execute('DELETE FROM tracks WHERE playlist = ? AND name = ?', (playlist, name, ))
 				print '- %s' % file
 		self.db.commit()
+
+	def get_files_in_folder(self, folder_name):
+		lst = []
+		prefixlen = len(os.path.join(self.path, folder_name)) + 1
+		for triple in os.walk(os.path.join(self.path, folder_name), followlinks=True):
+			for fn in triple[2]:
+				lst.append(os.path.join(triple[0], fn)[prefixlen:])
+		return lst
 
 def usage():
 	print >>sys.stderr, 'Usage: %s working_dir options...' % sys.argv[0]
