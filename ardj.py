@@ -118,20 +118,20 @@ class ardj:
 				cur.execute('UPDATE playlists SET last_played = ? WHERE name = ?', (now, playlist['name'], ))
 				self.db.commit()
 				self.log_track(os.path.join(playlist['name'], track[0]))
-				return os.path.realpath(os.path.join(self.path, playlist['name'], track[0]))
+				return os.path.realpath(os.path.join(self.path, playlist['name'], track[0])).encode('utf-8')
 
 		print >>sys.stderr, 'No tracks. Add some, then ardj -u.'
 		sys.exit(1)
 
 	def pick_track(self):
-		retries = 5
+		retries = 10
 		while retries:
 			try:
 				filename = self.pick_track_unsafe()
-				if filename is not None:
+				if filename is not None and os.path.exists(filename):
 					return filename
 			except: pass
-		print >>sys.stderr, 'Could not find a file in 5 attempts.'
+		print >>sys.stderr, 'Could not find a file in 10 attempts.'
 
 	def log_track(self, filename):
 		f = open(os.path.join(self.path, 'ardj.log'), 'a').write('%s %s\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), filename.encode('utf-8')))
@@ -194,7 +194,7 @@ def main(argv):
 		if '-u' in argv:
 			a.update_db()
 		elif '-n' in argv:
-			print a.pick_track().encode('utf-8')
+			print a.pick_track()
 		else:
 			usage()
 	except Exception, e:
