@@ -4,6 +4,7 @@
 import os
 import sys
 import time
+import traceback
 
 try:
 	import yaml
@@ -74,9 +75,21 @@ class ardj:
 						self.log_error('Playlist %s does not point to a folder.' % playlist['name'])
 					elif playlist.has_key('delay') and (playlist['delay'] * 60) + stats[playlist['name']] > int(time.time()):
 						self.log_error('Playlist %s is delayed.' % playlist['name'])
+					elif playlist.has_key('hours') and not self.in_list(int(time.strftime('%H')), playlist['hours']):
+						self.log_error('Playlist %s is not active on this hour.' % playlist['name'])
+					elif playlist.has_key('days') and not self.in_list(self.get_current_day_number(), playlist['days']):
+						self.log_error('Playlist %s is not active on this day.' % playlist['name'])
 					else:
 						playlists.append(playlist)
 		return playlists
+
+	def in_list(self, value, lst):
+		if type(lst) != type([]):
+			lst = list(lst)
+		return value in lst
+
+	def get_current_day_number(self):
+		return int(time.strftime('%w')) or 7
 
 	def get_playlist_stats(self):
 		"""
@@ -116,6 +129,7 @@ class ardj:
 		MP3 files as tracks.
 		"""
 		cur = self.db.cursor()
+		existing = [os.path.join(r[0], r[1]) for r in cur.execute('SELECT playlist, name FROM tracks').fetchall()]
 		for dir in os.listdir(self.path):
 			if os.path.isdir(os.path.join(self.path, dir)):
 				if cur.execute('SELECT id FROM playlists WHERE name = ?', (dir, )).fetchone() is None:
@@ -123,9 +137,14 @@ class ardj:
 					cur.execute('INSERT INTO playlists (name, last_played) VALUES (?, 0)', (dir, ))
 				for file in os.listdir(os.path.join(self.path, dir)):
 					if file.lower().endswith('.mp3'):
-						if cur.execute('SELECT name FROM tracks WHERE playlist = ? AND name = ?', (dir, file, )).fetchone() is None:
+						if os.path.join(dir, file) not in existing:
 							cur.execute('INSERT INTO tracks (playlist, name, count, last_played) VALUES (?, ?, ?, ?)', (dir, file, 0, 0, ))
 							print '+ %s/%s' % (dir, file)
+		for file in existing:
+			if not os.path.exists(os.path.join(self.path, file)):
+				(playlist, name) = os.path.split(file)
+				cur.execute('DELETE FROM tracks WHERE playlist = ? AND name = ?', (playlist, name, ))
+				print '- %s' % file
 		self.db.commit()
 
 def usage():
@@ -153,6 +172,7 @@ def main(argv):
 			usage()
 	except Exception, e:
 		print >>sys.stderr, str(e)
+		traceback.print_exc()
 		sys.exit(1)
 
 if __name__ == '__main__':
