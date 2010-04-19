@@ -116,10 +116,14 @@ class ardj:
 				cur.execute('UPDATE tracks SET count = ?, last_played = ? WHERE playlist = ? AND name = ?', (track[1] + 1, now, playlist['name'], track[0], ))
 				cur.execute('UPDATE playlists SET last_played = ? WHERE name = ?', (now, playlist['name'], ))
 				self.db.commit()
+				self.log_track(os.path.join(playlist['name'], track[0]))
 				return os.path.realpath(os.path.join(self.path, playlist['name'], track[0]))
 
 		print >>sys.stderr, 'No tracks. Add some, then ardj -u.'
 		sys.exit(1)
+
+	def log_track(self, filename):
+		f = open(os.path.join(self.path, 'ardj.log'), 'a').write('%s %s\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), filename))
 
 	def update_db(self):
 		"""
