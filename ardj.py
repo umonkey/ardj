@@ -102,7 +102,7 @@ class ardj:
 			res[row[0]] = row[1]
 		return res
 
-	def pick_track(self):
+	def pick_track_unsafe(self):
 		"""
 		Prints the name of a random track.
 		"""
@@ -122,6 +122,16 @@ class ardj:
 
 		print >>sys.stderr, 'No tracks. Add some, then ardj -u.'
 		sys.exit(1)
+
+	def pick_track(self):
+		retries = 5
+		while retries:
+			try:
+				filename = self.pick_track_unsafe()
+				if filename is not None:
+					return filename
+			except: pass
+		print >>sys.stderr, 'Could not find a file in 5 attempts.'
 
 	def log_track(self, filename):
 		f = open(os.path.join(self.path, 'ardj.log'), 'a').write('%s %s\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), filename.encode('utf-8')))
