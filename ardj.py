@@ -128,11 +128,19 @@ class ardj:
 							print '+ %s/%s' % (dir, file)
 		self.db.commit()
 
+def usage():
+	print >>sys.stderr, 'Usage: %s working_dir options...' % sys.argv[0]
+	print >>sys.stderr, 'Options:'
+	print >>sys.stderr, '  -n    show next track'
+	print >>sys.stderr, '  -q    turn off most messages'
+	print >>sys.stderr, '  -u    update database'
+	sys.exit(2)
+
 def main(argv):
 	try:
-		paths = [x for x in argv[1:] + ['.'] if os.path.exists(x)]
+		paths = [x for x in argv[1:] if os.path.exists(x)]
 		if not paths:
-			raise Exception('Working dir not specified.')
+			usage()
 		elif not os.path.exists(os.path.join(paths[0], 'ardj.yaml')):
 			raise Exception('No ardj.yaml in %s' % paths[0])
 
@@ -142,12 +150,7 @@ def main(argv):
 		elif '-n' in argv:
 			print a.pick_track()
 		else:
-			print >>sys.stderr, 'Usage: %s options...' % argv[0]
-			print >>sys.stderr, 'Options:'
-			print >>sys.stderr, '  -n    show next track'
-			print >>sys.stderr, '  -q    turn off most messages'
-			print >>sys.stderr, '  -u    update database'
-			sys.exit(2)
+			usage()
 	except Exception, e:
 		print >>sys.stderr, str(e)
 		sys.exit(1)
