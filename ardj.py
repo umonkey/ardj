@@ -28,10 +28,11 @@ class ardb:
 			cur = self.db.cursor()
 			cur.execute('CREATE TABLE IF NOT EXISTS playlists (id INTEGER PRIMARY KEY, name TEXT, last_played INTEGER)')
 			cur.execute('CREATE INDEX IF NOT EXISTS idx_playlists_last ON playlists (last_played)')
-			cur.execute('CREATE TABLE IF NOT EXISTS tracks (playlist TEXT, name TEXT, count INTEGER, last_played INTEGER)')
+			cur.execute('CREATE TABLE IF NOT EXISTS tracks (playlist TEXT, name TEXT, count INTEGER, last_played INTEGER, queue INTEGER)')
 			cur.execute('CREATE INDEX IF NOT EXISTS idx_tracks_playlist ON tracks (playlist)')
 			cur.execute('CREATE INDEX IF NOT EXISTS idx_tracks_last ON tracks (last_played)')
 			cur.execute('CREATE INDEX IF NOT EXISTS idx_tracks_count ON tracks (count)')
+			cur.execute('CREATE INDEX IF NOT EXISTS idx_tracks_queue ON tracks (queue)')
 
 	def cursor(self):
 		return self.db.cursor()
@@ -107,13 +108,13 @@ class ardj:
 		"""
 		for playlist in self.get_playlists():
 			if playlist.has_key('repeat'):
-				cur = self.db.cursor().execute('SELECT name, count FROM tracks WHERE playlist = ? AND count < ? ORDER BY RANDOM() LIMIT 1', (playlist['name'], playlist['repeat'], ))
+				cur = self.db.cursor().execute('SELECT name, count FROM tracks WHERE playlist = ? AND count < ? ORDER BY queue DESC, RANDOM() LIMIT 1', (playlist['name'], playlist['repeat'], ))
 			else:
-				cur = self.db.cursor().execute('SELECT name, count FROM tracks WHERE playlist = ? ORDER BY RANDOM() LIMIT 1', (playlist['name'], ))
+				cur = self.db.cursor().execute('SELECT name, count FROM tracks WHERE playlist = ? ORDER BY queue DESC, RANDOM() LIMIT 1', (playlist['name'], ))
 			track = cur.fetchone()
 			if track is not None:
 				now = int(time.time())
-				cur.execute('UPDATE tracks SET count = ?, last_played = ? WHERE playlist = ? AND name = ?', (track[1] + 1, now, playlist['name'], track[0], ))
+				cur.execute('UPDATE tracks SET count = ?, last_played = ?, queue = 0 WHERE playlist = ? AND name = ?', (track[1] + 1, now, playlist['name'], track[0], ))
 				cur.execute('UPDATE playlists SET last_played = ? WHERE name = ?', (now, playlist['name'], ))
 				self.db.commit()
 				self.log_track(os.path.join(playlist['name'], track[0]))
@@ -140,10 +141,14 @@ class ardj:
 					print '+ %s/' % dir
 					cur.execute('INSERT INTO playlists (name, last_played) VALUES (?, 0)', (dir, ))
 				for file in self.get_files_in_folder(dir):
-					if file.lower().endswith('.mp3'):
-						if os.path.join(dir, file) not in existing:
-							cur.execute('INSERT INTO tracks (playlist, name, count, last_played) VALUES (?, ?, ?, ?)', (dir, file, 0, 0, ))
-							print '+ %s/%s' % (dir, file)
+					try:
+						file = unicode(file)
+						if file.lower().endswith('.mp3'):
+							if os.path.join(dir, file) not in existing:
+								cur.execute('INSERT INTO tracks (playlist, name, count, last_played, queue) VALUES (?, ?, ?, ?, ?)', (dir, file, 0, 0, 0, ))
+								print '+ %s/%s' % (dir, file)
+					except Exception, e:
+						print '? %s/%s (error)' % (dir, file)
 		for file in existing:
 			if not os.path.exists(os.path.join(self.path, file)):
 				(playlist, name) = os.path.split(file)
