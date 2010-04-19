@@ -1,0 +1,156 @@
+#!/usr/bin/env python
+# vim: set ts=4 sts=4 sw=4 noet fileencoding=utf-8:
+
+import os
+import sys
+import time
+
+try:
+	import yaml
+except ImportError:
+	print >>sys.stderr, 'Please install PyYAML (python-yaml).'
+	sys.exit(13)
+
+try:
+	from sqlite3 import dbapi2 as sqlite
+	from sqlite3 import OperationalError
+except ImportError:
+	print >>sys.stderr, 'Please install pysqlite2.'
+	sys.exit(13)
+
+class ardb:
+	def __init__(self, name):
+		isnew = not os.path.exists(name)
+		self.file_name = name
+		self.db = sqlite.connect(self.file_name)
+		if isnew:
+			cur = self.db.cursor()
+			cur.execute('CREATE TABLE IF NOT EXISTS playlists (id INTEGER PRIMARY KEY, name TEXT, last_played INTEGER)')
+			cur.execute('CREATE INDEX IF NOT EXISTS idx_playlists_last ON playlists (last_played)')
+			cur.execute('CREATE TABLE IF NOT EXISTS tracks (playlist TEXT, name TEXT, count INTEGER, last_played INTEGER)')
+			cur.execute('CREATE INDEX IF NOT EXISTS idx_tracks_playlist ON tracks (playlist)')
+			cur.execute('CREATE INDEX IF NOT EXISTS idx_tracks_last ON tracks (last_played)')
+			cur.execute('CREATE INDEX IF NOT EXISTS idx_tracks_count ON tracks (count)')
+
+	def cursor(self):
+		return self.db.cursor()
+
+	def commit(self):
+		self.db.commit()
+
+class ardj:
+	def __init__(self, path):
+		self.path = path
+		self.config = self.read_config()
+		self.db = ardb(os.path.join(self.path, 'ardj.sqlite'))
+
+	def read_config(self):
+		name = os.path.join(self.path, 'ardj.yaml')
+		config = yaml.load(open(name, 'r').read())
+		for k in ['playlists']:
+			if not config.has_key(k):
+				raise Exception('No "%s\" key in %s.' % (k, name))
+		return config
+
+	def log_error(self, message):
+		if '-q' not in sys.argv:
+			print >>sys.stderr, message
+
+	def get_playlists(self):
+		"""
+		Returns all unblocked playlists.
+		"""
+		stats = self.get_playlist_stats()
+		playlists = []
+		if self.config.has_key('playlists'):
+			for playlist in self.config['playlists']:
+				if playlist.has_key('name'):
+					dir = os.path.join(self.path, playlist['name'])
+					if not stats.has_key(playlist['name']):
+						pass # self.log_error('Playlist %s not in the database (add with ardj -u)' % playlist['name'])
+					elif not os.path.exists(dir):
+						self.log_error('Playlist %s folder does not exist.' % playlist['name'])
+					elif not os.path.isdir(dir):
+						self.log_error('Playlist %s does not point to a folder.' % playlist['name'])
+					elif playlist.has_key('delay') and (playlist['delay'] * 60) + stats[playlist['name']] > int(time.time()):
+						self.log_error('Playlist %s is delayed.' % playlist['name'])
+					else:
+						playlists.append(playlist)
+		return playlists
+
+	def get_playlist_stats(self):
+		"""
+		Returns last played times for playlists, in the form of a dictionary.
+		"""
+		res = {}
+		cur = self.db.cursor().execute('SELECT name, last_played FROM playlists')
+		for row in cur.fetchall() or []:
+			res[row[0]] = row[1]
+		return res
+
+	def pick_track(self):
+		"""
+		Prints the name of a random track.
+		"""
+		for playlist in self.get_playlists():
+			if playlist.has_key('repeat'):
+				cur = self.db.cursor().execute('SELECT name, count FROM tracks WHERE playlist = ? AND count < ? ORDER BY RANDOM() LIMIT 1', (playlist['name'], playlist['repeat'], ))
+			else:
+				cur = self.db.cursor().execute('SELECT name, count FROM tracks WHERE playlist = ? ORDER BY RANDOM() LIMIT 1', (playlist['name'], ))
+			track = cur.fetchone()
+			if track is not None:
+				now = int(time.time())
+				cur.execute('UPDATE tracks SET count = ?, last_played = ? WHERE playlist = ? AND name = ?', (track[1] + 1, now, playlist['name'], track[0], ))
+				cur.execute('UPDATE playlists SET last_played = ? WHERE name = ?', (now, playlist['name'], ))
+				self.db.commit()
+				return os.path.realpath(os.path.join(self.path, playlist['name'], track[0]))
+
+		print >>sys.stderr, 'No tracks. Add some, then ardj -u.'
+		sys.exit(1)
+
+	def update_db(self):
+		"""
+		Scans the folder for new music. Adds new folders and files to the
+		database, reports the progress in stdout. Treats all folders as
+		playlists, not only those listed in the config file. Only treats
+		MP3 files as tracks.
+		"""
+		cur = self.db.cursor()
+		for dir in os.listdir(self.path):
+			if os.path.isdir(os.path.join(self.path, dir)):
+				if cur.execute('SELECT id FROM playlists WHERE name = ?', (dir, )).fetchone() is None:
+					print '+ %s/' % dir
+					cur.execute('INSERT INTO playlists (name, last_played) VALUES (?, 0)', (dir, ))
+				for file in os.listdir(os.path.join(self.path, dir)):
+					if file.lower().endswith('.mp3'):
+						if cur.execute('SELECT name FROM tracks WHERE playlist = ? AND name = ?', (dir, file, )).fetchone() is None:
+							cur.execute('INSERT INTO tracks (playlist, name, count, last_played) VALUES (?, ?, ?, ?)', (dir, file, 0, 0, ))
+							print '+ %s/%s' % (dir, file)
+		self.db.commit()
+
+def main(argv):
+	try:
+		paths = [x for x in argv[1:] + ['.'] if os.path.exists(x)]
+		if not paths:
+			raise Exception('Working dir not specified.')
+		elif not os.path.exists(os.path.join(paths[0], 'ardj.yaml')):
+			raise Exception('No ardj.yaml in %s' % paths[0])
+
+		a = ardj(paths[0].rstrip(os.path.sep))
+		if '-u' in argv:
+			a.update_db()
+		elif '-n' in argv:
+			print a.pick_track()
+		else:
+			print >>sys.stderr, 'Usage: %s options...' % argv[0]
+			print >>sys.stderr, 'Options:'
+			print >>sys.stderr, '  -n    show next track'
+			print >>sys.stderr, '  -q    turn off most messages'
+			print >>sys.stderr, '  -u    update database'
+			sys.exit(2)
+	except Exception, e:
+		print >>sys.stderr, str(e)
+		sys.exit(1)
+
+if __name__ == '__main__':
+	sys.exit(main(sys.argv))
