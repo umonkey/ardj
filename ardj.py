@@ -134,7 +134,18 @@ class ardj:
 		print >>sys.stderr, 'Could not find a file in 10 attempts.'
 
 	def log_track(self, filename):
-		f = open(os.path.join(self.path, 'ardj.log'), 'a').write('%s %s\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), filename.encode('utf-8')))
+		try:
+			msg = '%s %s\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), filename.encode('utf-8'))
+			# full log
+			f = open(os.path.join(self.path, 'ardj.log'), 'a').write(msg)
+			# short log
+			logname = os.path.join(self.path, 'ardj.short.log')
+			if os.path.exists(logname):
+				lines = '\n'.join((open(logname, 'r').read() + msg).split('\n')[-20:])
+			else:
+				lines = msg
+			open(logname, 'w').write(lines)
+		except: pass
 
 	def update_db(self):
 		"""
