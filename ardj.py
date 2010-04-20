@@ -117,7 +117,6 @@ class ardj:
 				cur.execute('UPDATE tracks SET count = ?, last_played = ?, queue = 0 WHERE playlist = ? AND name = ?', (track[1] + 1, now, playlist['name'], track[0], ))
 				cur.execute('UPDATE playlists SET last_played = ? WHERE name = ?', (now, playlist['name'], ))
 				self.db.commit()
-				self.log_track(os.path.join(playlist['name'], track[0]))
 				return os.path.realpath(os.path.join(self.path, playlist['name'], track[0])).encode('utf-8')
 
 		print >>sys.stderr, 'No tracks. Add some, then ardj -u.'
@@ -129,21 +128,23 @@ class ardj:
 			try:
 				filename = self.pick_track_unsafe()
 				if filename is not None and os.path.exists(filename):
+					self.log_track(filename)
 					return filename
 			except: pass
 		print >>sys.stderr, 'Could not find a file in 10 attempts.'
 
 	def log_track(self, filename):
 		try:
-			msg = '%s %s\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), filename.encode('utf-8'))
+			msg = '%s %s\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), self.strip_prefix(filename))
 			# full log
 			f = open(os.path.join(self.path, 'ardj.log'), 'a').write(msg)
 			# short log
 			logname = os.path.join(self.path, 'ardj.short.log')
 			if os.path.exists(logname):
-				lines = '\n'.join((open(logname, 'r').read() + msg).split('\n')[-20:])
+				lines = open(logname, 'r').read()
 			else:
-				lines = msg
+				lines = ''
+			lines = '\n'.join((msg + lines).split('\n')[:20])
 			open(logname, 'w').write(lines)
 		except: pass
 
@@ -165,25 +166,31 @@ class ardj:
 					try:
 						file = file.decode('utf-8')
 						if os.path.splitext(file.lower())[1] in ('.mp3', '.ogg', '.flac'):
-							if os.path.join(dir, file) not in existing:
-								cur.execute('INSERT INTO tracks (playlist, name, count, last_played, queue) VALUES (?, ?, ?, ?, ?)', (dir, file, 0, 0, 0, ))
-								print '+ %s/%s' % (dir, file)
+							(playlist, name) = file.split(os.path.sep, 1)
+							if file not in existing:
+								cur.execute('INSERT INTO tracks (playlist, name, count, last_played, queue) VALUES (?, ?, ?, ?, ?)', (playlist, name, 0, 0, 0, ))
+								print '+ %s/%s' % (playlist, name)
 					except Exception, e:
-						print '? %s/%s (error)' % (dir, file)
+						print '? %s/%s (error)' % (dir.encode('utf-8'), file.encode('utf-8'))
 		for file in existing:
-			if not os.path.exists(os.path.join(self.path, file)):
-				(playlist, name) = os.path.split(file)
+			if not os.path.exists(os.path.join(self.path, file).encode('utf-8')):
+				(playlist, name) = file.split(os.path.sep, 1)
 				cur.execute('DELETE FROM tracks WHERE playlist = ? AND name = ?', (playlist, name, ))
-				print '- %s' % file
+				print '- %s' % file.encode('utf-8')
 		self.db.commit()
 
 	def get_files_in_folder(self, folder_name):
 		lst = []
-		prefixlen = len(os.path.join(self.path, folder_name)) + 1
 		for triple in os.walk(os.path.join(self.path, folder_name), followlinks=True):
 			for fn in triple[2]:
-				lst.append(os.path.join(triple[0], fn)[prefixlen:])
+				lst.append(self.strip_prefix(os.path.join(triple[0], fn)))
 		return lst
+
+	def strip_prefix(self, path):
+		path_len = len(self.path)
+		if path[0:path_len] == self.path:
+			path = path[path_len + 1:]
+		return path
 
 def usage():
 	print >>sys.stderr, 'Usage: %s working_dir options...' % sys.argv[0]
