@@ -164,7 +164,7 @@ class ardj:
 				for file in self.get_files_in_folder(dir):
 					try:
 						file = file.decode('utf-8')
-						if file.lower().endswith('.mp3'):
+						if os.path.splitext(file.lower())[1] in ('.mp3', '.ogg', '.flac'):
 							if os.path.join(dir, file) not in existing:
 								cur.execute('INSERT INTO tracks (playlist, name, count, last_played, queue) VALUES (?, ?, ?, ?, ?)', (dir, file, 0, 0, 0, ))
 								print '+ %s/%s' % (dir, file)
