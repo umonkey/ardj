@@ -43,7 +43,7 @@ class LogNotifier(pyinotify.ProcessEvent):
 		cls.notifier = pyinotify.ThreadedNotifier(cls.wm, cls(cb))
 		cls.wm.add_watch(filename, pyinotify.IN_MODIFY)
 		cls.notifier.start()
-		print 'pyinotify is watching ', filename
+		print 'pyinotify is watching', filename
 
 	@classmethod
 	def stop(cls):
@@ -74,6 +74,7 @@ class ardjbot(JabberBot):
 		return JabberBot.serve_forever(self, connect_callback=self.on_connected)
 
 	def on_connected(self):
+		self.status_type = self.DND
 		LogNotifier.init(self.folder, self.on_inotify)
 		self.update_status()
 
@@ -98,37 +99,6 @@ class ardjbot(JabberBot):
 				self.status_message = u'♫ %s' % (track['file'])
 		if self.np_tunes:
 			self.send_tune(track)
-
-	def send_tune(self, song):
-		NS_TUNE = "http://jabber.org/protocol/tune"
-		iq = xmpp.Iq(typ="set")
-		iq.setFrom(self.jid)
-		iq.pubsub = iq.addChild("pubsub", namespace = xmpp.NS_PUBSUB)
-		iq.pubsub.publish = iq.pubsub.addChild("publish", attrs = { "node" : NS_TUNE })
-		iq.pubsub.publish.item = iq.pubsub.publish.addChild("item", attrs= { "id" : "current" })
-		tune = iq.pubsub.publish.item.addChild("tune")
-		tune.setNamespace(NS_TUNE)
-
-		if song.has_key('title'):
-			title = song['title']
-		else:
-			title = song['file']
-			if title.endswith('.mp3') or title.endswith('.ogg'):
-				title = title[:-4]
-		tune.addChild('title').addData(title)
-		if song.has_key('artist'):
-			tune.addChild('artist').addData(song['artist'])
-		if song.has_key('album'):
-			tune.addChild('source').addData(song['album'])
-		if song.has_key('pos') and song['pos'] > 0:
-			tune.addChild('track').addData(str(song['pos']))
-		if song.has_key('time'):
-			tune.addChild('length').addData(str(song['time']))
-		if song.has_key('uri'):
-			tune.addChild('uri').addData(song['uri'])
-
-		# print iq.__str__().encode('utf8')
-		self.conn.send(iq)
 
 	def get_current(self):
 		shortlog = os.path.join(self.folder, 'ardj.short.log')
