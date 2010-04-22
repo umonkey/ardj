@@ -3,6 +3,8 @@
 
 import os
 import sys
+import traceback
+import xmpp
 
 try:
 	import yaml
@@ -10,7 +12,42 @@ except ImportError:
 	print >>sys.stderr, 'Please install PyYAML (python-yaml).'
 	sys.exit(13)
 
+try:
+	import pyinotify
+except ImportError:
+	print >>sys.stderr, 'Please install pyinotify.'
+	sys.exit(13)
+
+try:
+	import mutagen
+except ImportError:
+	print >>sys.stderr, 'Pleasy install python-mutagen.'
+	sys.exit(13)
+
 from jabberbot import *
+
+class LogNotifier(pyinotify.ProcessEvent):
+	wm = None
+	notifier = None
+
+	def __init__(self, cb):
+		self.cb = cb
+		pyinotify.ProcessEvent.__init__(self)
+
+	def process_IN_MODIFY(self, event):
+		self.cb(event)
+
+	@classmethod
+	def init(cls, filename, cb):
+		cls.wm = pyinotify.WatchManager()
+		cls.notifier = pyinotify.ThreadedNotifier(cls.wm, cls(cb))
+		cls.wm.add_watch(filename, pyinotify.IN_MODIFY)
+		cls.notifier.start()
+		print 'pyinotify is watching ', filename
+
+	@classmethod
+	def stop(cls):
+		cls.notifier.stop()
 
 class ardjbot(JabberBot):
 	def __init__(self, config_name):
@@ -29,12 +66,83 @@ class ardjbot(JabberBot):
 		except:
 			raise Exception('Incorrect login info, must be user:pass@host.')
 		JabberBot.__init__(self, login, password)
+		self.log_notifier = None
+
+	def serve_forever(self):
+		return JabberBot.serve_forever(self, connect_callback=self.on_connected)
+
+	def on_connected(self):
+		print 'Connected, initializing pyinotify.'
+		LogNotifier.init(self.folder, self.on_inotify)
+		self.update_status()
+
+	def on_inotify(self, event):
+		if event.name == 'ardj.short.log':
+			return self.update_status()
+
+	def update_status(self):
+		"""
+		Updates the status with the current track name.
+		Called by inotify, if available.
+		"""
+		track = self.get_current_track()
+		print track
+		if track.has_key('artist') and track.has_key('title'):
+			self.status_message = u'♫ %s — %s' % (track['artist'], track['title'])
+		else:
+			self.status_message = u'♫ %s' % (track['file'])
+		self.send_tune(track)
+
+	def send_tune(self, song):
+		NS_TUNE = "http://jabber.org/protocol/tune"
+		iq = xmpp.Iq(typ="set")
+		iq.setFrom(self.jid)
+		iq.pubsub = iq.addChild("pubsub", namespace = xmpp.NS_PUBSUB)
+		iq.pubsub.publish = iq.pubsub.addChild("publish", attrs = { "node" : NS_TUNE })
+		iq.pubsub.publish.item = iq.pubsub.publish.addChild("item", attrs= { "id" : "current" })
+		tune = iq.pubsub.publish.item.addChild("tune")
+		tune.setNamespace(NS_TUNE)
+
+		if song.has_key('title'):
+			title = song['title']
+		else:
+			title = song['file']
+			if title.endswith('.mp3') or title.endswith('.ogg'):
+				title = title[:-4]
+		tune.addChild("title").addData(title)
+		if song.has_key('artist'):
+			tune.addChild("artist").addData(song['artist'])
+		if song.has_key('album'):
+			tune.addChild("source").addData(song['album'])
+		if song.has_key('pos') and song['pos'] > 0:
+			tune.addChild("track").addData(str(song['pos']))
+		if song.has_key('time'):
+			tune.addChild("length").addData(str(song['time']))
+
+		print iq.__str__().encode('utf8')
+		self.conn.send(iq)
 
 	def get_current(self):
 		shortlog = os.path.join(self.folder, 'ardj.short.log')
 		if not os.path.exists(shortlog):
 			raise Exception('Short log file not found.')
 		return open(shortlog, 'r').read().split('\n')[0].split(' ', 2)[2]
+
+	def get_current_track(self):
+		result = { 'file': self.get_current() }
+		try:
+			tags = mutagen.File(os.path.join(self.folder, result['file']))
+			if 'TPE1' in tags:
+				result['artist'] = unicode(tags['TPE1'])
+			elif 'artist' in tags:
+				result['artist'] = unicode(tags['artist'])
+			if 'TIT2' in tags:
+				result['title'] = unicode(tags['TIT2'])
+			elif 'title' in tags:
+				result['title'] = unicode(tags['title'])
+		except:
+			pass
+		return result
 
 	def check_access(self, message):
 		return message.getFrom().split('/')[0] in self.users
@@ -48,7 +156,9 @@ class ardjbot(JabberBot):
 	@botcmd
 	def name(self, message, args):
 		"see what's being played now."
-		return self.get_current()
+		current = self.get_current()
+		self.status_message = current
+		return current
 
 	@botcmd
 	def delete(self, message, args):
@@ -60,15 +170,16 @@ class ardjbot(JabberBot):
 		filename = os.path.join(self.folder, args.strip())
 		if not os.path.exists(filename):
 			return 'File "%s" does not exist.' % filename
-		os.rename(filename, filename + '.deleted')
+		os.rename(filename, filename + '.deleted-by-' + message.getFrom().getStripped())
 		return 'File "%s" was removed from the playlist.' % filename
 
-def run(settings):
-    if settings['jabber'] is None:
-        print >>sys.stderr, 'No jabber settings (jabber.login, jabber.password)'
-        sys.exit(1)
-    bot = FMHBot(settings['jabber']['login'], settings['jabber']['password'])
-    bot.serve_forever()
+	@botcmd
+	def last(self, message, args):
+		"show last played files."
+		shortlog = os.path.join(self.folder, 'ardj.short.log')
+		if not os.path.exists(shortlog):
+			raise Exception('Short log file not found.')
+		return open(shortlog, 'r').read()
 
 if __name__ == '__main__':
 	if len(sys.argv) < 2:
@@ -84,6 +195,8 @@ if __name__ == '__main__':
 	while True:
 		try:
 			bot.serve_forever()
+			LogNotifier.stop()
 			sys.exit(0)
 		except Exception, e:
 			print >>sys.stderr, 'Error: %s, restarting' % e
+			traceback.print_exc()
