@@ -65,6 +65,8 @@ class ardjbot(JabberBot):
 			raise Exception('Not enough parameters in config.')
 		except:
 			raise Exception('Incorrect login info, must be user:pass@host.')
+		self.np_status = config['jabber'].has_key('status') and config['jabber']['status']
+		self.np_tunes = config['jabber'].has_key('tunes') and config['jabber']['tunes']
 		JabberBot.__init__(self, login, password)
 		self.log_notifier = None
 
@@ -72,13 +74,16 @@ class ardjbot(JabberBot):
 		return JabberBot.serve_forever(self, connect_callback=self.on_connected)
 
 	def on_connected(self):
-		print 'Connected, initializing pyinotify.'
 		LogNotifier.init(self.folder, self.on_inotify)
 		self.update_status()
 
 	def on_inotify(self, event):
-		if event.name == 'ardj.short.log':
-			return self.update_status()
+		try:
+			if event.name == 'ardj.short.log':
+				return self.update_status()
+		except Exception, e:
+			print >>sys.stderr, 'Exception in inotify handler:', e
+			traceback.print_exc()
 
 	def update_status(self):
 		"""
@@ -86,12 +91,13 @@ class ardjbot(JabberBot):
 		Called by inotify, if available.
 		"""
 		track = self.get_current_track()
-		print track
-		if track.has_key('artist') and track.has_key('title'):
-			self.status_message = u'♫ %s — %s' % (track['artist'], track['title'])
-		else:
-			self.status_message = u'♫ %s' % (track['file'])
-		self.send_tune(track)
+		if self.np_status:
+			if track.has_key('artist') and track.has_key('title'):
+				self.status_message = u'♫ %s — %s' % (track['artist'], track['title'])
+			else:
+				self.status_message = u'♫ %s' % (track['file'])
+		if self.np_tunes:
+			self.send_tune(track)
 
 	def send_tune(self, song):
 		NS_TUNE = "http://jabber.org/protocol/tune"
@@ -109,17 +115,19 @@ class ardjbot(JabberBot):
 			title = song['file']
 			if title.endswith('.mp3') or title.endswith('.ogg'):
 				title = title[:-4]
-		tune.addChild("title").addData(title)
+		tune.addChild('title').addData(title)
 		if song.has_key('artist'):
-			tune.addChild("artist").addData(song['artist'])
+			tune.addChild('artist').addData(song['artist'])
 		if song.has_key('album'):
-			tune.addChild("source").addData(song['album'])
+			tune.addChild('source').addData(song['album'])
 		if song.has_key('pos') and song['pos'] > 0:
-			tune.addChild("track").addData(str(song['pos']))
+			tune.addChild('track').addData(str(song['pos']))
 		if song.has_key('time'):
-			tune.addChild("length").addData(str(song['time']))
+			tune.addChild('length').addData(str(song['time']))
+		if song.has_key('uri'):
+			tune.addChild('uri').addData(song['uri'])
 
-		print iq.__str__().encode('utf8')
+		# print iq.__str__().encode('utf8')
 		self.conn.send(iq)
 
 	def get_current(self):
@@ -129,7 +137,7 @@ class ardjbot(JabberBot):
 		return open(shortlog, 'r').read().split('\n')[0].split(' ', 2)[2]
 
 	def get_current_track(self):
-		result = { 'file': self.get_current() }
+		result = { 'file': self.get_current(), 'uri': 'http://radio.mirkforce.net/' }
 		try:
 			tags = mutagen.File(os.path.join(self.folder, result['file']))
 			if 'TPE1' in tags:
