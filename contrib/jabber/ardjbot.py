@@ -113,11 +113,11 @@ class ardjbot(JabberBot):
 			if 'TPE1' in tags:
 				result['artist'] = unicode(tags['TPE1'])
 			elif 'artist' in tags:
-				result['artist'] = unicode(tags['artist'])
+				result['artist'] = unicode(tags['artist'])[0]
 			if 'TIT2' in tags:
 				result['title'] = unicode(tags['TIT2'])
 			elif 'title' in tags:
-				result['title'] = unicode(tags['title'])
+				result['title'] = unicode(tags['title'])[0]
 		except:
 			pass
 		return result
@@ -135,7 +135,6 @@ class ardjbot(JabberBot):
 	def name(self, message, args):
 		"see what's being played now."
 		current = self.get_current()
-		self.status_message = current
 		return current
 
 	@botcmd
@@ -144,7 +143,7 @@ class ardjbot(JabberBot):
 		if not args:
 			return 'Usage: delete filename. You can find the name using command "name".'
 		if args == 'current':
-			args = self.get_current()
+			args = self.get_current().decode('utf-8')
 		filename = os.path.join(self.folder, args.strip())
 		if not os.path.exists(filename):
 			return 'File "%s" does not exist.' % filename
