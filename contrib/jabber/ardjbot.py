@@ -20,11 +20,17 @@ except ImportError:
 
 try:
 	import mutagen
+	import mutagen.easyid3
 except ImportError:
 	print >>sys.stderr, 'Pleasy install python-mutagen.'
 	sys.exit(13)
 
 from jabberbot import *
+
+def get_file_tags(filename):
+	if filename.lower().endswith('.mp3'):
+		return mutagen.easyid3.Open(filename)
+	return mutagen.File(filename)
 
 class LogNotifier(pyinotify.ProcessEvent):
 	wm = None
@@ -109,15 +115,11 @@ class ardjbot(JabberBot):
 	def get_current_track(self):
 		result = { 'file': self.get_current(), 'uri': 'http://radio.mirkforce.net/' }
 		try:
-			tags = mutagen.File(os.path.join(self.folder, result['file']))
-			if 'TPE1' in tags:
-				result['artist'] = unicode(tags['TPE1'])
-			elif 'artist' in tags:
-				result['artist'] = unicode(tags['artist'])[0]
-			if 'TIT2' in tags:
-				result['title'] = unicode(tags['TIT2'])
-			elif 'title' in tags:
-				result['title'] = unicode(tags['title'])[0]
+			tags = get_file_tags(os.path.join(self.folder, result['file']))
+			if 'artist' in tags:
+				result['artist'] = unicode(tags['artist'][0])
+			if 'title' in tags:
+				result['title'] = unicode(tags['title'][0])
 		except:
 			pass
 		return result
@@ -148,6 +150,7 @@ class ardjbot(JabberBot):
 		if not os.path.exists(filename):
 			return 'File "%s" does not exist.' % filename
 		os.rename(filename, filename + '.deleted-by-' + message.getFrom().getStripped())
+		self.broadcast('%s deleted "%s"' % (message.getFrom().getStripped(), filename))
 		return 'File "%s" was removed from the playlist.' % filename
 
 	@botcmd
