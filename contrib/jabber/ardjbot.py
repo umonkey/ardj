@@ -3,7 +3,10 @@
 
 import os
 import sys
+import time
 import traceback
+
+import lastfm.client
 import xmpp
 
 try:
@@ -75,6 +78,8 @@ class ardjbot(JabberBot):
 		self.np_tunes = config['jabber'].has_key('tunes') and config['jabber']['tunes']
 		JabberBot.__init__(self, login, password)
 		self.log_notifier = None
+		self.lastfm = lastfm.client.Daemon('ardj')
+		self.lastfm.open_log()
 
 	def serve_forever(self):
 		return JabberBot.serve_forever(self, connect_callback=self.on_connected)
@@ -105,21 +110,24 @@ class ardjbot(JabberBot):
 				self.status_message = u'♫ %s' % (track['file'])
 		if self.np_tunes:
 			self.send_tune(track)
+		if track.has_key('artist') and track.has_key('title'):
+			filename = os.path.join(self.folder, track['file'])
+			self.lastfm.submit({ 'artist': track['artist'], 'title': track['title'], 'time': time.gmtime(), 'length': mutagen.File(filename).info.length })
 
 	def get_current(self):
+		"""Возвращает имя проигрываемого файла из краткого лога."""
 		shortlog = os.path.join(self.folder, 'ardj.short.log')
 		if not os.path.exists(shortlog):
 			raise Exception('Short log file not found.')
 		return open(shortlog, 'r').read().split('\n')[0].split(' ', 2)[2]
 
 	def get_current_track(self):
-		result = { 'file': self.get_current(), 'uri': 'http://radio.mirkforce.net/' }
+		result = { 'file': self.get_current(), 'uri': 'http://tmradio.net/' }
 		try:
 			tags = get_file_tags(os.path.join(self.folder, result['file']))
-			if 'artist' in tags:
-				result['artist'] = unicode(tags['artist'][0])
-			if 'title' in tags:
-				result['title'] = unicode(tags['title'][0])
+			for tag in ('artist', 'title'):
+				if tag in tags:
+					result[tag] = unicode(tags[tag][0])
 		except:
 			pass
 		return result
@@ -151,7 +159,7 @@ class ardjbot(JabberBot):
 			return 'File "%s" does not exist.' % filename
 		os.rename(filename, filename + '.deleted-by-' + message.getFrom().getStripped())
 		self.broadcast('%s deleted "%s"' % (message.getFrom().getStripped(), filename))
-		return 'File "%s" was removed from the playlist.' % filename
+		return 'OK'
 
 	@botcmd
 	def last(self, message, args):
@@ -160,6 +168,34 @@ class ardjbot(JabberBot):
 		if not os.path.exists(shortlog):
 			raise Exception('Short log file not found.')
 		return open(shortlog, 'r').read()
+
+	@botcmd
+	def move(self, message, args):
+		"move a file to a different playlist."
+		args = args.split(' ')
+		if len(args) < 2:
+			return "Usage: move filename|\"current\" playlist_name"
+		if args[0] == 'current':
+			args[0] = self.get_current().decode('utf-8')
+		if args[0].split(os.path.sep)[0] == args[1]:
+			return "It's in \"%s\" already." % args[1]
+		playlist = args[1]
+		if not os.path.exists(os.path.join(self.folder, playlist.encode('utf-8'))):
+			available = [d for d in os.listdir(self.folder) if os.path.isdir(os.path.join(self.folder, d))]
+			return "Playlist \"%s\" does not exist, available playlists: %s." % (playlist, ', '.join(available))
+		src = os.path.join(self.folder, args[0])
+		dst = os.path.join(self.folder, playlist, os.path.basename(src))
+		if not os.path.exists(src):
+			return "File \"%s\" does not exist." % (args[0])
+		os.rename(src, dst)
+		self.broadcast('%s moved "%s" to playlist "%s".' % (message.getFrom().getStripped(), src.decode('utf-8'), playlist))
+		return 'OK'
+
+	@botcmd
+	def say(self, message, args):
+		"broadcast a message to connected users."
+		if len(args):
+			self.broadcast('%s said: %s' % (message.getFrom().getStripped(), args), True)
 
 if __name__ == '__main__':
 	if len(sys.argv) < 2:
