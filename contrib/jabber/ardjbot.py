@@ -2,6 +2,7 @@
 # vim: set ts=4 sts=4 sw=4 noet fileencoding=utf-8:
 
 import os
+import re
 import sys
 import time
 import traceback
@@ -52,7 +53,6 @@ class LogNotifier(pyinotify.ProcessEvent):
 		cls.notifier = pyinotify.ThreadedNotifier(cls.wm, cls(cb))
 		cls.wm.add_watch(filename, pyinotify.IN_MODIFY)
 		cls.notifier.start()
-		print 'pyinotify is watching', filename
 
 	@classmethod
 	def stop(cls):
@@ -69,7 +69,6 @@ class ardjbot(JabberBot):
 			h = config['jabber']['login'].split('@')[1]
 			login = u + '@' + h
 			self.users = config['jabber']['access']
-			print self.users
 		except KeyError:
 			raise Exception('Not enough parameters in config.')
 		except:
@@ -80,6 +79,10 @@ class ardjbot(JabberBot):
 		self.log_notifier = None
 		self.lastfm = lastfm.client.Daemon('ardj')
 		self.lastfm.open_log()
+		try:
+			self.lastfm_skip = re.compile(config['lastfm']['skip'])
+		except KeyError:
+			self.lastfm_skip = None
 
 	def serve_forever(self):
 		return JabberBot.serve_forever(self, connect_callback=self.on_connected)
@@ -87,7 +90,7 @@ class ardjbot(JabberBot):
 	def on_connected(self):
 		self.status_type = self.DND
 		LogNotifier.init(self.folder, self.on_inotify)
-		self.update_status()
+		self.update_status(onstart=True)
 
 	def on_inotify(self, event):
 		try:
@@ -97,7 +100,7 @@ class ardjbot(JabberBot):
 			print >>sys.stderr, 'Exception in inotify handler:', e
 			traceback.print_exc()
 
-	def update_status(self):
+	def update_status(self, onstart=False):
 		"""
 		Updates the status with the current track name.
 		Called by inotify, if available.
@@ -110,9 +113,10 @@ class ardjbot(JabberBot):
 				self.status_message = u'♫ %s' % (track['file'])
 		if self.np_tunes:
 			self.send_tune(track)
-		if track.has_key('artist') and track.has_key('title'):
-			filename = os.path.join(self.folder, track['file'])
-			self.lastfm.submit({ 'artist': track['artist'], 'title': track['title'], 'time': time.gmtime(), 'length': mutagen.File(filename).info.length })
+		if not onstart and track.has_key('artist') and track.has_key('title'):
+			if self.lastfm_skip is None or self.lastfm_skip.match(track['file']):
+				filename = os.path.join(self.folder, track['file'])
+				self.lastfm.submit({ 'artist': track['artist'], 'title': track['title'], 'time': time.gmtime(), 'length': mutagen.File(filename).info.length })
 
 	def get_current(self):
 		"""Возвращает имя проигрываемого файла из краткого лога."""
@@ -123,6 +127,7 @@ class ardjbot(JabberBot):
 
 	def get_current_track(self):
 		result = { 'file': self.get_current(), 'uri': 'http://tmradio.net/' }
+		print 'get_current_track: file=%s' % result
 		try:
 			tags = get_file_tags(os.path.join(self.folder, result['file']))
 			for tag in ('artist', 'title'):
