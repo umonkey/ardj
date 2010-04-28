@@ -35,28 +35,6 @@ def get_file_tags(filename):
 		return mutagen.easyid3.Open(filename)
 	return mutagen.File(filename)
 
-class LogNotifier(pyinotify.ProcessEvent):
-	wm = None
-	notifier = None
-
-	def __init__(self, cb):
-		self.cb = cb
-		pyinotify.ProcessEvent.__init__(self)
-
-	def process_IN_MODIFY(self, event):
-		self.cb(event)
-
-	@classmethod
-	def init(cls, filename, cb):
-		cls.wm = pyinotify.WatchManager()
-		cls.notifier = pyinotify.ThreadedNotifier(cls.wm, cls(cb))
-		cls.wm.add_watch(filename, pyinotify.IN_MODIFY)
-		cls.notifier.start()
-
-	@classmethod
-	def stop(cls):
-		cls.notifier.stop()
-
 class ardjbot(JabberBot):
 	def __init__(self, config_name):
 		self.folder = os.path.dirname(config_name)
@@ -241,6 +219,31 @@ class LastFmClient:
 			except KeyError, e:
 				print >>sys.stderr, 'Track not sent to last.fm: no "%s" property, data: %s' % (e, track)
 
+class LogNotifier(pyinotify.ProcessEvent):
+	"""
+	Tracks changes in a file using inotify.
+	"""
+	wm = None
+	notifier = None
+
+	def __init__(self, cb):
+		self.cb = cb
+		pyinotify.ProcessEvent.__init__(self)
+
+	def process_IN_MODIFY(self, event):
+		self.cb(event)
+
+	@classmethod
+	def init(cls, filename, cb):
+		cls.wm = pyinotify.WatchManager()
+		cls.notifier = pyinotify.ThreadedNotifier(cls.wm, cls(cb))
+		cls.wm.add_watch(filename, pyinotify.IN_MODIFY)
+		cls.notifier.start()
+
+	@classmethod
+	def stop(cls):
+		cls.notifier.stop()
+
 if __name__ == '__main__':
 	if len(sys.argv) < 2:
 		print >>sys.stderr, 'Usage: %s path/to/ardj.yaml' % sys.argv[0]
@@ -255,7 +258,6 @@ if __name__ == '__main__':
 	while True:
 		try:
 			bot.serve_forever()
-			LogNotifier.stop()
 			sys.exit(0)
 		except Exception, e:
 			print >>sys.stderr, 'Error: %s, restarting' % e
