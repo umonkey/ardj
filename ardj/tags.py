@@ -26,6 +26,8 @@ def raw(filename):
 def get(filename):
 	result = {}
 	t = raw(filename)
+	if t is None:
+		return None
 	for k in ('artist', 'title', 'album'):
 		if k in t:
 			result[k] = t[k][0]
