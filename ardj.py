@@ -43,7 +43,7 @@ if __name__ == '__main__':
 			if track is None:
 				print >>sys.stderr, 'Could not find a track to play.'
 				sys.exit(1)
-			print track['filepath']
+			print track['filepath'].encode('utf-8')
 			db.commit()
 		if '-N' == option:
 			import ardj.db
