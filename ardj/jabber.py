@@ -8,7 +8,6 @@ import db
 from config import config
 from jabberbot import JabberBot, botcmd
 from notify import LogNotifier
-from scrobbler import client as lastfm
 
 class ardjbot(JabberBot):
 	def __init__(self):
@@ -18,7 +17,6 @@ class ardjbot(JabberBot):
 		self.np_status = self.config.get('jabber/status', True)
 		self.np_tunes = self.config.get('jabber/tunes', True)
 		self.log_notifier = None
-		self.lastfm = lastfm()
 
 		login, password = self.split_login(self.config.get('jabber/login'))
 		JabberBot.__init__(self, login, password)
@@ -61,8 +59,6 @@ class ardjbot(JabberBot):
 				self.status_message = u'♫ %s' % (track['file'])
 		if self.np_tunes:
 			self.send_tune(track)
-		if not onstart:
-			self.lastfm.submit(track)
 
 	def get_current(self):
 		"""Возвращает имя проигрываемого файла из краткого лога."""
