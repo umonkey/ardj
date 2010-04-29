@@ -162,6 +162,23 @@ class ardjbot(JabberBot):
 		url = 'http://twitter.com/' + posting.GetUser().GetScreenName() + '/status/' + str(posting.GetId())
 		self.broadcast('%s sent a message to twitter: %s <%s>' % (message.getFrom().getStripped(), args, url))
 
+	@botcmd
+	def set(self, message, args):
+		"""modifies track properties"""
+		args = self.split(args)
+		if len(args) == 3:
+			args.append(u'for')
+			args.append(self.get_current_track()['id'])
+		log('args: %s' % args)
+		if len(args) != 5 or args[1] != u'to' or args[3] != u'for' or args[0] not in (u'weight', u'queue'):
+			return 'Usage: set {weight|queue} to <float> [for <track_id>].'
+		if args[0] == u'weight':
+			self.db.set_track_weight(args[2], args[4])
+		if args[0] == u'queue':
+			self.db.set_track_queue(args[2], args[4])
+		track = self.db.get_track_info(args[4])
+		self.broadcast('%s set %s=%f for track=%u (%s/%s)' % (message.getFrom().getStripped(), args[0], float(args[2]), track['id'], track['playlist'], track['filename']))
+
 	def split(self, args):
 		if not args:
 			return []

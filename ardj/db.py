@@ -147,7 +147,7 @@ class db:
 		init_rnd = rnd = random.random() * probability_sum
 		for row in rows:
 			if rnd < row[1]:
-				log('db: track %u won with probability=%f (sum=%f, rnd=%f)' % (row[0], row[1], probability_sum, init_rnd))
+				log('db: track %u(%s) won with p=%.4f s=%.4f r=%.4f' % (row[0], playlist, row[1], probability_sum, init_rnd))
 				return row[0]
 			rnd = rnd - row[1]
 		raise Exception(u'This can not happen (could not choose from %u tracks).' % len(rows))
@@ -192,6 +192,10 @@ class db:
 
 	def set_track_weight(self, track_id, weight):
 		self.cursor().execute('UPDATE tracks SET weight = ? WHERE id = ?', (float(weight), int(track_id), ))
+		self.commit()
+
+	def set_track_queue(self, track_id, queue):
+		self.cursor().execute('UPDATE tracks SET queue = ? WHERE id = ?', (float(queue), int(track_id), ))
 		self.commit()
 
 	def add_file(self, filename, check=True):
