@@ -9,6 +9,13 @@ from config import config
 from jabberbot import JabberBot, botcmd
 from notify import LogNotifier
 
+have_twitter = False
+try:
+	import twitter
+	have_twitter = True
+except ImportError:
+	print >>sys.stderr, 'Install python-twitter to get additional features.'
+
 class ardjbot(JabberBot):
 	def __init__(self):
 		self.config = config()
@@ -17,6 +24,13 @@ class ardjbot(JabberBot):
 		self.np_status = self.config.get('jabber/status', True)
 		self.np_tunes = self.config.get('jabber/tunes', True)
 		self.log_notifier = None
+		self.twitter = None
+		if have_twitter:
+			try:
+				self.twitter = twitter.Api(username=self.config.get('twitter/name'), password=self.config.get('twitter/password'))
+				self.twitter.SetXTwitterHeaders(client='ardj', url='http://ardj.googlecode.com/', version='1.0')
+			except Exception, e:
+				print >>sys.stderr, 'Twitter: %s' % e
 
 		login, password = self.split_login(self.config.get('jabber/login'))
 		JabberBot.__init__(self, login, password)
@@ -136,6 +150,15 @@ class ardjbot(JabberBot):
 		for row in self.db.cursor().execute(message.getBody()).fetchall():
 			result += u', '.join([unicode(cell) for cell in row]) + u'\n'
 		return result
+
+	@botcmd
+	def twit(self, message, args):
+		"sends a message to twitter"
+		if not have_twitter:
+			return 'You need to install python-twitter to use this command.'
+		posting = self.twitter.PostUpdate(args)
+		url = 'http://twitter.com/' + posting.GetUser().GetScreenName() + '/status/' + str(posting.GetId())
+		self.broadcast('%s sent a message to twitter: %s <%s>' % (message.getFrom().getStripped(), args, url))
 
 	def split(self, args):
 		if not args:
