@@ -134,13 +134,15 @@ class db:
 			sql += ' AND count < ?'
 			params += (repeat, )
 		rows = self.cursor().execute(sql, params).fetchall()
+		if not rows:
+			return None
 		probability_sum = sum([row[1] for row in rows])
 		rnd = random.random() * probability_sum
 		for row in rows:
 			if rnd < row[1]:
 				return row[0]
 			rnd = rnd - row[1]
-		raise Exception(u'This can not happen.')
+		raise Exception(u'This can not happen (could not choose from %u tracks).' % len(rows))
 
 	def get_random_track_from_playlist(self, playlist, repeat=None):
 		"""
@@ -196,8 +198,11 @@ class db:
 			if row is not None:
 				return
 		t = tags.get(os.path.join(musicdir, filename))
-		self.cursor().execute('INSERT INTO tracks (playlist, name, artist, title, length, artist_weight, weight, count, last_played, queue) VALUES (?, ?, ?, ?, ?, 1, 1, 0, 0, 0)', (playlist, track, t['artist'], t['title'], t['length'], ))
-		print 'db: track added: %s/%s' % (playlist, track)
+		if t is not None:
+			self.cursor().execute('INSERT INTO tracks (playlist, name, artist, title, length, artist_weight, weight, count, last_played, queue) VALUES (?, ?, ?, ?, ?, 1, 1, 0, 0, 0)', (playlist, track, t['artist'], t['title'], t['length'], ))
+			print 'db: track added: %s/%s' % (playlist, track)
+		else:
+			print >>sys.stderr, 'db: no tags: %s/%s' % (playlist, track)
 
 	def update_files(self):
 		"""
@@ -228,7 +233,7 @@ class db:
 			self.commit()
 		except Exception, e:
 			self.db.rollback()
-			raise e
+			raise
 
 	def move_track_to(self, track_id, playlist_name):
 		"""
