@@ -7,7 +7,6 @@ import sys
 import time
 import traceback
 
-import lastfm.client
 import xmpp
 
 try:
@@ -36,34 +35,13 @@ def get_file_tags(filename):
 		return mutagen.easyid3.Open(filename)
 	return mutagen.File(filename)
 
-class LogNotifier(pyinotify.ProcessEvent):
-	wm = None
-	notifier = None
-
-	def __init__(self, cb):
-		self.cb = cb
-		pyinotify.ProcessEvent.__init__(self)
-
-	def process_IN_MODIFY(self, event):
-		self.cb(event)
-
-	@classmethod
-	def init(cls, filename, cb):
-		cls.wm = pyinotify.WatchManager()
-		cls.notifier = pyinotify.ThreadedNotifier(cls.wm, cls(cb))
-		cls.wm.add_watch(filename, pyinotify.IN_MODIFY)
-		cls.notifier.start()
-
-	@classmethod
-	def stop(cls):
-		cls.notifier.stop()
-
 class ardjbot(JabberBot):
 	def __init__(self, config_name):
 		self.folder = os.path.dirname(config_name)
 		if not os.path.exists(config_name):
 			raise Exception('Config file not found: %s' % config_name)
 		config = yaml.load(open(config_name, 'r').read())
+		self.config = config
 		try:
 			u, password = config['jabber']['login'].split('@')[0].split(':')
 			h = config['jabber']['login'].split('@')[1]
@@ -77,12 +55,7 @@ class ardjbot(JabberBot):
 		self.np_tunes = config['jabber'].has_key('tunes') and config['jabber']['tunes']
 		JabberBot.__init__(self, login, password)
 		self.log_notifier = None
-		self.lastfm = lastfm.client.Daemon('ardj')
-		self.lastfm.open_log()
-		try:
-			self.lastfm_skip = re.compile(config['lastfm']['skip'])
-		except KeyError:
-			self.lastfm_skip = None
+		self.lastfm = LastFmClient(self)
 
 	def serve_forever(self):
 		return JabberBot.serve_forever(self, connect_callback=self.on_connected)
@@ -91,6 +64,10 @@ class ardjbot(JabberBot):
 		self.status_type = self.DND
 		LogNotifier.init(self.folder, self.on_inotify)
 		self.update_status(onstart=True)
+
+	def shutdown(self):
+		LogNotifier.stop()
+		JabberBot.shutdown(self)
 
 	def on_inotify(self, event):
 		try:
@@ -113,10 +90,8 @@ class ardjbot(JabberBot):
 				self.status_message = u'♫ %s' % (track['file'])
 		if self.np_tunes:
 			self.send_tune(track)
-		if not onstart and track.has_key('artist') and track.has_key('title'):
-			if self.lastfm_skip is None or self.lastfm_skip.match(track['file']):
-				filename = os.path.join(self.folder, track['file'])
-				self.lastfm.submit({ 'artist': track['artist'], 'title': track['title'], 'time': time.gmtime(), 'length': mutagen.File(filename).info.length })
+		if not onstart:
+			self.lastfm.submit(track)
 
 	def get_current(self):
 		"""Возвращает имя проигрываемого файла из краткого лога."""
@@ -126,15 +101,16 @@ class ardjbot(JabberBot):
 		return open(shortlog, 'r').read().split('\n')[0].split(' ', 2)[2]
 
 	def get_current_track(self):
-		result = { 'file': self.get_current(), 'uri': 'http://tmradio.net/' }
-		print 'get_current_track: file=%s' % result
 		try:
+			result = { 'file': self.get_current(), 'uri': 'http://tmradio.net/' }
 			tags = get_file_tags(os.path.join(self.folder, result['file']))
 			for tag in ('artist', 'title'):
 				if tag in tags:
 					result[tag] = unicode(tags[tag][0])
-		except:
-			pass
+		except Exception, e:
+			print 'get_current_track: error=%s' % (e)
+			traceback.print_exc()
+			result = {}
 		return result
 
 	def check_access(self, message):
@@ -202,6 +178,74 @@ class ardjbot(JabberBot):
 		if len(args):
 			self.broadcast('%s said: %s' % (message.getFrom().getStripped(), args), True)
 
+	@botcmd
+	def restart(self, message, args):
+		"restart the bot"
+		self.shutdown()
+		sys.exit(1)
+
+class LastFmClient:
+	"""
+	Last.fm client class. Uses lastfmsubmitd to send track info. Uses config
+	file parameter lastfm/skip as a regular expression to match files that
+	must never be reported (such as jingles).
+	"""
+	def __init__(self, bot):
+		"""
+		Imports and initializes lastfm.client, reads options from bot's config file.
+		"""
+		self.skip = None
+		self.folder = bot.folder
+		try:
+			import lastfm.client
+			self.cli = lastfm.client.Daemon('ardj')
+			self.cli.open_log()
+		except ImportError:
+			print >>sys.stderr, 'Last.fm disabled: please install lastfmsubmitd.'
+			self.cli = None
+		if bot.config.has_key('lastfm') and bot.config['lastfm'].has_key('skip'):
+			self.skip = re.compile(bot.config['lastfm']['skip'])
+
+	def submit(self, track):
+		"""
+		Reports a track, which must be a dictionary containing keys: file,
+		artist, title. If a key is not there, the track is not reported.
+		"""
+		if self.cli is not None:
+			try:
+				if self.skip is not None and self.skip.match(track['file']):
+					print 'Last.fm: skipped', track['file']
+				else:
+					filename = os.path.join(self.folder, track['file'])
+					self.cli.submit({ 'artist': track['artist'], 'title': track['title'], 'time': time.gmtime(), 'length': mutagen.File(filename).info.length })
+			except KeyError, e:
+				print >>sys.stderr, 'Last.fm: no %s in %s' % (e.args[0], track)
+
+class LogNotifier(pyinotify.ProcessEvent):
+	"""
+	Tracks changes in a file using inotify.
+	"""
+	wm = None
+	notifier = None
+
+	def __init__(self, cb):
+		self.cb = cb
+		pyinotify.ProcessEvent.__init__(self)
+
+	def process_IN_MODIFY(self, event):
+		self.cb(event)
+
+	@classmethod
+	def init(cls, filename, cb):
+		cls.wm = pyinotify.WatchManager()
+		cls.notifier = pyinotify.ThreadedNotifier(cls.wm, cls(cb))
+		cls.wm.add_watch(filename, pyinotify.IN_MODIFY)
+		cls.notifier.start()
+
+	@classmethod
+	def stop(cls):
+		cls.notifier.stop()
+
 if __name__ == '__main__':
 	if len(sys.argv) < 2:
 		print >>sys.stderr, 'Usage: %s path/to/ardj.yaml' % sys.argv[0]
@@ -216,7 +260,6 @@ if __name__ == '__main__':
 	while True:
 		try:
 			bot.serve_forever()
-			LogNotifier.stop()
 			sys.exit(0)
 		except Exception, e:
 			print >>sys.stderr, 'Error: %s, restarting' % e
