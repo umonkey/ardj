@@ -169,7 +169,7 @@ class db:
 		if track is not None:
 			if not os.path.exists(track['filepath']):
 				self.cursor().execute('DELETE FROM tracks WHERE id = ?', (track['id'], ))
-				log('db: track %s/%s does not exist -- deleted' % (track['playlist'], track['filename']))
+				log('db: deleted %s/%s' % (track['playlist'], track['filename']))
 				self.commit()
 				return self.get_random_track_from_playlist(playlist, repeat)
 			now = int(time.time())

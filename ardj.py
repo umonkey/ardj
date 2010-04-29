@@ -63,3 +63,4 @@ if __name__ == '__main__':
 		if '-u' == option:
 			import ardj.db
 			ardj.db.db().update_files()
+			print 'OK'
