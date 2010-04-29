@@ -39,7 +39,7 @@ if __name__ == '__main__':
 		if '-n' == option:
 			import ardj.db
 			db = ardj.db.db()
-			track = db.get_random_track()
+			track = db.get_random_track(scrobble=True)
 			if track is None:
 				print >>sys.stderr, 'Could not find a track to play.'
 				sys.exit(1)

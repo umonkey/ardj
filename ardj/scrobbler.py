@@ -2,7 +2,10 @@
 
 # System imports.
 import lastfm
+import os
 import re
+import sys
+import time
 
 # Local imports.
 import config
@@ -39,10 +42,12 @@ class client:
 		"""
 		if self.cli is not None:
 			try:
-				if self.skip is not None and self.skip.match(track['file']):
-					print 'Last.fm: skipped', track['file']
-				else:
-					filename = os.path.join(self.folder, track['file'])
-					self.cli.submit({ 'artist': track['artist'], 'title': track['title'], 'time': time.gmtime(), 'length': mutagen.File(filename).info.length })
+				filename = os.path.join(track['playlist'], track['filename'])
+				if self.skip is not None and self.skip.match(filename):
+					print 'Last.fm: skipped', filename
+				elif track['artist'] and track['title']:
+					data = { 'artist': track['artist'], 'title': track['title'], 'time': time.gmtime(), 'length': track['length'] }
+					self.cli.submit(data)
+					# print >>sys.stderr, 'Last.fm: sent', filename, data
 			except KeyError, e:
 				print >>sys.stderr, 'Last.fm: no %s in %s' % (e.args[0], track)

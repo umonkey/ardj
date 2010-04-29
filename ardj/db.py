@@ -2,6 +2,7 @@
 
 import os
 import random
+import scrobbler
 import sys
 import time
 import traceback
@@ -41,6 +42,7 @@ class db:
 			cur.execute('CREATE INDEX IF NOT EXISTS idx_tracks_last ON tracks (last_played)')
 			cur.execute('CREATE INDEX IF NOT EXISTS idx_tracks_count ON tracks (count)')
 			cur.execute('CREATE INDEX IF NOT EXISTS idx_tracks_queue ON tracks (queue)')
+		self.scrobbler = scrobbler.client()
 
 	def sqlite_randomize(self, id, artist_weight, weight, count):
 		result = weight
@@ -84,13 +86,15 @@ class db:
 			res[row[0]] = row[1] or 0
 		return res
 
-	def get_random_track(self):
+	def get_random_track(self, scrobble=False):
 		for playlist in self.get_playlists():
 			repeat = None
 			if playlist.has_key('repeat'):
 				repeat = playlist['repeat']
 			track = self.get_random_track_from_playlist(playlist['name'], repeat)
 			if track is not None:
+				if scrobble:
+					self.scrobbler.submit(track)
 				return track
 
 	def get_playlists(self):
@@ -179,8 +183,8 @@ class db:
 		"""
 		Returns information about a particular track.
 		"""
-		row = self.cursor().execute('SELECT playlist, name, artist, title, id, weight, count, queue FROM tracks WHERE id = ?', (int(id), )).fetchone()
-		return { 'playlist': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'filepath': os.path.join(self.config.get_music_dir(), row[0], row[1]), 'uri': 'http://tmradio.net/', 'id': row[4], 'weight': row[5], 'count': row[6], 'queue': row[7] }
+		row = self.cursor().execute('SELECT playlist, name, artist, title, id, weight, count, queue, length FROM tracks WHERE id = ?', (int(id), )).fetchone()
+		return { 'playlist': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'filepath': os.path.join(self.config.get_music_dir(), row[0], row[1]), 'uri': 'http://tmradio.net/', 'id': row[4], 'weight': row[5], 'count': row[6], 'queue': row[7], 'length': row[8] }
 
 	def set_track_weight(self, track_id, weight):
 		self.cursor().execute('UPDATE tracks SET weight = ? WHERE id = ?', (float(weight), int(track_id), ))
