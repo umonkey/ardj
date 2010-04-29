@@ -10,15 +10,16 @@ def usage():
 	print "Usage: %s [options]" % os.path.basename(sys.argv[0])
 	print "\nBasic options:"
 	print " -c           open SQLite console"
-	print " -d           run a jabber bot"
+	print " -d           run a jabber bot (consider using `./monitor ardj.py -d')"
 	print " -n           show next track"
-	print " -N NUM       show NUM next tracks"
+	print " -N NUM       show NUM next tracks (debug, no DB updates)"
+	print " -s           scrobble track (only with -n)"
 	print " -u           update database"
 	return 1
 
 if __name__ == '__main__':
 	try:
-		opts, args = getopt.getopt(sys.argv[1:], 'cdnN:u')
+		opts, args = getopt.getopt(sys.argv[1:], 'cdnN:su')
 	except getopt.GetoptError:
 		sys.exit(usage())
 
@@ -39,7 +40,8 @@ if __name__ == '__main__':
 		if '-n' == option:
 			import ardj.db
 			db = ardj.db.db()
-			track = db.get_random_track(scrobble=True)
+			scrobble = ('-s', '') in opts
+			track = db.get_random_track(scrobble=scrobble)
 			if track is None:
 				print >>sys.stderr, 'Could not find a track to play.'
 				sys.exit(1)
