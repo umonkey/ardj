@@ -15,6 +15,7 @@ except ImportError:
 	sys.exit(13)
 
 import config
+from log import log
 import tags
 
 class db:
@@ -30,10 +31,10 @@ class db:
 		self.folder = os.path.dirname(self.filename)
 		self.musicdir = self.config.get_music_dir()
 		isnew = not os.path.exists(self.filename)
-		self.db = sqlite.connect(self.filename)
+		self.db = sqlite.connect(self.filename, check_same_thread=False)
 		self.db.create_function('randomize', 4, self.sqlite_randomize)
 		if isnew:
-			print 'db: initializing the database'
+			log('db: initializing the database')
 			cur = self.db.cursor()
 			cur.execute('CREATE TABLE IF NOT EXISTS playlists (id INTEGER PRIMARY KEY, name TEXT, last_played INTEGER)')
 			cur.execute('CREATE INDEX IF NOT EXISTS idx_playlists_last ON playlists (last_played)')
@@ -45,6 +46,9 @@ class db:
 		self.scrobbler = scrobbler.client()
 
 	def sqlite_randomize(self, id, artist_weight, weight, count):
+		"""
+		The randomize() function for SQLite.
+		"""
 		result = weight
 
 		# применяем коэффициент исполнителя (= 1 / количество_дорожек)
@@ -52,10 +56,9 @@ class db:
 
 		# делим на количество проигрываний, чтобы стимулировать
 		# дорожки, которые проигрываются реже
-		if count:
-			result = result / count
+		result = result / (count + 1)
 
-		# print >>sys.stderr, 'randomize(%05u, %f, %f, %u) = %f' % (id, artist_weight, weight, count, result)
+		# log('randomize(%05u, %f, %f, %u) = %f' % (id, artist_weight, weight, count, result))
 		return result
 
 	def cursor(self):
@@ -115,15 +118,15 @@ class db:
 				if not stats.has_key(playlist['name']):
 					pass
 				elif not os.path.exists(dir):
-					print >>sys.stderr, 'Playlist %s folder does not exist.' % playlist['name']
+					log('Playlist %s folder does not exist.' % playlist['name'])
 				elif not os.path.isdir(dir):
-					print >>sys.stderr, 'Playlist %s does not point to a folder.' % playlist['name']
+					log('Playlist %s does not point to a folder.' % playlist['name'])
 				elif playlist.has_key('delay') and (playlist['delay'] * 60) + stats[playlist['name']] > int(time.time()):
-					pass # print >>sys.stderr, 'Playlist %s is delayed.' % playlist['name']
+					pass # log('Playlist %s is delayed.' % playlist['name'])
 				elif playlist.has_key('hours') and not in_list(int(time.strftime('%H')), playlist['hours']):
-					pass # print >>sys.stderr, 'Playlist %s is not active on this hour.' % playlist['name']
+					pass # log('Playlist %s is not active on this hour.' % playlist['name'])
 				elif playlist.has_key('days') and not in_list(self.get_current_day_number(), playlist['days']):
-					pass # print >>sys.stderr, 'Playlist %s is not active on this day.' % playlist['name']
+					pass # log('Playlist %s is not active on this day.' % playlist['name'])
 				else:
 					playlists.append(playlist)
 		return playlists
@@ -141,9 +144,10 @@ class db:
 		if not rows:
 			return None
 		probability_sum = sum([row[1] for row in rows])
-		rnd = random.random() * probability_sum
+		init_rnd = rnd = random.random() * probability_sum
 		for row in rows:
 			if rnd < row[1]:
+				log('db: track %u won with probability=%f (sum=%f, rnd=%f)' % (row[0], row[1], probability_sum, init_rnd))
 				return row[0]
 			rnd = rnd - row[1]
 		raise Exception(u'This can not happen (could not choose from %u tracks).' % len(rows))
@@ -165,7 +169,7 @@ class db:
 		if track is not None:
 			if not os.path.exists(track['filepath']):
 				self.cursor().execute('DELETE FROM tracks WHERE id = ?', (track['id'], ))
-				print >>sys.stderr, 'db: track %s/%s does not exist -- deleted' % (track['playlist'], track['filename'])
+				log('db: track %s/%s does not exist -- deleted' % (track['playlist'], track['filename']))
 				self.commit()
 				return self.get_random_track_from_playlist(playlist, repeat)
 			now = int(time.time())
@@ -183,8 +187,8 @@ class db:
 		"""
 		Returns information about a particular track.
 		"""
-		row = self.cursor().execute('SELECT playlist, name, artist, title, id, weight, count, queue, length FROM tracks WHERE id = ?', (int(id), )).fetchone()
-		return { 'playlist': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'filepath': os.path.join(self.config.get_music_dir(), row[0], row[1]), 'uri': 'http://tmradio.net/', 'id': row[4], 'weight': row[5], 'count': row[6], 'queue': row[7], 'length': row[8] }
+		row = self.cursor().execute('SELECT playlist, name, artist, title, id, weight, count, queue, length, artist_weight FROM tracks WHERE id = ?', (int(id), )).fetchone()
+		return { 'playlist': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'filepath': os.path.join(self.config.get_music_dir(), row[0], row[1]), 'uri': 'http://tmradio.net/', 'id': row[4], 'weight': row[5], 'count': row[6], 'queue': row[7], 'length': row[8], 'artist_weight': row[9] }
 
 	def set_track_weight(self, track_id, weight):
 		self.cursor().execute('UPDATE tracks SET weight = ? WHERE id = ?', (float(weight), int(track_id), ))
@@ -204,9 +208,9 @@ class db:
 		t = tags.get(os.path.join(musicdir, filename))
 		if t is not None:
 			self.cursor().execute('INSERT INTO tracks (playlist, name, artist, title, length, artist_weight, weight, count, last_played, queue) VALUES (?, ?, ?, ?, ?, 1, 1, 0, 0, 0)', (playlist, track, t['artist'], t['title'], t['length'], ))
-			print 'db: track added: %s/%s' % (playlist, track)
+			log('db: track added: %s/%s' % (playlist, track))
 		else:
-			print >>sys.stderr, 'db: no tags: %s/%s' % (playlist, track)
+			log('db: no tags: %s/%s' % (playlist, track))
 
 	def update_files(self):
 		"""

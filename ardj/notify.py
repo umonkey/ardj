@@ -6,6 +6,8 @@ except ImportError:
 	print >>sys.stderr, 'Please install pyinotify.'
 	sys.exit(13)
 
+from log import log
+
 class LogNotifier(pyinotify.ProcessEvent):
 	"""
 	Tracks changes in a file using inotify.
@@ -26,6 +28,7 @@ class LogNotifier(pyinotify.ProcessEvent):
 		cls.notifier = pyinotify.ThreadedNotifier(cls.wm, cls(cb))
 		cls.wm.add_watch(filename, pyinotify.IN_MODIFY)
 		cls.notifier.start()
+		log('inotify: started looking for %s' % filename)
 
 	@classmethod
 	def stop(cls):

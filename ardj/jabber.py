@@ -8,6 +8,7 @@ import db
 from config import config
 from jabberbot import JabberBot, botcmd
 from notify import LogNotifier
+from log import log
 
 have_twitter = False
 try:
@@ -30,7 +31,7 @@ class ardjbot(JabberBot):
 				self.twitter = twitter.Api(username=self.config.get('twitter/name'), password=self.config.get('twitter/password'))
 				self.twitter.SetXTwitterHeaders(client='ardj', url='http://ardj.googlecode.com/', version='1.0')
 			except Exception, e:
-				print >>sys.stderr, 'Twitter: %s' % e
+				log('Twitter: %s' % e)
 
 		login, password = self.split_login(self.config.get('jabber/login'))
 		JabberBot.__init__(self, login, password)
@@ -45,7 +46,7 @@ class ardjbot(JabberBot):
 
 	def on_connected(self):
 		self.status_type = self.DND
-		# LogNotifier.init(self.config.folder, self.on_inotify)
+		LogNotifier.init(os.path.dirname(self.config.filename), self.on_inotify)
 		self.update_status(onstart=True)
 
 	def shutdown(self):
@@ -54,10 +55,11 @@ class ardjbot(JabberBot):
 
 	def on_inotify(self, event):
 		try:
-			if event.name == 'ardj.short.log':
+			if event.name == os.path.basename(self.db.filename):
+				log('inotify: %s updated.' % event.name)
 				return self.update_status()
 		except Exception, e:
-			print >>sys.stderr, 'Exception in inotify handler:', e
+			log('Exception in inotify handler:', e)
 			traceback.print_exc()
 
 	def update_status(self, onstart=False):
@@ -118,7 +120,7 @@ class ardjbot(JabberBot):
 		track = self.db.get_track_info(args[0])
 		if track is None:
 			return u'No such track.'
-		return u'id=%u playlist=%s filename="%s" artist="%s" title="%s" weight=%f playcount=%u queue=%f' % (track['id'], track['playlist'], track['filename'], track['artist'], track['title'], track['weight'], track['count'], track['queue'])
+		return u'id=%u playlist=%s filename="%s" artist="%s" title="%s" weight=%f artist_weight=%f playcount=%u, length=%us' % (track['id'], track['playlist'], track['filename'], track['artist'], track['title'], track['weight'], track['artist_weight'], track['count'], track['length'])
 
 	@botcmd
 	def move(self, message, args):
@@ -169,7 +171,7 @@ def run():
 	try:
 		bot = ardjbot()
 	except Exception, e:
-		print >>sys.stderr, e
+		log(e)
 		traceback.print_exc()
 		sys.exit(1)
 
@@ -178,5 +180,5 @@ def run():
 			bot.serve_forever()
 			sys.exit(0)
 		except Exception, e:
-			print >>sys.stderr, 'Error: %s, restarting' % e
+			log('Error: %s, restarting' % e)
 			traceback.print_exc()

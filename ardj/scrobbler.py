@@ -9,6 +9,7 @@ import time
 
 # Local imports.
 import config
+from log import log
 
 class client:
 	"""
@@ -28,12 +29,12 @@ class client:
 			self.cli = lastfm.client.Daemon('ardj')
 			self.cli.open_log()
 		except ImportError:
-			print >>sys.stderr, 'Last.fm disabled: please install lastfmsubmitd.'
+			log('scrobbler disabled: please install lastfmsubmitd.')
 			self.cli = None
 		self.skip = None
 		skip = self.config.get('lastfm/skip', '')
 		if skip:
-			re.compile(skip)
+			self.skip = re.compile(skip)
 
 	def submit(self, track):
 		"""
@@ -44,10 +45,10 @@ class client:
 			try:
 				filename = os.path.join(track['playlist'], track['filename'])
 				if self.skip is not None and self.skip.match(filename):
-					print 'Last.fm: skipped', filename
+					log('scrobbler: skipped %s' % filename)
 				elif track['artist'] and track['title']:
 					data = { 'artist': track['artist'], 'title': track['title'], 'time': time.gmtime(), 'length': track['length'] }
 					self.cli.submit(data)
-					# print >>sys.stderr, 'Last.fm: sent', filename, data
+					log('scrobbler: sent "%s" by %s' % (track['title'], track['artist']))
 			except KeyError, e:
-				print >>sys.stderr, 'Last.fm: no %s in %s' % (e.args[0], track)
+				log('scrobbler: no %s in %s' % (e.args[0], track))
