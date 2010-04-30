@@ -190,6 +190,13 @@ class db:
 		row = self.cursor().execute('SELECT playlist, name, artist, title, id, weight, count, queue, length, artist_weight FROM tracks WHERE id = ?', (int(id), )).fetchone()
 		return { 'playlist': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'filepath': os.path.join(self.config.get_music_dir(), row[0], row[1]), 'uri': 'http://tmradio.net/', 'id': row[4], 'weight': row[5], 'count': row[6], 'queue': row[7], 'length': row[8], 'artist_weight': row[9] }
 
+	def get_stats(self):
+		count, length = 0, 0
+		for row in self.cursor().execute('SELECT length FROM tracks WHERE weight > 0').fetchall():
+			count = count + 1
+			length = length + row[0]
+		return (count, length)
+
 	def set_track_weight(self, track_id, weight):
 		self.cursor().execute('UPDATE tracks SET weight = ? WHERE id = ?', (float(weight), int(track_id), ))
 		self.commit()

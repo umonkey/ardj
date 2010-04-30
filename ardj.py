@@ -14,12 +14,13 @@ def usage():
 	print " -n           show next track"
 	print " -N NUM       show NUM next tracks (debug, no DB updates)"
 	print " -s           scrobble track (only with -n)"
+	print " -S           show database statistics"
 	print " -u           update database"
 	return 1
 
 if __name__ == '__main__':
 	try:
-		opts, args = getopt.getopt(sys.argv[1:], 'cdnN:su')
+		opts, args = getopt.getopt(sys.argv[1:], 'cdnN:sSu')
 	except getopt.GetoptError:
 		sys.exit(usage())
 
@@ -60,6 +61,10 @@ if __name__ == '__main__':
 				print u'%05u %s/%s' % (track['id'], track['playlist'], track['filename'])
 				limit = limit - 1
 			db.rollback()
+		if '-S' == option:
+			import ardj.db
+			count, length = ardj.db.db().get_stats()
+			print '%u tracks, %.1f hours.' % (count, length / 60 / 60)
 		if '-u' == option:
 			import ardj.db
 			ardj.db.db().update_files()
