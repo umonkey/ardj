@@ -221,20 +221,28 @@ class db:
 		Adds to the database all files which are supported by mutagen and have tags.
 		"""
 		try:
-			files = []
+			# Файлы, существующие в ФС.
+			infs = []
 			musicdir = self.config.get_music_dir()
 			for triple in os.walk(musicdir, followlinks=True):
 				for fn in triple[2]:
 					f = os.path.join(triple[0], fn)[len(musicdir)+1:]
 					if os.path.sep in f:
-						files.append(f)
+						infs.append(f)
 
-			existing = [os.path.join(row[0], row[1]).encode('utf-8') for row in self.cursor().execute('SELECT playlist, name FROM tracks').fetchall()]
+			# Файлы, существующие в БД.
+			indb = [os.path.join(row[0], row[1]).encode('utf-8') for row in self.cursor().execute('SELECT playlist, name FROM tracks').fetchall()]
+
+			dead = [x for x in indb if x not in infs]
+			new  = [x for x in infs if x not in indb]
 
 			cur = self.cursor()
-			for filename in files:
-				if filename not in existing:
-					self.add_file(filename, check=False)
+			for filename in new:
+				self.add_file(filename, check=False)
+			for filename in dead:
+				parts = filename.decode('utf-8').split(os.path.sep, 1)
+				cur.execute('DELETE FROM tracks WHERE playlist = ? AND name = ?', (parts[0], parts[1], ))
+				log('dead file: %s' % filename)
 
 			# add new playlists
 			cur.execute('INSERT INTO playlists (name) SELECT DISTINCT playlist FROM tracks WHERE playlist NOT IN (SELECT name FROM playlists)')
