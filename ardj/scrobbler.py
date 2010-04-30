@@ -50,5 +50,7 @@ class client:
 					data = { 'artist': track['artist'], 'title': track['title'], 'time': time.gmtime(), 'length': track['length'] }
 					self.cli.submit(data)
 					log(u'scrobbler: sent "%s" by %s' % (track['title'], track['artist']))
+				else:
+					log('scrobbler: no tags: %s' % filename)
 			except KeyError, e:
 				log('scrobbler: no %s in %s' % (e.args[0], track))
