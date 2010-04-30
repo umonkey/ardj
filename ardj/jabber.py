@@ -173,9 +173,9 @@ class ardjbot(JabberBot):
 		if len(args) != 5 or args[1] != u'to' or args[3] != u'for' or args[0] not in (u'weight', u'queue'):
 			return 'Usage: set {weight|queue} to <float> [for <track_id>].'
 		if args[0] == u'weight':
-			self.db.set_track_weight(args[2], args[4])
+			self.db.set_track_weight(args[4], args[2])
 		if args[0] == u'queue':
-			self.db.set_track_queue(args[2], args[4])
+			self.db.set_track_queue(args[4], args[2])
 		track = self.db.get_track_info(args[4])
 		self.broadcast('%s set %s=%f for track=%u (%s/%s)' % (message.getFrom().getStripped(), args[0], float(args[2]), track['id'], track['playlist'], track['filename']))
 
