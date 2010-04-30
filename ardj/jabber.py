@@ -69,10 +69,13 @@ class ardjbot(JabberBot):
 		"""
 		track = self.get_current_track()
 		if self.np_status:
-			if track.has_key('artist') and track.has_key('title'):
-				self.status_message = u'♫ %s — %s' % (track['artist'], track['title'])
-			else:
-				self.status_message = u'♫ %s' % (track['file'])
+			parts = []
+			for k in ('artist', 'title'):
+				if track.has_key(k):
+					parts.append(track[k])
+			if not parts:
+				parts.append(track['file'])
+			self.status_message = u'♫ %s' % u' — '.join(parts)
 		if self.np_tunes:
 			self.send_tune(track)
 
