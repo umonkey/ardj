@@ -90,6 +90,7 @@ class db:
 		return res
 
 	def get_random_track(self, scrobble=False):
+		skip_artists = self.get_last_artists()
 		for playlist in self.get_playlists():
 			repeat = None
 			if playlist.has_key('repeat'):
@@ -99,6 +100,12 @@ class db:
 				if scrobble:
 					self.scrobbler.submit(track)
 				return track
+
+	def get_last_artists(self):
+		"""
+		Returns names of 5 last played artists.
+		"""
+		return [row[0] for row in self.cursor().execute('SELECT artist FROM tracks ORDER BY last_played DESC LIMIT 5').fetchall()]
 
 	def get_playlists(self):
 		"""
@@ -152,7 +159,7 @@ class db:
 			rnd = rnd - row[1]
 		raise Exception(u'This can not happen (could not choose from %u tracks).' % len(rows))
 
-	def get_random_track_from_playlist(self, playlist, repeat=None):
+	def get_random_track_from_playlist(self, playlist, repeat=None, skip_artists=None):
 		"""
 		Returns information about a random track from the specified playlist,
 		in the form of a dictionary with keys: file, path, title, artist.
@@ -167,6 +174,8 @@ class db:
 			return None
 		track = self.get_track_info(id)
 		if track is not None:
+			if skip_artists is not None and track['artist'] in skip_artists:
+				return self.get_random_track_from_playlist(playlist, repeat, skip_artists)
 			if not os.path.exists(track['filepath']):
 				self.cursor().execute('DELETE FROM tracks WHERE id = ?', (track['id'], ))
 				log('db: deleted %s/%s' % (track['playlist'], track['filename']))
