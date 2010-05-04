@@ -157,6 +157,14 @@ class ardjbot(JabberBot):
 		return result
 
 	@botcmd
+	def update(self, message, args):
+		"low level update to the database"
+		sql = 'update ' + args
+		self.db.cursor().execute(sql)
+		self.db.commit()
+		self.broadcast('SQL from %s: %s' % (message.getFrom().getStripped(), sql))
+
+	@botcmd
 	def twit(self, message, args):
 		"sends a message to twitter"
 		if not have_twitter:
