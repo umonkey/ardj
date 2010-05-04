@@ -95,7 +95,7 @@ class db:
 			repeat = None
 			if playlist.has_key('repeat'):
 				repeat = playlist['repeat']
-			track = self.get_random_track_from_playlist(playlist['name'], repeat)
+			track = self.get_random_track_from_playlist(playlist['name'], repeat, skip_artists)
 			if track is not None:
 				if scrobble:
 					self.scrobbler.submit(track)
@@ -105,7 +105,7 @@ class db:
 		"""
 		Returns names of 5 last played artists.
 		"""
-		return [row[0] for row in self.cursor().execute('SELECT artist FROM tracks ORDER BY last_played DESC LIMIT 5').fetchall()]
+		return [row[0] for row in self.cursor().execute('SELECT artist FROM tracks WHERE artist is not null ORDER BY last_played DESC LIMIT 5').fetchall()]
 
 	def get_playlists(self):
 		"""
