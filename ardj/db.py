@@ -159,7 +159,7 @@ class db:
 			rnd = rnd - row[1]
 		raise Exception(u'This can not happen (could not choose from %u tracks).' % len(rows))
 
-	def get_random_track_from_playlist(self, playlist, repeat=None, skip_artists=None):
+	def get_random_track_from_playlist(self, playlist, repeat=None, skip_artists=None, retry=5):
 		"""
 		Returns information about a random track from the specified playlist,
 		in the form of a dictionary with keys: file, path, title, artist.
@@ -175,12 +175,16 @@ class db:
 		track = self.get_track_info(id)
 		if track is not None:
 			if skip_artists is not None and track['artist'] in skip_artists:
-				return self.get_random_track_from_playlist(playlist, repeat, skip_artists)
+				if 1 == retry:
+					return None
+				return self.get_random_track_from_playlist(playlist, repeat, skip_artists, retry - 1)
 			if not os.path.exists(track['filepath']):
 				self.cursor().execute('DELETE FROM tracks WHERE id = ?', (track['id'], ))
 				log('db: deleted %s/%s' % (track['playlist'], track['filename']))
 				self.commit()
-				return self.get_random_track_from_playlist(playlist, repeat)
+				if 1 == retry:
+					return None
+				return self.get_random_track_from_playlist(playlist, repeat, skip_artists, retry - 1)
 			now = int(time.time())
 			self.cursor().execute('UPDATE tracks SET count = ?, last_played = ?, queue = 0 WHERE id = ?', (track['count'] + 1, now, track['id'], ))
 			self.cursor().execute('UPDATE playlists SET last_played = ? WHERE name = ?', (now, playlist, ))
