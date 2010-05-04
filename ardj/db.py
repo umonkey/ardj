@@ -105,7 +105,10 @@ class db:
 		"""
 		Returns names of 5 last played artists.
 		"""
-		return [row[0] for row in self.cursor().execute('SELECT artist FROM tracks WHERE artist is not null ORDER BY last_played DESC LIMIT 5').fetchall()]
+		dupes = self.config.get('dupes', 0)
+		if not dupes:
+			return []
+		return [row[0] for row in self.cursor().execute('SELECT artist FROM tracks WHERE artist is not null ORDER BY last_played DESC LIMIT ' + str(dupes)).fetchall()]
 
 	def get_playlists(self):
 		"""
@@ -138,7 +141,7 @@ class db:
 					playlists.append(playlist)
 		return playlists
 
-	def get_random_track_id(self, playlist, repeat=None):
+	def get_random_track_id(self, playlist, repeat=None, skip_artists=None):
 		"""
 		Returns id of a random track.
 		"""
@@ -147,6 +150,12 @@ class db:
 		if repeat is not None:
 			sql += ' AND count < ?'
 			params += (repeat, )
+		if skip_artists is not None:
+			tsql = []
+			for name in skip_artists:
+				tsql.apend('?')
+				params += (name, )
+			sql += ' AND artist NOT IN (%)' % ', '.join(tsql)
 		rows = self.cursor().execute(sql, params).fetchall()
 		if not rows:
 			return None
