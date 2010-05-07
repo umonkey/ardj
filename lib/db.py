@@ -1,11 +1,14 @@
 # vim: set ts=4 sts=4 sw=4 noet fileencoding=utf-8:
 
+import hashlib
 import os
 import random
 import scrobbler
 import sys
 import time
 import traceback
+
+import tags
 
 try:
 	from sqlite3 import dbapi2 as sqlite
@@ -41,7 +44,7 @@ class db:
 			cur = self.db.cursor()
 			cur.execute('CREATE TABLE IF NOT EXISTS playlists (id INTEGER PRIMARY KEY, name TEXT, last_played INTEGER)')
 			cur.execute('CREATE INDEX IF NOT EXISTS idx_playlists_last ON playlists (last_played)')
-			cur.execute('CREATE TABLE IF NOT EXISTS tracks (id INTEGER PRIMARY KEY, playlist TEXT, name TEXT, artist TEXT, title TEXT, length INTEGER, artist_weight REAL, weight REAL, count INTEGER, last_played INTEGER, queue INTEGER)')
+			cur.execute('CREATE TABLE IF NOT EXISTS tracks (id INTEGER PRIMARY KEY, playlist TEXT, filename TEXT, artist TEXT, title TEXT, length INTEGER, artist_weight REAL, weight REAL, count INTEGER, last_played INTEGER, queue INTEGER)')
 			cur.execute('CREATE INDEX IF NOT EXISTS idx_tracks_playlist ON tracks (playlist)')
 			cur.execute('CREATE INDEX IF NOT EXISTS idx_tracks_last ON tracks (last_played)')
 			cur.execute('CREATE INDEX IF NOT EXISTS idx_tracks_count ON tracks (count)')
@@ -328,14 +331,14 @@ class db:
 		return cls.connect().execute(*args, **kwargs)
 
 class track:
-	def __init__(self):
+	def __init__(self, filename=None, artist=None, title=None, length=None, count=None, weight=None):
 		self.id = None
-		self.filename = None
-		self.artist = None
-		self.title = None
-		self.length = None
-		self.weight = None
-		self.count = None
+		self.filename = filename
+		self.artist = artist
+		self.title = title
+		self.length = length
+		self.weight = weight
+		self.count = count
 		self.last_played = None
 
 	@classmethod
@@ -355,16 +358,44 @@ class track:
 		Saves any pending changes.
 		"""
 		db.execute('UPDATE tracks SET name = ?, artist = ?, title = ?, length = ?, weight = ?, count = ?, last_played = ? WHERE id = ?', (self.filename, self.artist, self.title, self.length, self.weight, self.count, self.last_played, self.id))
-		newtags = { 'artist': self.artist, 'title': self.title, 'comment': 'ardj=1;weight=%f;count=%u;last_played=%u' % (self.weight, self.count, self.last_played) }
-		print newtags
+		comment = 'ardj=1'
+		for k in ('weight', 'count', 'last_played'):
+			if getattr(self, k):
+				comment += ';%s=%s' % (k, getattr(self, k))
+		tags.set(os.path.join(config.get_path('musicdir'), self.filename), { 'artist': self.artist, 'title': self.title, 'ardj': comment })
+		return self
 
-	def add(self, filename):
+	@classmethod
+	def add(cls, filename):
 		"""
 		Adds a file to the database.
 		"""
 		if not os.path.exists(filename):
 			raise Exception('File not found: %s' % filename)
-		db = connect()
+
+		t = cls(weight=1, count=0, filename=cls.hashname(filename))
+		print t
+		tg = tags.get(filename)
+		for k in ('artist', 'title'):
+			setattr(t, k, tg[k])
+		cls.copy(filename, os.path.join(config.get_path('musicdir'), t.filename))
+		return t.save()
+
+	@classmethod
+	def hashname(cls, filename):
+		h = hashlib.md5(open(filename, 'rb').read()).hexdigest()
+		filename = os.path.join(h[0], h[1], h) + os.path.splitext(filename.lower())[1]
+		return filename
+		target = os.path.join(config.get_path('musicdir'), filename)
+		if not os.path.exists(os.path.dirname(target)):
+			os.makedirs(os.path.dirname(target), mode=0755)
+		return target
+
+	@classmethod
+	def copy(cls, src, dst):
+		if not os.path.exists(os.path.dirname(dst)):
+			os.makedirs(os.path.dirname(dst), mode=0755)
+		open(dst, 'wb').write(open(src, 'rb').read())
 
 	@classmethod
 	def get_random(cls, playlist=None, repeat=None, skip_artists=None):
@@ -396,3 +427,10 @@ class track:
 				return cls.load(row[0])
 			rnd = rnd - row[1]
 		raise Exception(u'This can not happen (could not choose from %u tracks).' % len(rows))
+
+	def __repr__(self):
+		x = ''
+		for k in ('artist', 'title', 'filename'):
+			if hasattr(self, k) and getattr(self, k):
+				x += ' %s=%s' % (k, getattr(self, k))
+		return '<track%s>' % x

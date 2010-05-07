@@ -5,8 +5,9 @@ import sys
 try:
 	import mutagen
 	import mutagen.easyid3
-except ImportError:
-	print >>sys.stderr, 'Pleasy install python-mutagen.'
+	mutagen.easyid3.EasyID3.RegisterTXXXKey('ardj', 'ardj metadata')
+except ImportError, e:
+	print >>sys.stderr, 'Pleasy install python-mutagen.', e
 	sys.exit(13)
 
 def raw(filename):
@@ -17,7 +18,8 @@ def raw(filename):
 	"""
 	try:
 		if filename.lower().endswith('.mp3'):
-			return mutagen.easyid3.Open(filename)
+			t = mutagen.easyid3.Open(filename)
+			return t
 		return mutagen.File(filename)
 	except Exception, e:
 		print >>sys.stderr, 'No tags for %s: %s' % (filename, e)
@@ -39,3 +41,14 @@ def get(filename):
 		t = mutagen.File(filename)
 		result['length'] = t.info.length
 	return result
+
+def set(filename, tags):
+	t = raw(filename)
+	for k in tags:
+		try:
+			t[k] = tags[k]
+		except Exception, e:
+			print >>sys.stderr, e
+	t.save()
+
+__all__ = ['get', 'set']

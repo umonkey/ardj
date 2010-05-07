@@ -9,6 +9,8 @@ except ImportError:
 	sys.exit(13)
 
 class config:
+	instance = None
+
 	def __init__(self):
 		self.filename = os.path.expandvars('$HOME/.config/ardj/default.yaml')
 		self.folder = os.path.dirname(self.filename)
@@ -32,6 +34,9 @@ class config:
 			data = data[k]
 		return data
 
+	def get_path(self, name):
+		return os.path.expandvars(self.get(name))
+
 	def get_db_name(self):
 		"""
 		Returns the name of the SQLite database.
@@ -43,3 +48,11 @@ class config:
 		Returns full path to the music folder.
 		"""
 		return os.path.realpath(os.path.expandvars(self.get('musicdir', os.path.dirname(self.filename))))
+
+def get(path, default=None):
+	if config.instance is None:
+		config.instance = config()
+	return config.instance.get(path, default)
+
+def get_path(name):
+	return os.path.expandvars(get(name))
