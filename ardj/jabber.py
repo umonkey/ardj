@@ -46,8 +46,11 @@ class ardjbot(JabberBot):
 
 	def on_connected(self):
 		self.status_type = self.DND
-		LogNotifier.init(os.path.dirname(self.config.filename), self.on_inotify)
-		self.update_status(onstart=True)
+		try:
+			LogNotifier.init(os.path.dirname(self.config.filename), self.on_inotify)
+			self.update_status(onstart=True)
+		except Exception, e:
+			log('inotify failed: %s' % e)
 
 	def shutdown(self):
 		LogNotifier.stop()
@@ -59,7 +62,7 @@ class ardjbot(JabberBot):
 				log('inotify: %s updated.' % event.name)
 				return self.update_status()
 		except Exception, e:
-			log('Exception in inotify handler:', e)
+			log('Exception in inotify handler: %s' % e)
 			traceback.print_exc()
 
 	def update_status(self, onstart=False):
@@ -180,7 +183,6 @@ class ardjbot(JabberBot):
 		if len(args) == 3:
 			args.append(u'for')
 			args.append(self.get_current_track()['id'])
-		log('args: %s' % args)
 		if len(args) != 5 or args[1] != u'to' or args[3] != u'for' or args[0] not in (u'weight', u'queue'):
 			return 'Usage: set {weight|queue} to <float> [for <track_id>].'
 		if args[0] == u'weight':
