@@ -17,8 +17,11 @@ except ImportError:
 import config
 from log import log
 import tags
-
+			
 class db:
+	# Database connection
+	instance = None
+
 	"""
 	Interface to the database.
 	"""
@@ -141,11 +144,14 @@ class db:
 					playlists.append(playlist)
 		return playlists
 
+	def get_current_day_number(self):
+		return int(time.strftime('%w')) or 7
+
 	def get_random_track_id(self, playlist, repeat=None, skip_artists=None):
 		"""
 		Returns id of a random track.
 		"""
-		sql = 'SELECT id, randomize(id, artist_weight, weight, count) AS w FROM tracks WHERE playlist = ? AND w > 0'
+		sql = 'SELECT id, randomize(id, artist_weight, weight, count) AS w, count FROM tracks WHERE playlist = ? AND w > 0'
 		params = (playlist, )
 		if repeat is not None:
 			sql += ' AND count < ?'
@@ -163,7 +169,7 @@ class db:
 		init_rnd = rnd = random.random() * probability_sum
 		for row in rows:
 			if rnd < row[1]:
-				log('db: track %u(%s) won with p=%.4f s=%.4f r=%.4f' % (row[0], playlist, row[1], probability_sum, init_rnd))
+				log('db: track %u(%s) won with p=%.4f s=%.4f r=%.4f c=%u' % (row[0], playlist, row[1], probability_sum, init_rnd, row[2]))
 				return row[0]
 			rnd = rnd - row[1]
 		raise Exception(u'This can not happen (could not choose from %u tracks).' % len(rows))
@@ -310,3 +316,83 @@ class db:
 
 		self.cursor().execute('UPDATE tracks SET playlist = ? WHERE id = ?', (playlist_name, track_id, ))
 		self.commit()
+
+	@classmethod
+	def connect(cls):
+		if cls.instance is None:
+			cls.instance = cls()
+		return cls.instance.cursor()
+
+	@classmethod
+	def execute(cls, *args, **kwargs):
+		return cls.connect().execute(*args, **kwargs)
+
+class track:
+	def __init__(self):
+		self.id = None
+		self.filename = None
+		self.artist = None
+		self.title = None
+		self.length = None
+		self.weight = None
+		self.count = None
+		self.last_played = None
+
+	@classmethod
+	def load(cls, id):
+		"""
+		Loads a track by id.
+		"""
+		o = cls()
+		row = db.execute('SELECT id, name, artist, title, length, weight, count, last_played FROM tracks WHERE id = ?', (id,)).fetchone()
+		if row is None:
+			raise Exception('Track %u does not exist.' % id)
+		o.id, o.filename, o.artist, o.title, o.length, o.weight, o.count, o.last_played = row
+		return o
+
+	def save(self):
+		"""
+		Saves any pending changes.
+		"""
+		db.execute('UPDATE tracks SET name = ?, artist = ?, title = ?, length = ?, weight = ?, count = ?, last_played = ? WHERE id = ?', (self.filename, self.artist, self.title, self.length, self.weight, self.count, self.last_played, self.id))
+		newtags = { 'artist': self.artist, 'title': self.title, 'comment': 'ardj=1;weight=%f;count=%u;last_played=%u' % (self.weight, self.count, self.last_played) }
+		print newtags
+
+	def add(self, filename):
+		"""
+		Adds a file to the database.
+		"""
+		if not os.path.exists(filename):
+			raise Exception('File not found: %s' % filename)
+		db = connect()
+
+	@classmethod
+	def get_random(cls, playlist=None, repeat=None, skip_artists=None):
+		"""
+		Returns a random track which is OK to play.
+		"""
+		sql = 'SELECT id, randomize(id, artist_weight, weight, count) AS w, count FROM tracks WHERE w > 0'
+		params = []
+		if playlist is not None:
+			sql += ' AND playlist = ?'
+			params.append(playlist)
+		if repeat is not None:
+			sql += ' AND count < ?'
+			params.append(repeat)
+		if skip_artists is not None:
+			tsql = []
+			for name in skip_artists:
+				tsql.apend('?')
+				params.append(name)
+			sql += ' AND artist NOT IN (%)' % ', '.join(tsql)
+		rows = db.execute(sql, params).fetchall()
+		if not rows:
+			return None
+		probability_sum = sum([row[1] for row in rows])
+		init_rnd = rnd = random.random() * probability_sum
+		for row in rows:
+			if rnd < row[1]:
+				log('db: track %u(%s) won with p=%.4f s=%.4f r=%.4f c=%u' % (row[0], playlist, row[1], probability_sum, init_rnd, row[2]))
+				return cls.load(row[0])
+			rnd = rnd - row[1]
+		raise Exception(u'This can not happen (could not choose from %u tracks).' % len(rows))
