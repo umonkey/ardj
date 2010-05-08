@@ -56,3 +56,8 @@ def get(path, default=None):
 
 def get_path(name):
 	return os.path.expandvars(get(name))
+
+def get_self():
+	if config.instance is None:
+		config.instance = config()
+	return config.instance.filename

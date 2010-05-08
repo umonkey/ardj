@@ -10,6 +10,8 @@ except ImportError, e:
 	print >>sys.stderr, 'Pleasy install python-mutagen.', e
 	sys.exit(13)
 
+from log import log
+
 def raw(filename):
 	"""
 	Returns a mutagen object that corresponds to filename. The object can be
@@ -30,7 +32,7 @@ def get(filename):
 	t = raw(filename)
 	if t is None:
 		return None
-	for k in ('artist', 'title', 'album'):
+	for k in ('artist', 'title', 'album', 'ardj'):
 		if k in t:
 			result[k] = t[k][0]
 		else:
@@ -43,12 +45,15 @@ def get(filename):
 	return result
 
 def set(filename, tags):
-	t = raw(filename)
-	for k in tags:
-		try:
-			t[k] = tags[k]
-		except Exception, e:
-			print >>sys.stderr, e
-	t.save()
+	try:
+		t = raw(filename)
+		for k in tags:
+			try:
+				if tags[k]: t[k] = tags[k]
+			except Exception, e:
+				print >>sys.stderr, e
+		t.save()
+	except Exception, e:
+		log('Could not save tags to %s: %s' % (filename, e), trace=True)
 
 __all__ = ['get', 'set']

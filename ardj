@@ -9,77 +9,98 @@ import traceback
 def usage():
 	print "Usage: %s [options]" % os.path.basename(sys.argv[0])
 	print "\nBasic options:"
-	print " -c           open SQLite console"
-	print " -d           run a jabber bot (consider using `./monitor ardj -d')"
-	print " -i FILES     add FILES to the database"
-	print " -n           show next track"
+	print " --backup     save metadata to file tags"
+	print " --config     edit config file"
+	print " --dbconsole  open SQLite console"
+	print " --jabber     run a jabber bot"
+	print " --next       show next track"
 	print " -N NUM       show NUM next tracks (debug, no DB updates)"
-	print " -R           reset database"
-	print " -s           scrobble track (only with -n)"
-	print " -S           show database statistics"
-	print " -u           update database"
+	print " --quiet      suppress log messages (stderr)"
+	print " --reset      reset database"
+	print " --scroble    scrobble track (only makes sense with --next)"
+	print " --stats      show database statistics"
+	print " --update     update database"
 	return 1
+
+def run(commands, args):
+	if type(commands) != list:
+		commands = [commands]
+	dirs = os.getenv('PATH').split(os.pathsep)
+	for command in commands:
+		for dir in dirs:
+			cmd = os.path.join(dir, command)
+			if command and os.path.exists(cmd):
+				args.insert(0, os.path.basename(cmd))
+				return os.execv(cmd, args)
+	print >>sys.stderr, '%s not found in $PATH.' % '|'.join(commands)
+	sys.exit(1)
 
 if __name__ == '__main__':
 	try:
-		opts, args = getopt.getopt(sys.argv[1:], 'cdinN:RsSu')
+		opts, args = getopt.getopt(sys.argv[1:], 'iN:', ['backup', 'config', 'dbconsole', 'jabber', 'jabber-child', 'next', 'quiet', 'reset', 'scrobble', 'stats', 'update'])
 	except getopt.GetoptError:
 		sys.exit(usage())
 
 	if not len(opts):
 		sys.exit(usage())
 
+	# prepare for work
 	for option, value in opts:
-		if '-c' == option:
-			for dir in os.getenv('PATH').split(os.pathsep):
-				cmd = os.path.join(dir, 'sqlite3')
-				if os.path.exists(cmd):
-					from lib.db import db
-					os.execv(cmd, ['-header', db().filename])
-			print 'Could not find sqlite3 binary.'
-		if '-d' == option:
-			from lib.jabber import run
+		if '--quiet' == option:
+			sys.stderr = None
+
+	for option, value in opts:
+		if '--backup' == option:
+			import db
+			idx, tracks = 1, db.track.get_all()
+			for track in tracks:
+				if os.path.exists(track.path):
+					print '%u/%u\r' % (idx, len(tracks)),
+					sys.stdout.flush()
+					track.backup()
+				idx += 1
+			print
+		if '--dbconsole' == option:
+			from db import db
+			run('sqlite3', [db().filename])
+		if '--config' == option:
+			import config
+			run([os.getenv('EDITOR'), 'editor'], [config.get_self()])
+		if '--jabber' == option:
+			from jabber import run
 			run()
-		if '-i' == option:
-			if not len(args):
-				sys.exit(usage())
-			import lib.db as db
-			for arg in args:
-				t = db.track.add(arg)
-				print arg, t
-		if '-n' == option:
-			import lib.db
-			track = lib.db.track.get_random()
+		if '--next' == option:
+			import db
+			track = db.track.get_random()
 			if track is None:
 				print >>sys.stderr, 'Could not find a track to play.'
 				sys.exit(1)
-			if ('-s', '') in opts:
+			if ('--scrobble', '') in opts:
 				track.scrobble()
-			print track['filepath'].encode('utf-8')
+			print track.path.encode('utf-8')
+			track.backup()
 			db.commit()
 		if '-N' == option:
-			import lib.db
-			db = lib.db.db()
+			import db
 			limit = int(value)
 			while limit:
-				track = db.get_random_track()
+				track = db.track.get_random()
 				if track is None:
 					print >>sys.stderr, 'Could not find a track to play.'
 					sys.exit(1)
-				# print track # ['path']
-				print u'%05u %s/%s' % (track['id'], track['playlist'], track['filename'])
+				print u'%05u %s/%s' % (track.id, track.playlist, track.filename)
 				limit = limit - 1
-			db.rollback()
-		if '-R' == option:
-			import lib.config
-			filename = lib.config.config().get_db_name()
+			db.db.instance().rollback()
+		if '--reset' == option:
+			import config
+			filename = config.config().get_db_name()
 			if os.path.exists(filename):
 				os.unlink(filename)
 				print 'OK'
-		if '-S' == option:
-			import lib.db
-			count, length = lib.db.db().get_stats()
+		if '--stats' == option:
+			import db
+			count, length = db.db().get_stats()
 			print '%u tracks, %.1f hours.' % (count, length / 60 / 60)
-		if '-u' == option:
-			from lib.db import db
-			db().update_files()
+		if '--update' == option:
+			from db import db
+			db().update()

@@ -87,7 +87,7 @@ class ardjbot(JabberBot):
 		return self.get_current_track()['filepath']
 
 	def get_current_track(self):
-		return self.db.get_last_tracks(1)[0]
+		return db.track.get_last_tracks(1)[0]
 
 	def check_access(self, message):
 		return message.getFrom().split('/')[0] in self.users
@@ -183,12 +183,10 @@ class ardjbot(JabberBot):
 		if len(args) == 3:
 			args.append(u'for')
 			args.append(self.get_current_track()['id'])
-		if len(args) != 5 or args[1] != u'to' or args[3] != u'for' or args[0] not in (u'weight', u'queue'):
-			return 'Usage: set {weight|queue} to <float> [for <track_id>].'
+		if len(args) != 5 or args[1] != u'to' or args[3] != u'for' or args[0] not in (u'weight'):
+			return 'Usage: set weight to <float> [for <track_id>].'
 		if args[0] == u'weight':
 			self.db.set_track_weight(args[4], args[2])
-		if args[0] == u'queue':
-			self.db.set_track_queue(args[4], args[2])
 		track = self.db.get_track_info(args[4])
 		self.broadcast('%s set %s=%f for track=%u (%s/%s)' % (message.getFrom().getStripped(), args[0], float(args[2]), track['id'], track['playlist'], track['filename']))
 
