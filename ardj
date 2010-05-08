@@ -67,6 +67,13 @@ if __name__ == '__main__':
 			import config
 			run([os.getenv('EDITOR'), 'editor'], [config.get_self()])
 		if '--jabber' == option:
+			import subprocess, time
+			while True:
+				if not subprocess.Popen([sys.argv[0], '--jabber-child']).wait():
+					sys.exit(0)
+				print >>sys.stderr, 'Unclean shutdown, restarting in 5 seconds.'
+				time.sleep(5)
+		if '--jabber-child' == option:
 			from jabber import run
 			run()
 		if '--next' == option:
