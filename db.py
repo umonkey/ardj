@@ -320,6 +320,10 @@ class track:
 		"""
 		Saves the current track.
 		"""
+		if not self.artist:
+			self.artist = 'Unknown'
+		if not self.title:
+			self.title = os.path.basename(self.filename)
 		if not self.playlist:
 			self.playlist = config.get('default_playlist', 'music')
 			if not self.playlist:
