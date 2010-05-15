@@ -115,7 +115,7 @@ class ardjbot(JabberBot):
 	@botcmd
 	def last(self, message, args):
 		"show last 10 played tracks"
-		return u'\n'.join(['%s/%s (id=%u, weight=%f)' % (t['playlist'], t['name'], t['id'], t['weight']) for t in self.db.get_last_tracks()])
+		return u'\n'.join(['%s/%s (id=%u, weight=%f)' % (t['playlist'], t['name'], t['id'], t['weight']) for t in db.track.get_last_tracks()])
 
 	@botcmd
 	def show(self, message, args):
