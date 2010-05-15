@@ -1,4 +1,26 @@
 # vim: set ts=4 sts=4 sw=4 noet fileencoding=utf-8:
+#
+# database related functions for ardj.
+#
+# ardj is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# ardj is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+"""
+Functions for working with the database.
+
+This module can be used as a command line script, in which case
+the music dir is watched for updates.
+"""
 
 import hashlib
 import os
@@ -7,6 +29,7 @@ import sys
 import time
 import traceback
 
+import notify
 import scrobbler
 import tags
 
@@ -299,6 +322,7 @@ class track:
 		"""
 		if self.id is None:
 			self.id = db.execute('INSERT INTO tracks (playlist) VALUES (NULL)').lastrowid
+			log('track added: id=%u filename=%s' % (self.id, self.filename))
 		db.execute('UPDATE tracks SET playlist = ?, filename = ?, artist = ?, title = ?, length = ?, weight = ?, count = ?, last_played = ? WHERE id = ?', (self.playlist, self.filename, self.artist, self.title, self.length, self.weight, self.count, self.last_played, self.id))
 		return self
 
@@ -385,7 +409,6 @@ class track:
 			obj = cls.from_file(filename)
 			if obj is not None and obj.id is None:
 				obj.save()
-				log('track added: %s' % filename)
 		db.instance().commit()
 
 	@classmethod
@@ -433,6 +456,40 @@ class track:
 		return filename
 
 	@classmethod
+	def monitor(self):
+		"""
+		Starts tracking the music dir.
+		"""
+		def callback(action, path):
+			localpath = path.decode('utf-8')
+			if localpath.startswith(musicdir):
+				localpath = localpath[len(musicdir):].lstrip(os.path.sep)
+				if action == 'deleted':
+					dbi.execute('DELETE FROM tracks WHERE filename = ?', (localpath, ))
+					tmp = localpath.rstrip(os.path.sep) + os.path.sep
+					dbi.execute('DELETE FROM tracks WHERE filename LIKE ?', (tmp, ))
+					dbi.commit()
+				# Only track creation of folders, which is a also a case of
+				# renaming/moving a folder. Files are created with a zero
+				# length and can not be added at this point because there
+				# will be no tags. Files are added when they're changed
+				# and length is over 16kb.
+				elif action == 'created' and os.path.isdir(path):
+					dbi.update()
+				elif action == 'modified' and os.path.isfile(path) and os.path.getsize(path) > 16384:
+					track.add([localpath])
+				else:
+					print 'unhandled:', action, path, localpath
+
+		dbi = db.instance()
+		musicdir = config.get_path('musicdir')
+
+		# Synchronize before tracking.
+		dbi.update()
+
+		return notify.monitor([musicdir], callback)
+
+	@classmethod
 	def __copy__(cls, src, dst):
 		"""
 		Copies a file creating all necessary dst subfolders.
@@ -453,3 +510,15 @@ class track:
 
 def commit():
 	db.instance().commit()
+
+if __name__ == '__main__':
+	m = track.monitor()
+
+	print 'Watching files, press Ctrl+C to stop.'
+	try:
+		while True:
+			time.sleep(1)
+	except KeyboardInterrupt:
+		print 'Break.'
+	finally:
+		m.stop()

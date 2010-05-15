@@ -24,7 +24,7 @@ def raw(filename):
 			return t
 		return mutagen.File(filename)
 	except Exception, e:
-		print >>sys.stderr, 'No tags for %s: %s' % (filename, e)
+		log('no tags: %s' % filename)
 		return None
 
 def get(filename):

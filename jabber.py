@@ -7,7 +7,7 @@ import traceback
 import db
 from config import config
 from jabberbot import JabberBot, botcmd
-from notify import LogNotifier
+import notify
 from log import log
 
 have_twitter = False
@@ -26,6 +26,8 @@ class ardjbot(JabberBot):
 		self.np_tunes = self.config.get('jabber/tunes', True)
 		self.log_notifier = None
 		self.twitter = None
+		self.filetracker = None
+		self.musicdir_monitor = None
 		if have_twitter:
 			try:
 				self.twitter = twitter.Api(username=self.config.get('twitter/name'), password=self.config.get('twitter/password'))
@@ -42,28 +44,31 @@ class ardjbot(JabberBot):
 		return (name + '@' + host, password)
 
 	def serve_forever(self):
+		"""
+		Updates the database, then starts the jabber bot.
+		"""
+		self.db.update()
 		return JabberBot.serve_forever(self, connect_callback=self.on_connected)
 
 	def on_connected(self):
 		self.status_type = self.DND
-		try:
-			LogNotifier.init(os.path.dirname(self.config.filename), self.on_inotify)
-			self.update_status(onstart=True)
-		except Exception, e:
-			log('inotify failed: %s' % e)
+		self.filetracker = notify.monitor([os.path.dirname(self.config.filename), self.config.get_music_dir()], self.on_file_changes)
+		self.musicdir_monitor = db.track.monitor()
 
-	def shutdown(self):
-		LogNotifier.stop()
-		JabberBot.shutdown(self)
-
-	def on_inotify(self, event):
+	def on_file_changes(self, action, path):
 		try:
-			if event.name == os.path.basename(self.db.filename):
-				log('inotify: %s updated.' % event.name)
-				return self.update_status()
+			if path == self.db.filename:
+				if 'changed' == action:
+					return self.update_status()
 		except Exception, e:
 			log('Exception in inotify handler: %s' % e)
 			traceback.print_exc()
+
+	def shutdown(self):
+		self.filetracker.stop()
+		if self.musicdir_monitor is not None:
+			self.musicdir_monitor.stop()
+		JabberBot.shutdown(self)
 
 	def update_status(self, onstart=False):
 		"""
