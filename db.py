@@ -307,7 +307,7 @@ class track:
 		Returns names of most recently played artists.
 		"""
 		limit = config.get('artist_history', 5)
-		return [row[0] for row in db.execute('SELECT DISTINCT artist FROM tracks WHERE artist IS NOT NULL ORDER BY last_played DESC LIMIT ' + str(limit)).fetchall()]
+		return [row[0] for row in db.execute('SELECT DISTINCT artist FROM tracks WHERE artist IS NOT NULL AND last_played IS NOT NULL ORDER BY last_played DESC LIMIT ' + str(limit)).fetchall()]
 
 	@classmethod
 	def get_last_tracks(cls, limit=10):
