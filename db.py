@@ -314,7 +314,7 @@ class track:
 		"""
 		Returns last played tracks.
 		"""
-		return [cls.load(row[0]) for row in db.execute('SELECT id FROM tracks ORDER BY last_played DESC LIMIT ' + str(limit)).fetchall()]
+		return [cls.load(row[0]) for row in db.execute('SELECT id FROM tracks WHERE last_played IS NOT NULL ORDER BY last_played DESC LIMIT ' + str(limit)).fetchall()]
 
 	def save(self):
 		"""
