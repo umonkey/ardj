@@ -32,11 +32,14 @@ except ImportError:
 	sys.exit(13)
 
 class Dispatcher(pyinotify.ProcessEvent):
-	def __init__(self, callback):
+	def __init__(self, callback, debug):
 		self.callback = callback
+		self.debug = debug
 		pyinotify.ProcessEvent.__init__(self)
 
 	def process_default(self, event):
+		if self.debug:
+			print event
 		path = event.pathname
 		if event.mask & pyinotify.IN_MOVED_FROM:
 			action = 'deleted'
@@ -60,13 +63,13 @@ class Monitor:
 	paths, stop() to stop (otherwise the process will become
 	a zombie after exit).
 	"""
-	def __init__(self, callback):
+	def __init__(self, callback, debug=False):
 		"""
 		Initializes pyinotify objects. Creates a Dispatcher instance,
 		which will decode and report events to the callback function.
 		"""
 		self.wm = pyinotify.WatchManager()
-		self.notifier = pyinotify.ThreadedNotifier(self.wm, Dispatcher(callback))
+		self.notifier = pyinotify.ThreadedNotifier(self.wm, Dispatcher(callback, debug))
 
 	def __del__(self):
 		"""
@@ -96,13 +99,13 @@ class Monitor:
 			self.notifier = None
 		return self
 
-def monitor(paths, callback):
+def monitor(paths, callback, debug=False):
 	"""
 	Creates and initializes a Monitor. The returned objec is only
 	useful for calling stop() when you no longer need to monitor
 	the paths.
 	"""
-	return Monitor(callback).watch(paths)
+	return Monitor(callback, debug).watch(paths)
 
 if __name__ == '__main__':
 	"""
@@ -118,7 +121,7 @@ if __name__ == '__main__':
 		print >>sys.stderr, 'Usage: %s paths...' % os.path.basename(sys.argv[0])
 		sys.exit(1)
 
-	m = monitor(sys.argv[1:], callback)
+	m = monitor(sys.argv[1:], callback, debug=True)
 	print 'Waiting for an interrupt (Ctrl+C).'
 
 	try:
