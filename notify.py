@@ -37,23 +37,21 @@ class Dispatcher(pyinotify.ProcessEvent):
 		pyinotify.ProcessEvent.__init__(self)
 
 	def process_default(self, event):
-		if event.mask & pyinotify.IN_ISDIR:
-			return
 		path = event.pathname
-		if event.maskname == 'IN_MOVED_FROM':
+		if event.mask & pyinotify.IN_MOVED_FROM:
 			action = 'deleted'
-		elif event.maskname == 'IN_MOVED_TO':
+		elif event.mask & pyinotify.IN_MOVED_TO:
 			action = 'created'
-		elif event.maskname == 'IN_DELETE':
+		elif event.mask & pyinotify.IN_DELETE:
 			action = 'deleted'
-		elif event.maskname == 'IN_CREATE':
+		elif event.mask & pyinotify.IN_CREATE:
 			action = 'created'
-		elif event.maskname == 'IN_MODIFY':
+		elif event.mask & pyinotify.IN_MODIFY:
 			action = 'modified'
 		else:
 			# unsupported event
 			return
-		self.callback(path, action)
+		self.callback(action, path)
 
 class Monitor:
 	"""
@@ -113,8 +111,8 @@ if __name__ == '__main__':
 	import os
 	import time # to sleep waiting for an interrupt
 
-	def callback(path, action):
-		print action, path
+	def callback(action, path):
+		print 'callback: action=%s path=%s' % (action, path)
 
 	if len(sys.argv) < 2:
 		print >>sys.stderr, 'Usage: %s paths...' % os.path.basename(sys.argv[0])
