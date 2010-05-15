@@ -350,15 +350,26 @@ class track:
 		Returns a random track from the most appropriate playlist.
 		"""
 		skip_artists = track.get_last_artists()
-		for pl in playlist.get_active():
-			id = cls.__randomid__(pl.name, repeat=pl.repeat, skip_artists=skip_artists)
-			if id is not None:
-				obj = cls.load(id)
-				obj.count += 1
-				obj.last_played = int(time.time())
-				obj.save()
-				pl.mark_played().save()
-				return obj
+		playlists = playlist.get_active()
+		if not playlists:
+			log('db: no active playlists')
+			return None
+
+		def find_track(playlists, skip_artists):
+			for pl in playlists:
+				id = track.__randomid__(pl.name, repeat=pl.repeat, skip_artists=skip_artists)
+				if id is not None:
+					obj = cls.load(id)
+					obj.count += 1
+					obj.last_played = int(time.time())
+					obj.save()
+					pl.mark_played().save()
+					return obj
+
+		obj = find_track(playlists, skip_artists)
+		if obj is None and skip_artists:
+			obj = find_track(playlists, None)
+		return obj
 
 	@classmethod
 	def __randomid__(cls, playlist=None, repeat=None, skip_artists=None):
