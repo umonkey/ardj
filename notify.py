@@ -31,53 +31,14 @@ except ImportError:
 	print >>sys.stderr, 'Please install pyinotify.'
 	sys.exit(13)
 
-class LogNotifier(pyinotify.ProcessEvent):
-	"""
-	Tracks changes in a file using inotify.
-	"""
-	wm = None
-	notifier = None
-
-	def __init__(self, cb):
-		self.cb = cb
-		pyinotify.ProcessEvent.__init__(self)
-
-	def process_default(self, event):
-		path = event.pathname
-		if event.maskname == 'IN_MOVED_FROM':
-			action = 'deleted'
-		elif event.maskname == 'IN_MOVED_TO':
-			action = 'created'
-		elif event.maskname == 'IN_DELETE':
-			action = 'deleted'
-		elif event.maskname == 'IN_CREATE':
-			action = 'created'
-		elif event.maskname == 'IN_MODIFY':
-			action = 'modified'
-		else:
-			action = event.maskname
-		self.cb(path, action)
-
-	@classmethod
-	def init(cls, filename, cb):
-		cls.wm = pyinotify.WatchManager()
-		cls.notifier = pyinotify.ThreadedNotifier(cls.wm, cls(cb))
-		# For more codes see:
-		# http://pyinotify.sourceforge.net/#The_EventsCodes_Class
-		cls.wm.add_watch(filename, pyinotify.IN_MODIFY|pyinotify.IN_CREATE|pyinotify.IN_DELETE|pyinotify.IN_MOVED_FROM|pyinotify.IN_MOVED_TO)
-		cls.notifier.start()
-
-	@classmethod
-	def stop(cls):
-		if cls.notifier is not None:
-			cls.notifier.stop()
-
 class Dispatcher(pyinotify.ProcessEvent):
 	def __init__(self, callback):
 		self.callback = callback
 		pyinotify.ProcessEvent.__init__(self)
 
 	def process_default(self, event):
+		if event.mask & pyinotify.IN_ISDIR:
+			return
 		path = event.pathname
 		if event.maskname == 'IN_MOVED_FROM':
 			action = 'deleted'
@@ -90,7 +51,8 @@ class Dispatcher(pyinotify.ProcessEvent):
 		elif event.maskname == 'IN_MODIFY':
 			action = 'modified'
 		else:
-			action = event.maskname
+			# unsupported event
+			return
 		self.callback(path, action)
 
 class Monitor:
@@ -121,7 +83,7 @@ class Monitor:
 		for path in paths:
 			# For more codes see:
 			# http://pyinotify.sourceforge.net/#The_EventsCodes_Class
-			self.wm.add_watch(path, pyinotify.IN_MODIFY|pyinotify.IN_CREATE|pyinotify.IN_DELETE|pyinotify.IN_MOVED_FROM|pyinotify.IN_MOVED_TO)
+			self.wm.add_watch(path, pyinotify.IN_MODIFY|pyinotify.IN_CREATE|pyinotify.IN_DELETE|pyinotify.IN_MOVED_FROM|pyinotify.IN_MOVED_TO, rec=True, auto_add=True)
 		self.notifier.start()
 		return self
 
