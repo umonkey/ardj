@@ -120,7 +120,10 @@ class ardjbot(JabberBot):
 	@botcmd
 	def last(self, message, args):
 		"show last 10 played tracks"
-		return u'\n'.join(['%s/%s (id=%u, weight=%f)' % (t['playlist'], t['name'], t['id'], t['weight']) for t in db.track.get_last_tracks()])
+		tracks = db.track.get_last_tracks()
+		if not tracks:
+			return u'Nothing was played yet.'
+		return u'\n'.join(['%s (playlist=%s, id=%u, weight=%f)' % (t.filename, t.playlist, t.id, t.weight) for t in tracks])
 
 	@botcmd
 	def show(self, message, args):
@@ -168,6 +171,8 @@ class ardjbot(JabberBot):
 	def update(self, message, args):
 		"low level update to the database"
 		sql = 'update ' + args
+		if not sql.endswith(';'):
+			return u'SQL updates must end with a ; to prevent accidents.'
 		self.db.cursor().execute(sql)
 		self.db.commit()
 		self.broadcast('SQL from %s: %s' % (message.getFrom().getStripped(), sql))
