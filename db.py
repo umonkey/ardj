@@ -320,6 +320,10 @@ class track:
 		"""
 		Saves the current track.
 		"""
+		if not self.playlist:
+			self.playlist = config.get('default_playlist', 'music')
+			if not self.playlist:
+				raise Exception('Saving a track with no playlist.')
 		if self.id is None:
 			self.id = db.execute('INSERT INTO tracks (playlist) VALUES (NULL)').lastrowid
 			log('track added: id=%u filename=%s' % (self.id, self.filename))
