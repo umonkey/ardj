@@ -353,7 +353,7 @@ class track:
 		"""
 		return [cls.load(row[0]) for row in db.execute('SELECT id FROM tracks WHERE last_played IS NOT NULL ORDER BY last_played DESC LIMIT ' + str(limit)).fetchall()]
 
-	def save(self):
+	def save(self, commit=True, backup=True):
 		"""
 		Saves the current track.
 		"""
@@ -369,6 +369,10 @@ class track:
 			self.id = db.execute('INSERT INTO tracks (playlist) VALUES (NULL)').lastrowid
 			log('track added: id=%u filename=%s' % (self.id, self.filename))
 		db.execute('UPDATE tracks SET playlist = ?, filename = ?, artist = ?, title = ?, length = ?, weight = ?, count = ?, last_played = ? WHERE id = ?', (self.playlist, self.filename, self.artist, self.title, self.length, self.weight, self.count, self.last_played, self.id))
+		if commit:
+			db.instance().commit()
+		if backup:
+			self.backup()
 		return self
 
 	def backup(self):
