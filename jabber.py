@@ -130,11 +130,11 @@ class ardjbot(JabberBot):
 		"shows detailed track info"
 		args = self.split(args)
 		if not args:
-			args.insert(0, self.get_current_track()['id'])
-		track = self.db.get_track_info(args[0])
+			args.insert(0, self.get_current_track().id)
+		track = db.track.load(args[0])
 		if track is None:
 			return u'No such track.'
-		return u'id=%u playlist=%s filename="%s" artist="%s" title="%s" weight=%f artist_weight=%f playcount=%u, length=%us' % (track['id'], track['playlist'], track['filename'], track['artist'], track['title'], track['weight'], track['artist_weight'], track['count'], track['length'])
+		return u'id=%u playlist=%s filename="%s" artist="%s" title="%s" weight=%f playcount=%u, length=%us' % (track.id, track.playlist, track.filename, track.artist, track.title, track.weight, track.count, track.length)
 
 	@botcmd
 	def move(self, message, args):
