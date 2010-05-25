@@ -106,16 +106,23 @@ class ardjbot(JabberBot):
 	@botcmd
 	def delete(self, message, args):
 		"deletes a track (sets weight to 0)"
-		track = self.db.get_track_info(args or self.get_current_track()['id'])
-		self.db.set_track_weight(track['id'], 0)
-		self.broadcast('%s set weight=0 for track=%u (%s/%s)' % (message.getFrom().getStripped(), track['id'], track['playlist'], track['filename']))
+		track = db.track.load(args or self.get_current_track().id)
+		if track.weight == 0:
+			return u'Zero weight already.'
+		elif track.weight > 1:
+			return u'This track is protected (weight=%f), use \'set weight to 0\' if you are sure.' % track.weight
+		self.db.set_track_weight(track.id, 0)
+		self.broadcast('%s set weight=0 for track=%u playlist=%s filename=%s' % (message.getFrom().getStripped(), track.id, track.playlist, track.filename))
 
 	@botcmd
 	def undelete(self, message, args):
 		"undeletes a track (sets weight to 1)"
-		track = self.db.get_track_info(args or self.get_current_track()['id'])
-		self.db.set_track_weight(track['id'], 1.0)
-		self.broadcast('%s set weight=1 for track=%u (%s/%s)' % (message.getFrom().getStripped(), track['id'], track['playlist'], track['filename']))
+		track = db.track.load(args or self.get_current_track().id)
+		if track.weight == 0:
+			self.db.set_track_weight(track.id, 1.0)
+			self.broadcast('%s set weight=1 for track=%u playlist=%s filename=%s' % (message.getFrom().getStripped(), track.id, track.playlist, track.filename))
+		else:
+			return u'I\'s weight is %f, not quite zero.' % track.weight
 
 	@botcmd
 	def last(self, message, args):
