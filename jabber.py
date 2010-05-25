@@ -52,13 +52,13 @@ class ardjbot(JabberBot):
 
 	def on_connected(self):
 		self.status_type = self.DND
-		self.filetracker = notify.monitor([os.path.dirname(self.config.filename), self.config.get_music_dir()], self.on_file_changes)
+		self.filetracker = notify.monitor([os.path.dirname(self.config.filename)], self.on_file_changes)
 		self.musicdir_monitor = db.track.monitor()
 
 	def on_file_changes(self, action, path):
 		try:
 			if path == self.db.filename:
-				if 'changed' == action:
+				if 'modified' == action:
 					return self.update_status()
 		except Exception, e:
 			log('Exception in inotify handler: %s' % e)
@@ -79,13 +79,13 @@ class ardjbot(JabberBot):
 		if self.np_status:
 			parts = []
 			for k in ('artist', 'title'):
-				if track.has_key(k):
-					parts.append(track[k])
+				if hasattr(track, k):
+					parts.append(getattr(track, k))
 			if not parts:
 				parts.append(track['file'])
 			self.status_message = u'♫ %s' % u' — '.join(parts)
 		if self.np_tunes:
-			self.send_tune(track)
+			self.send_tune(dict([(k, getattr(track, k)) for k in ('artist', 'title', 'length', 'filename')]))
 
 	def get_current(self):
 		"""Возвращает имя проигрываемого файла из краткого лога."""
