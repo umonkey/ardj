@@ -146,17 +146,6 @@ class ardjbot(JabberBot):
 		return u'id=%u playlist=%s filename="%s" artist="%s" title="%s" weight=%f playcount=%u, length=%us' % (track.id, track.playlist, track.filename, track.artist, track.title, track.weight, track.count, track.length)
 
 	@botcmd
-	def move(self, message, args):
-		"moves a track to a different playlist"
-		args = self.split(args)
-		if len(args) < 3:
-			args.insert(0, self.get_current_track()['id'])
-		if len(args) != 3 or args[1] != 'to':
-			return 'Usage: move [id] to <playlist>'
-		self.db.move_track_to(args[0], args[2])
-		self.broadcast('%s moved track %u to playlist "%s".' % (message.getFrom().getStripped(), args[0], args[2]))
-
-	@botcmd
 	def say(self, message, args):
 		"sends a message to all connected users"
 		if len(args):
