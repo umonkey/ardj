@@ -124,7 +124,7 @@ class ardjbot(JabberBot):
 			track.save()
 			self.broadcast('%s set weight=1 for track=%u playlist=%s filename=%s' % (message.getFrom().getStripped(), track.id, track.playlist, track.filename))
 		else:
-			return u'I\'s weight is %f, not quite zero.' % track.weight
+			return u'Track %u\'s weight is %f, not quite zero.' % (track.id, track.weight)
 
 	@botcmd
 	def last(self, message, args):
