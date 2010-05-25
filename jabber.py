@@ -9,6 +9,7 @@ import db
 from config import config
 from jabberbot import JabberBot, botcmd
 import notify
+import tags
 from log import log
 
 have_twitter = False
@@ -143,7 +144,12 @@ class ardjbot(JabberBot):
 		track = db.track.load(args[0])
 		if track is None:
 			return u'No such track.'
-		return u'id=%u playlist=%s filename="%s" artist="%s" title="%s" weight=%f playcount=%u, length=%us' % (track.id, track.playlist, track.filename, track.artist, track.title, track.weight, track.count, track.length)
+		result = u'id=%u playlist=%s filename="%s" artist="%s" title="%s" weight=%f playcount=%u, length=%us' % (track.id, track.playlist, track.filename, track.artist, track.title, track.weight, track.count, track.length)
+		result += u'. Tags:\n'
+		tt = tags.get(track.path)
+		for k in tt:
+			result += u'%s: %s\n' % (k, tt[k])
+		return result
 
 	@botcmd
 	def say(self, message, args):
