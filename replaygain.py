@@ -18,87 +18,118 @@
 """
 ReplayGain scanner for ardj.
 
-Updates RG info in MP3 and OGG/Vorbis files. Command line usage:
+Updates RG info in MP3 and OGG/Vorbis files. Reads track peak/gain from
+tags, calculates if none (MP3, OGG and FLAC files only). For MP3 files
+the ID3v2 (both TXXX and RVA2) and APEv2 tags are read and written.
 
-python replaygain.py files...
+Usage:
+
+	import replaygain
+	replaygain.update(filename)
+
+Command line usage:
+
+	python replaygain.py files...
 """
 
 import os
 import subprocess
+import sys
 
 import mutagen
 from mutagen.mp3 import MP3
+from mutagen.id3 import RVA2, TXXX
 from mutagen.apev2 import APEv2 
 
 def update(filename):
 	if not os.access(filename, os.W_OK):
+		print >>sys.stderr, 'WARNING: %s is write protected, refusing to update ReplayGain info.' % filename
 		return False
-	ext = os.path.splitext(filename.lower())[1]
-	if ext == '.mp3':
-		return update_mp3(filename)
-	elif ext == '.ogg':
-		return update_ogg(filename)
+	peak, gain = read(filename)
+	if peak is not None and gain is not None:
+		return write(filename, peak, gain)
+	print >>sys.stderr, 'WARNING: no replaygain for %s: peak=%s gain=%s' % (filename, peak, gain)
 	return False
 
-def update_ogg(filename):
-	tags = mutagen.File(filename)
-	if 'replaygain_track_peak' not in tags or 'replaygain_track_gain' not in tags:
-		return run(['vorbisgain', '-q', '-f', filename])
-	return True
+def read(filename, update=True):
+	"""
+	Returns (peak, gain) for a file.
+	"""
+	peak = gain = None
 
-def update_mp3(filename):
-	return update_mp3_id3(filename) and update_mp3_ape(filename)
+	def parse_rg(tags):
+		p = g = None
+		if 'replaygain_track_peak' in tags:
+			p = float(tags['replaygain_track_peak'][0])
+		if 'replaygain_track_gain' in tags:
+			value = tags['replaygain_track_gain'][0]
+			if value.endswith(' dB'):
+				g = float(value[:-3])
+		return (p, g)
 
-def update_mp3_id3(filename):
-	"""
-	Updates ID3v2 tags if necessary. Uses mp3gain to calculate the values.
-	"""
-	tags = mutagen.File(filename)
-	if 'TXXX:replaygain_track_gain' in tags and 'TXXX:replaygain_track_peak' in tags:
-		return True
-	return run(['mp3gain', '-q', filename])
+	try: peak, gain = parse_rg(mutagen.File(filename, easy=True))
+	except: pass
 
-def update_mp3_ape(filename):
-	"""
-	Copies ID3v2 tags to APE.
-	"""
-	id3 = mutagen.File(filename)
-	ape = APEv2(filename)
-	peak = gain = update = 0
-	if 'TXXX:replaygain_track_peak' in id3 and 'replaygain_track_peak' not in ape:
-		try:
-			peak = float(tags['TXXX:replaygain_track_peak'].text[0])
-			update = True
+	# Prefer the first value because RVA2 is more precise than
+	# APE, formatted as %.2f.
+	if peak is None or gain is None:
+		try: peak, gain = parse_rg(APEv2(filename))
 		except: pass
-	if 'TXXX:replaygain_track_gain' in id3 and 'replaygain_track_gain' not in ape:
-		try:
-			gain = float(tags['TXXX:replaygain_track_gain'].text[0][:-3])
-			update = True
-		except: pass
-	if update:
-		ape['replaygain_track_peak'] = '%.6f' % peak
-		ape['replaygain_track_gain'] = '%.2f dB' % gain
-		ape.save()
+
+	if (peak is None or gain is None) and update:
+		scanner = None
+		ext = os.path.splitext(filename.lower())[1]
+		if ext in ('.mp3'):
+			scanner = ['mp3gain', '-q', '-s', 'i', filename]
+		elif ext in ('.ogg', '.oga'):
+			scanner = ['vorbisgain', '-q', '-f', filename]
+		elif ext in ('.flac'):
+			scanner = ['metaflac', '--add-replay-gain', filename]
+		# If the scan is successful, retry reading the tags but only once.
+		if scanner is not None and run(scanner):
+			return read(filename, update=False)
+
+	return (peak, gain)
+
+def write(filename, peak, gain):
+	if peak is None:
+		raise Exception('peak is None')
+	elif gain is None:
+		raise Exception('gain is None')
+	try:
+		tags = mutagen.File(filename)
+		if type(tags) == MP3:
+			tags['TXXX:replaygain_track_peak'] = TXXX(encoding=0, desc=u'replaygain_track_peak', text=[u'%.6f' % peak])
+			tags['TXXX:replaygain_track_gain'] = TXXX(encoding=0, desc=u'replaygain_track_gain', text=[u'%.2f dB' % gain])
+			tags['RVA2:track'] = RVA2(desc=u'track', channel=1, peak=peak, gain=gain)
+			tags.save()
+
+			# Additionally write APEv2 tags to MP3 files.
+			try: tags = APEv2(filename)
+			except: tags = APEv2()
+			tags['replaygain_track_peak'] = '%.6f' % peak
+			tags['replaygain_track_gain'] = '%.2f dB' % gain
+			tags.save(filename)
+		else:
+			tags['replaygain_track_peak'] = '%.6f' % peak
+			tags['replaygain_track_gain'] = '%.2f dB' % gain
+			tags.save(filename)
 		return True
+	except: pass
 	return False
 
 def run(args):
+	"Runs an external program, returns True on success."
 	for path in os.getenv('PATH').split(os.pathsep):
 		exe = os.path.join(path, args[0])
 		if os.path.exists(exe):
-			args[0] = exe
-			if subprocess.Popen(args).wait():
-				return True
+			return subprocess.Popen([exe] + args[1:]).wait() == 0
 	return False
 
 def purge(filename):
-	try:
-		tags = mutagen.File(filename)
-		tags.delete()
+	try: mutagen.File(filename).delete()
 	except: pass
-	try:
-		tags = APEv2(filename)
-		tags.delete()
+	try: APEv2(filename).delete()
 	except: pass
 
 __all__ = ['update']
@@ -107,14 +138,19 @@ if __name__ == '__main__':
 	import getopt
 	import sys
 
-	(opts, args) = getopt.getopt(sys.argv[1:], 'c')
+	(opts, args) = getopt.getopt(sys.argv[1:], 'cr')
 
 	f = update
 	if ('-c', '') in opts:
 		f = purge
+	elif ('-r', '') in opts:
+		f = read
 
 	if not args:
-		print >>sys.stderr, 'Usage: %s files...' % sys.argv[0]
+		print >>sys.stderr, 'Usage: %s [-cr] files...' % sys.argv[0]
+		print >>sys.stderr, 'Options:'
+		print >>sys.stderr, ' -c    clear all tags (updates by default)'
+		print >>sys.stderr, ' -r    read and show tags'
 		sys.exit(1)
 	for filename in args:
 		res = f(filename)
