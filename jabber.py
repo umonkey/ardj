@@ -48,11 +48,11 @@ class ardjbot(JabberBot):
 		"""
 		Updates the database, then starts the jabber bot.
 		"""
-		self.db.update()
 		return JabberBot.serve_forever(self, connect_callback=self.on_connected)
 
 	def on_connected(self):
 		self.status_type = self.DND
+		self.db.update()
 		self.filetracker = notify.monitor([os.path.dirname(self.config.filename), self.config.get_music_dir()], self.on_file_changes)
 		self.musicdir_monitor = db.track.monitor()
 

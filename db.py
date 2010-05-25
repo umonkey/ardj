@@ -171,15 +171,15 @@ class db:
 		Reads playlists.yaml from the files folder and updates the playlists table.
 		"""
 		cur = self.cursor()
-		cur.execute('DELETE FROM playlists')
+		cur.execute('UPDATE playlists SET priority = 0')
 
 		playlists = self.config.get_playlists()
 		priority = len(playlists) + 1
 		for item in playlists:
 			try:
-				obj = playlist()
+				obj = playlist.load_by_name(item['name'])
 				obj.priority = priority
-				for k in ('name', 'days', 'hours'):
+				for k in ('days', 'hours'):
 					if k in item:
 						setattr(obj, k, item[k])
 				for k in ('repeat', 'delay'):
@@ -191,6 +191,7 @@ class db:
 				print >>sys.stderr, 'Bad playlist: %s: %s' % (e, item)
 				traceback.print_exc()
 
+		cur.execute('DELETE FROM playlists WHERE priority = 0')
 		log('%u playlists saved.' % len(playlists))
 		self.commit()
 
@@ -219,12 +220,20 @@ class playlist:
 		return r + '>'
 
 	@classmethod
+	def load_by_name(cls, name):
+		pl = [x for x in cls.get_all() if x.name == name]
+		if pl: return pl[0]
+		pl = cls()
+		pl.name = name
+		return pl
+
+	@classmethod
 	def get_all(cls):
 		"""
 		Returns all available playlists.
 		"""
 		result = []
-		for row in db.execute('SELECT id, priority, name, repeat, delay, hours, days, last_played FROM playlists WHERE priority > 0 ORDER BY priority DESC'):
+		for row in db.execute('SELECT id, priority, name, repeat, delay, hours, days, last_played FROM playlists ORDER BY priority DESC'):
 			obj = cls()
 			obj.id, obj.priority, obj.name, obj.repeat, obj.delay, obj.hours, obj.days, obj.last_played = row
 			for k in ('days', 'hours'):
@@ -275,6 +284,8 @@ class playlist:
 		"""
 		Checks whether the playlist is active.
 		"""
+		if not self.priority:
+			return False
 		if self.delay is not None and self.last_played is not None and self.delay * 60 + self.last_played > int(time.time()):
 			return False
 		if self.hours is not None:
