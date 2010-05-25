@@ -547,10 +547,12 @@ class track:
 				# and length is over 16kb.
 				elif action == 'created' and os.path.isdir(path):
 					dbi.update()
-				elif action == 'modified' and os.path.isfile(path) and os.path.getsize(path) > 16384:
-					track.add([localpath])
-				else:
-					print 'unhandled:', action, path, localpath
+				elif action == 'modified' and os.path.isfile(path):
+					if localpath == 'playlists.yaml':
+						db.instance().update_playlists()
+					elif os.path.getsize(path) > 16384:
+						track.add([localpath])
+				# else: print 'unhandled:', action, path, localpath
 
 		dbi = db.instance()
 		musicdir = config.get_path('musicdir')
