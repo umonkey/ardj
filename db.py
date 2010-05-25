@@ -154,7 +154,8 @@ class db:
 				log('dead file: %s' % filename)
 
 			# add new playlists
-			cur.execute('INSERT INTO playlists (name) SELECT DISTINCT playlist FROM tracks WHERE playlist NOT IN (SELECT name FROM playlists)')
+			self.update_playlists()
+			# cur.execute('INSERT INTO playlists (name) SELECT DISTINCT playlist FROM tracks WHERE playlist NOT IN (SELECT name FROM playlists)')
 
 			# update artist weights
 			for artist, count in cur.execute('SELECT artist, COUNT(*) FROM tracks WHERE weight > 0 GROUP BY artist'):
@@ -164,6 +165,34 @@ class db:
 		except Exception, e:
 			self.db.rollback()
 			raise
+
+	def update_playlists(self):
+		"""
+		Reads playlists.yaml from the files folder and updates the playlists table.
+		"""
+		cur = self.cursor()
+		cur.execute('DELETE FROM playlists')
+
+		playlists = self.config.get_playlists()
+		priority = len(playlists) + 1
+		for item in playlists:
+			try:
+				obj = playlist()
+				obj.priority = priority
+				for k in ('name', 'days', 'hours'):
+					if k in item:
+						setattr(obj, k, item[k])
+				for k in ('repeat', 'delay'):
+					if k in item:
+						setattr(obj, k, int(item[k]))
+				obj.save(cur)
+				priority -= 1
+			except Exception, e:
+				print >>sys.stderr, 'Bad playlist: %s: %s' % (e, item)
+				traceback.print_exc()
+
+		log('%u playlists saved.' % len(playlists))
+		self.commit()
 
 	@classmethod
 	def execute(cls, *args, **kwargs):
@@ -182,10 +211,6 @@ class playlist:
 		self.hours = None
 		self.days = None
 		self.last_played = None
-		# make lists lists
-		for k in ('days', 'hours'):
-			if getattr(self, k) is not None and type(getattr(self, k)) != list:
-				setattr(self, k, [getattr(self, k)])
 
 	def __repr__(self):
 		r = '<playlist'
@@ -202,6 +227,9 @@ class playlist:
 		for row in db.execute('SELECT id, priority, name, repeat, delay, hours, days, last_played FROM playlists WHERE priority > 0 ORDER BY priority DESC'):
 			obj = cls()
 			obj.id, obj.priority, obj.name, obj.repeat, obj.delay, obj.hours, obj.days, obj.last_played = row
+			for k in ('days', 'hours'):
+				if getattr(obj, k): setattr(obj, k, getattr(obj, k).split(','))
+				else: setattr(obj, k, None)
 			result.append(obj)
 		return result
 
@@ -212,17 +240,20 @@ class playlist:
 		"""
 		return [p for p in cls.get_all() if p.__isactive__()]
 
-	def save(self):
+	def save(self, cur=None):
 		"""
 		Saves the current playlist.
 		"""
+		if cur is None:
+			cur = db.instance().cursor()
 		if self.id is None:
-			row = db.execute('SELECT id FROM playlists WHERE name = ?', (self.name, )).fetchone()
+			row = cur.execute('SELECT id FROM playlists WHERE name = ?', (self.name, )).fetchone()
 			if row is not None:
 				self.id = row[0]
 			else:
-				self.id = db.execute('INSERT INTO playlists (name) VALUES (NULL)').lastrowid
-		db.execute('UPDATE playlists SET priority = ?, name = ?, repeat = ?, delay = ?, hours = ?, days = ?, last_played = ? WHERE id = ?', (self.priority, self.name, self.repeat, self.delay, self.hours, self.days, self.last_played, self.id, ))
+				self.id = cur.execute('INSERT INTO playlists (name) VALUES (NULL)').lastrowid
+		fl = lambda l: ','.join([str(x) for x in l or []])
+		cur.execute('UPDATE playlists SET priority = ?, name = ?, repeat = ?, delay = ?, hours = ?, days = ?, last_played = ? WHERE id = ?', (self.priority, self.name, self.repeat, self.delay, fl(self.hours), fl(self.days), self.last_played, self.id, ))
 		return self
 
 	def mark_played(self):
@@ -247,11 +278,11 @@ class playlist:
 		if self.delay is not None and self.last_played is not None and self.delay * 60 + self.last_played > int(time.time()):
 			return False
 		if self.hours is not None:
-			if time.strftime('%H') not in self.hours.split(','):
+			if time.strftime('%H') not in self.hours:
 				return False
 		if self.days is not None:
 			day = time.strftime('%w') or '7'
-			if day not in self.days.split(','):
+			if day not in self.days:
 				return False
 		return True
 

@@ -49,6 +49,9 @@ class config:
 		"""
 		return os.path.realpath(os.path.expandvars(self.get('musicdir', os.path.dirname(self.filename))))
 
+	def get_playlists(self):
+		return self.get('playlists')
+
 def get(path, default=None):
 	if config.instance is None:
 		config.instance = config()
