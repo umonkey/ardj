@@ -30,6 +30,7 @@ import time
 import traceback
 
 import notify
+import replaygain
 import scrobbler
 import tags
 
@@ -422,11 +423,11 @@ class track:
 
 	@classmethod
 	def add(cls, filenames):
-		if type(filenames) != list:
-			filenames = [filenames]
+		if type(filenames) != list: filenames = [filenames]
 		for filename in filenames:
 			obj = cls.from_file(filename)
 			if obj is not None and obj.id is None:
+				replaygain.update(filename)
 				obj.save()
 		db.instance().commit()
 
