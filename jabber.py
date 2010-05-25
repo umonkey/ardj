@@ -1,6 +1,7 @@
 # vim: set ts=4 sts=4 sw=4 noet fileencoding=utf-8:
 
 import os
+import re
 import sys
 import traceback
 
@@ -111,7 +112,8 @@ class ardjbot(JabberBot):
 			return u'Zero weight already.'
 		elif track.weight > 1:
 			return u'This track is protected (weight=%f), use \'set weight to 0\' if you are sure.' % track.weight
-		self.db.set_track_weight(track.id, 0)
+		track.weight = 0
+		track.save()
 		self.broadcast('%s set weight=0 for track=%u playlist=%s filename=%s' % (message.getFrom().getStripped(), track.id, track.playlist, track.filename))
 
 	@botcmd
@@ -119,7 +121,8 @@ class ardjbot(JabberBot):
 		"undeletes a track (sets weight to 1)"
 		track = db.track.load(args or self.get_current_track().id)
 		if track.weight == 0:
-			self.db.set_track_weight(track.id, 1.0)
+			track.weight = 1
+			track.save()
 			self.broadcast('%s set weight=1 for track=%u playlist=%s filename=%s' % (message.getFrom().getStripped(), track.id, track.playlist, track.filename))
 		else:
 			return u'I\'s weight is %f, not quite zero.' % track.weight
@@ -193,19 +196,28 @@ class ardjbot(JabberBot):
 		url = 'http://twitter.com/' + posting.GetUser().GetScreenName() + '/status/' + str(posting.GetId())
 		self.broadcast('%s sent a message to twitter: %s <%s>' % (message.getFrom().getStripped(), args, url))
 
-	@botcmd
-	def set(self, message, args):
-		"""modifies track properties"""
-		args = self.split(args)
-		if len(args) == 3:
-			args.append(u'for')
-			args.append(self.get_current_track()['id'])
-		if len(args) != 5 or args[1] != u'to' or args[3] != u'for' or args[0] not in (u'weight'):
-			return 'Usage: set weight to <float> [for <track_id>].'
-		if args[0] == u'weight':
-			self.db.set_track_weight(args[4], args[2])
-		track = self.db.get_track_info(args[4])
-		self.broadcast('%s set %s=%f for track=%u (%s/%s)' % (message.getFrom().getStripped(), args[0], float(args[2]), track['id'], track['playlist'], track['filename']))
+	def unknown_command(self, mess, cmd, args):
+		m = re.match('(?:for (\w+) )?set (\w+) to (.*)$', cmd + ' ' + args)
+		if m is not None:
+			id, prop, value = m.groups()
+			usage = u'Usage: "[for id] set prop to value", where prop is artist, playlist, title or weight.'
+			if prop not in ('artist', 'playlist', 'title', 'weight'):
+				return usage
+			# Load the track:
+			if id is None: track = self.get_current_track()
+			else: track = db.track.load(id)
+			# Update the value:
+			if 'weight' == prop:
+				if track.weight == float(value):
+					return u'OK already.'
+				track.weight = float(value)
+			elif prop in ('artist', 'playlist', 'title'): setattr(track, prop, value)
+			else: return usage
+			# Get over it:
+			track.save()
+			self.broadcast('%s set %s to %s for track=%u (%s)' % (mess.getFrom().getStripped(), prop, value, track.id, track.filename))
+			return None
+		return JabberBot.unknown_command(self, mess, cmd, args)
 
 	def split(self, args):
 		if not args:
