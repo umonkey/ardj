@@ -149,7 +149,7 @@ class ardjbot(JabberBot):
 		tt = tags.get(track.path)
 		for k in tt:
 			result += u'%s: %s\n' % (k, tt[k])
-		return result
+		return result.strip()
 
 	@botcmd
 	def say(self, message, args):
@@ -188,7 +188,7 @@ class ardjbot(JabberBot):
 			return 'You need to install python-twitter to use this command.'
 		posting = self.twitter.PostUpdate(args)
 		url = 'http://twitter.com/' + posting.GetUser().GetScreenName() + '/status/' + str(posting.GetId())
-		self.broadcast('%s sent a message to twitter: %s <%s>' % (message.getFrom().getStripped(), args, url))
+		self.broadcast('%s sent <a href="%s">a message</a> to twitter: %s' % (message.getFrom().getStripped(), url, args))
 
 	def unknown_command(self, mess, cmd, args):
 		m = re.match('(?:for (\w+) )?set (\w+) to (.*)$', cmd + ' ' + args)
