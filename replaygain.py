@@ -42,14 +42,37 @@ from mutagen.id3 import RVA2, TXXX
 from mutagen.apev2 import APEv2 
 
 def update(filename):
+	"""
 	if not os.access(filename, os.W_OK):
 		print >>sys.stderr, 'WARNING: %s is write protected, refusing to update ReplayGain info.' % filename
 		return False
+	"""
+	if check(filename):
+		return True
+
 	peak, gain = read(filename)
 	if peak is not None and gain is not None:
 		return write(filename, peak, gain)
 	print >>sys.stderr, 'WARNING: no replaygain for %s: peak=%s gain=%s' % (filename, peak, gain)
 	return False
+
+def check(filename):
+	"""
+	Returns True if the file has all ReplayGain data.
+	"""
+	try:
+		tags = mutagen.File(filename)
+
+		if type(tags) != MP3:
+			return 'replaygain_track_peak' in tags and 'replaygain_track_gain' in tags
+		if 'TXXX:replaygain_track_peak' not in tags or 'TXXX:replaygain_track_gain' not in tags:
+			return False
+		if 'RVA2:track' not in tags:
+			return False
+		tags = APEv2(filename)
+		return 'replaygain_track_peak' in tags and 'replaygain_track_gain' in tags
+	except:
+		return False
 
 def read(filename, update=True):
 	"""
@@ -65,6 +88,8 @@ def read(filename, update=True):
 			value = tags['replaygain_track_gain'][0]
 			if value.endswith(' dB'):
 				g = float(value[:-3])
+			else:
+				print >>sys.stderr, 'WARNING: malformed track gain info: "%s" in %s' % (value, filename)
 		return (p, g)
 
 	try: peak, gain = parse_rg(mutagen.File(filename, easy=True))
@@ -87,7 +112,7 @@ def read(filename, update=True):
 			scanner = ['metaflac', '--add-replay-gain', filename]
 		# If the scan is successful, retry reading the tags but only once.
 		if scanner is not None and run(scanner):
-			return read(filename, update=False)
+			peak, gain = read(filename, update=False)
 
 	return (peak, gain)
 
@@ -118,12 +143,16 @@ def write(filename, peak, gain):
 	except: pass
 	return False
 
-def run(args):
+def run(args, quiet=True):
 	"Runs an external program, returns True on success."
 	for path in os.getenv('PATH').split(os.pathsep):
 		exe = os.path.join(path, args[0])
 		if os.path.exists(exe):
-			return subprocess.Popen([exe] + args[1:]).wait() == 0
+			stdout = stderr = None
+			if quiet:
+				stdout = stderr = subprocess.PIPE
+			print >>sys.stderr, '$ %s' % ' '.join(args)
+			return subprocess.Popen([exe] + args[1:], stdout=stdout, stderr=stderr).wait() == 0
 	return False
 
 def purge(filename):
