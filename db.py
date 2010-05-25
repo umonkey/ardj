@@ -427,9 +427,8 @@ class track:
 		for filename in filenames:
 			obj = cls.from_file(filename)
 			if obj is not None and obj.id is None:
-				replaygain.update(filename)
 				obj.save()
-		db.instance().commit()
+		db.instance().commit() # the whole batch
 
 	@classmethod
 	def from_file(cls, filename):
@@ -445,6 +444,7 @@ class track:
 			obj.filename = filename
 			if type(obj.filename) == str:
 				obj.filename = obj.filename.decode('utf-8')
+			replaygain.update(filepath)
 			tg = tags.get(filepath)
 			if tg is None:
 				log('file skipped: %s' % filename)
