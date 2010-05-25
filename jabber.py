@@ -52,7 +52,6 @@ class ardjbot(JabberBot):
 
 	def on_connected(self):
 		self.status_type = self.DND
-		self.db.update()
 		self.filetracker = notify.monitor([os.path.dirname(self.config.filename), self.config.get_music_dir()], self.on_file_changes)
 		self.musicdir_monitor = db.track.monitor()
 
@@ -133,7 +132,7 @@ class ardjbot(JabberBot):
 		tracks = db.track.get_last_tracks()
 		if not tracks:
 			return u'Nothing was played yet.'
-		return u'\n'.join(['%s (playlist=%s, id=%u, weight=%f)' % (t.filename, t.playlist, t.id, t.weight) for t in tracks])
+		return u'Last played tracks:\n' + u'\n'.join(['%5u. %s (playlist=%s, weight=%f)' % (t.id, t.filename, t.playlist, t.weight) for t in tracks])
 
 	@botcmd
 	def show(self, message, args):
