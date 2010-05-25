@@ -91,13 +91,31 @@ def run(args):
 				return True
 	return False
 
+def purge(filename):
+	try:
+		tags = mutagen.File(filename)
+		tags.delete()
+	except: pass
+	try:
+		tags = APEv2(filename)
+		tags.delete()
+	except: pass
+
 __all__ = ['update']
 
 if __name__ == '__main__':
+	import getopt
 	import sys
-	if len(sys.argv) == 1:
+
+	(opts, args) = getopt.getopt(sys.argv[1:], 'c')
+
+	f = update
+	if ('-c', '') in opts:
+		f = purge
+
+	if not args:
 		print >>sys.stderr, 'Usage: %s files...' % sys.argv[0]
 		sys.exit(1)
-	for filename in sys.argv[1:]:
-		res = update(filename)
+	for filename in args:
+		res = f(filename)
 		print '%s: %s' % (filename, res)
