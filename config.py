@@ -50,7 +50,10 @@ class config:
 		return os.path.realpath(os.path.expandvars(self.get('musicdir', os.path.dirname(self.filename))))
 
 	def get_playlists(self):
-		return self.get('playlists')
+		filename = os.path.join(self.get_music_dir(), 'playlists.yaml')
+		if not os.path.exists:
+			raise Exception('%s does not exist.' % filename)
+		return yaml.load(open(filename, 'r').read())
 
 def get(path, default=None):
 	if config.instance is None:
