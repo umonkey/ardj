@@ -17,7 +17,7 @@ def usage():
 	print " -N NUM       show NUM next tracks (debug, no DB updates)"
 	print " --quiet      suppress log messages (stderr)"
 	print " --reset      reset database"
-	print " --scroble    scrobble track (only makes sense with --next)"
+	print " --scrobble   scrobble track (only makes sense with --next)"
 	print " --stats      show database statistics"
 	print " --update     update database"
 	return 1

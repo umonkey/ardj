@@ -43,14 +43,13 @@ class client:
 		"""
 		if self.cli is not None:
 			try:
-				filename = os.path.join(track['playlist'], track['filename'])
-				if self.skip is not None and self.skip.match(filename):
-					log('scrobbler: skipped %s' % filename)
-				elif track['artist'] and track['title']:
-					data = { 'artist': track['artist'], 'title': track['title'], 'time': time.gmtime(), 'length': track['length'] }
+				if self.skip is not None and self.skip.match(track.filename):
+					log('scrobbler: skipped %s' % track.filename)
+				elif track.artist and track.title:
+					data = { 'artist': track.artist, 'title': track.title, 'time': time.gmtime(), 'length': track.length }
 					self.cli.submit(data)
-					log(u'scrobbler: sent "%s" by %s' % (track['title'], track['artist']))
+					log(u'scrobbler: sent "%s" by %s' % (track.title, track.artist))
 				else:
-					log('scrobbler: no tags: %s' % filename)
+					log('scrobbler: no tags: %s' % track.filename)
 			except KeyError, e:
 				log('scrobbler: no %s in %s' % (e.args[0], track))

@@ -302,6 +302,11 @@ class track:
 	def path(self):
 		return os.path.join(config.get_path('musicdir'), self.filename)
 
+	def scrobble(self):
+		cli = db.instance().scrobbler
+		if cli is not None:
+			cli.submit(self)
+
 	@classmethod
 	def init_db(cls, db):
 		"""
