@@ -1,14 +1,12 @@
 # vim: set ts=4 sts=4 sw=4 noet fileencoding=utf-8:
 
 import sys
-import os, subprocess # for external replaygain scanners
 
 try:
 	import mutagen
 	import mutagen.easyid3
 	from mutagen.apev2 import APEv2 
 	mutagen.easyid3.EasyID3.RegisterTXXXKey('ardj', 'ardj metadata')
-	mutagen.easyid3.EasyID3.RegisterTXXXKey('replaygain_track_gain', 'replaygain_track_gain')
 except ImportError, e:
 	print >>sys.stderr, 'Pleasy install python-mutagen.', e
 	sys.exit(13)
@@ -35,7 +33,7 @@ def get(filename):
 	t = raw(filename)
 	if t is None:
 		return None
-	for k in ('artist', 'title', 'album', 'ardj', 'replaygain_track_gain'):
+	for k in ('artist', 'title', 'album', 'ardj'):
 		if k in t:
 			result[k] = t[k][0]
 		else:
