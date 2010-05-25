@@ -367,12 +367,7 @@ class JabberBot(object):
                 self.log('An error happened while processing a message ("%s") from %s: %s"' % (text, jid, reply))
                 print reply
         else:
-            # In private chat, it's okay for the bot to always respond.
-            # In group chat, the bot should silently ignore commands it
-            # doesn't understand or aren't handled by unknown_command().
-            default_reply = 'Unknown command: "%s". Type "help" for available commands.<b>blubb!</b>' % cmd
-            if type == "groupchat": default_reply = None
-            reply = self.unknown_command( mess, cmd, args) or default_reply
+            reply = self.unknown_command( mess, cmd, args)
         if reply:
             self.send_simple_reply(mess,reply)
 
@@ -385,7 +380,11 @@ class JabberBot(object):
         value, else some helpful text will be sent back
         to the sender.
         """
-        return None
+        # In private chat, it's okay for the bot to always respond.
+        # In group chat, the bot should silently ignore commands it
+        # doesn't understand or aren't handled by unknown_command().
+        if mess.getType() == 'groupchat': return None
+        return 'Unknown command: "%s". Type "help" for available commands.<b>blubb!</b>' % cmd
 
     def top_of_help_message(self):
         """Returns a string that forms the top of the help message
