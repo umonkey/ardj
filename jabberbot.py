@@ -243,8 +243,8 @@ class JabberBot(object):
                 message.addChild(node=html)
             except Exception, e:
                 # Didn't work, incorrect markup or something.
-                print >>sys.stderr, e
-                message = xmpp.protocol.Message(to=to_user, body=text_plain)
+                # print >> sys.stderr, e, text
+                message = xmpp.protocol.Message(body=text_plain)
         return message
 
     def get_sender_username(self, mess):
