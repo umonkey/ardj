@@ -285,16 +285,21 @@ class playlist:
 		Checks whether the playlist is active.
 		"""
 		if not self.priority:
+			# print >>sys.stderr, '%s not active: zero priority' % self.name
 			return False
 		if self.delay is not None and self.last_played is not None and self.delay * 60 + self.last_played > int(time.time()):
+			# print >>sys.stderr, '%s not active: delayed' % self.name
 			return False
 		if self.hours is not None:
-			if time.strftime('%H') not in self.hours:
+			if '%u' % int(time.strftime('%H')) not in self.hours:
+				# print >>sys.stderr, '%s not active: wrong hours -- %s not in %s' % (self.name, time.strftime('%H'), self.hours)
 				return False
 		if self.days is not None:
 			day = time.strftime('%w') or '7'
 			if day not in self.days:
+				# print >>sys.stderr, '%s not active: wrong days' % self.name
 				return False
+		print >>sys.stderr, '%s is active' % self.name
 		return True
 
 class track:
@@ -336,7 +341,7 @@ class track:
 		o = cls()
 		row = db.execute('SELECT id, playlist, filename, artist, title, length, weight, count, last_played FROM tracks WHERE id = ?', (id,)).fetchone()
 		if row is None:
-			raise Exception('Track %u does not exist.' % id)
+			raise Exception('Track %s does not exist.' % id)
 		o.id, o.playlist, o.filename, o.artist, o.title, o.length, o.weight, o.count, o.last_played = row
 		return o
 
@@ -373,7 +378,7 @@ class track:
 		if not self.title:
 			self.title = os.path.basename(self.filename)
 		if not self.playlist:
-			self.playlist = config.get('default_playlist', 'music')
+			self.playlist = config.get('default_playlist', os.path.split(self.filename)[0])
 			if not self.playlist:
 				raise Exception('Saving a track with no playlist.')
 		if self.id is None:
@@ -392,8 +397,7 @@ class track:
 		"""
 		comment = 'ardj=1'
 		for k in ('playlist', 'weight', 'count', 'last_played'):
-			if getattr(self, k):
-				comment += ';%s=%s' % (k, getattr(self, k))
+			comment += ';%s=%s' % (k, getattr(self, k))
 		tags.set(os.path.join(config.get_path('musicdir'), self.filename), { 'artist': self.artist, 'title': self.title, 'ardj': comment })
 
 	@classmethod
@@ -515,6 +519,7 @@ class track:
 							setattr(obj, k, saved[k])
 		except Exception, e:
 			log('error adding %s: %s' % (filename, e))
+			traceback.print_exc()
 		return obj
 
 	@classmethod
