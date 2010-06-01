@@ -190,6 +190,10 @@ class ardjbot(JabberBot):
 		url = 'http://twitter.com/' + posting.GetUser().GetScreenName() + '/status/' + str(posting.GetId())
 		self.broadcast('%s sent <a href="%s">a message</a> to twitter: %s' % (message.getFrom().getStripped(), url, args))
 
+	@botcmd
+	def echo(self, message, args):
+		return args
+
 	def unknown_command(self, mess, cmd, args):
 		m = re.match('(?:for (\w+) )?set (\w+) to (.*)$', cmd + ' ' + args)
 		if m is not None:

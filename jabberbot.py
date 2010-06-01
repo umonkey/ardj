@@ -239,7 +239,7 @@ class JabberBot(object):
         if text_plain != text:
             html = xmpp.Node('html', {'xmlns': 'http://jabber.org/protocol/xhtml-im'})
             try:
-                html.addChild(node=xmpp.simplexml.XML2Node("<body xmlns='http://www.w3.org/1999/xhtml'>" + text + "</body>"))
+                html.addChild(node=xmpp.simplexml.XML2Node("<body xmlns='http://www.w3.org/1999/xhtml'>" + text.encode('utf-8') + "</body>"))
                 message.addChild(node=html)
             except Exception, e:
                 # Didn't work, incorrect markup or something.
