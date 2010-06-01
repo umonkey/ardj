@@ -174,26 +174,27 @@ class db:
 		cur.execute('UPDATE playlists SET priority = 0')
 
 		playlists = self.config.get_playlists()
-		priority = len(playlists) + 1
-		for item in playlists:
-			try:
-				obj = playlist.load_by_name(item['name'])
-				obj.priority = priority
-				for k in ('days', 'hours'):
-					if k in item:
-						setattr(obj, k, item[k])
-				for k in ('repeat', 'delay'):
-					if k in item:
-						setattr(obj, k, int(item[k]))
-				obj.save(cur)
-				priority -= 1
-			except Exception, e:
-				print >>sys.stderr, 'Bad playlist: %s: %s' % (e, item)
-				traceback.print_exc()
+		if playlists is not None:
+			priority = len(playlists) + 1
+			for item in playlists:
+				try:
+					obj = playlist.load_by_name(item['name'])
+					obj.priority = priority
+					for k in ('days', 'hours'):
+						if k in item:
+							setattr(obj, k, item[k])
+					for k in ('repeat', 'delay'):
+						if k in item:
+							setattr(obj, k, int(item[k]))
+					obj.save(cur)
+					priority -= 1
+				except Exception, e:
+					print >>sys.stderr, 'Bad playlist: %s: %s' % (e, item)
+					traceback.print_exc()
 
-		cur.execute('DELETE FROM playlists WHERE priority = 0')
-		log('%u playlists saved.' % len(playlists))
-		self.commit()
+			cur.execute('DELETE FROM playlists WHERE priority = 0')
+			log('%u playlists saved.' % len(playlists))
+			self.commit()
 
 	@classmethod
 	def execute(cls, *args, **kwargs):
