@@ -379,7 +379,7 @@ class track:
 		if not self.title:
 			self.title = os.path.basename(self.filename)
 		if not self.playlist:
-			self.playlist = config.get('default_playlist', os.path.split(self.filename)[0])
+			self.playlist = config.get('default_playlist', self.filename.split(os.path.sep)[0])
 			if not self.playlist:
 				raise Exception('Saving a track with no playlist.')
 		if self.id is None:
@@ -511,13 +511,18 @@ class track:
 				saved = dict([x.split('=') for x in tg['ardj'].split(';')])
 				if saved.has_key('ardj') and saved['ardj'] == '1':
 					del saved['ardj']
+					print >>sys.stderr, 'stored metadata: %s' % saved
 					for k in saved:
-						if k in ('count', 'last_played'):
-							setattr(obj, k, int(saved[k]))
-						elif k in ('weight'):
-							setattr(obj, k, float(saved[k]))
-						else:
-							setattr(obj, k, saved[k])
+						try:
+							if k in ('count', 'last_played'):
+								setattr(obj, k, int(saved[k]))
+							elif k in ('weight'):
+								setattr(obj, k, float(saved[k]))
+							else:
+								setattr(obj, k, saved[k])
+						except Exception, e:
+							print >>sys.stderr, e
+							traceback.print_exc()
 		except Exception, e:
 			log('error adding %s: %s' % (filename, e))
 			traceback.print_exc()
