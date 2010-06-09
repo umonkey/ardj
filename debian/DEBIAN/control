@@ -1,0 +1,14 @@
+Package: ardj
+Version: 1.0
+Section: sound
+Priority: optional
+Maintainer: Justin Forest <justin.forest@gmail.com>
+Architecture: all
+Essential: no
+Depends: ices, icecast2, python-yaml, python-pyinotify, python-twitter
+Recommends: lastfmsubmitd, sqlite3
+Installed-Size: 1024
+Description: An artificial DJ for your icecast2 based internet radio.
+  Consists of an ices python playlist module and a jabber bot which
+  lets you control that radio.  Supports sending messages to twitter
+  and other unnecessary stuff.

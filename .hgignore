@@ -1,2 +1,6 @@
 .*\.pyc
 \.git
+\.deb
+debian/bin
+debian/etc
+debian/usr
