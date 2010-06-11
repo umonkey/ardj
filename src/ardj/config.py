@@ -1,6 +1,7 @@
 # vim: set ts=4 sts=4 sw=4 noet fileencoding=utf-8:
 
 import os
+import sys
 
 try:
 	import yaml
@@ -9,15 +10,16 @@ except ImportError:
 	sys.exit(13)
 
 class config:
-	instance = None
-
 	def __init__(self):
-		self.filename = os.path.expandvars('$HOME/.config/ardj/default.yaml')
+		for filename in [os.path.expandvars('$HOME/.config/ardj/default.yaml'), '/etc/ardj.yaml']:
+			if os.path.exists(filename):
+				self.filename = filename
+				break
+		if not self.filename:
+			raise Exception('Could not find a config file.')
 		self.folder = os.path.dirname(self.filename)
 		if not os.path.exists(self.folder):
 			os.makedirs(self.folder)
-		if not os.path.exists(self.filename):
-			raise Exception('Config file %s not found.' % self.filename)
 		self.data = yaml.load(open(self.filename, 'r').read())
 
 	def get(self, path, default=None):
@@ -34,14 +36,14 @@ class config:
 			data = data[k]
 		return data
 
-	def get_path(self, name):
-		return os.path.expandvars(self.get(name))
+	def get_path(self, name, default=None):
+		return os.path.expandvars(self.get(name, default))
 
 	def get_db_name(self):
 		"""
 		Returns the name of the SQLite database.
 		"""
-		return os.path.splitext(self.filename)[0] + '.sqlite'
+		return self.get_path('database', os.path.splitext(self.filename)[0] + '.sqlite')
 
 	def get_music_dir(self):
 		"""
@@ -51,19 +53,10 @@ class config:
 
 	def get_playlists(self):
 		filename = os.path.join(self.get_music_dir(), 'playlists.yaml')
-		if not os.path.exists:
-			raise Exception('%s does not exist.' % filename)
+		if not os.path.exists(filename):
+			print >>sys.stderr, '%s does not exist, assuming empty.' % filename
+			return []
 		return yaml.load(open(filename, 'r').read())
 
-def get(path, default=None):
-	if config.instance is None:
-		config.instance = config()
-	return config.instance.get(path, default)
-
-def get_path(name):
-	return os.path.expandvars(get(name))
-
-def get_self():
-	if config.instance is None:
-		config.instance = config()
-	return config.instance.filename
+def Open():
+	return config()

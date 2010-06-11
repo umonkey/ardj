@@ -3,10 +3,10 @@
 import sys
 
 try:
-	import mutagen
-	import mutagen.easyid3
-	from mutagen.apev2 import APEv2 
-	mutagen.easyid3.EasyID3.RegisterTXXXKey('ardj', 'ardj metadata')
+	import ardj.mutagen as mutagen
+	import ardj.mutagen.easyid3 as easyid3
+	from ardj.mutagen.apev2 import APEv2 
+	easyid3.EasyID3.RegisterTXXXKey('ardj', 'ardj metadata')
 except ImportError, e:
 	print >>sys.stderr, 'Pleasy install python-mutagen.', e
 	sys.exit(13)
@@ -21,7 +21,7 @@ def raw(filename):
 	"""
 	try:
 		if filename.lower().endswith('.mp3'):
-			t = mutagen.easyid3.Open(filename)
+			t = easyid3.Open(filename)
 			return t
 		return mutagen.File(filename)
 	except Exception, e:

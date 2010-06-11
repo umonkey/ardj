@@ -22,7 +22,6 @@ This module can be used as a command line script, in which case
 the music dir is watched for updates.
 """
 
-import hashlib
 import os
 import random
 import sys
@@ -44,7 +43,7 @@ except ImportError:
 import config
 from log import log
 import tags
-			
+
 class db:
 	# Database connection
 	_instance = None
@@ -165,36 +164,6 @@ class db:
 		except Exception, e:
 			self.db.rollback()
 			raise
-
-	def update_playlists(self):
-		"""
-		Reads playlists.yaml from the files folder and updates the playlists table.
-		"""
-		cur = self.cursor()
-		cur.execute('UPDATE playlists SET priority = 0')
-
-		playlists = self.config.get_playlists()
-		if playlists is not None:
-			priority = len(playlists) + 1
-			for item in playlists:
-				try:
-					obj = playlist.load_by_name(item['name'])
-					obj.priority = priority
-					for k in ('days', 'hours'):
-						if k in item:
-							setattr(obj, k, item[k])
-					for k in ('repeat', 'delay'):
-						if k in item:
-							setattr(obj, k, int(item[k]))
-					obj.save(cur)
-					priority -= 1
-				except Exception, e:
-					print >>sys.stderr, 'Bad playlist: %s: %s' % (e, item)
-					traceback.print_exc()
-
-			cur.execute('DELETE FROM playlists WHERE priority = 0')
-			log('%u playlists saved.' % len(playlists))
-			self.commit()
 
 	@classmethod
 	def execute(cls, *args, **kwargs):
@@ -527,15 +496,6 @@ class track:
 			log('error adding %s: %s' % (filename, e))
 			traceback.print_exc()
 		return obj
-
-	@classmethod
-	def __hashname__(cls, filename):
-		"""
-		Returns a MD5-based hashed file name.
-		"""
-		h = hashlib.md5(open(filename, 'rb').read()).hexdigest()
-		filename = os.path.join(h[0], h[1], h) + os.path.splitext(filename.lower())[1]
-		return filename
 
 	@classmethod
 	def monitor(self):
