@@ -1,7 +1,7 @@
 VERSION=1.0-$(shell date +'%Y.%m.%d.%H%M')
 
 deb:
-	rm -rf debian/usr
+	rm -rf debian/usr *deb *zip
 	cat debian/DEBIAN/control.in | sed -e "s/VERSION/${VERSION}/g" > debian/DEBIAN/control
 	mkdir -p debian/usr/lib/python2.6
 	cp -R src/ardj debian/usr/lib/python2.6/ardj
@@ -12,6 +12,11 @@ deb:
 
 install: deb
 	sudo dpkg -i ardj-${VERSION}.deb
+
+release: deb
+	hg archive -t zip ardj-${VERSION}.zip
+	googlecode_upload.py -s "ardj v${VERSION}" -p ardj -l Featured,Type-Package,OpSys-Linux ardj-${VERSION}.deb
+	googlecode_upload.py -s "ardj v${VERSION}" -p ardj -l Featured,Type-Source,OpSys-All ardj-${VERSION}.zip
 
 back:
 	scp tmradio.local:/usr/lib/python2.6/ardj/*.py src/ardj/
