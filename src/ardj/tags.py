@@ -8,7 +8,7 @@ try:
 	from ardj.mutagen.apev2 import APEv2 
 	easyid3.EasyID3.RegisterTXXXKey('ardj', 'ardj metadata')
 except ImportError, e:
-	print >>sys.stderr, 'Pleasy install python-mutagen.', e
+	print >>sys.stderr, 'Pleasy install python-mutagen (%s)' % e
 	sys.exit(13)
 
 from log import log

@@ -30,7 +30,8 @@ class ardj:
 
 		Normally returns a dictionary with keys that corresponds to the "tracks"
 		table fields, e.g.: filename, artist, title, length, artist_weight, weight,
-		count, last_played, playlist.
+		count, last_played, playlist.  An additional key is filepath, which
+		contains the full path name to the picked track, encoded in UTF-8.
 
 		Before the track is returned, its and the playlist's statistics are updated.
 		"""
@@ -50,6 +51,7 @@ class ardj:
 			self.update_track(track)
 			if scrobble and self.scrobbler:
 				self.scrobbler.submit(track)
+			track['filepath'] = os.path.join(self.config.get_music_dir(), track['filename']).encode('utf-8')
 		return track
 
 	def get_random_track(self, playlist=None, repeat=None, skip_artists=None, cur=None):
