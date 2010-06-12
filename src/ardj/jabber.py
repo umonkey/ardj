@@ -117,13 +117,12 @@ class ardjbot(JabberBot):
 	@botcmd
 	def undelete(self, message, args):
 		"undeletes a track (sets weight to 1)"
-		track = db.track.load(args or self.get_current_track().id)
-		if track.weight == 0:
-			track.weight = 1
-			track.save()
-			self.broadcast(u'%s set weight=1 for track=%u playlist=%s filename=%s' % (self.get_linked_sender(message), track.id, track.playlist, track.filename))
-		else:
-			return u'Track %u\'s weight is %f, not quite zero.' % (track.id, track.weight)
+		track = args and self.ardj.get_track_by_id(int(args)) or self.get_current_track()
+		if track['weight']:
+			return u'This track\'s weight is %s, not quite zero.' % (track['weight'])
+		track['weight'] = 1.
+		self.ardj.update_track(track, commit=True)
+		self.broadcast(u'%s changed weight from 0 to 1 for %s; #%u @%s' % (self.get_linked_sender(message), self.get_linked_title(track), track['id'], track['playlist']))
 
 	@botcmd
 	def last(self, message, args):
