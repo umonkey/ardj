@@ -3,9 +3,9 @@
 import sys
 
 try:
-	import ardj.mutagen as mutagen
-	import ardj.mutagen.easyid3 as easyid3
-	from ardj.mutagen.apev2 import APEv2 
+	import mutagen as mutagen
+	import mutagen.easyid3 as easyid3
+	from mutagen.apev2 import APEv2 
 	easyid3.EasyID3.RegisterTXXXKey('ardj', 'ardj metadata')
 except ImportError, e:
 	print >>sys.stderr, 'Pleasy install python-mutagen (%s)' % e
