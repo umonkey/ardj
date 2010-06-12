@@ -218,6 +218,8 @@ class ardjbot(JabberBot):
 		result = u''
 		for row in self.ardj.database.cursor().execute(message.getBody()).fetchall():
 			result += u', '.join([unicode(cell) for cell in row]) + u'\n'
+		if not result:
+			result = u'Nothing.'
 		return result
 
 	@botcmd
