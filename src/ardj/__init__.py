@@ -1,32 +1,132 @@
 # vim: set ts=4 sts=4 sw=4 noet fileencoding=utf-8:
 
 import os
+import random
 import sys
+import time
 import traceback
 
 import ardj.config as config
 import ardj.database as database
+import ardj.scrobbler as scrobbler
 import ardj.tags as tags
 
 class ardj:
 	def __init__(self):
 		self.config = config.Open()
 		self.database = database.Open(self.config.get_db_name())
+		self.scrobbler = scrobbler.Open(self.config)
 
 	def __del__(self):
 		print >>sys.stderr, 'Shutting down.'
+		self.database.commit()
 
-	def next(self):
+	def next(self, scrobble=True):
 		"""
-		Returns information about the next track.
+		Returns information about the next track. The track is chosen from the
+		active playlists. If nothing could be chosen, a random track is picked
+		regardless of the playlist (e.g., the track can be in no playlist or
+		in an unexisting one).  If that fails too, None is returned.
+
+		Normally returns a dictionary with keys that corresponds to the "tracks"
+		table fields, e.g.: filename, artist, title, length, artist_weight, weight,
+		count, last_played, playlist.
+
+		Before the track is returned, its and the playlist's statistics are updated.
 		"""
-		# last played artist names
 		cur = self.database.cursor()
+		# Last played artist names.
 		skip = [row[0] for row in cur.execute('SELECT DISTINCT artist FROM tracks WHERE artist IS NOT NULL AND last_played IS NOT NULL ORDER BY last_played DESC LIMIT ' + str(self.config.get('dupes', 5))).fetchall()]
-		return skip
+
+		track = None
+		playlists = self.get_active_playlists()
+		for name in playlists:
+			track = self.get_random_track(name, repeat=playlists[name]['repeat'], skip_artists=skip, cur=cur)
+			if track is not None:
+				break
+		if track is not None:
+			track['count'] += 1
+			track['last_played'] = int(time.time())
+			self.update_track(track)
+			if scrobble and self.scrobbler:
+				self.scrobbler.submit(track)
+		return track
+
+	def get_random_track(self, playlist=None, repeat=None, skip_artists=None, cur=None):
+		"""
+		Returns a random track from the specified playlist.
+		"""
+		cur = cur or self.database.cursor()
+		id = self.get_random_track_id(playlist, repeat, skip_artists, cur)
+		if id is not None:
+			row = cur.execute('SELECT id, playlist, filename, artist, title, length, artist_weight, weight, count, last_played FROM tracks WHERE id = ?', (id, )).fetchone()
+			if row is not None:
+				return { 'id': row[0], 'playlist': row[1], 'filename': row[2], 'artist': row[3], 'title': row[4], 'length': row[5], 'artist_weight': row[6], 'weight': row[7], 'count': row[8], 'last_played': row[9] }
+
+	def get_random_track_id(self, playlist=None, repeat=None, skip_artists=None, cur=None):
+		"""
+		Returns a random track's id.
+		"""
+		cur = cur or self.database.cursor()
+		sql = 'SELECT id, randomize(id, artist_weight, weight, count) AS w, count FROM tracks WHERE w > 0'
+		params = []
+		# filter by playlist
+		if playlist is not None:
+			sql += ' AND playlist = ?'
+			params.append(playlist)
+		# filter by repeat count
+		if repeat is not None:
+			sql += ' AND count < ?'
+			params.append(repeat)
+		# filter by recent artists
+		if skip_artists is not None:
+			tsql = []
+			for name in skip_artists:
+				tsql.append('?')
+				params.append(name)
+			sql += ' AND artist NOT IN (' + ', '.join(tsql) + ')'
+		# fetch all records
+		rows = cur.execute(sql, tuple(params)).fetchall()
+		if not rows:
+			return None
+		# pick a random track
+		probability_sum = sum([row[1] for row in rows])
+		init_rnd = rnd = random.random() * probability_sum
+		for row in rows:
+			if rnd < row[1]:
+				return row[0]
+			rnd = rnd - row[1]
+		print >>sys.stderr, 'This must not happen: could not choose from %u tracks.' % len(rows)
+		return None
+
+	def get_playlists(self):
+		"""
+		Returns information about all known playlists.
+		"""
+		return dict([(row[0] or 'playlist-' + str(row[1]), { 'id': row[1], 'priority': row[2], 'repeat': row[3], 'delay': row[4], 'hours': row[5] and [int(x) for x in row[5].split(',')] or None, 'days': row[6] and [int(x) for x in row[6].split(',')] or None, 'last_played': row[7] }) for row in self.database.cursor().execute('SELECT name, id, priority, repeat, delay, hours, days, last_played FROM playlists').fetchall()])
 
 	def get_active_playlists(self):
-		pass
+		"""
+		Returns a dictionary with currently active playlists.
+		"""
+		def is_active(playlist):
+			if not playlist['priority']:
+				return False
+			if playlist['delay'] and playlist['last_played'] and playlist['delay'] * 60 + playlist['last_played'] > int(time.time()):
+				return False
+			if playlist['hours']:
+				if '%u' % int(time.strftime('%H')) not in playlist['hours']:
+					return False
+			if playlist['days']:
+				day = time.strftime('%w') or '7'
+				if day not in playlist['days']:
+					return False
+			return True
+		saved = self.get_playlists()
+		for k in saved.keys():
+			if not is_active(saved[k]):
+				del(saved[k])
+		return saved
 
 	def update_playlists(self):
 		"""
@@ -35,7 +135,11 @@ class ardj:
 		cur = self.database.cursor()
 		cur.execute('UPDATE playlists SET priority = 0')
 
-		saved = dict([(row[0] or 'playlist-' + str(row[1]), { 'id': row[1], 'priority': 0, 'repeat': row[3], 'delay': row[4], 'hours': row[5], 'days': row[6], 'last_played': row[7] }) for row in cur.execute('SELECT name, id, priority, repeat, delay, hours, days, last_played FROM playlists').fetchall()])
+		saved = self.get_playlists()
+
+		# Сбрасываем приоритеты, чтобы потом удалить лишние плейтисты.
+		for k in saved.keys():
+			saved[k]['priority'] = 0
 
 		playlists = self.config.get_playlists()
 		if playlists is not None:
@@ -43,7 +147,11 @@ class ardj:
 			for item in playlists:
 				try:
 					if not saved.has_key(item['name']):
+						# создаём новый плейлист
 						saved[item['name']] = { 'name': item['name'], 'last_played': None, 'id': cur.execute('INSERT INTO playlists (name) VALUES (NULL)').lastrowid }
+					else:
+						# очищаем почти все свойства
+						saved[item['name']] = { 'name': item['name'], 'id': saved[item['name']]['id'], 'last_played': saved[item['name']]['last_played'] }
 					for k in ('days', 'hours'):
 						if k in item:
 							saved[item['name']][k] = item[k] and ','.join([str(x) for x in item[k]]) or None
@@ -188,12 +296,17 @@ class ardj:
 		cur.execute(sql, tuple(params))
 
 		if backup:
-			print >>sys.stderr, 'writing metadata to ' + filename.encode('utf-8')
 			filename, artist, title, playlist, weight, count, last_played = cur.execute('SELECT filename, artist, title, playlist, weight, count, last_played FROM tracks WHERE id = ?', (args['id'], )).fetchone()
 			comment = u'ardj=1;playlist=%s;weight=%f;count=%u;last_played=%s' % (playlist, weight, count, last_played)
-			tags.set(os.path.join(self.config.get_music_dir(), filename.encode('utf-8')), { 'artist': artist, 'title': title, 'ardj': comment })
+			try:
+				tags.set(os.path.join(self.config.get_music_dir(), filename.encode('utf-8')), { 'artist': artist, 'title': title, 'ardj': comment })
+			except Exception, e:
+				print >>sys.stderr, 'could not write metadata to %s: %s' % (filename.encode('utf-8'), e)
 
 	def sqlite_randomize(self, id, artist_weight, weight, count):
+		"""
+		Implements the SQLite randomize() function.
+		"""
 		result = weight or 0
 		if artist_weight is not None:
 			result = result * artist_weight

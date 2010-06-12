@@ -1,15 +1,15 @@
 # vim: set ts=4 sts=4 sw=4 noet fileencoding=utf-8:
 
-# System imports.
-import lastfm
-import os
 import re
 import sys
 import time
 
-# Local imports.
-import config
-from log import log
+try:
+	import lastfm
+	have_cli = True
+except ImportError:
+	print >>sys.stderr, 'scrobbler: disabled, please install lastfmsubmitd.'
+	have_cli = False
 
 class client:
 	"""
@@ -17,19 +17,18 @@ class client:
 	file parameter lastfm/skip as a regular expression to match files that
 	must never be reported (such as jingles).
 	"""
-	def __init__(self):
+	def __init__(self, config):
 		"""
 		Imports and initializes lastfm.client, reads options from bot's config file.
 		"""
-		self.config = config.config()
+		self.config = config
 		self.skip = None
 		self.folder = self.config.get_music_dir()
-		try:
-			import lastfm.client
+		if have_cli:
 			self.cli = lastfm.client.Daemon('ardj')
 			self.cli.open_log()
-		except ImportError:
-			log('scrobbler disabled: please install lastfmsubmitd.')
+		else:
+			print >>sys.stderr, 'Scrobbler disabled: please install lastfmsubmitd.'
 			self.cli = None
 		self.skip = None
 		skip = self.config.get('lastfm/skip', '')
@@ -43,13 +42,16 @@ class client:
 		"""
 		if self.cli is not None:
 			try:
-				if self.skip is not None and self.skip.match(track.filename):
-					log('scrobbler: skipped %s' % track.filename)
-				elif track.artist and track.title:
-					data = { 'artist': track.artist, 'title': track.title, 'time': time.gmtime(), 'length': track.length }
+				if self.skip is not None and self.skip.match(track['filename']):
+					print >>sys.stderr, 'scrobbler: skipped %s' % track['filename']
+				elif track['artist'] and track['title']:
+					data = { 'artist': track['artist'], 'title': track['title'], 'time': time.gmtime(), 'length': track['length'] }
 					self.cli.submit(data)
-					log(u'scrobbler: sent "%s" by %s' % (track.title, track.artist))
+					print >>sys.stderr, 'scrobbler: sent "%s" by %s' % (track['title'].encode('utf-8'), track['artist'].encode('utf-8'))
 				else:
-					log('scrobbler: no tags: %s' % track.filename)
+					print >>sys.stderr, 'scrobbler: no tags in %s' % track['filename'].encode('utf-8')
 			except KeyError, e:
-				log('scrobbler: no %s in %s' % (e.args[0], track))
+				print >>sys.stderr, (u'scrobbler: no %s in %s' % (e.args[0], track)).encode('utf-8')
+
+def Open(config):
+	return have_cli and client(config)
