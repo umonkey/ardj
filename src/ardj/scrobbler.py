@@ -5,7 +5,7 @@ import sys
 import time
 
 try:
-	import lastfm
+	import lastfm.client
 	have_cli = True
 except ImportError:
 	print >>sys.stderr, 'scrobbler: disabled, please install lastfmsubmitd.'
