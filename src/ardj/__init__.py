@@ -69,6 +69,14 @@ class ardj:
 		if row is not None:
 			return { 'id': row[0], 'playlist': row[1], 'filename': row[2], 'artist': row[3], 'title': row[4], 'length': row[5], 'artist_weight': row[6], 'weight': row[7], 'count': row[8], 'last_played': row[9] }
 
+	def get_track_by_id(self, id):
+		"""
+		Returns a dictionary that describes the specified track.
+		"""
+		row = self.database.cursor().execute('SELECT id, playlist, filename, artist, title, length, artist_weight, weight, count, last_played FROM tracks WHERE id = ?', (id, )).fetchone()
+		if row is not None:
+			return { 'id': row[0], 'playlist': row[1], 'filename': row[2], 'artist': row[3], 'title': row[4], 'length': row[5], 'artist_weight': row[6], 'weight': row[7], 'count': row[8], 'last_played': row[9] }
+
 	def get_random_track(self, playlist=None, repeat=None, skip_artists=None, cur=None):
 		"""
 		Returns a random track from the specified playlist.

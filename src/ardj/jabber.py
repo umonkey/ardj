@@ -86,7 +86,10 @@ class ardjbot(JabberBot):
 		return self.get_current_track()['filepath']
 
 	def get_current_track(self):
-		return db.track.get_last_tracks(1)[0]
+		"""
+		Возвращает информацию о последней проигранной дорожке.
+		"""
+		return self.ardj.get_last_track()
 
 	def check_access(self, message):
 		return message.getFrom().split('/')[0] in self.get_users()
@@ -127,13 +130,9 @@ class ardjbot(JabberBot):
 		rows = [{ 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'playlist': row[4] } for row in self.ardj.database.cursor().execute('SELECT id, filename, artist, title, playlist FROM tracks ORDER BY last_played DESC LIMIT 10').fetchall()]
 		if not rows:
 			return u'Nothing was played yet.'
-		message = u'Last played tracks:<br/>\n'
+		message = u'Last played tracks:'
 		for row in rows:
-			if row['artist'] and row['title']:
-				link = '<a href="http://www.last.fm/music/%s/_/%s">%s</a> by <a href="http://www.last.fm/music/%s">%s</a>' % (urllib.quote(row['artist'].encode('utf-8')), urllib.quote(row['title'].encode('utf-8')), row['title'], urllib.quote(row['artist'].encode('utf-8')), row['artist'])
-			else:
-				link = row['filename']
-			message += u'%s — @%s, #%u<br/>\n' % (link, row['playlist'], row['id'])
+			message += u'<br/>\n%s — @%s, #%u' % (self.get_linked_title(row), row['playlist'], row['id'])
 		return message
 
 	@botcmd
@@ -141,15 +140,19 @@ class ardjbot(JabberBot):
 		"shows detailed track info"
 		args = self.split(args)
 		if not args:
-			args.insert(0, self.get_current_track().id)
-		track = db.track.load(args[0])
+			track = self.get_current_track()
+		else:
+			track = self.ardj.get_track_by_id(int(args[0]))
 		if track is None:
 			return u'No such track.'
-		result = u'id=%u playlist=%s filename="%s" artist="%s" title="%s" weight=%f playcount=%u, length=%us' % (track.id, track.playlist, track.filename, track.artist, track.title, track.weight, track.count, track.length)
+		result = self.get_linked_title(track)
+		result += u'; #%u @%s filename="%s" weight=%f playcount=%u length=%us' % (track['id'], track['playlist'], track['filename'], track['weight'], track['count'], track['length'])
+		"""
 		result += u'. Tags:\n'
 		tt = tags.get(track.path)
 		for k in tt:
 			result += u'%s: %s\n' % (k, tt[k])
+		"""
 		return result.strip()
 
 	@botcmd
@@ -232,6 +235,15 @@ class ardjbot(JabberBot):
 				print >>sys.stderr, 'Error: %s, restarting in 5 seconds.' % e
 				traceback.print_exc()
 				time.sleep(5)
+
+	def get_linked_title(self, track):
+		if not track['artist']:
+			return track['filename']
+		elif not track['title']:
+			link = os.path.basename(track['filename'])
+		else:
+			link = u'<a href="http://www.last.fm/music/%s/_/%s">%s</a>' % (urllib.quote(track['artist'].encode('utf-8')), urllib.quote(track['title'].encode('utf-8')), track['title'])
+		return link + u' by <a href="http://www.last.fm/music/%s">%s</a>' % (urllib.quote(track['artist'].encode('utf-8')), track['artist'])
 
 def Open(ardj):
 	"""
