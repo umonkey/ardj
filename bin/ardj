@@ -14,7 +14,6 @@ def usage():
 	print " --dbconsole  open SQLite console"
 	print " --jabber     run a jabber bot"
 	print " --next       show next track"
-	print " -N NUM       show NUM next tracks (debug, no DB updates)"
 	print " --quiet      suppress log messages (stderr)"
 	print " --reset      reset database"
 	print " --scrobble   scrobble track (only makes sense with --next)"
@@ -26,7 +25,7 @@ def run(commands, args):
 	if type(commands) != list:
 		commands = [commands]
 	dirs = os.getenv('PATH').split(os.pathsep)
-	for command in commands:
+	for command in [x for x in commands if x]:
 		for dir in dirs:
 			cmd = os.path.join(dir, command)
 			if command and os.path.exists(cmd):
@@ -45,7 +44,7 @@ if __name__ == '__main__':
 	ardj = Open()
 
 	try:
-		opts, args = getopt.getopt(sys.argv[1:], 'iN:', ['backup', 'config', 'dbconsole', 'jabber', 'jabber-child', 'next', 'quiet', 'reset', 'scrobble', 'stats', 'update'])
+		opts, args = getopt.getopt(sys.argv[1:], 'i', ['backup', 'config', 'dbconsole', 'jabber', 'jabber-child', 'next', 'quiet', 'reset', 'scrobble', 'stats', 'update'])
 	except getopt.GetoptError:
 		sys.exit(usage())
 
@@ -69,11 +68,9 @@ if __name__ == '__main__':
 				idx += 1
 			print
 		if '--dbconsole' == option:
-			from db import db
-			run('sqlite3', [db().filename])
+			run('sqlite3', [ardj.config.get_db_name()])
 		if '--config' == option:
-			import config
-			run([os.getenv('EDITOR'), 'editor'], [config.get_self()])
+			run([os.getenv('EDITOR'), 'editor'], [ardj.config.filename])
 		if '--jabber' == option:
 			import subprocess, time, log
 			while True:
@@ -85,27 +82,13 @@ if __name__ == '__main__':
 			from jabber import run
 			run()
 		if '--next' == option:
-			import db
-			track = db.track.get_random()
+			track = ardj.next()
 			if track is None:
 				print >>sys.stderr, 'Could not find a track to play.'
 				sys.exit(1)
 			if ('--scrobble', '') in opts:
 				track.scrobble()
-			print track.path.encode('utf-8')
-			track.backup()
-			db.commit()
-		if '-N' == option:
-			import db
-			limit = int(value)
-			while limit:
-				track = db.track.get_random()
-				if track is None:
-					print >>sys.stderr, 'Could not find a track to play.'
-					sys.exit(1)
-				print u'%05u %s/%s' % (track.id, track.playlist, track.filename)
-				limit = limit - 1
-			db.db.instance().rollback()
+			print track['filepath']
 		if '--reset' == option:
 			filename = ardj.config.get_db_name()
 			if os.path.exists(filename):
