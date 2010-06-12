@@ -11,6 +11,7 @@ except ImportError:
 
 class config:
 	def __init__(self):
+		self.filename = None
 		for filename in [os.path.expandvars('$HOME/.config/ardj/default.yaml'), '/etc/ardj.yaml']:
 			if os.path.exists(filename):
 				self.filename = filename
