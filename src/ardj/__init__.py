@@ -308,7 +308,7 @@ class ardj:
 		print >>sys.stderr, 'added: ' + filename
 		return True
 
-	def update_track(self, args, backup=True, cur=None):
+	def update_track(self, args, backup=True, cur=None, commit=False):
 		if type(args) != dict:
 			raise TypeError('ardj.update_track() expects a dictionary.')
 
@@ -333,6 +333,9 @@ class ardj:
 				tags.set(os.path.join(self.config.get_music_dir(), filename.encode('utf-8')), { 'artist': artist, 'title': title, 'ardj': comment })
 			except Exception, e:
 				print >>sys.stderr, 'could not write metadata to %s: %s' % (filename.encode('utf-8'), e)
+
+		if commit:
+			self.database.commit()
 
 	def sqlite_randomize(self, id, artist_weight, weight, count):
 		"""
