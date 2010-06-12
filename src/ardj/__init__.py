@@ -308,7 +308,7 @@ class ardj:
 		print >>sys.stderr, 'added: ' + filename
 		return True
 
-	def update_track(self, args, backup=True, cur=None, commit=False):
+	def update_track(self, args, backup=True, cur=None, commit=True):
 		if type(args) != dict:
 			raise TypeError('ardj.update_track() expects a dictionary.')
 

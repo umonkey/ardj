@@ -103,8 +103,41 @@ class ardjbot(JabberBot):
 		return JabberBot.callback_message(self, conn, mess)
 
 	@botcmd
+	def set(self, message, args):
+		"modify track properties"
+		r = re.match('(\S+)\s+to\s+(.+)\s+for\s+(\d+)$', args)
+		if r:
+			a1, a2, a3 = r.groups()
+			track = self.ardj.get_track_by_id(int(a3))
+		else:
+			r = re.match('(\S+)\s+to\s+(.+)$', args)
+			if r:
+				a1, a2 = r.groups()
+				track = self.get_current_track()
+			else:
+				return u'Syntax: set prop to value [for id]'
+
+		types = { 'playlist': unicode, 'artist': unicode, 'title': unicode, 'weight': float }
+		if a1 not in types:
+			return u'Unknown property: %s, available: %s.' % (a1, u', '.join(types.keys()))
+
+		try:
+			a2 = types[a1](a2)
+		except Exception, e:
+			return u'Wrong data type for property %s: %s' % (a1, e)
+
+		old = track[a1]
+		if old == a2:
+			return u'That\'s the current value, yes.'
+
+		track[a1] = a2
+		self.ardj.update_track(track)
+
+		self.broadcast(u'%s changed %s from "%s" to "%s" for %s; #%u @%s' % (self.get_linked_sender(message), a1, old, a2, self.get_linked_title(track), track['id'], track['playlist']))
+
+	@botcmd
 	def delete(self, message, args):
-		"deletes a track (sets weight to 0)"
+		"delete a track (sets weight to 0)"
 		track = args and self.ardj.get_track_by_id(int(args)) or self.get_current_track()
 		if not track['weight']:
 			return u'Zero weight already.'
@@ -112,18 +145,18 @@ class ardjbot(JabberBot):
 			return u'This track is protected (weight=%f), use \'set weight to 0\' if you are sure.' % track['weight']
 		old = track['weight']
 		track['weight'] = 0
-		self.ardj.update_track(track, commit=True)
+		self.ardj.update_track(track)
 		self.broadcast(u'%s changed weight from %s to 0 for %s; #%u @%s' % (self.get_linked_sender(message), old, self.get_linked_title(track), track['id'], track['playlist']))
 		self.skip(message, args)
 
 	@botcmd
 	def undelete(self, message, args):
-		"undeletes a track (sets weight to 1)"
+		"undelete a track (sets weight to 1)"
 		track = args and self.ardj.get_track_by_id(int(args)) or self.get_current_track()
 		if track['weight']:
 			return u'This track\'s weight is %s, not quite zero.' % (track['weight'])
 		track['weight'] = 1.
-		self.ardj.update_track(track, commit=True)
+		self.ardj.update_track(track)
 		self.broadcast(u'%s changed weight from 0 to 1 for %s; #%u @%s' % (self.get_linked_sender(message), self.get_linked_title(track), track['id'], track['playlist']))
 
 	@botcmd
@@ -149,7 +182,7 @@ class ardjbot(JabberBot):
 
 	@botcmd
 	def show(self, message, args):
-		"shows detailed track info"
+		"show detailed track info"
 		args = self.split(args)
 		if not args:
 			track = self.get_current_track()
@@ -169,13 +202,13 @@ class ardjbot(JabberBot):
 
 	@botcmd
 	def say(self, message, args):
-		"sends a message to all connected users"
+		"send a message to all connected users"
 		if len(args):
 			self.broadcast(u'%s said: %s' % (self.get_linked_sender(message), args), True)
 
 	@botcmd
 	def die(self, message, args):
-		"shuts down the bot (should be restarted)"
+		"shut down the bot (should be restarted)"
 		self.shutdown()
 		sys.exit(1)
 
@@ -199,7 +232,7 @@ class ardjbot(JabberBot):
 
 	@botcmd
 	def twit(self, message, args):
-		"sends a message to twitter"
+		"send a message to twitter"
 		if not have_twitter:
 			return u'You need to install <a href="http://code.google.com/p/python-twitter/">python-twitter</a> to use this command.'
 		username, password = self.ardj.config.get('twitter/name', ''), self.ardj.config.get('twitter/password', '')
@@ -216,30 +249,8 @@ class ardjbot(JabberBot):
 
 	@botcmd
 	def echo(self, message, args):
+		"send back the arguments"
 		return args
-
-	def unknown_command(self, mess, cmd, args):
-		m = re.match('(?:for (\w+) )?set (\w+) to (.*)$', cmd + ' ' + args)
-		if m is not None:
-			id, prop, value = m.groups()
-			usage = u'Usage: "[for id] set prop to value", where prop is artist, playlist, title or weight.'
-			if prop not in ('artist', 'playlist', 'title', 'weight'):
-				return usage
-			# Load the track:
-			if id is None: track = self.get_current_track()
-			else: track = db.track.load(id)
-			# Update the value:
-			if 'weight' == prop:
-				if track.weight == float(value):
-					return u'OK already.'
-				track.weight = float(value)
-			elif prop in ('artist', 'playlist', 'title'): setattr(track, prop, value)
-			else: return usage
-			# Get over it:
-			track.save()
-			self.broadcast(u'%s set %s to %s for track=%u (%s)' % (self.get_linked_sender(mess), prop, value, track.id, track.filename))
-			return None
-		return JabberBot.unknown_command(self, mess, cmd, args)
 
 	def split(self, args):
 		if not args:
