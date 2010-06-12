@@ -3,6 +3,7 @@
 import os
 import re
 import socket # for gethostname()
+import subprocess
 import sys
 import time
 import traceback
@@ -113,6 +114,7 @@ class ardjbot(JabberBot):
 		track['weight'] = 0
 		self.ardj.update_track(track, commit=True)
 		self.broadcast(u'%s changed weight from %s to 0 for %s; #%u @%s' % (self.get_linked_sender(message), old, self.get_linked_title(track), track['id'], track['playlist']))
+		self.skip(message, args)
 
 	@botcmd
 	def undelete(self, message, args):
@@ -123,6 +125,16 @@ class ardjbot(JabberBot):
 		track['weight'] = 1.
 		self.ardj.update_track(track, commit=True)
 		self.broadcast(u'%s changed weight from 0 to 1 for %s; #%u @%s' % (self.get_linked_sender(message), self.get_linked_title(track), track['id'], track['playlist']))
+
+	@botcmd
+	def skip(self, message, args):
+		"skip to next track"
+		cmd = '/usr/bin/killall'
+		if not os.path.exists(cmd):
+			return u'%s is not available.' % cmd
+		if subprocess.Popen([cmd, '-USR1', 'ices']).wait():
+			return u'Could not skip. Is ices running?'
+		return u'OK'
 
 	@botcmd
 	def last(self, message, args):
