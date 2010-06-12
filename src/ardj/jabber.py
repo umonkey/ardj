@@ -267,6 +267,18 @@ class ardjbot(JabberBot):
 				traceback.print_exc()
 				time.sleep(5)
 
+	@botcmd
+	def purge(self, message, args):
+		"erase tracks with zero weight"
+		cur = self.ardj.database.cursor()
+		musicdir = self.ardj.config.get_music_dir()
+		for id, filename in [(row[0], os.path.join(musicdir, row[1].encode('utf-8'))) for row in cur.execute('SELECT id, filename FROM tracks WHERE weight = 0').fetchall()]:
+			if os.path.exists(filename):
+				os.unlink(filename)
+		cur.execute('DELETE FROM tracks WHERE weight = 0')
+		self.ardj.database.commit()
+		return u'OK'
+
 	def get_linked_title(self, track):
 		if not track['artist']:
 			return track['filename']
