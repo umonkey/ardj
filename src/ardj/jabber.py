@@ -111,7 +111,7 @@ class ardjbot(JabberBot):
 			return u'This track is protected (weight=%f), use \'set weight to 0\' if you are sure.' % track.weight
 		track.weight = 0
 		track.save()
-		self.broadcast('%s set weight=0 for track=%u playlist=%s filename=%s' % (message.getFrom().getStripped(), track.id, track.playlist, track.filename))
+		self.broadcast(u'%s set weight=0 for track=%u playlist=%s filename=%s' % (self.get_linked_sender(message), track.id, track.playlist, track.filename))
 
 	@botcmd
 	def undelete(self, message, args):
@@ -120,7 +120,7 @@ class ardjbot(JabberBot):
 		if track.weight == 0:
 			track.weight = 1
 			track.save()
-			self.broadcast('%s set weight=1 for track=%u playlist=%s filename=%s' % (message.getFrom().getStripped(), track.id, track.playlist, track.filename))
+			self.broadcast(u'%s set weight=1 for track=%u playlist=%s filename=%s' % (self.get_linked_sender(message), track.id, track.playlist, track.filename))
 		else:
 			return u'Track %u\'s weight is %f, not quite zero.' % (track.id, track.weight)
 
@@ -159,7 +159,7 @@ class ardjbot(JabberBot):
 	def say(self, message, args):
 		"sends a message to all connected users"
 		if len(args):
-			self.broadcast('%s said: %s' % (message.getFrom().getStripped(), args), True)
+			self.broadcast(u'%s said: %s' % (self.get_linked_sender(message), args), True)
 
 	@botcmd
 	def die(self, message, args):
@@ -183,7 +183,7 @@ class ardjbot(JabberBot):
 			return u'SQL updates must end with a ; to prevent accidents.'
 		self.db.cursor().execute(sql)
 		self.db.commit()
-		self.broadcast('SQL from %s: %s' % (message.getFrom().getStripped(), sql))
+		self.broadcast(u'SQL from %s: %s' % (self.get_linked_sender(message), sql))
 
 	@botcmd
 	def twit(self, message, args):
@@ -192,7 +192,7 @@ class ardjbot(JabberBot):
 			return 'You need to install python-twitter to use this command.'
 		posting = self.twitter.PostUpdate(args)
 		url = 'http://twitter.com/' + posting.GetUser().GetScreenName() + '/status/' + str(posting.GetId())
-		self.broadcast('%s sent <a href="%s">a message</a> to twitter: %s' % (message.getFrom().getStripped(), url, args))
+		self.broadcast(u'%s sent <a href="%s">a message</a> to twitter: %s' % (self.get_linked_sender(message), url, args))
 
 	@botcmd
 	def echo(self, message, args):
@@ -217,7 +217,7 @@ class ardjbot(JabberBot):
 			else: return usage
 			# Get over it:
 			track.save()
-			self.broadcast('%s set %s to %s for track=%u (%s)' % (mess.getFrom().getStripped(), prop, value, track.id, track.filename))
+			self.broadcast(u'%s set %s to %s for track=%u (%s)' % (self.get_linked_sender(mess), prop, value, track.id, track.filename))
 			return None
 		return JabberBot.unknown_command(self, mess, cmd, args)
 
@@ -244,6 +244,10 @@ class ardjbot(JabberBot):
 		else:
 			link = u'<a href="http://www.last.fm/music/%s/_/%s">%s</a>' % (urllib.quote(track['artist'].encode('utf-8')), urllib.quote(track['title'].encode('utf-8')), track['title'])
 		return link + u' by <a href="http://www.last.fm/music/%s">%s</a>' % (urllib.quote(track['artist'].encode('utf-8')), track['artist'])
+
+	def get_linked_sender(self, message):
+		name, host = message.getFrom().getStripped().split('@')
+		return u'<a href="xmpp:%s@%s">%s</a>' % (name, host, name)
 
 def Open(ardj):
 	"""
