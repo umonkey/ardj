@@ -38,7 +38,7 @@ if __name__ == '__main__':
 	# Allow running from sources.
 	if not os.path.abspath(sys.argv[0]).startswith('/usr'):
 		sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(sys.argv[0]))), 'src'))
-		print >>sys.stderr, 'Using modules from %s.' % sys.path[0]
+		# print >>sys.stderr, 'Using modules from %s.' % sys.path[0]
 
 	from ardj import Open
 	ardj = Open()
