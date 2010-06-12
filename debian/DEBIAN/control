@@ -5,7 +5,7 @@ Priority: optional
 Maintainer: Justin Forest <justin.forest@gmail.com>
 Architecture: all
 Essential: no
-Depends: ices, icecast2, python-yaml, python-pyinotify, python-twitter
+Depends: ices, icecast2, python-yaml, python-pyinotify, python-twitter, python-mutagen (>= 1.19)
 Recommends: lastfmsubmitd, sqlite3
 Installed-Size: 1024
 Description: An artificial DJ for your icecast2 based internet radio.
