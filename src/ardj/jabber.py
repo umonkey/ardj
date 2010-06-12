@@ -26,7 +26,7 @@ class ardjbot(JabberBot):
 	def __init__(self, ardj):
 		self.ardj = ardj
 		self.twitter = None
-		self.filetracker = None
+		self.dbtracker = None
 
 		login, password = self.split_login(self.ardj.config.get('jabber/login'))
 		JabberBot.__init__(self, login, password, res=socket.gethostname())
@@ -50,11 +50,11 @@ class ardjbot(JabberBot):
 
 	def on_connected(self):
 		self.status_type = self.DND
-		self.filetracker = notify.monitor([os.path.dirname(self.ardj.config.filename)], self.on_file_changes)
+		self.dbtracker = notify.monitor([self.ardj.database.filename], self.on_file_changes)
 
 	def on_file_changes(self, action, path):
 		try:
-			if path == self.db.filename:
+			if path == self.ardj.database.filename:
 				if 'modified' == action:
 					return self.update_status()
 		except Exception, e:
@@ -62,7 +62,7 @@ class ardjbot(JabberBot):
 			traceback.print_exc()
 
 	def shutdown(self):
-		self.filetracker.stop()
+		self.dbtracker.stop()
 		JabberBot.shutdown(self)
 
 	def update_status(self, onstart=False):
@@ -74,13 +74,13 @@ class ardjbot(JabberBot):
 		if self.ardj.config.get('jabber/status', False):
 			parts = []
 			for k in ('artist', 'title'):
-				if hasattr(track, k):
-					parts.append(getattr(track, k))
+				if track.has_key(k):
+					parts.append(track[k])
 			if not parts:
-				parts.append(track['file'])
+				parts.append(track['filename'])
 			self.status_message = u'♫ %s' % u' — '.join(parts)
 		if self.ardj.config.get('jabber/tunes', True):
-			self.send_tune(dict([(k, getattr(track, k)) for k in ('artist', 'title', 'length', 'filename')]))
+			self.send_tune(track)
 
 	def get_current(self):
 		"""Возвращает имя проигрываемого файла из краткого лога."""
@@ -280,6 +280,11 @@ class ardjbot(JabberBot):
 		cur.execute('DELETE FROM tracks WHERE weight = 0')
 		self.ardj.database.commit()
 		return u'OK'
+
+	@botcmd
+	def sync(self, message, args):
+		"update database (finds new and dead files)"
+		return self.ardj.sync()
 
 	def get_linked_title(self, track):
 		if not track['artist']:

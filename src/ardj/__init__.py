@@ -193,28 +193,6 @@ class ardj:
 		for k in [x for x in saved.keys() if not saved[x]['priority']]:
 			cur.execute('DELETE FROM playlists WHERE id = ?', (saved[k]['id'], ))
 
-	def delete(self, id=None):
-		"""
-		Deletes a track.  If id is not specified, deletes the
-		currently played track.
-		"""
-		pass
-
-	def set(self, attrs):
-		"""
-		Modifies track properties.  Attrs is a dictionary with properties
-		to modify.  If there is no 'id' property, the currently played
-		track is modified.  Updated information is saved to both database
-		and file tags.
-		"""
-		pass
-
-	def update(self):
-		"""
-		Updates the database by scanning files.
-		"""
-		pass
-
 	def close(self):
 		"""
 		Flushes any transactions, closes the database.
@@ -255,8 +233,10 @@ class ardj:
 		for artist, count in cur.execute('SELECT artist, COUNT(*) FROM tracks WHERE weight > 0 GROUP BY artist'):
 			cur.execute('UPDATE tracks SET artist_weight = ? WHERE artist = ?', (1.0 / count, artist, ))
 
-		print >>sys.stderr, 'sync: %u new files, %u dead ones.' % (len(news), len(dead))
+		msg = u'%u files added, %u removed.' % (len(news), len(dead))
+		print >>sys.stderr, 'sync: ' + msg
 		self.database.commit()
+		return msg
 
 	def add_track_from_file(self, filename):
 		"""
