@@ -20,8 +20,7 @@ class ardj:
 		self.scrobbler = scrobbler.Open(self.config)
 
 	def __del__(self):
-		# print >>sys.stderr, 'Shutting down.'
-		self.database.commit()
+		self.close()
 
 	def get_next_track(self, scrobble=True):
 		"""
@@ -197,7 +196,8 @@ class ardj:
 		"""
 		Flushes any transactions, closes the database.
 		"""
-		pass
+		self.database.commit()
+		self.config.close()
 
 	def sync(self):
 		"""

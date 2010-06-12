@@ -80,6 +80,7 @@ if __name__ == '__main__':
 				time.sleep(5)
 		if '--jabber-child' == option:
 			ardj.get_bot().run()
+			ardj.close()
 		if '--next' == option:
 			track = ardj.get_next_track()
 			if track is None:

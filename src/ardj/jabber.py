@@ -263,7 +263,7 @@ class ardjbot(JabberBot):
 		while True:
 			try:
 				self.serve_forever()
-				sys.exit(0)
+				return
 			except Exception, e:
 				print >>sys.stderr, 'Error: %s, restarting in 5 seconds.' % e
 				traceback.print_exc()

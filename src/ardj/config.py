@@ -3,6 +3,8 @@
 import os
 import sys
 
+import notify
+
 try:
 	import yaml
 except ImportError:
@@ -18,16 +20,43 @@ class config:
 				break
 		if not self.filename:
 			raise Exception('Could not find a config file.')
+		self.reload = False
+		self.tracker = None
 		self.folder = os.path.dirname(self.filename)
 		if not os.path.exists(self.folder):
 			os.makedirs(self.folder)
+		self.load()
+
+	def __del__(self):
+		self.close()
+
+	def close(self):
+		if self.tracker:
+			self.tracker.stop()
+			self.tracker = None
+
+	def start_tracking(self):
+		if self.tracker is None:
+			self.tracker = notify.monitor([self.filename], self.on_file_changed)
+
+	def load(self):
 		self.data = yaml.load(open(self.filename, 'r').read())
+		self.reload = False
+
+	def on_file_changed(self, action, path):
+		"""
+		Called by the notify module when the file is changed.
+		"""
+		self.reload = True
 
 	def get(self, path, default=None):
 		"""
 		Returns the value of a config parameter. Path is of the x/y/z form.
 		If there is no such value, default is returned.
 		"""
+		if self.reload:
+			print >>sys.stderr, 'Reloading ' + self.filename
+			self.load()
 		data = self.data
 		for k in path.split('/'):
 			if not k in data:
