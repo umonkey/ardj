@@ -171,7 +171,7 @@ class ardjbot(JabberBot):
 	def select(self, message, args):
 		"low level access to the database"
 		result = u''
-		for row in self.db.cursor().execute(message.getBody()).fetchall():
+		for row in self.ardj.database.cursor().execute(message.getBody()).fetchall():
 			result += u', '.join([unicode(cell) for cell in row]) + u'\n'
 		return result
 
@@ -181,8 +181,8 @@ class ardjbot(JabberBot):
 		sql = 'update ' + args
 		if not sql.endswith(';'):
 			return u'SQL updates must end with a ; to prevent accidents.'
-		self.db.cursor().execute(sql)
-		self.db.commit()
+		self.ardj.database.cursor().execute(sql)
+		self.ardj.database.commit()
 		self.broadcast(u'SQL from %s: %s' % (self.get_linked_sender(message), sql))
 
 	@botcmd
