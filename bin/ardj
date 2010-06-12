@@ -36,6 +36,14 @@ def run(commands, args):
 	sys.exit(1)
 
 if __name__ == '__main__':
+	# Allow running from sources.
+	if not os.path.abspath(sys.argv[0]).startswith('/usr'):
+		sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(sys.argv[0]))), 'src'))
+		print >>sys.stderr, 'Using modules from %s.' % sys.path[0]
+
+	from ardj import Open
+	ardj = Open()
+
 	try:
 		opts, args = getopt.getopt(sys.argv[1:], 'iN:', ['backup', 'config', 'dbconsole', 'jabber', 'jabber-child', 'next', 'quiet', 'reset', 'scrobble', 'stats', 'update'])
 	except getopt.GetoptError:
@@ -99,15 +107,12 @@ if __name__ == '__main__':
 				limit = limit - 1
 			db.db.instance().rollback()
 		if '--reset' == option:
-			import config
-			filename = config.config().get_db_name()
+			filename = ardj.config.get_db_name()
 			if os.path.exists(filename):
 				os.unlink(filename)
 				print 'OK'
 		if '--stats' == option:
-			import db
-			count, length = db.db().get_stats()
-			print '%u tracks, %.1f hours.' % (count, length / 60 / 60)
+			stats = ardj.get_stats()
+			print '%u tracks, %.1f hours.' % (stats['tracks'], stats['seconds'] / 60 / 60)
 		if '--update' == option:
-			from db import db
-			db().update()
+			ardj.sync()

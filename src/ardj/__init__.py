@@ -18,7 +18,7 @@ class ardj:
 		self.scrobbler = scrobbler.Open(self.config)
 
 	def __del__(self):
-		print >>sys.stderr, 'Shutting down.'
+		# print >>sys.stderr, 'Shutting down.'
 		self.database.commit()
 
 	def next(self, scrobble=True):
@@ -238,6 +238,7 @@ class ardj:
 			cur.execute('UPDATE tracks SET artist_weight = ? WHERE artist = ?', (1.0 / count, artist, ))
 
 		print >>sys.stderr, 'sync: %u new files, %u dead ones.' % (len(news), len(dead))
+		self.database.commit()
 
 	def add_track_from_file(self, filename):
 		"""
@@ -324,6 +325,18 @@ class ardj:
 			result = result * artist_weight
 		result = result / ((count or 0) + 1)
 		return result
+
+	def get_stats(self):
+		"""
+		Returns information about the database in the form of a dictionary
+		with the following keys: tracks, seconds.
+		"""
+		count, length = 0, 0
+		for row in self.database.cursor().execute('SELECT length FROM tracks WHERE weight > 0').fetchall():
+			count = count + 1
+			if row[0] is not None:
+				length = length + row[0]
+		return { 'tracks': count, 'seconds': length }
 
 def Open():
     return ardj()
