@@ -56,6 +56,7 @@ class ardj:
 			if scrobble and self.scrobbler:
 				self.scrobbler.submit(track)
 			track['filepath'] = os.path.join(self.config.get_music_dir(), track['filename']).encode('utf-8')
+			self.database.commit() # без этого параллельные обращения будут висеть
 		return track
 
 	def get_random_track(self, playlist=None, repeat=None, skip_artists=None, cur=None):
