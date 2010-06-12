@@ -216,18 +216,23 @@ class ardj:
 		# Файлы, существующие в базе данных.
 		indb = [row[0].encode('utf-8') for row in cur.execute('SELECT filename FROM tracks').fetchall()]
 
+		news = [x for x in infs if x not in indb]
+		dead = [x for x in indb if x not in infs]
+
 		# Удаляем из базы данных несуществующие файлы.
-		for filename in [x for x in indb if x not in infs]:
+		for filename in dead:
 			print >>sys.stderr, 'no longer exists: ' + filename
 			cur.execute('DELETE FROM tracks WHERE filename = ?', (filename.decode('utf-8'), ))
 
 		# Добавляем новые файлы.
-		for filename in [x for x in infs if x not in indb]:
+		for filename in news:
 			self.add_track_from_file(filename)
 
 		# Обновление статистики исполнителей.
 		for artist, count in cur.execute('SELECT artist, COUNT(*) FROM tracks WHERE weight > 0 GROUP BY artist'):
 			cur.execute('UPDATE tracks SET artist_weight = ? WHERE artist = ?', (1.0 / count, artist, ))
+
+		print >>sys.stderr, 'sync: %u new files, %u dead ones.' % (len(news), len(dead))
 
 	def add_track_from_file(self, filename):
 		"""
