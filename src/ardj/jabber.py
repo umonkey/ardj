@@ -189,8 +189,16 @@ class ardjbot(JabberBot):
 	def twit(self, message, args):
 		"sends a message to twitter"
 		if not have_twitter:
-			return 'You need to install python-twitter to use this command.'
-		posting = self.twitter.PostUpdate(args)
+			return u'You need to install <a href="http://code.google.com/p/python-twitter/">python-twitter</a> to use this command.'
+		username, password = self.ardj.config.get('twitter/name', ''), self.ardj.config.get('twitter/password', '')
+		if not username or not password:
+			return u'Twitter is not enabled in the config file.'
+		try:
+			api = twitter.Api(username=username, password=password)
+			api.SetXTwitterHeaders(client='ardj', url='http://ardj.googlecode.com/', version='1.0')
+		except Exception, e:
+			return u'Could not initialize Twitter API: %s' % e
+		posting = api.PostUpdate(args)
 		url = 'http://twitter.com/' + posting.GetUser().GetScreenName() + '/status/' + str(posting.GetId())
 		self.broadcast(u'%s sent <a href="%s">a message</a> to twitter: %s' % (self.get_linked_sender(message), url, args))
 
