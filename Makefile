@@ -9,3 +9,10 @@ deb:
 
 install: deb
 	sudo dpkg -i ardj.deb
+
+back:
+	scp tmradio.local:/usr/lib/python2.6/ardj/*.py src/ardj/
+
+copy: deb
+	scp ardj.deb tmradio.local:
+	ssh -t tmradio.local 'sudo dpkg -i ardj.deb'
