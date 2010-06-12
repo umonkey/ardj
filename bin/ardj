@@ -72,17 +72,16 @@ if __name__ == '__main__':
 		if '--config' == option:
 			run([os.getenv('EDITOR'), 'editor'], [ardj.config.filename])
 		if '--jabber' == option:
-			import subprocess, time, log
+			import subprocess, time
 			while True:
 				if not subprocess.Popen([sys.argv[0], '--jabber-child']).wait():
 					sys.exit(0)
-				log.log('Unclean shutdown, restarting in 5 seconds.')
+				print >>sys.stderr, 'Unclean shutdown, restarting in 5 seconds.'
 				time.sleep(5)
 		if '--jabber-child' == option:
-			from jabber import run
-			run()
+			ardj.get_bot().run()
 		if '--next' == option:
-			track = ardj.next()
+			track = ardj.get_next_track()
 			if track is None:
 				print >>sys.stderr, 'Could not find a track to play.'
 				sys.exit(1)

@@ -11,6 +11,8 @@ import ardj.database as database
 import ardj.scrobbler as scrobbler
 import ardj.tags as tags
 
+have_jabber = False
+
 class ardj:
 	def __init__(self):
 		self.config = config.Open()
@@ -21,7 +23,7 @@ class ardj:
 		# print >>sys.stderr, 'Shutting down.'
 		self.database.commit()
 
-	def next(self, scrobble=True):
+	def get_next_track(self, scrobble=True):
 		"""
 		Returns information about the next track. The track is chosen from the
 		active playlists. If nothing could be chosen, a random track is picked
@@ -58,6 +60,14 @@ class ardj:
 			track['filepath'] = os.path.join(self.config.get_music_dir(), track['filename']).encode('utf-8')
 			self.database.commit() # без этого параллельные обращения будут висеть
 		return track
+
+	def get_last_track(self):
+		"""
+		Returns a dictionary that describes the last played track.
+		"""
+		row = self.database.cursor().execute('SELECT id, playlist, filename, artist, title, length, artist_weight, weight, count, last_played FROM tracks ORDER BY last_played DESC LIMIT 1').fetchone()
+		if row is not None:
+			return { 'id': row[0], 'playlist': row[1], 'filename': row[2], 'artist': row[3], 'title': row[4], 'length': row[5], 'artist_weight': row[6], 'weight': row[7], 'count': row[8], 'last_played': row[9] }
 
 	def get_random_track(self, playlist=None, repeat=None, skip_artists=None, cur=None):
 		"""
@@ -337,6 +347,16 @@ class ardj:
 			if row[0] is not None:
 				length = length + row[0]
 		return { 'tracks': count, 'seconds': length }
+
+	def get_bot(self):
+		"""
+		Returns an instance of the jabber bot.
+		"""
+		global have_jabber
+		if not have_jabber:
+			import ardj.jabber as jabber
+			have_jabber = True
+		return jabber.Open(self)
 
 def Open():
     return ardj()

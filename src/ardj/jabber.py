@@ -2,43 +2,39 @@
 
 import os
 import re
+import socket # for gethostname()
 import sys
+import time
 import traceback
+import urllib
 
-import db
-from config import config
 from jabberbot import JabberBot, botcmd
 import notify
 import tags
-from log import log
 
-have_twitter = False
+def log(msg):
+	print >>sys.stderr, msg
+
 try:
 	import twitter
 	have_twitter = True
 except ImportError:
-	print >>sys.stderr, 'Install python-twitter to get additional features.'
+	have_twitter = False
 
 class ardjbot(JabberBot):
-	def __init__(self):
-		self.config = config()
-		self.db = db.db()
-		self.users = self.config.get('jabber/access', [])
-		self.np_status = self.config.get('jabber/status', True)
-		self.np_tunes = self.config.get('jabber/tunes', True)
-		self.log_notifier = None
+	def __init__(self, ardj):
+		self.ardj = ardj
 		self.twitter = None
 		self.filetracker = None
-		self.musicdir_monitor = None
-		if have_twitter:
-			try:
-				self.twitter = twitter.Api(username=self.config.get('twitter/name'), password=self.config.get('twitter/password'))
-				self.twitter.SetXTwitterHeaders(client='ardj', url='http://ardj.googlecode.com/', version='1.0')
-			except Exception, e:
-				log('Twitter: %s' % e)
 
-		login, password = self.split_login(self.config.get('jabber/login'))
-		JabberBot.__init__(self, login, password)
+		login, password = self.split_login(self.ardj.config.get('jabber/login'))
+		JabberBot.__init__(self, login, password, res=socket.gethostname())
+
+	def get_users(self):
+		"""
+		Returns the list of authorized jids.
+		"""
+		return self.ardj.config.get('jabber/access', [])
 
 	def split_login(self, uri):
 		name, password = uri.split('@', 1)[0].split(':', 1)
@@ -53,8 +49,7 @@ class ardjbot(JabberBot):
 
 	def on_connected(self):
 		self.status_type = self.DND
-		self.filetracker = notify.monitor([os.path.dirname(self.config.filename)], self.on_file_changes)
-		self.musicdir_monitor = db.track.monitor()
+		self.filetracker = notify.monitor([os.path.dirname(self.ardj.config.filename)], self.on_file_changes)
 
 	def on_file_changes(self, action, path):
 		try:
@@ -67,8 +62,6 @@ class ardjbot(JabberBot):
 
 	def shutdown(self):
 		self.filetracker.stop()
-		if self.musicdir_monitor is not None:
-			self.musicdir_monitor.stop()
 		JabberBot.shutdown(self)
 
 	def update_status(self, onstart=False):
@@ -77,7 +70,7 @@ class ardjbot(JabberBot):
 		Called by inotify, if available.
 		"""
 		track = self.get_current_track()
-		if self.np_status:
+		if self.ardj.config.get('jabber/status', False):
 			parts = []
 			for k in ('artist', 'title'):
 				if hasattr(track, k):
@@ -85,7 +78,7 @@ class ardjbot(JabberBot):
 			if not parts:
 				parts.append(track['file'])
 			self.status_message = u'♫ %s' % u' — '.join(parts)
-		if self.np_tunes:
+		if self.ardj.config.get('jabber/tunes', True):
 			self.send_tune(dict([(k, getattr(track, k)) for k in ('artist', 'title', 'length', 'filename')]))
 
 	def get_current(self):
@@ -96,11 +89,12 @@ class ardjbot(JabberBot):
 		return db.track.get_last_tracks(1)[0]
 
 	def check_access(self, message):
-		return message.getFrom().split('/')[0] in self.users
+		return message.getFrom().split('/')[0] in self.get_users()
 
 	def callback_message(self, conn, mess):
 		if mess.getType() == 'chat':
-			if mess.getFrom().getStripped() not in self.users:
+			if mess.getFrom().getStripped() not in self.get_users():
+				print >>sys.stderr, mess.getFrom().getStripped(), self.get_users()
 				return self.send_simple_reply(mess, 'No access for you.')
 		return JabberBot.callback_message(self, conn, mess)
 
@@ -130,10 +124,17 @@ class ardjbot(JabberBot):
 	@botcmd
 	def last(self, message, args):
 		"show last 10 played tracks"
-		tracks = db.track.get_last_tracks()
-		if not tracks:
+		rows = [{ 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'playlist': row[4] } for row in self.ardj.database.cursor().execute('SELECT id, filename, artist, title, playlist FROM tracks ORDER BY last_played DESC LIMIT 10').fetchall()]
+		if not rows:
 			return u'Nothing was played yet.'
-		return u'Last played tracks:\n' + u'\n'.join(['%5u. %s (playlist=%s, weight=%f)' % (t.id, t.filename, t.playlist, t.weight) for t in tracks])
+		message = u'Last played tracks:<br/>\n'
+		for row in rows:
+			if row['artist'] and row['title']:
+				link = '<a href="http://www.last.fm/music/%s/_/%s">%s</a> by <a href="http://www.last.fm/music/%s">%s</a>' % (urllib.quote(row['artist'].encode('utf-8')), urllib.quote(row['title'].encode('utf-8')), row['title'], urllib.quote(row['artist'].encode('utf-8')), row['artist'])
+			else:
+				link = row['filename']
+			message += u'%s — @%s, #%u<br/>\n' % (link, row['playlist'], row['id'])
+		return message
 
 	@botcmd
 	def show(self, message, args):
@@ -222,18 +223,20 @@ class ardjbot(JabberBot):
 			return []
 		return args.split(u' ')
 
-def run():
-	try:
-		bot = ardjbot()
-	except Exception, e:
-		log(e)
-		traceback.print_exc()
-		sys.exit(1)
+	def run(self):
+		while True:
+			try:
+				self.serve_forever()
+				sys.exit(0)
+			except Exception, e:
+				print >>sys.stderr, 'Error: %s, restarting in 5 seconds.' % e
+				traceback.print_exc()
+				time.sleep(5)
 
-	while True:
-		try:
-			bot.serve_forever()
-			sys.exit(0)
-		except Exception, e:
-			log('Error: %s, restarting' % e)
-			traceback.print_exc()
+def Open(ardj):
+	"""
+	Returns a new bot instance.
+	"""
+	return ardjbot(ardj)
+
+__all__ = ['Open']

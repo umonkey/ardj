@@ -46,6 +46,10 @@ class database:
 			cur.execute('CREATE INDEX IF NOT EXISTS idx_tracks_last ON tracks (last_played)')
 			cur.execute('CREATE INDEX IF NOT EXISTS idx_tracks_count ON tracks (count)')
 
+	def __del__(self):
+		self.commit()
+		print >>sys.stderr, 'Database closed.'
+
 	def sqlite_randomize(self, id, artist_weight, weight, count):
 		"""
 		The randomize() function for SQLite.

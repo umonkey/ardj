@@ -34,7 +34,7 @@ def ices_get_next():
 	"""
 	global ardj, last_track
 	# print >>sys.stderr, 'ices/ardj: requesting next track.'
-	last_track = ardj.next()
+	last_track = ardj.get_next_track()
 	return last_track['filepath']
 
 def ices_get_metadata():
