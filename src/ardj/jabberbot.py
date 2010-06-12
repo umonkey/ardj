@@ -400,7 +400,7 @@ class JabberBot(object):
         # In group chat, the bot should silently ignore commands it
         # doesn't understand or aren't handled by unknown_command().
         if mess.getType() == 'groupchat': return None
-        return 'Unknown command: "%s". Type "help" for available commands.<b>blubb!</b>' % cmd
+        return 'Unknown command: "%s". Type "help" for available commands.' % cmd
 
     def top_of_help_message(self):
         """Returns a string that forms the top of the help message
