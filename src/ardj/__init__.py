@@ -45,6 +45,10 @@ class ardj:
 			track = self.get_random_track(name, repeat=playlists[name]['repeat'], skip_artists=skip, cur=cur)
 			if track is not None:
 				break
+		if track is None:
+			track = self.get_random_track(cur=cur)
+			if track is not None:
+				print >>sys.stderr, 'warning: no tracks in playlists, picked a totally random one.'
 		if track is not None:
 			track['count'] += 1
 			track['last_played'] = int(time.time())
