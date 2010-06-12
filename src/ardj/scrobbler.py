@@ -8,7 +8,6 @@ try:
 	import lastfm.client
 	have_cli = True
 except ImportError:
-	print >>sys.stderr, 'scrobbler: disabled, please install lastfmsubmitd.'
 	have_cli = False
 
 class client:
@@ -54,4 +53,9 @@ class client:
 				print >>sys.stderr, (u'scrobbler: no %s in %s' % (e.args[0], track)).encode('utf-8')
 
 def Open(config):
-	return have_cli and client(config)
+	if not config.get('lastfm/enable', False):
+		return None
+	if not have_cli:
+		print >>sys.stderr, 'Last.fm scrobbler is not available: please install lastfmsubmitd.'
+		return None
+	return client(config)
