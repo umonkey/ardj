@@ -299,7 +299,7 @@ class ardjbot(JabberBot):
 		"reload ices config and playlist scripts"
 		try:
 			self.send_signal('HUP', 'ices')
-			return u'ok'
+			return u'Ices will be reinitialized when the track changes.'
 		except Exception, e:
 			return unicode(e)
 
