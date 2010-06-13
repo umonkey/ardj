@@ -151,7 +151,8 @@ class ardjbot(JabberBot):
 		track['weight'] = 0
 		self.ardj.update_track(track)
 		self.broadcast(u'%s changed weight from %s to 0 for %s; #%u @%s' % (self.get_linked_sender(message), old, self.get_linked_title(track), track['id'], track['playlist']))
-		self.skip(message, args)
+		if not args:
+			self.skip(message, args)
 
 	@botcmd
 	def undelete(self, message, args):
