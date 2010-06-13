@@ -162,12 +162,11 @@ class ardjbot(JabberBot):
 	@botcmd
 	def skip(self, message, args):
 		"skip to next track"
-		cmd = '/usr/bin/killall'
-		if not os.path.exists(cmd):
-			return u'%s is not available.' % cmd
-		if subprocess.Popen([cmd, '-USR1', 'ices']).wait():
-			return u'Could not skip. Is ices running?'
-		return u'OK'
+		try:
+			self.send_signal('USR1', 'ices')
+			return u'ok'
+		except Exception, e:
+			return unicode(e)
 
 	@botcmd
 	def last(self, message, args):
@@ -295,9 +294,29 @@ class ardjbot(JabberBot):
 			link = u'<a href="http://www.last.fm/music/%s/_/%s">%s</a>' % (urllib.quote(track['artist'].encode('utf-8')), urllib.quote(track['title'].encode('utf-8')), track['title'])
 		return link + u' by <a href="http://www.last.fm/music/%s">%s</a>' % (urllib.quote(track['artist'].encode('utf-8')), track['artist'])
 
+	@botcmd
+	def reload(self, message, args):
+		"reload ices config and playlist scripts"
+		try:
+			self.send_signal('HUP', 'ices')
+			return u'ok'
+		except Exception, e:
+			return unicode(e)
+
 	def get_linked_sender(self, message):
 		name, host = message.getFrom().getStripped().split('@')
 		return u'<a href="xmpp:%s@%s">%s</a>' % (name, host, name)
+
+	def send_signal(self, sig, prog):
+		"""
+		Sends a signal to the specified program. Returns True on success.
+		"""
+		cmd = '/usr/bin/killall'
+		if not os.path.exists(cmd):
+			raise Exception(u'%s is not available.' % cmd)
+		if subprocess.Popen([cmd, '-' + sig, prog]).wait():
+			raise Exception(u'Could not skip. Is '+ prog +' running?')
+		return True
 
 def Open(ardj):
 	"""
