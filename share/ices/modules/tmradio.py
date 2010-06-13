@@ -23,8 +23,9 @@ def ices_shutdown():
 	Return 1 if ok, 0 if something went wrong.
 	"""
 	global ardj
-	print >>sys.stderr, 'ices/ardj: shutting down.'
-	ardj.close()
+    if ardj:
+        print >>sys.stderr, 'ices/ardj: shutting down.'
+        ardj.close()
 	return 1
 
 def ices_get_next():
