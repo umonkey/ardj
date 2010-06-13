@@ -57,6 +57,10 @@ class ardjbot(JabberBot):
 			if path == self.ardj.database.filename:
 				if 'modified' == action:
 					return self.update_status()
+		except IOError, e:
+			log('IOError: %s, shutting down.' % e)
+			self.shutdown()
+			sys.exit(1)
 		except Exception, e:
 			log('Exception in inotify handler: %s' % e)
 			traceback.print_exc()
@@ -302,6 +306,22 @@ class ardjbot(JabberBot):
 			return u'Ices will be reinitialized when the track changes.'
 		except Exception, e:
 			return unicode(e)
+
+	@botcmd
+	def rocks(self, message, args):
+		"express your love for the current track"
+		track = self.get_current_track()
+		track['weight'] += 0.5
+		self.ardj.update_track(track)
+		self.broadcast(u'%s just liked %s (weight=%s)' % (self.get_linked_sender(message), self.get_linked_title(track), track['weight']))
+
+	@botcmd
+	def sucks(self, message, args):
+		"express your hate for the current track"
+		track = self.get_current_track()
+		track['weight'] = max(0, track['weight'] - 0.5)
+		self.ardj.update_track(track)
+		self.broadcast(u'%s just hated %s (weight=%s)' % (self.get_linked_sender(message), self.get_linked_title(track), track['weight']))
 
 	def get_linked_sender(self, message):
 		name, host = message.getFrom().getStripped().split('@')
