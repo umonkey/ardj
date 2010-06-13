@@ -38,7 +38,7 @@ class ardj:
 		"""
 		cur = self.database.cursor()
 		# Last played artist names.
-		skip = [row[0] for row in cur.execute('SELECT DISTINCT artist FROM tracks WHERE artist IS NOT NULL AND last_played IS NOT NULL ORDER BY last_played DESC LIMIT ' + str(self.config.get('dupes', 5))).fetchall()]
+		skip = self.get_last_artists(cur=cur)
 
 		track = None
 		playlists = self.get_active_playlists()
@@ -59,6 +59,13 @@ class ardj:
 			track['filepath'] = os.path.join(self.config.get_music_dir(), track['filename']).encode('utf-8')
 			self.database.commit() # без этого параллельные обращения будут висеть
 		return track
+
+	def get_last_artists(self, cur=None):
+		"""
+		Returns the names of last played artists.
+		"""
+		cur = cur or self.database.cursor()
+		return [row[0] for row in cur.execute('SELECT DISTINCT artist FROM tracks WHERE artist IS NOT NULL AND last_played IS NOT NULL ORDER BY last_played DESC LIMIT ' + str(self.config.get('dupes', 5))).fetchall()]
 
 	def get_last_track(self):
 		"""
