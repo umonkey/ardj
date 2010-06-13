@@ -283,7 +283,7 @@ class ardjbot(JabberBot):
 				os.unlink(filename)
 		cur.execute('DELETE FROM tracks WHERE weight = 0')
 		self.ardj.database.commit()
-		return u'OK'
+		return u'ok'
 
 	@botcmd
 	def sync(self, message, args):
@@ -296,7 +296,7 @@ class ardjbot(JabberBot):
 		elif not track['title']:
 			link = os.path.basename(track['filename'])
 		else:
-			link = u'<a href="http://www.last.fm/music/%s/_/%s">%s</a>' % (urllib.quote(track['artist'].encode('utf-8')), urllib.quote(track['title'].encode('utf-8')), track['title'])
+			link = u'"<a href="http://www.last.fm/music/%s/_/%s">%s</a>"' % (urllib.quote(track['artist'].encode('utf-8')), urllib.quote(track['title'].encode('utf-8')), track['title'])
 		return link + u' by <a href="http://www.last.fm/music/%s">%s</a>' % (urllib.quote(track['artist'].encode('utf-8')), track['artist'])
 
 	@botcmd
