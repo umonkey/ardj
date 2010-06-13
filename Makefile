@@ -25,7 +25,7 @@ back:
 
 copy: deb
 	scp ardj-${VERSION}.deb tmradio.local:
-	ssh -t tmradio.local 'sudo dpkg -i ardj-${VERSION}.deb'
+	ssh -t tmradio.local 'sudo dpkg -i ardj-${VERSION}.deb; rm -f ardj-*.deb'
 
 clean:
 	rm -rf *deb *zip
