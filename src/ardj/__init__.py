@@ -65,7 +65,7 @@ class ardj:
 		Returns the names of last played artists.
 		"""
 		cur = cur or self.database.cursor()
-		return [row[0] for row in cur.execute('SELECT DISTINCT artist FROM tracks WHERE artist IS NOT NULL AND last_played IS NOT NULL ORDER BY last_played DESC LIMIT ' + str(self.config.get('dupes', 5))).fetchall()]
+		return [row[0] for row in cur.execute('SELECT artist FROM tracks WHERE artist IS NOT NULL AND last_played IS NOT NULL ORDER BY last_played DESC LIMIT ' + str(self.config.get('dupes', 5))).fetchall()]
 
 	def get_last_track(self):
 		"""
