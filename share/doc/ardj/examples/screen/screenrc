@@ -1,9 +1,0 @@
-# Screen script for ardj. To run from cron use this syntax:
-#
-#   @reboot /usr/share/doc/ardj/examples/screen/screen.sh
-#
-# More info at:
-# http://www.plouj.com/blog/2008/03/31/howto-run-rtorrent-from-cron-inside-screen/
-
-screen -t jabber /usr/bin/ardj --jabber
-screen -t ices /bin/sh /usr/share/doc/ardj/examples/screen/ices-runner.sh

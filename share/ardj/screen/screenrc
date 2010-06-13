@@ -1,0 +1,2 @@
+screen -t jabber /usr/bin/ardj --jabber
+screen -t ices /bin/sh /usr/share/ardj/screen/ices-runner.sh
