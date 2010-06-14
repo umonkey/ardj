@@ -27,6 +27,7 @@ class ardjbot(JabberBot):
 		self.ardj = ardj
 		self.twitter = None
 		self.dbtracker = None
+		self.pidfile = '/tmp/ardj-jabber.pid'
 
 		login, password = self.split_login(self.ardj.config.get('jabber/login'))
 		JabberBot.__init__(self, login, password, res=socket.gethostname())
@@ -51,6 +52,11 @@ class ardjbot(JabberBot):
 	def on_connected(self):
 		self.status_type = self.DND
 		self.dbtracker = notify.monitor([self.ardj.database.filename], self.on_file_changes)
+		if self.pidfile:
+			try:
+				open(self.pidfile, 'w').write(str(os.getpid()))
+			except IOError, e:
+				print >>sys.stderr, 'Could not write to %s: %s' % (self.pidfile, e)
 
 	def on_file_changes(self, action, path):
 		try:
@@ -68,6 +74,8 @@ class ardjbot(JabberBot):
 	def shutdown(self):
 		self.dbtracker.stop()
 		JabberBot.shutdown(self)
+		if self.pidfile and os.path.exists(self.pidfile):
+			os.unlink(self.pidfile)
 
 	def update_status(self, onstart=False):
 		"""
@@ -76,13 +84,12 @@ class ardjbot(JabberBot):
 		"""
 		track = self.get_current_track()
 		if self.ardj.config.get('jabber/status', False):
-			parts = []
-			for k in ('artist', 'title'):
-				if track.has_key(k):
-					parts.append(track[k])
-			if not parts:
-				parts.append(track['filename'])
-			self.status_message = u'♫ %s' % u' — '.join(parts)
+			if track.has_key('artist') and track.has_key('title'):
+				status = u'«%s» by %s' % (track['title'], track['artist'])
+			else:
+				status = os.path.basename(track['filename'])
+			status += u' — #' + unicode(track['id'])
+			self.status_message = status
 		if self.ardj.config.get('jabber/tunes', True):
 			self.send_tune(track)
 
@@ -323,6 +330,18 @@ class ardjbot(JabberBot):
 		track['weight'] = max(0, track['weight'] - 0.5)
 		self.ardj.update_track(track)
 		self.broadcast(u'%s just hated %s (weight=%s)' % (self.get_linked_sender(message), self.get_linked_title(track), track['weight']))
+
+	@botcmd
+	def shitlist(self, message, args):
+		"list tracks with zero weight"
+		tracks = [{ 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'playlist': row[4] } for row in self.ardj.database.cursor().execute('SELECT id, filename, artist, title, playlist FROM tracks WHERE weight = 0 ORDER BY title, artist').fetchall()]
+		if not tracks:
+			return u'The shitlist is empty.'
+		message = u'The shitlist:'
+		for track in tracks:
+			message += u'\n<br/>%s — #%u @%s' % (self.get_linked_title(track), track['id'], track['playlist'])
+		message += u'\n<br/>Use the "purge" command to erase these tracks.'
+		return message
 
 	def get_linked_sender(self, message):
 		name, host = message.getFrom().getStripped().split('@')
