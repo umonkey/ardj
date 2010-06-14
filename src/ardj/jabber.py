@@ -337,7 +337,7 @@ class ardjbot(JabberBot):
 		tracks = [{ 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'playlist': row[4] } for row in self.ardj.database.cursor().execute('SELECT id, filename, artist, title, playlist FROM tracks WHERE weight = 0 ORDER BY title, artist').fetchall()]
 		if not tracks:
 			return u'The shitlist is empty.'
-		message = u'The shitlist:'
+		message = u'The shitlist has %u items:' % len(tracks)
 		for track in tracks:
 			message += u'\n<br/>%s — #%u @%s' % (self.get_linked_title(track), track['id'], track['playlist'])
 		message += u'\n<br/>Use the "purge" command to erase these tracks.'
