@@ -41,9 +41,8 @@ class ardj:
 		skip = self.get_last_artists(cur=cur)
 
 		track = None
-		playlists = self.get_active_playlists()
-		for name in playlists:
-			track = self.get_random_track(name, repeat=playlists[name]['repeat'], skip_artists=skip, cur=cur)
+		for playlist in self.get_active_playlists():
+			track = self.get_random_track(playlist['name'], repeat=playlist['repeat'], skip_artists=skip, cur=cur)
 			if track is not None:
 				break
 		if track is None:
@@ -134,30 +133,35 @@ class ardj:
 		"""
 		Returns information about all known playlists.
 		"""
-		return dict([(row[0] or 'playlist-' + str(row[1]), { 'id': row[1], 'priority': row[2], 'repeat': row[3], 'delay': row[4], 'hours': row[5] and [int(x) for x in row[5].split(',')] or None, 'days': row[6] and [int(x) for x in row[6].split(',')] or None, 'last_played': row[7] }) for row in self.database.cursor().execute('SELECT name, id, priority, repeat, delay, hours, days, last_played FROM playlists').fetchall()])
+		return [{ 'name': row[0] or 'playlist-' + str(row[1]), 'id': row[1], 'priority': row[2], 'repeat': row[3], 'delay': row[4], 'hours': row[5] and [int(x) for x in row[5].split(',')] or None, 'days': row[6] and [int(x) for x in row[6].split(',')] or None, 'last_played': row[7] } for row in self.database.cursor().execute('SELECT name, id, priority, repeat, delay, hours, days, last_played FROM playlists').fetchall()]
 
-	def get_active_playlists(self):
+	def explain_playlists(self):
+		self.get_active_playlists(explain=True)
+
+	def get_active_playlists(self, explain=False):
 		"""
 		Returns a dictionary with currently active playlists.
 		"""
 		def is_active(playlist):
 			if not playlist['priority']:
+				if explain: print '%s: zero priority' % playlist['name']
 				return False
 			if playlist['delay'] and playlist['last_played'] and playlist['delay'] * 60 + playlist['last_played'] > int(time.time()):
+				if explain: print '%s: delayed' % playlist['name']
 				return False
 			if playlist['hours']:
-				if '%u' % int(time.strftime('%H')) not in playlist['hours']:
+				now = int(time.strftime('%H'))
+				if now not in playlist['hours']:
+					if explain: print '%s: wrong hour (%s vs %s)' % (playlist['name'], now, playlist['hours'])
 					return False
 			if playlist['days']:
-				day = time.strftime('%w') or '7'
+				day = int(time.strftime('%w')) or 7
 				if day not in playlist['days']:
+					if explain: print '%s: wrong day (%s vs %s)' % (playlist['name'], day, playlist['days'])
 					return False
+			if explain: print '%s: ready' % playlist['name']
 			return True
-		saved = self.get_playlists()
-		for k in saved.keys():
-			if not is_active(saved[k]):
-				del(saved[k])
-		return saved
+		return [p for p in self.get_playlists() if is_active(p)]
 
 	def update_playlists(self):
 		"""
