@@ -319,7 +319,7 @@ class ardjbot(JabberBot):
 	def rocks(self, message, args):
 		"express your love for the current track"
 		track = self.get_current_track()
-		track['weight'] += 0.5
+		track['weight'] *= 1.25
 		self.ardj.update_track(track)
 		self.broadcast(u'%s just liked %s (weight=%s)' % (self.get_linked_sender(message), self.get_linked_title(track), track['weight']))
 
@@ -327,7 +327,9 @@ class ardjbot(JabberBot):
 	def sucks(self, message, args):
 		"express your hate for the current track"
 		track = self.get_current_track()
-		track['weight'] = max(0, track['weight'] - 0.5)
+		if not track['weight']:
+			return u'This track sucks already.'
+		track['weight'] *= 0.8
 		self.ardj.update_track(track)
 		self.broadcast(u'%s just hated %s (weight=%s)' % (self.get_linked_sender(message), self.get_linked_title(track), track['weight']))
 
