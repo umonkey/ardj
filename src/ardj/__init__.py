@@ -52,6 +52,7 @@ class ardj:
 		if track is not None:
 			track['count'] += 1
 			track['last_played'] = int(time.time())
+			track = self.check_track_conditions(track)
 			self.update_track(track)
 			if scrobble and self.scrobbler:
 				self.scrobbler.submit(track)
@@ -59,6 +60,26 @@ class ardj:
 			cur.execute('UPDATE playlists SET last_played = ? WHERE name = ?', (int(time.time()), track['playlist']))
 			self.database.commit() # без этого параллельные обращения будут висеть
 		return track
+
+	def check_track_conditions(self, track):
+		"""
+		Updates track information according to various conditions. Currently can
+		only move it to another playlist when play count reaches the limit for
+		the current playlist; the target playlist must be specified in current
+		playlist's "on_repeat_move_to" property.
+		"""
+		playlist = self.get_playlist_by_name(track['playlist'])
+		if playlist:
+			if playlist.has_key('repeat') and playlist['repeat'] == track['count']:
+				if playlist.has_key('on_repeat_move_to'):
+					track['playlist'] = playlist['on_repeat_move_to']
+		return track
+
+	def get_playlist_by_name(self, name):
+		for playlist in self.get_playlists():
+			if name == playlist['name']:
+				return playlist
+		return None
 
 	def get_last_artists(self, cur=None):
 		"""
