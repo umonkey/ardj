@@ -56,6 +56,7 @@ class ardj:
 			if scrobble and self.scrobbler:
 				self.scrobbler.submit(track)
 			track['filepath'] = os.path.join(self.config.get_music_dir(), track['filename']).encode('utf-8')
+			cur.execute('UPDATE playlists SET last_played = ? WHERE name = ?', (int(time.time()), track['playlist']))
 			self.database.commit() # без этого параллельные обращения будут висеть
 		return track
 
