@@ -155,7 +155,7 @@ class ardj:
 		"""
 		Returns information about all known playlists.
 		"""
-		return [{ 'name': row[0] or 'playlist-' + str(row[1]), 'id': row[1], 'priority': row[2], 'repeat': row[3], 'delay': row[4], 'hours': row[5] and [int(x) for x in row[5].split(',')] or None, 'days': row[6] and [int(x) for x in row[6].split(',')] or None, 'last_played': row[7] } for row in self.database.cursor().execute('SELECT name, id, priority, repeat, delay, hours, days, last_played FROM playlists').fetchall()]
+		return [{ 'name': row[0] or 'playlist-' + str(row[1]), 'id': row[1], 'priority': row[2], 'repeat': row[3], 'delay': row[4], 'hours': row[5] and [int(x) for x in row[5].split(',')] or None, 'days': row[6] and [int(x) for x in row[6].split(',')] or None, 'last_played': row[7] } for row in self.database.cursor().execute('SELECT name, id, priority, repeat, delay, hours, days, last_played FROM playlists ORDER BY priority DESC').fetchall()]
 
 	def explain_playlists(self):
 		self.get_active_playlists(explain=True)
@@ -185,14 +185,14 @@ class ardj:
 			return True
 		return [p for p in self.get_playlists() if is_active(p)]
 
-	def update_playlists(self):
+	def update_playlists(self, cur=None):
 		"""
 		Reads playlists.yaml from the files folder and updates the playlists table.
 		"""
-		cur = self.database.cursor()
+		cur = cur or self.database.cursor()
 		cur.execute('UPDATE playlists SET priority = 0')
 
-		saved = self.get_playlists()
+		saved = dict([(x['name'], x) for x in self.get_playlists()])
 
 		# Сбрасываем приоритеты, чтобы потом удалить лишние плейтисты.
 		for k in saved.keys():
@@ -265,6 +265,8 @@ class ardj:
 		# Обновление статистики исполнителей.
 		for artist, count in cur.execute('SELECT artist, COUNT(*) FROM tracks WHERE weight > 0 GROUP BY artist'):
 			cur.execute('UPDATE tracks SET artist_weight = ? WHERE artist = ?', (1.0 / count, artist, ))
+
+		self.update_playlists(cur=cur)
 
 		msg = u'%u files added, %u removed.' % (len(news), len(dead))
 		print >>sys.stderr, 'sync: ' + msg
