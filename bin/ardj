@@ -79,8 +79,9 @@ if __name__ == '__main__':
 				print >>sys.stderr, 'Unclean shutdown, restarting in 5 seconds.'
 				time.sleep(5)
 		if '--jabber-child' == option:
-			ardj.get_bot().run()
+			ret = ardj.get_bot().run()
 			ardj.close()
+			sys.exit(ret)
 		if '--next' == option:
 			track = ardj.get_next_track()
 			if track is None:

@@ -28,6 +28,7 @@ class ardjbot(JabberBot):
 		self.twitter = None
 		self.dbtracker = None
 		self.pidfile = '/tmp/ardj-jabber.pid'
+		self.rc = 0
 
 		login, password = self.split_login(self.ardj.config.get('jabber/login'))
 		JabberBot.__init__(self, login, password, res=socket.gethostname())
@@ -65,8 +66,7 @@ class ardjbot(JabberBot):
 					return self.update_status()
 		except IOError, e:
 			log('IOError: %s, shutting down.' % e)
-			self.shutdown()
-			sys.exit(1)
+			self.quit()
 		except Exception, e:
 			log('Exception in inotify handler: %s' % e)
 			traceback.print_exc()
@@ -221,7 +221,8 @@ class ardjbot(JabberBot):
 	def die(self, message, args):
 		"shut down the bot (should be restarted)"
 		self.shutdown()
-		sys.exit(1)
+		self.quit()
+		self.rc = 1
 
 	@botcmd
 	def select(self, message, args):
@@ -271,14 +272,13 @@ class ardjbot(JabberBot):
 		return args.split(u' ')
 
 	def run(self):
-		while True:
-			try:
-				self.serve_forever()
-				return
-			except Exception, e:
-				print >>sys.stderr, 'Error: %s, restarting in 5 seconds.' % e
-				traceback.print_exc()
-				time.sleep(5)
+		try:
+			self.serve_forever()
+		except Exception, e:
+			print >>sys.stderr, 'Error: %s.' % e
+			traceback.print_exc()
+			self.rc = 1
+		return self.rc
 
 	@botcmd
 	def purge(self, message, args):
