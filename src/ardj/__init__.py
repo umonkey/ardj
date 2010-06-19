@@ -40,11 +40,12 @@ class ardj:
 		# Last played artist names.
 		skip = self.get_last_artists(cur=cur)
 
-		track = None
-		for playlist in self.get_active_playlists():
-			track = self.get_random_track(playlist['name'], repeat=playlist['repeat'], skip_artists=skip, cur=cur)
-			if track is not None:
-				break
+		track = self.dequeue_track(cur)
+		if track is None:
+			for playlist in self.get_active_playlists():
+				track = self.get_random_track(playlist['name'], repeat=playlist['repeat'], skip_artists=skip, cur=cur)
+				if track is not None:
+					break
 		if track is None:
 			track = self.get_random_track(cur=cur)
 			if track is not None:
@@ -60,6 +61,23 @@ class ardj:
 			cur.execute('UPDATE playlists SET last_played = ? WHERE name = ?', (int(time.time()), track['playlist']))
 			self.database.commit() # без этого параллельные обращения будут висеть
 		return track
+
+	def dequeue_track(self, cur=None):
+		"""
+		Returns the top of the queue or None.
+		"""
+		cur = cur or self.database.cursor()
+		row = cur.execute('SELECT id, track_id FROM queue ORDER BY id LIMIT 1').fetchone()
+		if row is not None:
+			track = self.get_track_by_id(row[1])
+			cur.execute('DELETE FROM queue WHERE id = ?', (row[0], ))
+			return track
+
+	def queue_track(self, id, cur=None):
+		"""
+		Adds a track to the end of the queue.
+		"""
+		return (cur or self.database.cursor()).execute('INSERT INTO queue (track_id) VALUES (?)', (id, )).lastrowid
 
 	def check_track_conditions(self, track):
 		"""
@@ -111,9 +129,16 @@ class ardj:
 		cur = cur or self.database.cursor()
 		id = self.get_random_track_id(playlist, repeat, skip_artists, cur)
 		if id is not None:
-			row = cur.execute('SELECT id, playlist, filename, artist, title, length, artist_weight, weight, count, last_played FROM tracks WHERE id = ?', (id, )).fetchone()
-			if row is not None:
-				return { 'id': row[0], 'playlist': row[1], 'filename': row[2], 'artist': row[3], 'title': row[4], 'length': row[5], 'artist_weight': row[6], 'weight': row[7], 'count': row[8], 'last_played': row[9] }
+			return self.get_track_by_id(id, cur)
+
+	def	get_track_by_id(self, id, cur=None):
+		"""
+		Loads a track by id.  Used by other get_track_* methods.
+		"""
+		cur = cur or self.database.cursor()
+		row = cur.execute('SELECT id, playlist, filename, artist, title, length, artist_weight, weight, count, last_played FROM tracks WHERE id = ?', (id, )).fetchone()
+		if row is not None:
+			return { 'id': row[0], 'playlist': row[1], 'filename': row[2], 'artist': row[3], 'title': row[4], 'length': row[5], 'artist_weight': row[6], 'weight': row[7], 'count': row[8], 'last_played': row[9] }
 
 	def get_random_track_id(self, playlist=None, repeat=None, skip_artists=None, cur=None):
 		"""

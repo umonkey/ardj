@@ -163,7 +163,12 @@ class JabberBot(object):
 
     def send_message(self, mess):
         """Send an XMPP message"""
-        self.connect().send(mess)
+        try:
+            self.connect().send(mess)
+        except Exception, e:
+            self.log('Error sending message: %s: %s' % (e.__class__, e))
+            self.log('The message was: %s' % mess)
+            self.log(traceback.format_exc(e))
 
     def send_tune(self, song, debug=False):
         """Set information about the currently played tune
@@ -475,11 +480,16 @@ class JabberBot(object):
             try:
                 conn.Process(1)
                 self.idle_proc()
+            except IOError, e:
+                self.log('IOError: ' + str(e))
+                break
             except KeyboardInterrupt:
                 self.log('bot stopped by user request. shutting down.')
                 break
 
-        self.shutdown()
+        try:
+            self.shutdown()
+        except IOError: pass
 
         if disconnect_callback:
             disconnect_callback()

@@ -37,14 +37,13 @@ class database:
 		isnew = not os.path.exists(self.filename)
 		self.db = sqlite.connect(self.filename, check_same_thread=False)
 		self.db.create_function('randomize', 4, self.sqlite_randomize)
-		if isnew:
-			print >>sys.stderr, 'Initializing ' + self.filename
-			cur = self.db.cursor()
-			cur.execute('CREATE TABLE IF NOT EXISTS playlists (id INTEGER PRIMARY KEY, priority REAL, name TEXT, repeat INTEGER, delay INTEGER, hours TEXT, days TEXT, last_played INTEGER)')
-			cur.execute('CREATE TABLE IF NOT EXISTS tracks (id INTEGER PRIMARY KEY, playlist TEXT, filename TEXT, artist TEXT, title TEXT, length INTEGER, artist_weight REAL, weight REAL, count INTEGER, last_played INTEGER)')
-			cur.execute('CREATE INDEX IF NOT EXISTS idx_tracks_playlist ON tracks (playlist)')
-			cur.execute('CREATE INDEX IF NOT EXISTS idx_tracks_last ON tracks (last_played)')
-			cur.execute('CREATE INDEX IF NOT EXISTS idx_tracks_count ON tracks (count)')
+		cur = self.db.cursor()
+		cur.execute('CREATE TABLE IF NOT EXISTS playlists (id INTEGER PRIMARY KEY, priority REAL, name TEXT, repeat INTEGER, delay INTEGER, hours TEXT, days TEXT, last_played INTEGER)')
+		cur.execute('CREATE TABLE IF NOT EXISTS tracks (id INTEGER PRIMARY KEY, playlist TEXT, filename TEXT, artist TEXT, title TEXT, length INTEGER, artist_weight REAL, weight REAL, count INTEGER, last_played INTEGER)')
+		cur.execute('CREATE INDEX IF NOT EXISTS idx_tracks_playlist ON tracks (playlist)')
+		cur.execute('CREATE INDEX IF NOT EXISTS idx_tracks_last ON tracks (last_played)')
+		cur.execute('CREATE INDEX IF NOT EXISTS idx_tracks_count ON tracks (count)')
+		cur.execute('CREATE TABLE IF NOT EXISTS queue (id INTEGER PRIMARY KEY, track_id INTEGER, owner TEXT)')
 
 	def __del__(self):
 		self.commit()

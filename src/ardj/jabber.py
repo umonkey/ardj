@@ -58,6 +58,7 @@ class ardjbot(JabberBot):
 				open(self.pidfile, 'w').write(str(os.getpid()))
 			except IOError, e:
 				print >>sys.stderr, 'Could not write to %s: %s' % (self.pidfile, e)
+		self.update_status()
 
 	def on_file_changes(self, action, path):
 		try:
@@ -88,7 +89,7 @@ class ardjbot(JabberBot):
 				status = u'«%s» by %s' % (track['title'], track['artist'])
 			else:
 				status = os.path.basename(track['filename'])
-			status += u' — #' + unicode(track['id'])
+			status += u' — #%u @%s ♺%u' % (track['id'], track['playlist'], track['count'])
 			self.status_message = status
 		if self.ardj.config.get('jabber/tunes', True):
 			self.send_tune(track)
@@ -148,7 +149,13 @@ class ardjbot(JabberBot):
 
 	@botcmd
 	def delete(self, message, args):
-		"delete a track (sets weight to 0)"
+		"delete a track (sets weight to 0)\n\nUsage: delete track_id\n  or:\nUsage: delete from table where ...;"
+		if args.lower().startswith('from'):
+			if not args.endswith(';'):
+				return u'SQL commands must end with a ; to prevent accidents.'
+			self.ardj.database.cursor().execute(u'delete ' + args)
+			self.ardj.database.commit()
+			return u'ok'
 		track = args and self.ardj.get_track_by_id(int(args)) or self.get_current_track()
 		if not track['weight']:
 			return u'Zero weight already.'
@@ -344,6 +351,49 @@ class ardjbot(JabberBot):
 			message += u'\n<br/>%s — #%u @%s' % (self.get_linked_title(track), track['id'], track['playlist'])
 		message += u'\n<br/>Use the "purge" command to erase these tracks.'
 		return message
+
+	@botcmd
+	def hitlist(self, message, args):
+		"shows X top rated tracks"
+		limit = args and int(args) or 10
+		tracks = [{ 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'playlist': row[4] } for row in self.ardj.database.cursor().execute('SELECT id, filename, artist, title, playlist FROM tracks WHERE weight > 0 ORDER BY weight DESC LIMIT ' + str(limit)).fetchall()]
+		if not tracks:
+			return u'The hitlist is empty.'
+		message = u'The hitlist has %u items:' % len(tracks)
+		for track in tracks:
+			message += u'\n<br/>%s — #%u @%s' % (self.get_linked_title(track), track['id'], track['playlist'])
+		return message
+
+	@botcmd
+	def queue(self, message, args):
+		u"adds a track to queue\n\nUsage: queue [track_id...]"
+		cur = self.ardj.database.cursor()
+		if args:
+			ids = [int(x) for x in args.split(' ') if x]
+			for id in ids:
+				self.ardj.queue_track(id, cur)
+			self.ardj.database.commit()
+		tracks = [{ 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'playlist': row[4], 'qid': row[5] } for row in self.ardj.database.cursor().execute('SELECT t.id, t.filename, t.artist, t.title, t.playlist, q.id FROM tracks t INNER JOIN queue q ON q.track_id = t.id ORDER BY q.id').fetchall()]
+		if not tracks:
+			return u'Queue empty, use "queue track_id..." to fill.'
+		message = u'Current queue:'
+		for track in tracks:
+			message += u'\n<br/>%u. %s — #%u @%s' % (track['qid'], self.get_linked_title(track), track['id'], track['playlist'])
+		return message + u'\n<br/>Use "queue track_id..." to add more tracks and "find xyz" to find some ids.'
+
+	@botcmd
+	def find(self, message, args):
+		u"finds a track\n\nUsage: find substring\nLists all tracks that contain this substring in the artist, track or file name. The substring can contain spaces."
+		if not args:
+			return self.find.__doc__.split('\n\n')[1]
+		like = '%' + args + '%'
+		tracks = [{ 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'playlist': row[4] } for row in self.ardj.database.cursor().execute('SELECT id, filename, artist, title, playlist FROM tracks WHERE artist LIKE ? OR title LIKE ? OR filename LIKE ? ORDER BY id', (like, like, like, )).fetchall()]
+		if not tracks:
+			return u'No matching tracks.'
+		message = u'Found %u tracks:' % len(tracks)
+		for track in tracks:
+			message += u'\n<br/>  %s — #%u @%s' % (self.get_linked_title(track), track['id'], track['playlist'])
+		return message + u'\n<br/>You might want to use "queue track_ids..." now.'
 
 	def get_linked_sender(self, message):
 		name, host = message.getFrom().getStripped().split('@')
