@@ -1,5 +1,8 @@
 VERSION=1.0-$(shell date +'%Y.%m.%d.%H%M')
 
+help:
+	@echo "Targets: deb install release back copy clean."
+
 deb:
 	rm -rf *deb *zip
 	cat debian/DEBIAN/control.in | sed -e "s/VERSION/${VERSION}/g" > debian/DEBIAN/control
@@ -15,7 +18,7 @@ deb:
 install: deb
 	sudo dpkg -i ardj-${VERSION}.deb
 
-release: deb
+release: clean deb
 	hg archive -t zip ardj-${VERSION}.zip
 	googlecode_upload.py -s "ardj v${VERSION}" -p ardj -l Featured,Type-Package,OpSys-Linux ardj-${VERSION}.deb
 	googlecode_upload.py -s "ardj v${VERSION}" -p ardj -l Featured,Type-Source,OpSys-All ardj-${VERSION}.zip
