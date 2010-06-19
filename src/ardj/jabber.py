@@ -356,12 +356,12 @@ class ardjbot(JabberBot):
 	def hitlist(self, message, args):
 		"shows X top rated tracks"
 		limit = args and int(args) or 10
-		tracks = [{ 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'playlist': row[4] } for row in self.ardj.database.cursor().execute('SELECT id, filename, artist, title, playlist FROM tracks WHERE weight > 0 ORDER BY weight DESC LIMIT ' + str(limit)).fetchall()]
+		tracks = [{ 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'playlist': row[4], 'weight': row[5] } for row in self.ardj.database.cursor().execute('SELECT id, filename, artist, title, playlist, weight FROM tracks WHERE weight > 0 ORDER BY weight DESC LIMIT ' + str(limit)).fetchall()]
 		if not tracks:
 			return u'The hitlist is empty.'
-		message = u'The hitlist has %u items:' % len(tracks)
+		message = u'Top %u tracks:' % len(tracks)
 		for track in tracks:
-			message += u'\n<br/>%s — #%u @%s' % (self.get_linked_title(track), track['id'], track['playlist'])
+			message += u'\n<br/>  %s — #%u @%s %%%s' % (self.get_linked_title(track), track['id'], track['playlist'], track['weight'])
 		return message
 
 	@botcmd
