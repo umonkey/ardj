@@ -1,5 +1,6 @@
 # vim: set ts=4 sts=4 sw=4 noet fileencoding=utf-8:
 
+import math
 import os
 import re
 import socket # for gethostname()
@@ -9,7 +10,7 @@ import time
 import traceback
 import urllib
 
-from jabberbot import JabberBot, botcmd
+from ardj.jabberbot import JabberBot, botcmd
 import notify
 import tags
 
@@ -28,7 +29,6 @@ class ardjbot(JabberBot):
 		self.twitter = None
 		self.dbtracker = None
 		self.pidfile = '/tmp/ardj-jabber.pid'
-		self.rc = 0
 
 		login, password = self.split_login(self.ardj.config.get('jabber/login'))
 		JabberBot.__init__(self, login, password, res=socket.gethostname())
@@ -228,15 +228,14 @@ class ardjbot(JabberBot):
 	def die(self, message, args):
 		"shut down the bot (should be restarted)"
 		self.shutdown()
-		self.quit()
-		self.rc = 1
+		self.quit(1)
 
 	@botcmd
 	def select(self, message, args):
 		"low level access to the database"
 		result = u''
 		for row in self.ardj.database.cursor().execute(message.getBody()).fetchall():
-			result += u', '.join([unicode(cell) for cell in row]) + u'\n'
+			result += u', '.join([unicode(cell) for cell in row]) + u'\n<br/>'
 		if not result:
 			result = u'Nothing.'
 		return result
@@ -280,12 +279,11 @@ class ardjbot(JabberBot):
 
 	def run(self):
 		try:
-			self.serve_forever()
+			return self.serve_forever()
 		except Exception, e:
 			print >>sys.stderr, 'Error: %s.' % e
 			traceback.print_exc()
-			self.rc = 1
-		return self.rc
+			return 1
 
 	@botcmd
 	def purge(self, message, args):
@@ -310,8 +308,8 @@ class ardjbot(JabberBot):
 		elif not track['title']:
 			link = os.path.basename(track['filename'])
 		else:
-			link = u'«<a href="http://www.last.fm/music/%s/_/%s">%s</a>»' % (urllib.quote(track['artist'].encode('utf-8')), urllib.quote(track['title'].encode('utf-8')), track['title'])
-		return link + u' by <a href="http://www.last.fm/music/%s">%s</a>' % (urllib.quote(track['artist'].encode('utf-8')), track['artist'])
+			link = u'«<a href="http://www.last.fm/music/%s/_/%s">%s</a>»' % (urllib.quote(track['artist'].strip().encode('utf-8')), urllib.quote(track['title'].strip().encode('utf-8')), track['title'].strip())
+		return link + u' by <a href="http://www.last.fm/music/%s">%s</a>' % (urllib.quote(track['artist'].strip().encode('utf-8')), track['artist'].strip())
 
 	@botcmd
 	def reload(self, message, args):
@@ -382,18 +380,40 @@ class ardjbot(JabberBot):
 		return message + u'\n<br/>Use "queue track_id..." to add more tracks and "find xyz" to find some ids.'
 
 	@botcmd
-	def find(self, message, args):
-		u"finds a track\n\nUsage: find substring\nLists all tracks that contain this substring in the artist, track or file name. The substring can contain spaces."
+	def find(self, mess, args):
+		u"finds a track\n\nUsage: find substring\nLists all tracks that contain this substring in the artist, track or file name. The substring can contain spaces. If you want to see more than 10 matching tracks, use the select command, e.g.: SELECT id, filename FROM tracks WHERE ..."
 		if not args:
 			return self.find.__doc__.split('\n\n')[1]
 		like = '%' + args + '%'
-		tracks = [{ 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'playlist': row[4] } for row in self.ardj.database.cursor().execute('SELECT id, filename, artist, title, playlist FROM tracks WHERE artist LIKE ? OR title LIKE ? OR filename LIKE ? ORDER BY id', (like, like, like, )).fetchall()]
+		tracks = [{ 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'playlist': row[4] } for row in self.ardj.database.cursor().execute('SELECT id, filename, artist, title, playlist FROM tracks WHERE artist LIKE ? OR title LIKE ? OR filename LIKE ? ORDER BY id LIMIT 10', (like, like, like, )).fetchall()]
 		if not tracks:
 			return u'No matching tracks.'
 		message = u'Found %u tracks:' % len(tracks)
 		for track in tracks:
 			message += u'\n<br/>  %s — #%u @%s' % (self.get_linked_title(track), track['id'], track['playlist'])
-		return message + u'\n<br/>You might want to use "queue track_ids..." now.'
+		return = u'\n<br/>You might want to use "queue track_ids..." now.'
+
+	def send_simple_reply(self, mess, text, private=False):
+		"""
+		Splits long messages and sends them in parts.
+		"""
+		linelimit = 30
+		delay = 2
+
+		lines = text.split(u'\n')
+		parent = super(ardjbot, self)
+		if len(lines) <= linelimit:
+			return parent.send_simple_reply(mess, text, private)
+
+		current = 1
+		total = math.ceil(float(len(lines)) / float(linelimit))
+		parent.send_simple_reply(mess, u'The response it too long (%u lines), sending in %u messages, up to %u lines each, with a %u seconds delay.' % (len(lines), total, linelimit, delay), private)
+		while len(lines) and not parent.is_shutting_down():
+			prefix = u'[part %u of %u]\n<br/>' % (current, total)
+			parent.send_simple_reply(mess, prefix + u'\n'.join(lines[:linelimit]), private)
+			del lines[:linelimit]
+			current += 1
+			time.sleep(delay)
 
 	def get_linked_sender(self, message):
 		name, host = message.getFrom().getStripped().split('@')
