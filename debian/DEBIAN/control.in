@@ -5,8 +5,9 @@ Priority: optional
 Maintainer: Justin Forest <justin.forest@gmail.com>
 Architecture: all
 Essential: no
-Depends: python, ices, icecast2, python-yaml, python-pyinotify, python-twitter, python-mutagen (>= 1.19), screen
-Recommends: lastfmsubmitd, sqlite3, podget
+Depends: python, python-yaml, python-pyinotify, python-mutagen (>= 1.19)
+Suggests: python-dnspython, ices, icecast2
+Recommends: lastfmsubmitd, sqlite3, podget, python-twitter, screen
 Installed-Size: 660
 Description: An artificial DJ for your icecast2 based internet radio.
   Consists of an ices python playlist module and a jabber bot which
