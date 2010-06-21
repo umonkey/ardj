@@ -12,6 +12,7 @@ def usage():
 	print " --backup     save metadata to file tags"
 	print " --config     edit config file"
 	print " --dbconsole  open SQLite console"
+	print " --debug      enable extra logging"
 	print " --jabber     run a jabber bot"
 	print " --next       show next track"
 	print " --quiet      suppress log messages (stderr)"
@@ -44,7 +45,7 @@ if __name__ == '__main__':
 	ardj = Open()
 
 	try:
-		opts, args = getopt.getopt(sys.argv[1:], 'i', ['backup', 'config', 'dbconsole', 'jabber', 'jabber-child', 'next', 'quiet', 'reset', 'scrobble', 'stats', 'update'])
+		opts, args = getopt.getopt(sys.argv[1:], 'i', ['backup', 'config', 'dbconsole', 'debug', 'jabber', 'jabber-child', 'next', 'quiet', 'reset', 'scrobble', 'stats', 'update'])
 	except getopt.GetoptError:
 		sys.exit(usage())
 
@@ -55,6 +56,8 @@ if __name__ == '__main__':
 	for option, value in opts:
 		if '--quiet' == option:
 			sys.stderr = None
+		if '--debug' == option:
+			ardj.debug = True
 
 	for option, value in opts:
 		if '--backup' == option:
@@ -74,7 +77,10 @@ if __name__ == '__main__':
 		if '--jabber' == option:
 			import subprocess, time
 			while True:
-				if not subprocess.Popen([sys.argv[0], '--jabber-child']).wait():
+				args = [sys.argv[0], '--jabber-child']
+				if ardj.debug:
+					args.append('--debug')
+				if not subprocess.Popen(args).wait():
 					sys.exit(0)
 				print >>sys.stderr, 'Unclean shutdown, restarting in 5 seconds.'
 				time.sleep(5)
