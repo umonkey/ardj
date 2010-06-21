@@ -31,7 +31,7 @@ class ardjbot(JabberBot):
 		self.pidfile = '/tmp/ardj-jabber.pid'
 
 		login, password = self.split_login(self.ardj.config.get('jabber/login'))
-		JabberBot.__init__(self, login, password, res=socket.gethostname())
+		JabberBot.__init__(self, login, password, res=socket.gethostname(), debug=ardj.debug)
 
 	def get_users(self):
 		"""
@@ -73,7 +73,6 @@ class ardjbot(JabberBot):
 			traceback.print_exc()
 
 	def shutdown(self):
-		self.dbtracker.stop()
 		JabberBot.shutdown(self)
 		if self.pidfile and os.path.exists(self.pidfile):
 			os.unlink(self.pidfile)
@@ -429,6 +428,19 @@ class ardjbot(JabberBot):
 		if subprocess.Popen([cmd, '-' + sig, prog]).wait():
 			raise Exception(u'Could not skip. Is '+ prog +' running?')
 		return True
+
+	def connect(self):
+		"""
+		Extends the parent method by registering a disconnect handler.
+		"""
+		conn = super(ardjbot, self).connect()
+		conn.RegisterDisconnectHandler(self.on_disconnect)
+		return conn
+
+	def on_disconnect(self):
+		if self.dbtracker:
+			self.dbtracker.stop()
+			self.dbtracker = None
 
 def Open(ardj):
 	"""

@@ -18,7 +18,7 @@ class ardj:
 		self.config = config.Open()
 		self.database = database.Open(self.config.get_db_name())
 		self.scrobbler = scrobbler.Open(self.config)
-
+		self.debug = False
 	def __del__(self):
 		self.close()
 
