@@ -391,7 +391,7 @@ class ardjbot(JabberBot):
 		message = u'Found %u tracks:' % len(tracks)
 		for track in tracks:
 			message += u'\n<br/>  %s — #%u @%s' % (self.get_linked_title(track), track['id'], track['playlist'])
-		return = u'\n<br/>You might want to use "queue track_ids..." now.'
+		return message + u'\n<br/>You might want to use "queue track_ids..." now.'
 
 	def send_simple_reply(self, mess, text, private=False):
 		"""
