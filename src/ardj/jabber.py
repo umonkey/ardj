@@ -3,6 +3,7 @@
 import math
 import os
 import re
+import shutil # move()
 import socket # for gethostname()
 import subprocess
 import sys
@@ -11,6 +12,7 @@ import traceback
 import urllib
 
 from ardj.jabberbot import JabberBot, botcmd
+from ardj.filebot import FileBot
 import notify
 import tags
 
@@ -23,7 +25,44 @@ try:
 except ImportError:
 	have_twitter = False
 
-class ardjbot(JabberBot):
+class MyFileReceivingBot(FileBot):
+	def is_file_acceptable(self, sender, filename, filesize):
+		if not self.check_access(sender):
+			self.log('Refusing to accept files from %s.' % sender)
+			self.send(sender, 'I\'m not allowed to receive files from you, sorry.')
+			return False
+		if os.path.splitext(filename.lower())[1] not in ['.mp3', '.ogg']:
+			self.send(sender, 'I only accept MP3 and OGG files, which "%s" doesn\'t look like.' % os.path.basename(filename))
+			return False
+		return True
+
+	def callback_file(self, sender, filename):
+		dst_path = os.path.join(self.ardj.config.get_music_dir(), 'incoming', sender.split('/')[0])
+		if not os.path.exists(dst_path):
+			os.makedirs(dst_path)
+
+		dst_name = self.add_filename_suffix(os.path.join(dst_path, os.path.basename(filename)))
+		shutil.move(filename, dst_name)
+
+		self.log('Received %s.' % dst_name)
+		track_id = self.ardj.add_track_from_file(dst_name)
+
+		return 'Your file was assigned number %u. Use the "news" command to see last added files, "set playlist to xyz for %u" to move this file from @incoming.' % (track_id, track_id)
+
+	def add_filename_suffix(self, filename):
+		"""
+		Makes sure that filename does not exist by addind a numeric index
+		to the file's name if necessary.
+		"""
+		source = filename
+		index = 1
+		while os.path.exists(filename):
+			parts = os.path.splitext(source)
+			filename = parts[0] + '_' + unicode(index) + parts[1]
+			index += 1
+		return filename
+
+class ardjbot(MyFileReceivingBot):
 	def __init__(self, ardj):
 		self.ardj = ardj
 		self.twitter = None
@@ -31,7 +70,7 @@ class ardjbot(JabberBot):
 		self.pidfile = '/tmp/ardj-jabber.pid'
 
 		login, password = self.split_login(self.ardj.config.get('jabber/login'))
-		JabberBot.__init__(self, login, password, res=socket.gethostname(), debug=ardj.debug)
+		super(ardjbot, self).__init__(login, password, res=socket.gethostname(), debug=ardj.debug)
 
 	def get_users(self):
 		"""
@@ -73,6 +112,7 @@ class ardjbot(JabberBot):
 			traceback.print_exc()
 
 	def shutdown(self):
+		self.on_disconnect()
 		JabberBot.shutdown(self)
 		if self.pidfile and os.path.exists(self.pidfile):
 			os.unlink(self.pidfile)
@@ -103,13 +143,13 @@ class ardjbot(JabberBot):
 		"""
 		return self.ardj.get_last_track()
 
-	def check_access(self, message):
-		return message.getFrom().split('/')[0] in self.get_users()
+	def check_access(self, sender):
+		return sender.split('/')[0] in self.get_users()
 
 	def callback_message(self, conn, mess):
 		if mess.getType() == 'chat':
-			if mess.getFrom().getStripped() not in self.get_users():
-				print >>sys.stderr, mess.getFrom().getStripped(), self.get_users()
+			if not self.check_access(mess.getFrom().getStripped()):
+				self.log('Refusing access to %s.' % mess.getFrom())
 				return self.send_simple_reply(mess, 'No access for you.')
 		return JabberBot.callback_message(self, conn, mess)
 
@@ -391,6 +431,17 @@ class ardjbot(JabberBot):
 		for track in tracks:
 			message += u'\n<br/>  %s — #%u @%s' % (self.get_linked_title(track), track['id'], track['playlist'])
 		return message + u'\n<br/>You might want to use "queue track_ids..." now.'
+
+	@botcmd
+	def news(self, mess, args):
+		u"shows last added tracks"
+		tracks = [{ 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'playlist': row[4] } for row in self.ardj.database.cursor().execute('SELECT id, filename, artist, title, playlist FROM tracks ORDER BY id DESC LIMIT 10').fetchall()]
+		if not tracks:
+			return u'No news.'
+		message = u'Last %u tracks:' % len(tracks)
+		for track in tracks:
+			message += u'\n<br/>  %s — #%u @%s' % (self.get_linked_title(track), track['id'], track['playlist'])
+		return message
 
 	def send_simple_reply(self, mess, text, private=False):
 		"""

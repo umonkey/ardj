@@ -303,16 +303,30 @@ class ardj:
 		Добавление файла в базу данных.
 		"""
 		cur = self.database.cursor()
-		filepath = os.path.join(self.config.get_music_dir(), filename)
+		musicdir = self.config.get_music_dir()
+		filepath = os.path.join(musicdir, filename)
 
-		if cur.execute('SELECT id FROM tracks WHERE filename = ?', (filename.decode('utf-8'), )).fetchone():
-			print >>sys.stderr, 'refusing to add %s again' % filename
-			return False
+		if not os.path.exists(filepath):
+			raise Exception('File %s does not exist.' % filepath)
+
+		# The file might have been added by the full path, which os.path.join()
+		# handles nicely by returning the last component if it's an absolute
+		# path.  We need to check that the file belongs to the musicdir.
+		if not filepath.startswith(musicdir):
+			raise Exception('File %s is outside the music dir.' % filename)
+
+		# Strip the musicdir back to be able to guess the playlist later.
+		filename = filepath[len(musicdir)+1:].lstrip(os.path.sep)
+
+		oldid = cur.execute('SELECT id FROM tracks WHERE filename = ?', (filename.decode('utf-8'), )).fetchone()
+		if oldid:
+			print >>sys.stderr, 'exists: %s' % filename
+			return oldid
 
 		tg = tags.get(filepath)
 		if tg is None:
 			print >>sys.stderr, 'skipped: ' + filename
-			return False
+			return None
 
 		args = {
 			'filename': filename.decode('utf-8'),
@@ -346,7 +360,7 @@ class ardj:
 
 		self.update_track(args, backup=False, cur=cur)
 		print >>sys.stderr, 'added: ' + filename
-		return True
+		return args['id']
 
 	def update_track(self, args, backup=True, cur=None, commit=True):
 		if type(args) != dict:
