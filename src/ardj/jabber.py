@@ -10,6 +10,7 @@ import sys
 import time
 import traceback
 import urllib
+from xml.sax import saxutils
 
 from ardj.jabberbot import JabberBot, botcmd
 from ardj.filebot import FileBot
@@ -347,8 +348,10 @@ class ardjbot(MyFileReceivingBot):
 		elif not track['title']:
 			link = os.path.basename(track['filename'])
 		else:
-			link = u'«<a href="http://www.last.fm/music/%s/_/%s">%s</a>»' % (urllib.quote(track['artist'].strip().encode('utf-8')), urllib.quote(track['title'].strip().encode('utf-8')), track['title'].strip())
-		return link + u' by <a href="http://www.last.fm/music/%s">%s</a>' % (urllib.quote(track['artist'].strip().encode('utf-8')), track['artist'].strip())
+			link = u'«<a href="http://www.last.fm/music/%s/_/%s">%s</a>»' % (urllib.quote(track['artist'].strip().encode('utf-8')), urllib.quote(track['title'].strip().encode('utf-8')), saxutils.escape(track['title'].strip()))
+		link += u' by <a href="http://www.last.fm/music/%s">%s</a>' % (urllib.quote(track['artist'].strip().encode('utf-8')), saxutils.escape(track['artist'].strip()))
+		self.log('Link: %s' % link)
+		return link
 
 	@botcmd
 	def reload(self, message, args):

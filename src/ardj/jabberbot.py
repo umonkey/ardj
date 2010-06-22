@@ -250,7 +250,7 @@ class JabberBot(object):
 
     def build_message(self, text):
         """Builds an xhtml message without attributes."""
-        text_plain = re.sub(r'<[^>]+>', '', text)
+        text_plain = re.sub(r'<[^>]+>', '', text).replace('&amp;', '&')
         message = xmpp.protocol.Message(body=text_plain)
         if text_plain != text:
             html = xmpp.Node('html', {'xmlns': 'http://jabber.org/protocol/xhtml-im'})
