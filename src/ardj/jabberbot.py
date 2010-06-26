@@ -50,7 +50,6 @@ def botcmd(*args, **kwargs):
     else:
         return lambda func: decorate(func, **kwargs)
 
-
 class JabberBot(object):
     AVAILABLE, AWAY, CHAT, DND, XA, OFFLINE = None, 'away', 'chat', 'dnd', 'xa', 'unavailable'
 

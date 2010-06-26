@@ -13,7 +13,7 @@ import urllib
 from xml.sax import saxutils
 
 from ardj.jabberbot import JabberBot, botcmd
-from ardj.filebot import FileBot
+from ardj.filebot import FileBot, FileNotAcceptable
 import notify
 import tags
 
@@ -30,12 +30,9 @@ class MyFileReceivingBot(FileBot):
 	def is_file_acceptable(self, sender, filename, filesize):
 		if not self.check_access(sender):
 			self.log('Refusing to accept files from %s.' % sender)
-			self.send(sender, 'I\'m not allowed to receive files from you, sorry.')
-			return False
+			raise FileNotAcceptable('I\'m not allowed to receive files from you, sorry.')
 		if os.path.splitext(filename.lower())[1] not in ['.mp3', '.ogg']:
-			self.send(sender, 'I only accept MP3 and OGG files, which "%s" doesn\'t look like.' % os.path.basename(filename))
-			return False
-		return True
+			raise FileNotAcceptable('I only accept MP3 and OGG files, which "%s" doesn\'t look like.' % os.path.basename(filename))
 
 	def callback_file(self, sender, filename):
 		dst_path = os.path.join(self.ardj.config.get_music_dir(), 'incoming', sender.split('/')[0])
@@ -350,7 +347,6 @@ class ardjbot(MyFileReceivingBot):
 		else:
 			link = u'«<a href="http://www.last.fm/music/%s/_/%s">%s</a>»' % (urllib.quote(track['artist'].strip().encode('utf-8')), urllib.quote(track['title'].strip().encode('utf-8')), saxutils.escape(track['title'].strip()))
 		link += u' by <a href="http://www.last.fm/music/%s">%s</a>' % (urllib.quote(track['artist'].strip().encode('utf-8')), saxutils.escape(track['artist'].strip()))
-		self.log('Link: %s' % link)
 		return link
 
 	@botcmd
