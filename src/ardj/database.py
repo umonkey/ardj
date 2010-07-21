@@ -44,6 +44,10 @@ class database:
 		cur.execute('CREATE INDEX IF NOT EXISTS idx_tracks_last ON tracks (last_played)')
 		cur.execute('CREATE INDEX IF NOT EXISTS idx_tracks_count ON tracks (count)')
 		cur.execute('CREATE TABLE IF NOT EXISTS queue (id INTEGER PRIMARY KEY, track_id INTEGER, owner TEXT)')
+		# голоса пользователей
+		cur.execute('CREATE TABLE IF NOT EXISTS votes (track_id INTEGER NOT NULL, email TEXT NOT NULL, vote INTEGER)')
+		cur.execute('CREATE INDEX IF NOT EXISTS idx_votes_track_id ON votes (track_id)')
+		cur.execute('CREATE INDEX IF NOT EXISTS idx_votes_email ON votes (email)')
 
 	def __del__(self):
 		self.commit()

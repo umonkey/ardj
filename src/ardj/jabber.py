@@ -88,7 +88,7 @@ class ardjbot(MyFileReceivingBot):
 		return JabberBot.serve_forever(self, connect_callback=self.on_connected)
 
 	def on_connected(self):
-		self.status_type = self.DND
+		# self.status_type = self.DND
 		self.dbtracker = notify.monitor([self.ardj.database.filename], self.on_file_changes)
 		if self.pidfile:
 			try:
@@ -166,7 +166,7 @@ class ardjbot(MyFileReceivingBot):
 			else:
 				return u'Syntax: set prop to value [for id]'
 
-		types = { 'playlist': unicode, 'artist': unicode, 'title': unicode, 'weight': float }
+		types = { 'playlist': unicode, 'artist': unicode, 'title': unicode }
 		if a1 not in types:
 			return u'Unknown property: %s, available: %s.' % (a1, u', '.join(types.keys()))
 
@@ -361,20 +361,12 @@ class ardjbot(MyFileReceivingBot):
 	@botcmd
 	def rocks(self, message, args):
 		"express your love for the current track"
-		track = self.get_current_track()
-		track['weight'] *= 1.25
-		self.ardj.update_track(track)
-		self.broadcast(u'%s just liked %s (weight=%s)' % (self.get_linked_sender(message), self.get_linked_title(track), track['weight']))
+		return self.__vote(self.get_current_track()['id'], message.getFrom().getStripped(), 1)
 
 	@botcmd
 	def sucks(self, message, args):
 		"express your hate for the current track"
-		track = self.get_current_track()
-		if not track['weight']:
-			return u'This track sucks already.'
-		track['weight'] *= 0.8
-		self.ardj.update_track(track)
-		self.broadcast(u'%s just hated %s (weight=%s)' % (self.get_linked_sender(message), self.get_linked_title(track), track['weight']))
+		return self.__vote(self.get_current_track()['id'], message.getFrom().getStripped(), -1)
 
 	@botcmd
 	def shitlist(self, message, args):
@@ -489,8 +481,20 @@ class ardjbot(MyFileReceivingBot):
 
 	def on_disconnect(self):
 		if self.dbtracker:
+			self.log('on_disconnect: stopping dbtracker.')
 			self.dbtracker.stop()
 			self.dbtracker = None
+
+	def __vote(self, track_id, email, vote):
+		cur = self.ardj.database.cursor()
+		# store the vote
+		cur.execute('DELETE FROM votes WHERE track_id = ? AND email = ?', (track_id, email, ))
+		cur.execute('INSERT INTO votes (track_id, email, vote) VALUES (?, ?, ?)', (track_id, email, vote, ))
+		# update track weight
+		votes = cur.execute('SELECT SUM(vote) FROM votes WHERE track_id = ?', (track_id, )).fetchall()[0][0]
+		cur.execute('UPDATE tracks SET weight = ? WHERE id = ?', (1 + votes * 0.5, track_id, ))
+		self.ardj.database.commit()
+		return u'OK'
 
 def Open(ardj):
 	"""
