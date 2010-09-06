@@ -13,7 +13,7 @@ deb:
 	find debian -name '*.pyc' -delete
 	sudo chown -R root:root debian/usr
 	dpkg -b debian ardj-${VERSION}.deb
-	sudo rm -rf debian/usr
+	# sudo rm -rf debian/usr
 
 install: deb
 	sudo dpkg -i ardj-${VERSION}.deb

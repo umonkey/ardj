@@ -66,6 +66,7 @@ class ardjbot(MyFileReceivingBot):
 		self.twitter = None
 		self.dbtracker = None
 		self.pidfile = '/tmp/ardj-jabber.pid'
+		self.publicCommands = self.ardj.config.get('jabber/public-commands', 'help rocks sucks show last hitlist shitlist').split(' ')
 
 		login, password = self.split_login(self.ardj.config.get('jabber/login'))
 		super(ardjbot, self).__init__(login, password, res=socket.gethostname(), debug=ardj.debug)
@@ -121,15 +122,16 @@ class ardjbot(MyFileReceivingBot):
 		Called by inotify, if available.
 		"""
 		track = self.get_current_track()
-		if self.ardj.config.get('jabber/status', False):
-			if track.has_key('artist') and track.has_key('title'):
-				status = u'«%s» by %s' % (track['title'], track['artist'])
-			else:
-				status = os.path.basename(track['filename'])
-			status += u' — #%u @%s ♺%u' % (track['id'], track['playlist'], track['count'])
-			self.status_message = status
-		if self.ardj.config.get('jabber/tunes', True):
-			self.send_tune(track)
+		if track is not None:
+			if self.ardj.config.get('jabber/status', False):
+				if track.has_key('artist') and track.has_key('title'):
+					status = u'«%s» by %s' % (track['title'], track['artist'])
+				else:
+					status = os.path.basename(track['filename'])
+				status += u' — #%u @%s ♺%u' % (track['id'], track['playlist'], track['count'])
+				self.status_message = status
+			if self.ardj.config.get('jabber/tunes', True):
+				self.send_tune(track)
 
 	def get_current(self):
 		"""Возвращает имя проигрываемого файла из краткого лога."""
@@ -146,7 +148,8 @@ class ardjbot(MyFileReceivingBot):
 
 	def callback_message(self, conn, mess):
 		if mess.getType() == 'chat':
-			if not self.check_access(mess.getFrom().getStripped()):
+			is_public = mess.getBody().strip().split(' ')[0] in self.publicCommands
+			if not is_public and not self.check_access(mess.getFrom().getStripped()):
 				self.log('Refusing access to %s.' % mess.getFrom())
 				return self.send_simple_reply(mess, 'No access for you.')
 		return JabberBot.callback_message(self, conn, mess)
@@ -241,6 +244,8 @@ class ardjbot(MyFileReceivingBot):
 		args = self.split(args)
 		if not args:
 			track = self.get_current_track()
+			if track is None:
+				return 'Nothing is playing.'
 		else:
 			track = self.ardj.get_track_by_id(int(args[0]))
 		if track is None:
@@ -361,12 +366,20 @@ class ardjbot(MyFileReceivingBot):
 	@botcmd
 	def rocks(self, message, args):
 		"express your love for the current track"
-		return self.__vote(self.get_current_track()['id'], message.getFrom().getStripped(), 1)
+		track = self.get_current_track()
+		if track is None:
+			return 'Nothing is playing.'
+		else:
+			return self.__vote(track['id'], message.getFrom().getStripped(), 1)
 
 	@botcmd
 	def sucks(self, message, args):
 		"express your hate for the current track"
-		return self.__vote(self.get_current_track()['id'], message.getFrom().getStripped(), -1)
+		track = self.get_current_track()
+		if track is None:
+			return 'Nothing is playing.'
+		else:
+			return self.__vote(track['id'], message.getFrom().getStripped(), -1)
 
 	@botcmd
 	def shitlist(self, message, args):
