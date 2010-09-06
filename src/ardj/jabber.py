@@ -151,7 +151,7 @@ class ardjbot(MyFileReceivingBot):
 			is_public = mess.getBody().strip().split(' ')[0] in self.publicCommands
 			if not is_public and not self.check_access(mess.getFrom().getStripped()):
 				self.log('Refusing access to %s.' % mess.getFrom())
-				return self.send_simple_reply(mess, 'No access for you.')
+				return self.send_simple_reply(mess, 'Available commands: %s.' % ', '.join(self.publicCommands))
 		return JabberBot.callback_message(self, conn, mess)
 
 	@botcmd
