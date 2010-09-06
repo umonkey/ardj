@@ -370,7 +370,8 @@ class ardjbot(MyFileReceivingBot):
 		if track is None:
 			return 'Nothing is playing.'
 		else:
-			return self.__vote(track['id'], message.getFrom().getStripped(), 1)
+			self.__vote(track['id'], message.getFrom().getStripped(), 1)
+			return u'Recorded a vote for %s' % self.get_linked_title(track)
 
 	@botcmd
 	def sucks(self, message, args):
@@ -379,7 +380,8 @@ class ardjbot(MyFileReceivingBot):
 		if track is None:
 			return 'Nothing is playing.'
 		else:
-			return self.__vote(track['id'], message.getFrom().getStripped(), -1)
+			self.__vote(track['id'], message.getFrom().getStripped(), -1)
+			return u'Recorded a vote against %s' % self.get_linked_title(track)
 
 	@botcmd
 	def shitlist(self, message, args):
