@@ -3,6 +3,7 @@
 
 import getopt
 import os
+import signal
 import sys
 import traceback
 
@@ -17,6 +18,7 @@ def usage():
 	print " --next       show next track"
 	print " --quiet      suppress log messages (stderr)"
 	print " --reset      reset database"
+	print " --restart    restart a running jabber bot"
 	print " --scrobble   scrobble track (only makes sense with --next)"
 	print " --stats      show database statistics"
 	print " --update     update database"
@@ -45,7 +47,7 @@ if __name__ == '__main__':
 	ardj = Open()
 
 	try:
-		opts, args = getopt.getopt(sys.argv[1:], 'i', ['backup', 'config', 'dbconsole', 'debug', 'jabber', 'jabber-child', 'next', 'quiet', 'reset', 'scrobble', 'stats', 'update'])
+		opts, args = getopt.getopt(sys.argv[1:], 'i', ['backup', 'config', 'dbconsole', 'debug', 'jabber', 'jabber-child', 'next', 'quiet', 'reset', 'restart', 'scrobble', 'stats', 'update'])
 	except getopt.GetoptError:
 		sys.exit(usage())
 
@@ -101,6 +103,15 @@ if __name__ == '__main__':
 			if os.path.exists(filename):
 				os.unlink(filename)
 				print 'OK'
+		if '--restart' == option:
+			import subprocess
+			pidfile = '/tmp/ardj-jabber.pid'
+			if os.path.exists(pidfile):
+				pid = int(open(pidfile).read().strip())
+				try:
+					os.kill(pid, signal.SIGTERM)
+				except OSError: pass
+				subprocess.Popen(['/usr/bin/killall', '-HUP', 'ices']).wait()
 		if '--stats' == option:
 			stats = ardj.get_stats()
 			print '%u tracks, %.1f hours.' % (stats['tracks'], stats['seconds'] / 60 / 60)

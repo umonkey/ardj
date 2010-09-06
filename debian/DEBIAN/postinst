@@ -1,4 +1,3 @@
 #!/bin/sh -e
 # Restart a running instance of the jabber bot.
-test -s /tmp/ardj-jabber.pid && kill -9 `cat /tmp/ardj-jabber.pid`
-pkill -HUP ices
+ardj --restart
