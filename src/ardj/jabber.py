@@ -370,8 +370,8 @@ class ardjbot(MyFileReceivingBot):
 		if track is None:
 			return 'Nothing is playing.'
 		else:
-			self.__vote(track['id'], message.getFrom().getStripped(), 1)
-			return u'Recorded a vote for %s' % self.get_linked_title(track)
+			votes, weight = self.__vote(track['id'], message.getFrom().getStripped(), 1)
+			return u'Recorded a vote for %s, current score: %s, weight: %s.' % (self.get_linked_title(track), votes, weight)
 
 	@botcmd
 	def sucks(self, message, args):
@@ -380,8 +380,8 @@ class ardjbot(MyFileReceivingBot):
 		if track is None:
 			return 'Nothing is playing.'
 		else:
-			self.__vote(track['id'], message.getFrom().getStripped(), -1)
-			return u'Recorded a vote against %s' % self.get_linked_title(track)
+			votes, weight = self.__vote(track['id'], message.getFrom().getStripped(), -1)
+			return u'Recorded a vote against %s, current score: %s, weight: %s.' % (self.get_linked_title(track), votes, weight)
 
 	@botcmd
 	def shitlist(self, message, args):
@@ -507,9 +507,10 @@ class ardjbot(MyFileReceivingBot):
 		cur.execute('INSERT INTO votes (track_id, email, vote) VALUES (?, ?, ?)', (track_id, email, vote, ))
 		# update track weight
 		votes = cur.execute('SELECT SUM(vote) FROM votes WHERE track_id = ?', (track_id, )).fetchall()[0][0]
-		cur.execute('UPDATE tracks SET weight = ? WHERE id = ?', (1 + votes * 0.5, track_id, ))
+		weight = 1 + votes * 0.5
+		cur.execute('UPDATE tracks SET weight = ? WHERE id = ?', (weight, track_id, ))
 		self.ardj.database.commit()
-		return u'OK'
+		return (votes, weight)
 
 def Open(ardj):
 	"""
