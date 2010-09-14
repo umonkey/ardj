@@ -131,7 +131,7 @@ class ardjbot(MyFileReceivingBot):
 					status = u'«%s» by %s' % (track['title'], track['artist'])
 				else:
 					status = os.path.basename(track['filename'])
-				status += u' — #%u @%s ♺%u' % (track['id'], track['playlist'], track['count'])
+				status += u' — #%u @%s ♺%u ⚖%s' % (track['id'], track['playlist'], track['count'], track['weight'])
 				self.status_message = status
 			if self.ardj.config.get('jabber/tunes', True):
 				self.send_tune(track)
@@ -151,10 +151,12 @@ class ardjbot(MyFileReceivingBot):
 
 	def callback_message(self, conn, mess):
 		if mess.getType() == 'chat':
-			is_public = mess.getBody().strip().split(' ')[0] in self.publicCommands
-			if not is_public and not self.check_access(mess.getFrom().getStripped()):
-				self.log('Refusing access to %s.' % mess.getFrom())
-				return self.send_simple_reply(mess, 'Available commands: %s.' % ', '.join(self.publicCommands))
+			body = mess.getBody()
+			if body is not None:
+				is_public = body.strip().split(' ')[0] in self.publicCommands
+				if not is_public and not self.check_access(mess.getFrom().getStripped()):
+					self.log('Refusing access to %s.' % mess.getFrom())
+					return self.send_simple_reply(mess, 'Available commands: %s.' % ', '.join(self.publicCommands))
 		return JabberBot.callback_message(self, conn, mess)
 
 	@botcmd
@@ -188,7 +190,7 @@ class ardjbot(MyFileReceivingBot):
 		track[a1] = a2
 		self.ardj.update_track(track)
 
-		self.broadcast(u'%s changed %s from "%s" to "%s" for %s; #%u @%s' % (self.get_linked_sender(message), a1, old, a2, self.get_linked_title(track), track['id'], track['playlist']))
+		self.log(u'%s changed %s from "%s" to "%s" for %s; #%u @%s' % (self.get_linked_sender(message), a1, old, a2, self.get_linked_title(track), track['id'], track['playlist']))
 
 	@botcmd
 	def delete(self, message, args):
@@ -207,7 +209,7 @@ class ardjbot(MyFileReceivingBot):
 		old = track['weight']
 		track['weight'] = 0
 		self.ardj.update_track(track)
-		self.broadcast(u'%s changed weight from %s to 0 for %s; #%u @%s' % (self.get_linked_sender(message), old, self.get_linked_title(track), track['id'], track['playlist']))
+		self.log(u'%s changed weight from %s to 0 for %s; #%u @%s' % (self.get_linked_sender(message), old, self.get_linked_title(track), track['id'], track['playlist']))
 		if not args:
 			self.skip(message, args)
 
@@ -219,7 +221,7 @@ class ardjbot(MyFileReceivingBot):
 			return u'This track\'s weight is %s, not quite zero.' % (track['weight'])
 		track['weight'] = 1.
 		self.ardj.update_track(track)
-		self.broadcast(u'%s changed weight from 0 to 1 for %s; #%u @%s' % (self.get_linked_sender(message), self.get_linked_title(track), track['id'], track['playlist']))
+		self.log(u'%s changed weight from 0 to 1 for %s; #%u @%s' % (self.get_linked_sender(message), self.get_linked_title(track), track['id'], track['playlist']))
 
 	@botcmd
 	def skip(self, message, args):
@@ -293,7 +295,7 @@ class ardjbot(MyFileReceivingBot):
 			return u'SQL updates must end with a ; to prevent accidents.'
 		self.ardj.database.cursor().execute(sql)
 		self.ardj.database.commit()
-		self.broadcast(u'SQL from %s: %s' % (self.get_linked_sender(message), sql))
+		self.log(u'SQL from %s: %s' % (self.get_linked_sender(message), sql))
 
 	@botcmd
 	def twit(self, message, args):
@@ -310,7 +312,7 @@ class ardjbot(MyFileReceivingBot):
 			return u'Could not initialize Twitter API: %s' % e
 		posting = api.PostUpdate(args)
 		url = 'http://twitter.com/' + posting.GetUser().GetScreenName() + '/status/' + str(posting.GetId())
-		self.broadcast(u'%s sent <a href="%s">a message</a> to twitter: %s' % (self.get_linked_sender(message), url, args))
+		self.log(u'%s sent <a href="%s">a message</a> to twitter: %s' % (self.get_linked_sender(message), url, args))
 
 	@botcmd
 	def echo(self, message, args):
