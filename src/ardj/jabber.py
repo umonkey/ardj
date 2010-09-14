@@ -86,7 +86,7 @@ class ardjbot(MyFileReceivingBot):
 		"""
 		Updates the database, then starts the jabber bot.
 		"""
-		return JabberBot.serve_forever(self, connect_callback=self.on_connected)
+		return JabberBot.serve_forever(self, connect_callback=self.on_connected, disconnect_callback=self.on_disconnect)
 
 	def on_connected(self):
 		# self.status_type = self.DND
@@ -111,10 +111,13 @@ class ardjbot(MyFileReceivingBot):
 			traceback.print_exc()
 
 	def shutdown(self):
-		self.on_disconnect()
+		# self.on_disconnect() # called by JabberBot afterwards.
+		self.log('shutdown: shutting down JabberBot.')
 		JabberBot.shutdown(self)
 		if self.pidfile and os.path.exists(self.pidfile):
+			self.log('shutdown: removing the pid file.')
 			os.unlink(self.pidfile)
+		self.log('shutdown: over.')
 
 	def update_status(self, onstart=False):
 		"""
@@ -491,7 +494,8 @@ class ardjbot(MyFileReceivingBot):
 		Extends the parent method by registering a disconnect handler.
 		"""
 		conn = super(ardjbot, self).connect()
-		conn.RegisterDisconnectHandler(self.on_disconnect)
+		# this is now done while calling serve_forever().
+		# conn.RegisterDisconnectHandler(self.on_disconnect)
 		return conn
 
 	def on_disconnect(self):
@@ -499,6 +503,7 @@ class ardjbot(MyFileReceivingBot):
 			self.log('on_disconnect: stopping dbtracker.')
 			self.dbtracker.stop()
 			self.dbtracker = None
+			self.log('on_disconnect: finished.')
 
 	def __vote(self, track_id, email, vote):
 		cur = self.ardj.database.cursor()
