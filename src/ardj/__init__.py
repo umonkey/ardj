@@ -398,7 +398,9 @@ class ardj:
 		result = weight or 0
 		if artist_weight is not None:
 			result = result * artist_weight
-		result = result / ((count or 0) + 1)
+		# Fading priorities are disabled for now, would be nice to define this
+		# behaviour in playlist.yaml.
+		## result = result / ((count or 0) + 1)
 		return result
 
 	def get_stats(self):
