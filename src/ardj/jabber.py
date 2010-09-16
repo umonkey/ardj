@@ -454,6 +454,21 @@ class ardjbot(MyFileReceivingBot):
 			message += u'\n<br/>  %s — #%u @%s' % (self.get_linked_title(track), track['id'], track['playlist'])
 		return message
 
+	@botcmd
+	def votes(self, mess, args):
+		u"show votes for current track"
+		track = self.get_current_track()
+		if track is None:
+			return u'Nothing is playing.'
+		votes = self.ardj.database.cursor().execute('SELECT email, vote FROM votes WHERE track_id = ?', (track['id'], )).fetchall()
+		pro = [row[1] for row in votes if row[2] > 0]
+		if not pro:
+			pro.append('nobody')
+		contra = [row[1] for row in votes if row[2] < 0]
+		if not contra:
+			contra.append('nobody')
+		return u'Pro: %s, contra: %s.' % (', '.join(pro), ', '.join(contra))
+
 	def send_simple_reply(self, mess, text, private=False):
 		"""
 		Splits long messages and sends them in parts.
