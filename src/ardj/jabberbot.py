@@ -41,10 +41,11 @@ __license__ = 'GPLv3 or later'
 def botcmd(*args, **kwargs):
     """Decorator for bot command functions"""
 
-    def decorate(func, hidden=False, name=None):
+    def decorate(func, hidden=False, name=None, pattern=None):
         setattr(func, '_jabberbot_command', True)
         setattr(func, '_jabberbot_hidden', hidden)
         setattr(func, '_jabberbot_command_name', name or func.__name__)
+        setattr(func, '_jabberbot_command_re', pattern and re.compile(pattern))
         return func
 
     if len(args):
@@ -372,10 +373,7 @@ class JabberBot(object):
         # Remember the last-talked-in thread for replies
         self.__threads[jid] = mess.getThread()
 
-        if ' ' in text:
-            command, args = text.split(' ', 1)
-        else:
-            command, args = text, ''
+        command, args = self.parse_command(text)
         cmd = command.lower()
         self.log.debug("*** cmd = %s" % cmd)
 
@@ -389,13 +387,27 @@ class JabberBot(object):
             # In private chat, it's okay for the bot to always respond.
             # In group chat, the bot should silently ignore commands it
             # doesn't understand or aren't handled by unknown_command().
-            default_reply = 'Unknown command: "%s". Type "help" for available commands.<b>blubb!</b>' % cmd
+            default_reply = 'Unknown command: "%s". Type "help" for available commands.' % cmd
             if type == "groupchat": default_reply = None
             reply = self.unknown_command( mess, cmd, args)
             if reply is None:
                 reply = default_reply
         if reply:
             self.send_simple_reply(mess,reply)
+
+    def parse_command(self, text):
+        # First look for commands with regular expressions.
+        for command in self.commands:
+            pattern = getattr(self.commands[command], '_jabberbot_command_re')
+            if pattern is not None:
+                res = pattern.match(text)
+                if res is not None:
+                    return command, res.groups()
+        # Then look for regular matches.
+        if ' ' in text:
+            return text.split(' ', 1)
+        # Otherwise text is the command.
+        return text, ''
 
     def unknown_command(self, mess, cmd, args):
         """Default handler for unknown commands
@@ -492,5 +504,3 @@ class JabberBot(object):
 
         if disconnect_callback:
             disconnect_callback()
-
-

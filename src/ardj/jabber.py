@@ -368,25 +368,40 @@ class ardjbot(MyFileReceivingBot):
 		except Exception, e:
 			return unicode(e)
 
-	@botcmd
+	@botcmd(pattern='^(?:(\d+)\s+)?(?:rocks)$')
 	def rocks(self, message, args):
-		"express your love for the current track"
-		track = self.get_current_track()
+		"""express your love for the current track
+		
+		Usage: "[track_id] rocks".  If the track id is not specified, the current track is assumed.
+		"""
+		track = self.get_track(args, 0)
 		if track is None:
 			return 'Nothing is playing.'
 		else:
 			votes, weight = self.__vote(track['id'], message.getFrom().getStripped(), 1)
 			return u'Recorded a vote for %s, current score: %s, weight: %s.' % (self.get_linked_title(track), votes, weight)
 
-	@botcmd
+	@botcmd(pattern='^(?:(\d+)\s+)?(?:sucks)$')
 	def sucks(self, message, args):
-		"express your hate for the current track"
-		track = self.get_current_track()
+		"""express your hate for the current track
+		
+		Usage: "[track_id] sucks".  If the track id is not specified, the current track is assumed.
+		"""
+		track = self.get_track(args, 0)
 		if track is None:
 			return 'Nothing is playing.'
 		else:
 			votes, weight = self.__vote(track['id'], message.getFrom().getStripped(), -1)
 			return u'Recorded a vote against %s, current score: %s, weight: %s.' % (self.get_linked_title(track), votes, weight)
+
+	def get_track(self, args, index):
+		if type(args) != tuple:
+			raise TypeError("Use the 'help' command to understand how this works.")
+		if args[index] is None:
+			return self.ardj.get_last_track()
+		elif str(args[index]).isdigit():
+			return self.ardj.get_track_by_id(int(args[index]))
+		raise TypeError("Track id must be an integer, or not specified at all.")
 
 	@botcmd
 	def shitlist(self, message, args):
@@ -454,10 +469,13 @@ class ardjbot(MyFileReceivingBot):
 			message += u'\n<br/>  %s — #%u @%s' % (self.get_linked_title(track), track['id'], track['playlist'])
 		return message
 
-	@botcmd
+	@botcmd(pattern='^votes(?: for (\d+))?$')
 	def votes(self, mess, args):
-		u"show votes for current track"
-		track = self.get_current_track()
+		"""show votes for a track
+
+		Usage: "votes [for track_id]".  If track_id is not specified, the last played track is assumed.
+		"""
+		track = self.get_track(args, 0)
 		if track is None:
 			return u'Nothing is playing.'
 		votes = self.ardj.database.cursor().execute('SELECT email, vote FROM votes WHERE track_id = ?', (track['id'], )).fetchall()
