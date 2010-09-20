@@ -487,6 +487,11 @@ class ardjbot(MyFileReceivingBot):
 			contra.append('nobody')
 		return u'Pro: %s, contra: %s.' % (', '.join(pro), ', '.join(contra))
 
+	@botcmd
+	def voters(self, mess, args):
+		rows = self.ardj.database.cursor().execute('SELECT `email`, COUNT(*) AS `count` FROM `votes` GROUP BY `email` ORDER BY `count` DESC').fetchall()
+		return u'Top voters: ' + u', '.join([u'%s (%u)' % (row[0], row[1]) for row in rows]) + u'.'
+
 	def send_simple_reply(self, mess, text, private=False):
 		"""
 		Splits long messages and sends them in parts.
