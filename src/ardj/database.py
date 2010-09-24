@@ -45,9 +45,15 @@ class database:
 		cur.execute('CREATE INDEX IF NOT EXISTS idx_tracks_count ON tracks (count)')
 		cur.execute('CREATE TABLE IF NOT EXISTS queue (id INTEGER PRIMARY KEY, track_id INTEGER, owner TEXT)')
 		# голоса пользователей
-		cur.execute('CREATE TABLE IF NOT EXISTS votes (track_id INTEGER NOT NULL, email TEXT NOT NULL, vote INTEGER)')
+		cur.execute('CREATE TABLE IF NOT EXISTS votes (track_id INTEGER NOT NULL, email TEXT NOT NULL, vote INTEGER, weight REAL)')
 		cur.execute('CREATE INDEX IF NOT EXISTS idx_votes_track_id ON votes (track_id)')
 		cur.execute('CREATE INDEX IF NOT EXISTS idx_votes_email ON votes (email)')
+		# карма
+		cur.execute('CREATE TABLE IF NOT EXISTS karma (email TEXT, weight REAL)')
+		cur.execute('CREATE INDEX IF NOT EXISTS idx_karma_email ON karma (email)')
+		# View для подсчёта веса дорожек на основании кармы.
+		# weight = max(0.1, 1 + sum(vote * weight))
+		cur.execute('CREATE VIEW IF NOT EXISTS track_weights AS SELECT v.track_id AS track_id, COUNT(*) AS count, MAX(0.1, 1 + SUM(v.vote * k.weight)) AS weight FROM votes v INNER JOIN karma k ON k.email = v.email GROUP BY v.track_id')
 
 	def __del__(self):
 		self.commit()
@@ -94,6 +100,44 @@ class database:
 		params.append(args['id'])
 
 		cur.execute('UPDATE %s SET %s WHERE id = ?' % (table, ', '.join(sql)), tuple(params))
+
+	def add_vote(self, track_id, email, vote):
+		"""Adds a vote for/against a track, returns track's current weight.
+
+		The process is: 1) add a record to the votes table, 2) update email's
+		record in the karma table, 3) update weight for all tracks email voted
+		for/against.
+
+		Votes other than +1 and -1 are skipped.
+		"""
+		cur = self.cursor()
+
+		# Normalize the vote.
+		if vote > 0: vote = 1
+		elif vote < 0: vote = -1
+
+		# Skip wrong values.
+		if vote != 0:
+			cur.execute('DELETE FROM votes WHERE track_id = ? AND email = ?', (track_id, email, ))
+			cur.execute('INSERT INTO votes (track_id, email, vote) VALUES (?, ?, ?)', (track_id, email, vote, ))
+
+		# Update email's karma.
+		all = float(cur.execute('SELECT COUNT(*) FROM votes').fetchall()[0][0])
+		his = float(cur.execute('SELECT COUNT(*) FROM votes WHERE email = ?', (email, )).fetchall()[0][0])
+		cur.execute('DELETE FROM karma WHERE email = ?', (email, ))
+		cur.execute('INSERT INTO karma (email, weight) VALUES (?, ?)', (email, his / all, ))
+
+		# Update all track weights.  Later this can be replaced with joins and
+		# views (when out of beta).
+		cur.execute('UPDATE tracks SET weight = 1')
+		result = 1
+		for row in cur.execute('SELECT track_id, weight FROM track_weights WHERE track_id IN (SELECT track_id FROM votes WHERE email = ?)', (email, )).fetchall():
+			cur.execute('UPDATE tracks SET weight = ? WHERE id = ?', (row[1], row[0], ))
+			if track_id == row[0]:
+				result = row[1]
+
+		self.commit()
+		return result
 
 def Open(filename):
     return database(filename)

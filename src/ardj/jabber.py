@@ -14,22 +14,17 @@ from xml.sax import saxutils
 
 from ardj.jabberbot import JabberBot, botcmd
 from ardj.filebot import FileBot, FileNotAcceptable
+from ardj import twitter
 import notify
 import tags
 
 def log(msg):
 	print >>sys.stderr, msg
 
-try:
-	import twitter
-	have_twitter = True
-except ImportError:
-	have_twitter = False
-
 class MyFileReceivingBot(FileBot):
 	def is_file_acceptable(self, sender, filename, filesize):
 		if not self.check_access(sender):
-			self.log('Refusing to accept files from %s.' % sender)
+			log('Refusing to accept files from %s.' % sender)
 			raise FileNotAcceptable('I\'m not allowed to receive files from you, sorry.')
 		if os.path.splitext(filename.lower())[1] not in ['.mp3', '.ogg']:
 			raise FileNotAcceptable('I only accept MP3 and OGG files, which "%s" doesn\'t look like.' % os.path.basename(filename))
@@ -42,7 +37,7 @@ class MyFileReceivingBot(FileBot):
 		dst_name = self.add_filename_suffix(os.path.join(dst_path, os.path.basename(filename)))
 		shutil.move(filename, dst_name)
 
-		self.log('Received %s.' % dst_name)
+		log('Received %s.' % dst_name)
 		track_id = self.ardj.add_track_from_file(dst_name)
 
 		return 'Your file was assigned number %u. Use the "news" command to see last added files, "set playlist to xyz for %u" to move this file from @incoming.' % (track_id, track_id)
@@ -67,6 +62,15 @@ class ardjbot(MyFileReceivingBot):
 		self.dbtracker = None
 		self.pidfile = '/tmp/ardj-jabber.pid'
 		self.publicCommands = self.ardj.config.get('jabber/public-commands', 'help rocks sucks show last hitlist shitlist').split(' ')
+
+		try:
+			tmp = twitter.Api(username=ardj.config.get('twitter/consumer_key'),
+				password=ardj.config.get('twitter/consumer_secret'),
+				access_token_key=ardj.config.get('twitter/access_token_key'),
+				access_token_secret=ardj.config.get('twitter/access_token_secret'))
+			self.twitter = tmp
+			log('Logged in to Twitter.')
+		except: pass
 
 		login, password = self.split_login(self.ardj.config.get('jabber/login'))
 		super(ardjbot, self).__init__(login, password, res=socket.gethostname(), debug=ardj.debug)
@@ -112,12 +116,12 @@ class ardjbot(MyFileReceivingBot):
 
 	def shutdown(self):
 		# self.on_disconnect() # called by JabberBot afterwards.
-		self.log('shutdown: shutting down JabberBot.')
+		log('shutdown: shutting down JabberBot.')
 		JabberBot.shutdown(self)
 		if self.pidfile and os.path.exists(self.pidfile):
-			self.log('shutdown: removing the pid file.')
+			log('shutdown: removing the pid file.')
 			os.unlink(self.pidfile)
-		self.log('shutdown: over.')
+		log('shutdown: over.')
 
 	def update_status(self, onstart=False):
 		"""
@@ -131,7 +135,7 @@ class ardjbot(MyFileReceivingBot):
 					status = u'«%s» by %s' % (track['title'], track['artist'])
 				else:
 					status = os.path.basename(track['filename'])
-				status += u' — #%u @%s ♺%u ⚖%s' % (track['id'], track['playlist'], track['count'], track['weight'])
+				status += u' — #%u @%s ♺%u ⚖%.2f' % (track['id'], track['playlist'], track['count'], track['weight'])
 				self.status_message = status
 			if self.ardj.config.get('jabber/tunes', True):
 				self.send_tune(track)
@@ -155,7 +159,7 @@ class ardjbot(MyFileReceivingBot):
 			if body is not None:
 				is_public = body.strip().split(' ')[0] in self.publicCommands
 				if not is_public and not self.check_access(mess.getFrom().getStripped()):
-					self.log('Refusing access to %s.' % mess.getFrom())
+					log('Refusing access to %s.' % mess.getFrom())
 					return self.send_simple_reply(mess, 'Available commands: %s.' % ', '.join(self.publicCommands))
 		return JabberBot.callback_message(self, conn, mess)
 
@@ -190,7 +194,7 @@ class ardjbot(MyFileReceivingBot):
 		track[a1] = a2
 		self.ardj.update_track(track)
 
-		self.log(u'%s changed %s from "%s" to "%s" for %s; #%u @%s' % (self.get_linked_sender(message), a1, old, a2, self.get_linked_title(track), track['id'], track['playlist']))
+		log(u'%s changed %s from "%s" to "%s" for %s; #%u @%s' % (self.get_linked_sender(message), a1, old, a2, self.get_linked_title(track), track['id'], track['playlist']))
 
 	@botcmd
 	def delete(self, message, args):
@@ -209,7 +213,7 @@ class ardjbot(MyFileReceivingBot):
 		old = track['weight']
 		track['weight'] = 0
 		self.ardj.update_track(track)
-		self.log(u'%s changed weight from %s to 0 for %s; #%u @%s' % (self.get_linked_sender(message), old, self.get_linked_title(track), track['id'], track['playlist']))
+		log(u'%s changed weight from %s to 0 for %s; #%u @%s' % (self.get_linked_sender(message), old, self.get_linked_title(track), track['id'], track['playlist']))
 		if not args:
 			self.skip(message, args)
 
@@ -221,7 +225,7 @@ class ardjbot(MyFileReceivingBot):
 			return u'This track\'s weight is %s, not quite zero.' % (track['weight'])
 		track['weight'] = 1.
 		self.ardj.update_track(track)
-		self.log(u'%s changed weight from 0 to 1 for %s; #%u @%s' % (self.get_linked_sender(message), self.get_linked_title(track), track['id'], track['playlist']))
+		log(u'%s changed weight from 0 to 1 for %s; #%u @%s' % (self.get_linked_sender(message), self.get_linked_title(track), track['id'], track['playlist']))
 
 	@botcmd
 	def skip(self, message, args):
@@ -295,24 +299,17 @@ class ardjbot(MyFileReceivingBot):
 			return u'SQL updates must end with a ; to prevent accidents.'
 		self.ardj.database.cursor().execute(sql)
 		self.ardj.database.commit()
-		self.log(u'SQL from %s: %s' % (self.get_linked_sender(message), sql))
+		log(u'SQL from %s: %s' % (self.get_linked_sender(message), sql))
 
 	@botcmd
 	def twit(self, message, args):
 		"Send a message to Twitter"
-		if not have_twitter:
-			return u'You need to install <a href="http://code.google.com/p/python-twitter/">python-twitter</a> to use this command.'
-		username, password = self.ardj.config.get('twitter/name', ''), self.ardj.config.get('twitter/password', '')
-		if not username or not password:
+		if not self.twitter:
 			return u'Twitter is not enabled in the config file.'
-		try:
-			api = twitter.Api(username=username, password=password)
-			api.SetXTwitterHeaders(client='ardj', url='http://ardj.googlecode.com/', version='1.0')
-		except Exception, e:
-			return u'Could not initialize Twitter API: %s' % e
-		posting = api.PostUpdate(args)
+		posting = self.twitter.PostUpdate(args.encode('utf-8'))
 		url = 'http://twitter.com/' + posting.GetUser().GetScreenName() + '/status/' + str(posting.GetId())
-		self.log(u'%s sent <a href="%s">a message</a> to twitter: %s' % (self.get_linked_sender(message), url, args))
+		log(u'%s sent <a href="%s">a message</a> to twitter: %s' % (self.get_linked_sender(message), url, args))
+		return url
 
 	@botcmd
 	def echo(self, message, args):
@@ -379,7 +376,7 @@ class ardjbot(MyFileReceivingBot):
 			return 'Nothing is playing.'
 		else:
 			votes, weight = self.__vote(track['id'], message.getFrom().getStripped(), 1)
-			return u'Recorded a vote for %s, current score: %s, weight: %s.' % (self.get_linked_title(track), votes, weight)
+			return u'Recorded a vote for %s, weight: %s.' % (self.get_linked_title(track), weight)
 
 	@botcmd(pattern='^(?:(\d+)\s+)?(?:sucks)$')
 	def sucks(self, message, args):
@@ -392,7 +389,7 @@ class ardjbot(MyFileReceivingBot):
 			return 'Nothing is playing.'
 		else:
 			votes, weight = self.__vote(track['id'], message.getFrom().getStripped(), -1)
-			return u'Recorded a vote against %s, current score: %s, weight: %s.' % (self.get_linked_title(track), votes, weight)
+			return u'Recorded a vote against %s weight: %s.' % (self.get_linked_title(track), weight)
 
 	def get_track(self, args, index):
 		if type(args) != tuple:
@@ -541,19 +538,21 @@ class ardjbot(MyFileReceivingBot):
 
 	def on_disconnect(self):
 		if self.dbtracker:
-			self.log('on_disconnect: stopping dbtracker.')
+			log('on_disconnect: stopping dbtracker.')
 			self.dbtracker.stop()
 			self.dbtracker = None
-			self.log('on_disconnect: finished.')
+			log('on_disconnect: finished.')
 
 	def __vote(self, track_id, email, vote):
+		return (1, self.ardj.database.add_vote(track_id, email, vote))
+
 		cur = self.ardj.database.cursor()
 		# store the vote
 		cur.execute('DELETE FROM votes WHERE track_id = ? AND email = ?', (track_id, email, ))
 		cur.execute('INSERT INTO votes (track_id, email, vote) VALUES (?, ?, ?)', (track_id, email, vote, ))
 		# update track weight
 		votes = cur.execute('SELECT SUM(vote) FROM votes WHERE track_id = ?', (track_id, )).fetchall()[0][0]
-		weight = 1 + votes * 0.5
+		weight = max(1 + votes * 0.25, 0.1)
 		cur.execute('UPDATE tracks SET weight = ? WHERE id = ?', (weight, track_id, ))
 		self.ardj.database.commit()
 		return (votes, weight)
