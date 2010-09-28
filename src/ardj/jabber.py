@@ -276,10 +276,10 @@ class ardjbot(MyFileReceivingBot):
 			self.broadcast(u'%s said: %s' % (self.get_linked_sender(message), args), True)
 
 	@botcmd
-	def die(self, message, args):
-		"Shut down the bot (should be restarted)"
+	def restart(self, message, args):
+		"Shut down the bot (will be restarted)"
 		self.shutdown()
-		self.quit(1)
+		self.quit()
 
 	@botcmd
 	def select(self, message, args):
@@ -310,6 +310,20 @@ class ardjbot(MyFileReceivingBot):
 		url = 'http://twitter.com/' + posting.GetUser().GetScreenName() + '/status/' + str(posting.GetId())
 		log(u'%s sent <a href="%s">a message</a> to twitter: %s' % (self.get_linked_sender(message), url, args))
 		return url
+
+	@botcmd
+	def twits(self, message, args):
+		"Show twitter replies"
+		if not self.twitter:
+			return u'Twitter is not enabled in the config file.'
+		html = u''
+		for reply in self.twitter.GetReplies():
+			html += u'<a href="http://twitter.com/%s/status/%s">%s</a>: %s\n' % (reply.user.screen_name, reply.id, reply.user.screen_name, saxutils.escape(reply.text))
+		for reply in self.twitter.FilterPublicTimeline('#tmradio'):
+			html += u'<a href="http://twitter.com/%s/status/%s">%s</a>: %s\n' % (reply.user.screen_name, reply.id, reply.user.screen_name, saxutils.escape(reply.text))
+		if not len(html):
+			html = u'Nothing.'
+		return html.replace('\n', '<br/>\n')
 
 	@botcmd
 	def echo(self, message, args):
@@ -426,13 +440,25 @@ class ardjbot(MyFileReceivingBot):
 
 	@botcmd
 	def queue(self, message, args):
-		u"Adds a track to queue\n\nUsage: queue [track_id...]"
+		"""Adds a track to queue\n\nUsage: queue [pattern]
+		
+		The pattern can be a track id or a part of its name, artist or
+		filename.  If only one track matches, it's queued, otherwise an error
+		is shown.
+		"""
 		cur = self.ardj.database.cursor()
-		if args:
-			ids = [int(x) for x in args.split(' ') if x]
-			for id in ids:
-				self.ardj.queue_track(id, cur)
-			self.ardj.database.commit()
+
+		# Если есть нецифровые элементы, выполняем поиск.
+		if len(args.strip()):
+			if len([x for x in args.split(' ') if not x.isdigit()]):
+				rows = cur.execute('SELECT id FROM tracks WHERE title LIKE ? ORDER BY title', (u'%' + args + u'%', )).fetchall()
+				if rows:
+					self.ardj.queue_track(int(rows[0][0]), cur)
+				else:
+					return u'Ничего похожего нет.'
+			elif args:
+				for id in [x for x in args.split(' ') if x]:
+					self.ardj.queue_track(int(id), cur)
 		tracks = [{ 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'playlist': row[4], 'qid': row[5] } for row in self.ardj.database.cursor().execute('SELECT t.id, t.filename, t.artist, t.title, t.playlist, q.id FROM tracks t INNER JOIN queue q ON q.track_id = t.id ORDER BY q.id').fetchall()]
 		if not tracks:
 			return u'Queue empty, use "queue track_id..." to fill.'
@@ -447,7 +473,7 @@ class ardjbot(MyFileReceivingBot):
 		if not args:
 			return self.find.__doc__.split('\n\n')[1]
 		like = '%' + args + '%'
-		tracks = [{ 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'playlist': row[4] } for row in self.ardj.database.cursor().execute('SELECT id, filename, artist, title, playlist FROM tracks WHERE artist LIKE ? OR title LIKE ? OR filename LIKE ? ORDER BY id LIMIT 10', (like, like, like, )).fetchall()]
+		tracks = [{ 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'playlist': row[4] } for row in self.ardj.database.cursor().execute('SELECT id, filename, artist, title, playlist FROM tracks WHERE title LIKE ? ORDER BY id LIMIT 10', (like, )).fetchall()]
 		if not tracks:
 			return u'No matching tracks.'
 		message = u'Found %u tracks:' % len(tracks)

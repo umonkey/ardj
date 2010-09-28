@@ -413,7 +413,7 @@ class JabberBot(object):
         # If the command has a regexp -- skip it, beacuse it didn't match.
         # Also, handlers of such commands expect args to be tuples, and we only
         # have a string.
-        if getattr(handler, '_jabberbot_command_re'):
+        if hasattr(handler, '_jabberbot_command_re') and getattr(handler, '_jabberbot_command_re'):
             handler = None
         return handler, command, args
 
