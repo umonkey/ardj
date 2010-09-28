@@ -161,7 +161,9 @@ class ardjbot(MyFileReceivingBot):
 				if not is_public and not self.check_access(mess.getFrom().getStripped()):
 					log('Refusing access to %s.' % mess.getFrom())
 					return self.send_simple_reply(mess, 'Available commands: %s.' % ', '.join(self.publicCommands))
-		return JabberBot.callback_message(self, conn, mess)
+		res = JabberBot.callback_message(self, conn, mess)
+		self.ardj.database.commit()
+		return res
 
 	@botcmd
 	def set(self, message, args):
@@ -203,7 +205,6 @@ class ardjbot(MyFileReceivingBot):
 			if not args.endswith(';'):
 				return u'SQL commands must end with a ; to prevent accidents.'
 			self.ardj.database.cursor().execute(u'delete ' + args)
-			self.ardj.database.commit()
 			return u'ok'
 		track = args and self.ardj.get_track_by_id(int(args)) or self.get_current_track()
 		if not track['weight']:
@@ -298,7 +299,6 @@ class ardjbot(MyFileReceivingBot):
 		if not sql.endswith(';'):
 			return u'SQL updates must end with a ; to prevent accidents.'
 		self.ardj.database.cursor().execute(sql)
-		self.ardj.database.commit()
 		log(u'SQL from %s: %s' % (self.get_linked_sender(message), sql))
 
 	@botcmd
@@ -352,7 +352,6 @@ class ardjbot(MyFileReceivingBot):
 			if os.path.exists(filename):
 				os.unlink(filename)
 		cur.execute('DELETE FROM tracks WHERE weight = 0')
-		self.ardj.database.commit()
 		return u'ok'
 
 	@botcmd
@@ -473,7 +472,7 @@ class ardjbot(MyFileReceivingBot):
 		if not args:
 			return self.find.__doc__.split('\n\n')[1]
 		like = '%' + args + '%'
-		tracks = [{ 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'playlist': row[4] } for row in self.ardj.database.cursor().execute('SELECT id, filename, artist, title, playlist FROM tracks WHERE title LIKE ? ORDER BY id LIMIT 10', (like, )).fetchall()]
+		tracks = [{ 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'playlist': row[4] } for row in self.ardj.database.cursor().execute('SELECT id, filename, artist, title, playlist FROM tracks WHERE title LIKE ? OR artist LIKE ? ORDER BY id LIMIT 10', (like, like, )).fetchall()]
 		if not tracks:
 			return u'No matching tracks.'
 		message = u'Found %u tracks:' % len(tracks)
@@ -580,7 +579,6 @@ class ardjbot(MyFileReceivingBot):
 		votes = cur.execute('SELECT SUM(vote) FROM votes WHERE track_id = ?', (track_id, )).fetchall()[0][0]
 		weight = max(1 + votes * 0.25, 0.1)
 		cur.execute('UPDATE tracks SET weight = ? WHERE id = ?', (weight, track_id, ))
-		self.ardj.database.commit()
 		return (votes, weight)
 
 def Open(ardj):
