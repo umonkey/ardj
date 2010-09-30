@@ -512,3 +512,19 @@ class JabberBot(object):
 
         if disconnect_callback:
             disconnect_callback()
+
+if __name__ == '__main__':
+    if len(sys.argv) < 3:
+        print >>sys.stderr, 'Usage: %s jid password' % os.path.basename(sys.argv[0])
+        sys.exit(1)
+
+    class TestBot(JabberBot):
+        @botcmd
+        def die(self, mess, args):
+            self.quit()
+            return 'Ok, bye.'
+
+    bot = TestBot(sys.argv[1], sys.argv[2], res='debug/', debug=True)
+    bot.serve_forever()
+
+    print 'JabberBot exited.'

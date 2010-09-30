@@ -129,7 +129,7 @@ class database:
 
 		# Update all track weights.  Later this can be replaced with joins and
 		# views (when out of beta).
-		cur.execute('UPDATE tracks SET weight = 1')
+		## wtf ?! ## cur.execute('UPDATE tracks SET weight = 1')
 		result = 1
 		for row in cur.execute('SELECT track_id, weight FROM track_weights WHERE track_id IN (SELECT track_id FROM votes WHERE email = ?)', (email, )).fetchall():
 			cur.execute('UPDATE tracks SET weight = ? WHERE id = ?', (row[1], row[0], ))

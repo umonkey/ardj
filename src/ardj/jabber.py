@@ -86,14 +86,8 @@ class ardjbot(MyFileReceivingBot):
 		host = uri.split('@', 1)[1]
 		return (name + '@' + host, password)
 
-	def serve_forever(self):
-		"""
-		Updates the database, then starts the jabber bot.
-		"""
-		return JabberBot.serve_forever(self, connect_callback=self.on_connected, disconnect_callback=self.on_disconnect)
-
 	def on_connected(self):
-		# self.status_type = self.DND
+		log('on_connected called.')
 		self.dbtracker = notify.monitor([self.ardj.database.filename], self.on_file_changes)
 		if self.pidfile:
 			try:
@@ -154,16 +148,21 @@ class ardjbot(MyFileReceivingBot):
 		return sender.split('/')[0] in self.get_users()
 
 	def callback_message(self, conn, mess):
-		if mess.getType() == 'chat':
-			body = mess.getBody()
-			if body is not None:
-				is_public = body.strip().split(' ')[0] in self.publicCommands
-				if not is_public and not self.check_access(mess.getFrom().getStripped()):
-					log('Refusing access to %s.' % mess.getFrom())
-					return self.send_simple_reply(mess, 'Available commands: %s.' % ', '.join(self.publicCommands))
-		res = JabberBot.callback_message(self, conn, mess)
-		self.ardj.database.commit()
-		return res
+		"""Extended message handler
+
+		Adds an explicit database commit after all messages.
+		"""
+		try:
+			if mess.getType() == 'chat':
+				body = mess.getBody()
+				if body is not None:
+					is_public = body.strip().split(' ')[0] in self.publicCommands
+					if not is_public and not self.check_access(mess.getFrom().getStripped()):
+						log('Refusing access to %s.' % mess.getFrom())
+						return self.send_simple_reply(mess, 'Available commands: %s.' % ', '.join(self.publicCommands))
+			return JabberBot.callback_message(self, conn, mess)
+		finally:
+			self.ardj.database.commit()
 
 	@botcmd
 	def set(self, message, args):
@@ -336,12 +335,7 @@ class ardjbot(MyFileReceivingBot):
 		return args.split(u' ')
 
 	def run(self):
-		try:
-			return self.serve_forever()
-		except Exception, e:
-			print >>sys.stderr, 'Error: %s.' % e
-			traceback.print_exc()
-			return 1
+		self.serve_forever(connect_callback=self.on_connected, disconnect_callback=self.on_disconnect)
 
 	@botcmd
 	def purge(self, message, args):
@@ -562,6 +556,7 @@ class ardjbot(MyFileReceivingBot):
 		return conn
 
 	def on_disconnect(self):
+		log('on_disconnect called.')
 		if self.dbtracker:
 			log('on_disconnect: stopping dbtracker.')
 			self.dbtracker.stop()
