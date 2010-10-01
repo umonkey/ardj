@@ -146,6 +146,7 @@ class JabberBot(object):
             self.log.info('*** roster ***')
             self.conn.RegisterHandler('message', self.callback_message)
             self.conn.RegisterHandler('presence', self.callback_presence)
+            #self.conn.RegisterHandler('iq', self.on_ping_reply, ns='urn:xmpp:ping')
 
         return self.conn
 
@@ -521,16 +522,37 @@ class JabberBot(object):
 
         return self.__exitcode
 
+    def on_ping_reply(self):
+        print >>sys.stderr, 'Ping reply received.'
+
 if __name__ == '__main__':
     if len(sys.argv) < 3:
         print >>sys.stderr, 'Usage: %s jid password' % os.path.basename(sys.argv[0])
         sys.exit(1)
 
+    import time
     class TestBot(JabberBot):
+        PING_TIMEOUT = 10
+
+        def __init__(self, *args, **kwargs):
+            self.lastping = time.time()
+            JabberBot.__init__(self, *args, **kwargs)
+
         @botcmd
         def die(self, mess, args):
             self.quit()
             return 'Ok, bye.'
+
+        @botcmd
+        def check(self, mess, args):
+            pass
+
+        def idle_proc(self):
+            if time.time() - self.lastping > 5:
+                self.lastping = time.time()
+                ping = xmpp.Protocol('iq',typ='get',payload=[xmpp.Node('ping',attrs={'xmlns':'urn:xmpp:ping'})])
+                res = self.conn.SendAndWaitForResponse(ping, 1)
+                print 'GOT:', res
 
     bot = TestBot(sys.argv[1], sys.argv[2], res='debug/', debug=True)
     bot.serve_forever()
