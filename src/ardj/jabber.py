@@ -103,7 +103,7 @@ class ardjbot(MyFileReceivingBot):
             self.send(str(self.jid) + '/' + str(self.res), 'ping')
         if time.time() - self.lastpong > self.PING_TIMEOUT:
             log('Terminating due to PING timeout.')
-            self.quit()
+            self.quit(1)
         super(ardjbot, self).idle_proc()
 
     def on_connected(self):
@@ -124,7 +124,7 @@ class ardjbot(MyFileReceivingBot):
                     return self.update_status()
         except IOError, e:
             log('IOError: %s, shutting down.' % e)
-            self.quit()
+            self.quit(1)
         except Exception, e:
             log('Exception in inotify handler: %s' % e)
             traceback.print_exc()
@@ -299,7 +299,7 @@ class ardjbot(MyFileReceivingBot):
     @botcmd
     def restart(self, message, args):
         "Shut down the bot (will be restarted)"
-        self.quit()
+        self.quit(1)
 
     @botcmd
     def select(self, message, args):
@@ -355,7 +355,7 @@ class ardjbot(MyFileReceivingBot):
         return args.split(u' ')
 
     def run(self):
-        self.serve_forever(connect_callback=self.on_connected, disconnect_callback=self.on_disconnect)
+        return self.serve_forever(connect_callback=self.on_connected, disconnect_callback=self.on_disconnect)
 
     @botcmd
     def purge(self, message, args):

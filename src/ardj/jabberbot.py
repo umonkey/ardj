@@ -74,6 +74,7 @@ class JabberBot(object):
         self.res = (res or self.__class__.__name__)
         self.conn = None
         self.__finished = False
+        self.__exitcode = 0
         self.__show = None
         self.__status = None
         self.__seen = {}
@@ -155,7 +156,7 @@ class JabberBot(object):
         my_room_JID = '/'.join((room, username))
         self.connect().send(xmpp.Presence(to=my_room_JID))
 
-    def quit( self):
+    def quit( self, exitcode=0):
         """Stop serving messages and exit.
 
         I find it is handy for development to run the
@@ -166,6 +167,7 @@ class JabberBot(object):
         new version.
         """
         self.__finished = True
+        self.__exitcode = exitcode
 
     def send_message(self, mess):
         """Send an XMPP message"""
@@ -499,7 +501,7 @@ class JabberBot(object):
             self.log.info('bot connected. serving forever.')
         else:
             self.log.warn('could not connect to server - aborting.')
-            return
+            return self.__exitcode
 
         if connect_callback:
             connect_callback()
@@ -516,6 +518,8 @@ class JabberBot(object):
 
         if disconnect_callback:
             disconnect_callback()
+
+        return self.__exitcode
 
 if __name__ == '__main__':
     if len(sys.argv) < 3:
