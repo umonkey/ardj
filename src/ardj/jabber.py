@@ -218,7 +218,7 @@ class ardjbot(MyFileReceivingBot):
 
         log(u'%s changed %s from "%s" to "%s" for %s; #%u @%s' % (self.get_linked_sender(message), a1, old, a2, self.get_linked_title(track), track['id'], track['playlist']))
 
-    @botcmd
+    @botcmd(hidden=True)
     def delete(self, message, args):
         "Deletes a track (sets weight to 0)\n\nUsage: delete track_id\n  or:\nUsage: delete from table where ...;"
         if args.lower().startswith('from'):
@@ -238,7 +238,7 @@ class ardjbot(MyFileReceivingBot):
         if not args:
             self.skip(message, args)
 
-    @botcmd
+    @botcmd(hidden=True)
     def undelete(self, message, args):
         "Undeletes a track (sets weight to 1)"
         track = args and self.ardj.get_track_by_id(int(args)) or self.get_current_track()
@@ -296,12 +296,12 @@ class ardjbot(MyFileReceivingBot):
         if len(args):
             self.broadcast(u'%s said: %s' % (self.get_linked_sender(message), args), True)
 
-    @botcmd
+    @botcmd(hidden=True)
     def restart(self, message, args):
         "Shut down the bot (will be restarted)"
         self.quit(1)
 
-    @botcmd
+    @botcmd(hidden=True)
     def select(self, message, args):
         "Low level access to the database"
         result = u''
@@ -311,7 +311,7 @@ class ardjbot(MyFileReceivingBot):
             result = u'Nothing.'
         return result
 
-    @botcmd
+    @botcmd(hidden=True)
     def update(self, message, args):
         "Low level update to the database"
         sql = 'update ' + args
@@ -344,7 +344,7 @@ class ardjbot(MyFileReceivingBot):
             html = u'Nothing.'
         return html.replace('\n', '<br/>\n')
 
-    @botcmd
+    @botcmd(hidden=True)
     def echo(self, message, args):
         "Send back the arguments"
         return args
@@ -357,7 +357,7 @@ class ardjbot(MyFileReceivingBot):
     def run(self):
         return self.serve_forever(connect_callback=self.on_connected, disconnect_callback=self.on_disconnect)
 
-    @botcmd
+    @botcmd(hidden=True)
     def purge(self, message, args):
         "Erase tracks with zero weight"
         cur = self.ardj.database.cursor()
@@ -530,12 +530,12 @@ class ardjbot(MyFileReceivingBot):
         rows = self.ardj.database.cursor().execute('SELECT `email`, COUNT(*) AS `count` FROM `votes` GROUP BY `email` ORDER BY `count` DESC').fetchall()
         return u'Top voters: ' + u', '.join([u'%s (%u)' % (row[0], row[1]) for row in rows]) + u'.'
 
-    @botcmd
+    @botcmd(hidden=True)
     def ping(self, mess, args):
         "Replies with a pong."
         return u'pong'
 
-    @botcmd
+    @botcmd(hidden=True)
     def pong(self, mess, args):
         "Restarts the watchdog counter (if sent to and by self)."
         if mess.getFrom() == str(self.jid) + '/' + str(self.res):
@@ -556,7 +556,7 @@ class ardjbot(MyFileReceivingBot):
         current = 1
         total = math.ceil(float(len(lines)) / float(linelimit))
         parent.send_simple_reply(mess, u'The response it too long (%u lines), sending in %u messages, up to %u lines each, with a %u seconds delay.' % (len(lines), total, linelimit, delay), private)
-        while len(lines) and not parent.is_shutting_down():
+        while len(lines):
             prefix = u'[part %u of %u]\n<br/>' % (current, total)
             parent.send_simple_reply(mess, prefix + u'\n'.join(lines[:linelimit]), private)
             del lines[:linelimit]
