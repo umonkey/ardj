@@ -351,7 +351,8 @@ class ardjbot(MyFileReceivingBot):
 	@botcmd
 	def sync(self, message, args):
 		"Update database (finds new and dead files)"
-		return self.ardj.sync()
+		self.ardj.sync()
+		return self.news(message, args)
 
 	def get_linked_title(self, track):
 		if not track['artist']:
