@@ -1,4 +1,4 @@
-# vim: set ts=4 sts=4 sw=4 et fileencoding=utf-8:
+# vim: set ts=4 sts=4 sw=4 noet fileencoding=utf-8:
 
 import math
 import os
@@ -56,12 +56,18 @@ class MyFileReceivingBot(FileBot):
         return filename
 
 class ardjbot(MyFileReceivingBot):
+    PROCESS_MSG_FROM_SELF = True
+    PROCESS_MSG_FROM_UNSEEN = True
+    PING_TIMEOUT = 60
+
     def __init__(self, ardj):
         self.ardj = ardj
         self.twitter = None
         self.dbtracker = None
+        self.lastping = None # время последнего пинга
+        self.lastpong = None # время последнего ответа на пинг
         self.pidfile = '/tmp/ardj-jabber.pid'
-        self.publicCommands = self.ardj.config.get('jabber/public-commands', 'help rocks sucks show last hitlist shitlist').split(' ')
+        self.publicCommands = self.ardj.config.get('jabber/public-commands', 'help rocks sucks show last hitlist shitlist ping pong').split(' ')
 
         try:
             tmp = twitter.Api(username=ardj.config.get('twitter/consumer_key'),
@@ -87,8 +93,22 @@ class ardjbot(MyFileReceivingBot):
         host = uri.split('@', 1)[1]
         return (name + '@' + host, password)
 
+    def idle_proc(self):
+        """
+        Sends a ping to self every PING_TIMEOUT/2 seconds.  If last reply was
+        longer than PING_TIMEOUT seconds ago, a suicide is commited.
+        """
+        if time.time() - self.lastping > self.PING_TIMEOUT / 2:
+            self.lastping = time.time()
+            self.send(str(self.jid) + '/' + str(self.res), 'ping')
+        if time.time() - self.lastpong > self.PING_TIMEOUT:
+            log('Terminating due to PING timeout.')
+            self.quit()
+        super(ardjbot, self).idle_proc()
+
     def on_connected(self):
         log('on_connected called.')
+        self.lastping = self.lastpong = time.time()
         self.dbtracker = notify.monitor([self.ardj.database.filename], self.on_file_changes)
         if self.pidfile:
             try:
@@ -279,7 +299,6 @@ class ardjbot(MyFileReceivingBot):
     @botcmd
     def restart(self, message, args):
         "Shut down the bot (will be restarted)"
-        self.shutdown()
         self.quit()
 
     @botcmd
@@ -510,6 +529,17 @@ class ardjbot(MyFileReceivingBot):
         u"Shows top voters."
         rows = self.ardj.database.cursor().execute('SELECT `email`, COUNT(*) AS `count` FROM `votes` GROUP BY `email` ORDER BY `count` DESC').fetchall()
         return u'Top voters: ' + u', '.join([u'%s (%u)' % (row[0], row[1]) for row in rows]) + u'.'
+
+    @botcmd
+    def ping(self, mess, args):
+        "Replies with a pong."
+        return u'pong'
+
+    @botcmd
+    def pong(self, mess, args):
+        "Restarts the watchdog counter (if sent to and by self)."
+        if mess.getFrom() == str(self.jid) + '/' + str(self.res):
+            self.lastpong = time.time()
 
     def send_simple_reply(self, mess, text, private=False):
         """

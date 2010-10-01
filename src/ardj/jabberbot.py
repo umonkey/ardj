@@ -61,6 +61,9 @@ class JabberBot(object):
     MSG_AUTHORIZE_ME = 'Hey there. You are not yet on my roster. Authorize my request and I will do the same.'
     MSG_NOT_AUTHORIZED = 'You did not authorize my subscription request. Access denied.'
 
+    PROCESS_MSG_FROM_SELF = False
+    PROCESS_MSG_FROM_UNSEEN = False
+
     def __init__(self, username, password, res=None, debug=False):
         """Initializes the jabber bot and sets up commands."""
         self.__debug = debug
@@ -360,13 +363,13 @@ class JabberBot(object):
         if xmpp.NS_DELAY in props: return
 
         # Ignore messages from myself
-        if username == self.__username: return
+        if not self.PROCESS_MSG_FROM_SELF and username == self.__username: return
 
         # If a message format is not supported (eg. encrypted), txt will be None
         if not text: return
 
         # Ignore messages from users not seen by this bot
-        if jid not in self.__seen:
+        if not self.PROCESS_MSG_FROM_UNSEEN and jid not in self.__seen:
             self.log.info('Ignoring message from unseen guest: %s' % jid)
             self.log.debug("I've seen: %s" % ["%s" % x for x in self.__seen.keys()])
             return
