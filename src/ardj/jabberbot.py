@@ -382,21 +382,21 @@ class JabberBot(object):
         handler, command, args = self.parse_command(text)
         self.log.debug("*** cmd = %s" % command)
 
-        if handler is not None:
-            try:
+        try:
+            if handler is not None:
                 reply = handler(mess, args)
-            except Exception, e:
-                reply = traceback.format_exc(e)
-                self.log.exception('An error happened while processing a message ("%s") from %s: %s"' % (text, jid, reply))
-        else:
-            # In private chat, it's okay for the bot to always respond.
-            # In group chat, the bot should silently ignore commands it
-            # doesn't understand or aren't handled by unknown_command().
-            default_reply = 'Unknown command: "%s". Type "help" for available commands.' % command
-            if type == "groupchat": default_reply = None
-            reply = self.unknown_command(mess, command, args)
-            if reply is None:
-                reply = default_reply
+            else:
+                # In private chat, it's okay for the bot to always respond.
+                # In group chat, the bot should silently ignore commands it
+                # doesn't understand or aren't handled by unknown_command().
+                default_reply = 'Unknown command: "%s". Type "help" for available commands.' % command
+                if type == "groupchat": default_reply = None
+                reply = self.unknown_command(mess, command, args)
+                if reply is None:
+                    reply = default_reply
+        except Exception, e:
+            reply = traceback.format_exc(e)
+            self.log.exception('An error happened while processing a message ("%s") from %s: %s"' % (text, jid, reply))
         if reply:
             self.send_simple_reply(mess,reply)
 
