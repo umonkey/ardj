@@ -24,8 +24,10 @@ class FileNotAcceptable(Exception): pass
 class DiscoBot(JabberBot):
     def connect(self):
         """Add support for XEP-0115."""
+        init = not self.conn
         conn = super(DiscoBot, self).connect()
-        conn.RegisterHandler('iq', self.on_disco_info, ns=xmpp.NS_DISCO_INFO)
+        if init:
+            conn.RegisterHandler('iq', self.on_disco_info, ns=xmpp.NS_DISCO_INFO)
         return conn
 
     def on_disco_info(self, conn, mess):
@@ -69,9 +71,11 @@ class FileBot(DiscoBot):
         """
         Add support for SI and Bytestream.
         """
+        init = not self.conn
         conn = super(FileBot, self).connect()
-        conn.RegisterHandler('iq', self.si_req_handler, ns=xmpp.NS_SI)
-        conn.RegisterHandler('iq', self.on_bytestream, ns=xmpp.NS_BYTESTREAM)
+        if init:
+            conn.RegisterHandler('iq', self.si_req_handler, ns=xmpp.NS_SI)
+            conn.RegisterHandler('iq', self.on_bytestream, ns=xmpp.NS_BYTESTREAM)
         return conn
 
     def si_req_handler(self, conn, mess):
