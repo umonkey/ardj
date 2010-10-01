@@ -73,7 +73,8 @@ class ardjbot(MyFileReceivingBot):
 		except: pass
 
 		login, password = self.split_login(self.ardj.config.get('jabber/login'))
-		super(ardjbot, self).__init__(login, password, res=socket.gethostname(), debug=ardj.debug)
+		resource = socket.gethostname() + '/' + str(os.getpid()) + '/'
+		super(ardjbot, self).__init__(login, password, res=resource, debug=ardj.debug)
 
 	def get_users(self):
 		"""
