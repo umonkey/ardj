@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# vim: set ts=4 sts=4 sw=4 et fileencoding=utf-8:
 
 # JabberBot: A simple jabber/xmpp bot framework
 # Copyright (c) 2007-2010 Thomas Perl <thpinfo.com>
