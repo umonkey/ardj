@@ -15,6 +15,7 @@ from xml.sax import saxutils
 from ardj.jabberbot import JabberBot, botcmd
 from ardj.filebot import FileBot, FileNotAcceptable
 from ardj import twitter
+from ardj import xmpp
 import notify
 import tags
 
@@ -101,8 +102,10 @@ class ardjbot(MyFileReceivingBot):
         """
         if time.time() - self.lastping > self.PING_FREQUENCY:
             self.lastping = time.time()
+            log('Pinging the server.')
             ping = xmpp.Protocol('iq',typ='get',payload=[xmpp.Node('ping',attrs={'xmlns':'urn:xmpp:ping'})])
             res = self.conn.SendAndWaitForResponse(ping, self.PING_TIMEOUT)
+            log('Got response: ' + str(res))
             if res is None:
                 log('Terminating due to PING timeout.')
                 self.quit(1)
