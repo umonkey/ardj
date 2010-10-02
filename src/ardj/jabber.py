@@ -495,13 +495,15 @@ class ardjbot(MyFileReceivingBot):
         u"Finds a track\n\nUsage: find substring\nLists all tracks that contain this substring in the artist, track or file name. The substring can contain spaces. If you want to see more than 10 matching tracks, use the select command, e.g.: SELECT id, filename FROM tracks WHERE ..."
         if not args:
             return self.find.__doc__.split('\n\n')[1]
+        cur = self.ardj.database.cursor()
         like = '%' + args + '%'
-        tracks = [{ 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'playlist': row[4] } for row in self.ardj.database.cursor().execute('SELECT id, filename, artist, title, playlist FROM tracks WHERE title LIKE ? OR artist LIKE ? ORDER BY id LIMIT 10', (like, like, )).fetchall()]
+        tracks = [{ 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'playlist': row[4] } for row in cur.execute('SELECT id, filename, artist, title, playlist FROM tracks WHERE title LIKE ? OR artist LIKE ? ORDER BY id LIMIT 10', (like, like, )).fetchall()]
         if not tracks:
             return u'No matching tracks.'
         message = u'Found %u tracks:' % len(tracks)
         for track in tracks:
-            message += u'\n<br/>  %s — #%u @%s' % (self.get_linked_title(track), track['id'], track['playlist'])
+            labels = ['@' + row[0] for row in cur.execute('SELECT DISTINCT label FROM labels WHERE track_id = ? ORDER BY label', (track['id'], )).fetchall()]
+            message += u'\n<br/>  %s — #%u %s' % (self.get_linked_title(track), track['id'], u' '.join(labels))
         return message + u'\n<br/>You might want to use "queue track_ids..." now.'
 
     @botcmd
