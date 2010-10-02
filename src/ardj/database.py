@@ -44,6 +44,11 @@ class database:
 		cur.execute('CREATE INDEX IF NOT EXISTS idx_tracks_last ON tracks (last_played)')
 		cur.execute('CREATE INDEX IF NOT EXISTS idx_tracks_count ON tracks (count)')
 		cur.execute('CREATE TABLE IF NOT EXISTS queue (id INTEGER PRIMARY KEY, track_id INTEGER, owner TEXT)')
+		# метки
+		cur.execute('CREATE TABLE IF NOT EXISTS labels (track_id INTEGER NOT NULL, email TEXT NOT NULL, label TEXT NOT NULL)')
+		cur.execute('CREATE INDEX IF NOT EXISTS idx_labels_track_id ON labels (track_id)')
+		cur.execute('CREATE INDEX IF NOT EXISTS idx_labels_email ON labels (email)')
+		cur.execute('CREATE INDEX IF NOT EXISTS idx_labels_label ON labels (label)')
 		# голоса пользователей
 		cur.execute('CREATE TABLE IF NOT EXISTS votes (track_id INTEGER NOT NULL, email TEXT NOT NULL, vote INTEGER, weight REAL)')
 		cur.execute('CREATE INDEX IF NOT EXISTS idx_votes_track_id ON votes (track_id)')
@@ -138,6 +143,19 @@ class database:
 
 		self.commit()
 		return result
+
+	def add_labels(self, track_id, email, labels):
+		"""Adds labels to a track.  Labels prefixed with a dash are removed.
+		"""
+		cur = self.cursor()
+		for label in labels:
+			if label.startswith('-'):
+				cur.execute('DELETE FROM labels WHERE track_id = ? AND email = ? AND label = ?', (track_id, email, label[1:], ))
+			elif not cur.execute('SELECT 1 FROM labels WHERE track_id = ? AND email = ? AND label = ?', (track_id, email, label, )).fetchall():
+				cur.execute('INSERT INTO labels (track_id, email, label) VALUES (?, ?, ?)', (track_id, email, label, ))
+		current = [row[0] for row in cur.execute('SELECT DISTINCT label FROM labels WHERE track_id = ? ORDER BY label', (track_id, )).fetchall()]
+		self.commit()
+		return current
 
 def Open(filename):
     return database(filename)

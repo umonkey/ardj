@@ -205,6 +205,11 @@ class ardjbot(MyFileReceivingBot):
             else:
                 return u'Syntax: set prop to value [for id]'
 
+        if a1 == 'labels' and a2:
+            labels = re.split('[,\s]+', a2)
+            result = self.ardj.database.add_labels(track['id'], message.getFrom().getStripped(), labels) or ['none']
+            return u'Current labels for %s: %s.' % (self.get_linked_title(track), u', '.join(sorted(result)))
+
         types = { 'playlist': unicode, 'artist': unicode, 'title': unicode }
         if a1 not in types:
             return u'Unknown property: %s, available: %s.' % (a1, u', '.join(types.keys()))
