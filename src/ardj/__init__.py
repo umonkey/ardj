@@ -141,11 +141,11 @@ class ardj:
 			result['labels'] = [row[0] for row in cur.execute('SELECT DISTINCT label FROM labels WHERE track_id = ? ORDER BY label', (result['id'], )).fetchall()]
 			return result
 
-	def get_track_by_id(self, id):
+	def get_track_by_id(self, id, cur=None):
 		"""
 		Returns a dictionary that describes the specified track.
 		"""
-		cur = self.database.cursor()
+		cur = cur or self.database.cursor()
 		row = cur.execute('SELECT id, playlist, filename, artist, title, length, artist_weight, weight, count, last_played FROM tracks WHERE id = ?', (id, )).fetchone()
 		if row is not None:
 			result = { 'id': row[0], 'playlist': row[1], 'filename': row[2], 'artist': row[3], 'title': row[4], 'length': row[5], 'artist_weight': row[6], 'weight': row[7], 'count': row[8], 'last_played': row[9] }
@@ -166,15 +166,6 @@ class ardj:
 		id = self.get_random_track_id(labels, repeat, skip_artists, cur)
 		if id is not None:
 			return self.get_track_by_id(id, cur)
-
-	def	get_track_by_id(self, id, cur=None):
-		"""
-		Loads a track by id.  Used by other get_track_* methods.
-		"""
-		cur = cur or self.database.cursor()
-		row = cur.execute('SELECT id, playlist, filename, artist, title, length, artist_weight, weight, count, last_played FROM tracks WHERE id = ?', (id, )).fetchone()
-		if row is not None:
-			return { 'id': row[0], 'playlist': row[1], 'filename': row[2], 'artist': row[3], 'title': row[4], 'length': row[5], 'artist_weight': row[6], 'weight': row[7], 'count': row[8], 'last_played': row[9] }
 
 	def get_random_track_id(self, labels=None, repeat=None, skip_artists=None, cur=None):
 		"""
