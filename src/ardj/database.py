@@ -173,7 +173,7 @@ class database:
 		cur.execute('DELETE FROM urgent_playlists')
 		if labels != 'all':
 			if expires is None:
-				expires = time.time() + 1800
+				expires = time.time() + 3600
 			cur.execute('INSERT INTO urgent_playlists (labels, expires) VALUES (?, ?)', (labels, int(expires), ))
 		self.commit()
 
