@@ -66,6 +66,26 @@ class ardj:
 			self.database.commit() # без этого параллельные обращения будут висеть
 		return track
 
+	def __add_labels_filter(self, sql, params, labels):
+		if type(labels) != list:
+			raise Exception('Labels must be a list.')
+		normal = [l for l in labels if not l.startswith('+') and not l.startswith('-')]
+		if normal:
+			sql += ' AND id IN (SELECT track_id FROM labels WHERE label IN (%s))' % ', '.join(['?'] * len(normal))
+			for label in normal:
+				params.append(label)
+		forbidden = [l[1:] for l in labels if l.startswith('-')]
+		if forbidden:
+			sql += ' AND id NOT IN (SELECT track_id FROM labels WHERE label IN (%s))' % ', '.join(['?'] * len(forbidden))
+			for label in forbidden:
+				params.append(label)
+		required = [l[1:] for l in labels if l.startswith('+')]
+		if required:
+			for label in required:
+				sql += ' AND id IN (SELECT track_id FROM labels WHERE label = ?)'
+				params.append(label)
+		return sql, params
+
 	def dequeue_track(self, cur=None):
 		"""
 		Returns the top of the queue or None.
@@ -165,16 +185,7 @@ class ardj:
 		params = []
 		# filter by labels
 		if labels:
-			pos = [l for l in labels if not l.startswith('-')] # wanted
-			if pos:
-				sql += ' AND id IN (SELECT track_id FROM labels WHERE label IN (%s))' % (', '.join(['?'] * len(pos)))
-				for label in pos:
-					params.append(label)
-			neg = [l for l in labels if l.startswith('-')] # not wanted
-			if neg:
-				sql += ' AND id NOT IN (SELECT track_id FROM labels WHERE label IN (%s))' % (', '.join(['?'] * len(neg)))
-				for label in neg:
-					params.append(label[1:])
+			sql, params = self.__add_labels_filter(sql, params, labels)
 		# filter by repeat count
 		if repeat is not None:
 			sql += ' AND count < ?'
