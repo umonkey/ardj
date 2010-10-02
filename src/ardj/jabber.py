@@ -497,7 +497,7 @@ class ardjbot(MyFileReceivingBot):
             return self.find.__doc__.split('\n\n')[1]
         cur = self.ardj.database.cursor()
         like = '%' + args + '%'
-        tracks = [{ 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'playlist': row[4] } for row in cur.execute('SELECT id, filename, artist, title, playlist FROM tracks WHERE title LIKE ? OR artist LIKE ? ORDER BY id LIMIT 10', (like, like, )).fetchall()]
+        tracks = [{ 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'playlist': row[4] } for row in cur.execute('SELECT id, filename, artist, title, playlist FROM tracks WHERE title LIKE ? OR artist LIKE ? AND weight > 0 ORDER BY id LIMIT 10', (like, like, )).fetchall()]
         if not tracks:
             return u'No matching tracks.'
         message = u'Found %u tracks:' % len(tracks)
