@@ -16,7 +16,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import re
 import sys
+import time
 
 try:
 	from sqlite3 import dbapi2 as sqlite
@@ -44,6 +46,9 @@ class database:
 		cur.execute('CREATE INDEX IF NOT EXISTS idx_tracks_last ON tracks (last_played)')
 		cur.execute('CREATE INDEX IF NOT EXISTS idx_tracks_count ON tracks (count)')
 		cur.execute('CREATE TABLE IF NOT EXISTS queue (id INTEGER PRIMARY KEY, track_id INTEGER, owner TEXT)')
+		# экстренный плейлист
+		cur.execute('CREATE TABLE IF NOT EXISTS urgent_playlists (labels TEXT, expires INTEGER)')
+		cur.execute('CREATE INDEX IF NOT EXISTS urgent_playlists_expires ON urgent_playlists (expires)')
 		# метки
 		cur.execute('CREATE TABLE IF NOT EXISTS labels (track_id INTEGER NOT NULL, email TEXT NOT NULL, label TEXT NOT NULL)')
 		cur.execute('CREATE INDEX IF NOT EXISTS idx_labels_track_id ON labels (track_id)')
@@ -156,6 +161,30 @@ class database:
 		current = [row[0] for row in cur.execute('SELECT DISTINCT label FROM labels WHERE track_id = ? ORDER BY label', (track_id, )).fetchall()]
 		self.commit()
 		return current
+
+	def set_urgent(self, labels, expires=None):
+		"""
+		Sets music filter to be used for picking random tracks.  If set, only
+		matching tracks will be played, regardless of playlists.yaml.  Labels
+		must be specified as a string, using spaces or commas as separators.
+		Use "all" to reset.
+		"""
+		cur = self.cursor()
+		cur.execute('DELETE FROM urgent_playlists')
+		if labels != 'all':
+			if expires is None:
+				expires = time.time() + 1800
+			cur.execute('INSERT INTO urgent_playlists (labels, expires) VALUES (?, ?)', (labels, int(expires), ))
+		self.commit()
+
+	def get_urgent(self):
+		"""
+		Returns current playlist preferences.
+		"""
+		data = self.cursor().execute('SELECT labels FROM urgent_playlists WHERE expires > ? ORDER BY expires', (int(time.time()), )).fetchall()
+		if data:
+			return re.split('[,\s]+', data[0][0])
+		return None
 
 def Open(filename):
     return database(filename)

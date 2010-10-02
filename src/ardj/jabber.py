@@ -545,6 +545,17 @@ class ardjbot(MyFileReceivingBot):
         users = [str(x) for x in self.roster.getItems()]
         return u'I know %u users: %s.' % (len(users), u', '.join(sorted(users)))
 
+    @botcmd
+    def play(self, mess, args):
+        """Set custom playlist for next 30 minutes.
+        
+        The playlist is reset to normal automatically or using the 'play all' command.  Arguments are labels: 'play female -rock'.
+        """
+        if not args:
+            return u'Current filter: %s.' % u', '.join(self.ardj.database.get_urgent())
+        self.ardj.database.set_urgent(args)
+        return u'ok'
+
     def send_simple_reply(self, mess, text, private=False):
         """
         Splits long messages and sends them in parts.

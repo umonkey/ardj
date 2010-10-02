@@ -42,10 +42,14 @@ class ardj:
 
 		track = self.dequeue_track(cur)
 		if track is None:
-			for playlist in self.get_active_playlists():
-				track = self.get_random_track(playlist, repeat=playlist['repeat'], skip_artists=skip, cur=cur)
-				if track is not None:
-					break
+			urgent = self.database.get_urgent()
+			if urgent:
+				track = self.get_random_track({'labels':urgent}, skip_artists=skip, cur=cur)
+			else:
+				for playlist in self.get_active_playlists():
+					track = self.get_random_track(playlist, repeat=playlist['repeat'], skip_artists=skip, cur=cur)
+					if track is not None:
+						break
 		if track is None:
 			track = self.get_random_track(cur=cur)
 			if track is not None:
