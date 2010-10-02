@@ -554,7 +554,10 @@ class ardjbot(MyFileReceivingBot):
         The playlist is reset to normal automatically or using the 'play all' command.  Arguments are labels: 'play female -rock'.
         """
         if not args:
-            return u'Current filter: %s.' % u', '.join(self.ardj.database.get_urgent())
+            current = self.ardj.database.get_urgent()
+            if not current:
+                return u'Playing everything.'
+            return u'Current filter: %s.' % u', '.join(current)
         self.ardj.database.set_urgent(args)
         return u'ok'
 
