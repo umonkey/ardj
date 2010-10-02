@@ -170,7 +170,7 @@ class ardj:
 			if neg:
 				sql += ' AND id NOT IN (SELECT track_id FROM labels WHERE label IN (%s))' % (', '.join(['?'] * len(neg)))
 				for label in neg:
-					params.append(label)
+					params.append(label[1:])
 		# filter by repeat count
 		if repeat is not None:
 			sql += ' AND count < ?'
