@@ -399,7 +399,7 @@ class ardj:
 		sql = []
 		params = []
 		for k in args:
-			if k != 'id':
+			if k != 'id' and k != 'labels':
 				sql.append(k + ' = ?')
 				params.append(args[k])
 		params.append(args['id'])
