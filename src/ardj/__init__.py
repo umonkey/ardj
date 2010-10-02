@@ -110,17 +110,23 @@ class ardj:
 		"""
 		Returns a dictionary that describes the last played track.
 		"""
-		row = self.database.cursor().execute('SELECT id, playlist, filename, artist, title, length, artist_weight, weight, count, last_played FROM tracks ORDER BY last_played DESC LIMIT 1').fetchone()
+		cur = self.database.cursor()
+		row = cur.execute('SELECT id, playlist, filename, artist, title, length, artist_weight, weight, count, last_played FROM tracks ORDER BY last_played DESC LIMIT 1').fetchone()
 		if row is not None:
-			return { 'id': row[0], 'playlist': row[1], 'filename': row[2], 'artist': row[3], 'title': row[4], 'length': row[5], 'artist_weight': row[6], 'weight': row[7], 'count': row[8], 'last_played': row[9] }
+			result = { 'id': row[0], 'playlist': row[1], 'filename': row[2], 'artist': row[3], 'title': row[4], 'length': row[5], 'artist_weight': row[6], 'weight': row[7], 'count': row[8], 'last_played': row[9] }
+			result['labels'] = [row[0] for row in cur.execute('SELECT DISTINCT label FROM labels WHERE track_id = ? ORDER BY label', (result['id'], )).fetchall()]
+			return result
 
 	def get_track_by_id(self, id):
 		"""
 		Returns a dictionary that describes the specified track.
 		"""
-		row = self.database.cursor().execute('SELECT id, playlist, filename, artist, title, length, artist_weight, weight, count, last_played FROM tracks WHERE id = ?', (id, )).fetchone()
+		cur = self.database.cursor()
+		row = cur.execute('SELECT id, playlist, filename, artist, title, length, artist_weight, weight, count, last_played FROM tracks WHERE id = ?', (id, )).fetchone()
 		if row is not None:
-			return { 'id': row[0], 'playlist': row[1], 'filename': row[2], 'artist': row[3], 'title': row[4], 'length': row[5], 'artist_weight': row[6], 'weight': row[7], 'count': row[8], 'last_played': row[9] }
+			result = { 'id': row[0], 'playlist': row[1], 'filename': row[2], 'artist': row[3], 'title': row[4], 'length': row[5], 'artist_weight': row[6], 'weight': row[7], 'count': row[8], 'last_played': row[9] }
+			result['labels'] = [row[0] for row in cur.execute('SELECT DISTINCT label FROM labels WHERE track_id = ? ORDER BY label', (id, )).fetchall()]
+			return result
 
 	def get_random_track(self, playlist=None, repeat=None, skip_artists=None, cur=None, labels=None):
 		"""
