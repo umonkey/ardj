@@ -281,6 +281,11 @@ class ardjbot(MyFileReceivingBot):
     @botcmd
     def show(self, message, args):
         "Show detailed track info"
+        if args.strip() == 'labels':
+            result = self.ardj.database.cursor().execute('SELECT label, COUNT(*) AS c FROM labels GROUP BY label ORDER BY c DESC, label').fetchall()
+            if not result:
+                return u'No labels.'
+            return u'Label stats: %s.' % u', '.join(['%s (%u)' % (row[0], row[1]) for row in result])
         args = self.split(args)
         if not args:
             track = self.get_current_track()
@@ -291,13 +296,7 @@ class ardjbot(MyFileReceivingBot):
         if track is None:
             return u'No such track.'
         result = self.get_linked_title(track)
-        result += u'; #%u @%s filename="%s" weight=%f playcount=%u length=%us' % (track['id'], track['playlist'], track['filename'], track['weight'], track['count'], track['length'])
-        """
-        result += u'. Tags:\n'
-        tt = tags.get(track.path)
-        for k in tt:
-            result += u'%s: %s\n' % (k, tt[k])
-        """
+        result += u'; #%u weight=%f playcount=%u length=%us, labels=%s' % (track['id'], track['weight'], track['count'], track['length'], u', '.join(track['labels']))
         return result.strip()
 
     @botcmd
