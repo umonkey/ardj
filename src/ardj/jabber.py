@@ -540,6 +540,12 @@ class ardjbot(MyFileReceivingBot):
         rows = self.ardj.database.cursor().execute('SELECT `email`, COUNT(*) AS `count` FROM `votes` GROUP BY `email` ORDER BY `count` DESC').fetchall()
         return u'Top voters: ' + u', '.join([u'%s (%u)' % (row[0], row[1]) for row in rows]) + u'.'
 
+    @botcmd(hidden=True)
+    def users(self, mess, args):
+        "Shows the roster."
+        users = [str(x) for x in self.roster.getItems()]
+        return u'I know %u users: %s.' % (len(users), u', '.join(sorted(users)))
+
     def send_simple_reply(self, mess, text, private=False):
         """
         Splits long messages and sends them in parts.
