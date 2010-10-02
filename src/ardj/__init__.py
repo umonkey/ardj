@@ -43,7 +43,7 @@ class ardj:
 		track = self.dequeue_track(cur)
 		if track is None:
 			for playlist in self.get_active_playlists():
-				track = self.get_random_track(playlist['name'], repeat=playlist['repeat'], skip_artists=skip, cur=cur)
+				track = self.get_random_track(playlist, repeat=playlist['repeat'], skip_artists=skip, cur=cur)
 				if track is not None:
 					break
 		if track is None:
@@ -122,12 +122,18 @@ class ardj:
 		if row is not None:
 			return { 'id': row[0], 'playlist': row[1], 'filename': row[2], 'artist': row[3], 'title': row[4], 'length': row[5], 'artist_weight': row[6], 'weight': row[7], 'count': row[8], 'last_played': row[9] }
 
-	def get_random_track(self, playlist=None, repeat=None, skip_artists=None, cur=None):
+	def get_random_track(self, playlist=None, repeat=None, skip_artists=None, cur=None, labels=None):
 		"""
-		Returns a random track from the specified playlist.
+		Returns a random track from the specified playlist.  Playlist is a
+		dictionary which corresponds to a part of playlists.yaml.  If it has
+		labels, they are used, otherwise playlist name is used as the label.
 		"""
 		cur = cur or self.database.cursor()
-		id = self.get_random_track_id(playlist, repeat, skip_artists, cur)
+		if playlist:
+			labels = playlist.has_key('labels') and playlist['labels'] or [playlist['name']]
+		else:
+			labels = None
+		id = self.get_random_track_id(labels, repeat, skip_artists, cur)
 		if id is not None:
 			return self.get_track_by_id(id, cur)
 
@@ -140,17 +146,25 @@ class ardj:
 		if row is not None:
 			return { 'id': row[0], 'playlist': row[1], 'filename': row[2], 'artist': row[3], 'title': row[4], 'length': row[5], 'artist_weight': row[6], 'weight': row[7], 'count': row[8], 'last_played': row[9] }
 
-	def get_random_track_id(self, playlist=None, repeat=None, skip_artists=None, cur=None):
+	def get_random_track_id(self, labels=None, repeat=None, skip_artists=None, cur=None):
 		"""
 		Returns a random track's id.
 		"""
 		cur = cur or self.database.cursor()
 		sql = 'SELECT id, randomize(id, artist_weight, weight, count) AS w, count FROM tracks WHERE w > 0'
 		params = []
-		# filter by playlist
-		if playlist is not None:
-			sql += ' AND playlist = ?'
-			params.append(playlist)
+		# filter by labels
+		if labels:
+			pos = [l for l in labels if not l.startswith('-')] # wanted
+			if pos:
+				sql += ' AND id IN (SELECT track_id FROM labels WHERE label IN (%s))' % (', '.join(['?'] * len(pos)))
+				for label in pos:
+					params.append(label)
+			neg = [l for l in labels if l.startswith('-')] # not wanted
+			if neg:
+				sql += ' AND id NOT IN (SELECT track_id FROM labels WHERE label IN (%s))' % (', '.join(['?'] * len(neg)))
+				for label in neg:
+					params.append(label)
 		# filter by repeat count
 		if repeat is not None:
 			sql += ' AND count < ?'
@@ -162,6 +176,7 @@ class ardj:
 				tsql.append('?')
 				params.append(name)
 			sql += ' AND artist NOT IN (' + ', '.join(tsql) + ')'
+		print >>sys.stderr, 'SQL: %s; params: %s.' % (sql, params)
 		# fetch all records
 		rows = cur.execute(sql, tuple(params)).fetchall()
 		if not rows:
