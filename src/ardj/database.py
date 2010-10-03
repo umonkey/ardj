@@ -202,7 +202,7 @@ class database:
 		sql = []
 		params = []
 		for k in properties:
-			if k in ('filename', 'artist', 'title', 'length', 'artist_weight', 'weight', 'count', 'last_played'):
+			if k in ('filename', 'artist', 'title', 'length', 'artist_weight', 'weight', 'count', 'last_played', 'owner'):
 				sql.append(k + ' = ?')
 				params.append(properties[k])
 
