@@ -124,10 +124,10 @@ class ardjbot(MyFileReceivingBot):
         """
         if time.time() - self.lastping > self.PING_FREQUENCY:
             self.lastping = time.time()
-            logging.debug('Pinging the server.')
+            #logging.debug('Pinging the server.')
             ping = xmpp.Protocol('iq',typ='get',payload=[xmpp.Node('ping',attrs={'xmlns':'urn:xmpp:ping'})])
             res = self.conn.SendAndWaitForResponse(ping, self.PING_TIMEOUT)
-            logging.debug('Got response: ' + str(res))
+            #logging.debug('Got response: ' + str(res))
             if res is None:
                 logging.error('Terminating due to PING timeout.')
                 self.quit(1)
