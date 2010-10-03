@@ -1,12 +1,12 @@
 # vim: set ts=4 sts=4 sw=4 noet fileencoding=utf-8:
 # http://fragments.turtlemeat.com/pythonwebserver.php
 
+import logging
 from xml.sax import saxutils
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 
 import config
 import db
-from log import log
 
 def quote(values, wrap=None):
 	if type(values) != dict:
@@ -52,7 +52,7 @@ if __name__ == '__main__':
 	try:
 		port = config.get('server/port', 8765)
 		server = HTTPServer(('', port), ardj_server)
-		log('Listening on port %u' % port)
+		logging.info('Listening on port %u' % port)
 		server.serve_forever()
 	except KeyboardInterrupt:
 		server.socket.close()

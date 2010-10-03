@@ -19,6 +19,7 @@
 #
 
 
+import logging
 import os
 import re
 import sys
@@ -146,7 +147,6 @@ class JabberBot(object):
             self.log.info('*** roster ***')
             self.conn.RegisterHandler('message', self.callback_message)
             self.conn.RegisterHandler('presence', self.callback_presence)
-            #self.conn.RegisterHandler('iq', self.on_ping_reply, ns='urn:xmpp:ping')
 
         return self.conn
 
@@ -521,9 +521,6 @@ class JabberBot(object):
             disconnect_callback()
 
         return self.__exitcode
-
-    def on_ping_reply(self):
-        print >>sys.stderr, 'Ping reply received.'
 
 if __name__ == '__main__':
     if len(sys.argv) < 3:

@@ -3,7 +3,6 @@
 import logging
 import os
 import random
-import sys
 import time
 import traceback
 
@@ -218,7 +217,7 @@ class ardj:
 			if rnd < row[1]:
 				return row[0]
 			rnd = rnd - row[1]
-		print >>sys.stderr, 'This must not happen: could not choose from %u tracks.' % len(rows)
+		logging.error(u'Could not choose from %u tracks.' % len(rows))
 		return None
 
 	def get_playlists(self):
@@ -289,8 +288,8 @@ class ardj:
 					self.database.update('playlists', saved[item['name']], cur)
 					priority -= 1
 				except Exception, e:
-					print >>sys.stderr, 'bad playlist: %s: %s' % (e, item)
-					traceback.print_exc()
+					logging.error(u'Bad playlist: %s: %s' % (e, item))
+					logging.error(traceback.format_exc(e))
 
 		for k in [x for x in saved.keys() if not saved[x]['priority']]:
 			cur.execute('DELETE FROM playlists WHERE id = ?', (saved[k]['id'], ))
@@ -325,7 +324,7 @@ class ardj:
 
 		# Удаляем из базы данных несуществующие файлы.
 		for filename in dead:
-			print >>sys.stderr, 'no longer exists: ' + filename
+			logging.warning(u'Track no longer exists: %s.' % filename)
 			cur.execute('DELETE FROM tracks WHERE filename = ?', (filename.decode('utf-8'), ))
 
 		# Добавляем новые файлы.
@@ -339,7 +338,7 @@ class ardj:
 		self.update_playlists(cur=cur)
 
 		msg = u'%u files added, %u removed.' % (len(news), len(dead))
-		print >>sys.stderr, 'sync: ' + msg
+		logging.info(u'sync: ' + msg)
 		self.database.commit()
 		return msg
 
@@ -365,12 +364,12 @@ class ardj:
 
 		oldid = cur.execute('SELECT id FROM tracks WHERE filename = ?', (filename.decode('utf-8'), )).fetchone()
 		if oldid:
-			print >>sys.stderr, 'exists: %s' % filename
+			logging.debug(u'Track already exists: %s' % filename)
 			return oldid
 
 		tg = tags.get(filepath)
 		if tg is None:
-			print >>sys.stderr, 'skipped: ' + filename
+			logging.warning(u'Skipped for no tags: %s' % filename)
 			return None
 
 		args = {
@@ -398,13 +397,13 @@ class ardj:
 					if saved.has_key('playlist'):
 						args['playlist'] = unicode(saved['playlist'])
 				except Exception, e:
-					print >>sys.stderr, 'error parsing metadata from %s: %s' % (filename, e)
+					logging.error(u'Could not parse metadata from %s: %s' % (filename, e))
 
 		# Сохраняем фиктивную запись, чтобы получить id.
 		args['id'] = cur.execute('INSERT INTO tracks (playlist) VALUES (NULL)').lastrowid
 
 		self.update_track(args, backup=False, cur=cur)
-		print >>sys.stderr, 'added: ' + filename
+		logging.info(u'Added ' + filename)
 		return args['id']
 
 	def update_track(self, args, backup=True, cur=None, commit=True):
@@ -431,7 +430,7 @@ class ardj:
 			try:
 				tags.set(os.path.join(self.config.get_music_dir(), filename.encode('utf-8')), { 'artist': artist, 'title': title, 'ardj': comment })
 			except Exception, e:
-				print >>sys.stderr, 'could not write metadata to %s: %s' % (filename.encode('utf-8'), e)
+				logging.error(u'Could not write metadata to %s: %s' % (filename, e))
 
 		if commit:
 			self.database.commit()

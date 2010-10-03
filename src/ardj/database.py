@@ -25,7 +25,7 @@ try:
 	from sqlite3 import dbapi2 as sqlite
 	from sqlite3 import OperationalError
 except ImportError:
-	print >>sys.stderr, 'Please install pysqlite2.'
+	logging.critical(u'Please install pysqlite2.')
 	sys.exit(13)
 
 class database:
@@ -68,7 +68,7 @@ class database:
 
 	def __del__(self):
 		self.commit()
-		print >>sys.stderr, 'Database closed.'
+		logging.info(u'Database closed.')
 
 	def sqlite_randomize(self, id, artist_weight, weight, count):
 		"""

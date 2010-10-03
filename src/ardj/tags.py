@@ -1,5 +1,6 @@
 # vim: set ts=4 sts=4 sw=4 noet fileencoding=utf-8:
 
+import logging
 import sys
 
 try:
@@ -8,10 +9,8 @@ try:
 	from mutagen.apev2 import APEv2 
 	easyid3.EasyID3.RegisterTXXXKey('ardj', 'ardj metadata')
 except ImportError, e:
-	print >>sys.stderr, 'Pleasy install python-mutagen (%s)' % e
+	logging.critical('Pleasy install python-mutagen (%s)' % e)
 	sys.exit(13)
-
-from log import log
 
 def raw(filename):
 	"""
@@ -25,7 +24,7 @@ def raw(filename):
 			return t
 		return mutagen.File(filename)
 	except Exception, e:
-		log('no tags: %s' % filename)
+		logging.error('No tags in %s' % filename)
 		return None
 
 def get(filename):
@@ -52,9 +51,9 @@ def set(filename, tags):
 			try:
 				if tags[k]: t[k] = tags[k]
 			except Exception, e:
-				print >>sys.stderr, e
+				logging.error(u'Could not write tags to %s: %s' % (filename, e))
 		t.save()
 	except Exception, e:
-		log('Could not save tags to %s: %s' % (filename, e), trace=True)
+		logging.error(u'Could not save tags to %s: %s' % (filename, e), trace=True)
 
 __all__ = ['get', 'set']

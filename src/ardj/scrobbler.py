@@ -1,5 +1,6 @@
 # vim: set ts=4 sts=4 sw=4 noet fileencoding=utf-8:
 
+import logging
 import re
 import sys
 import time
@@ -28,7 +29,7 @@ class client:
 			self.cli = lastfm.client.Daemon('ardj')
 			self.cli.open_log()
 		else:
-			print >>sys.stderr, 'Scrobbler disabled: please install lastfmsubmitd.'
+			logging.warning('Scrobbler disabled: please install lastfmsubmitd.')
 			self.cli = None
 		skip = self.config.get('lastfm/skip_files', '')
 		if skip:
@@ -48,11 +49,11 @@ class client:
 				elif track['artist'] and track['title']:
 					data = { 'artist': track['artist'].strip(), 'title': track['title'].strip(), 'time': time.gmtime(), 'length': track['length'] }
 					self.cli.submit(data)
-					print >>sys.stderr, 'scrobbler: sent "%s" by %s' % (data['title'].encode('utf-8'), data['artist'].encode('utf-8'))
+					logging.info('scrobbler: sent "%s" by %s' % (data['title'].encode('utf-8'), data['artist'].encode('utf-8')))
 				else:
-					print >>sys.stderr, 'scrobbler: no tags in %s' % track['filename'].encode('utf-8')
+					logging.warning('scrobbler: no tags in %s' % track['filename'].encode('utf-8'))
 			except KeyError, e:
-				print >>sys.stderr, (u'scrobbler: no %s in %s' % (e.args[0], track)).encode('utf-8')
+				logging.error(u'scrobbler: no %s in %s' % (e.args[0], track))
 
 	def __skip_filename(self, track):
 		"""
@@ -61,7 +62,7 @@ class client:
 		if self.skip_files is None:
 			return False
 		if self.skip_files.match(track['filename']):
-			print >>sys.stderr, u'scrobbler: skipped %s (forbidden file name)' % track['filename']
+			logging.info(u'scrobbler: skipped %s (forbidden file name)' % track['filename'])
 			return True
 		return False
 
@@ -75,7 +76,7 @@ class client:
 			return False
 		for label in self.skip_labels:
 			if label in track['labels']:
-				print >>sys.stderr, 'scrobbler: skipped %s (forbidden label: %s)' % (track['filename'], label)
+				logging.info('scrobbler: skipped %s (forbidden label: %s)' % (track['filename'], label))
 				return True
 		return False
 
@@ -83,6 +84,6 @@ def Open(config):
 	if not config.get('lastfm/enable', False):
 		return None
 	if not have_cli:
-		print >>sys.stderr, 'Last.fm scrobbler is not available: please install lastfmsubmitd.'
+		logging.warning('Last.fm scrobbler is not available: please install lastfmsubmitd.')
 		return None
 	return client(config)

@@ -32,6 +32,7 @@ Command line usage:
 	python replaygain.py files...
 """
 
+import logging
 import os
 import subprocess
 import sys
@@ -42,18 +43,13 @@ from mutagen.id3 import RVA2, TXXX
 from mutagen.apev2 import APEv2 
 
 def update(filename):
-	"""
-	if not os.access(filename, os.W_OK):
-		print >>sys.stderr, 'WARNING: %s is write protected, refusing to update ReplayGain info.' % filename
-		return False
-	"""
 	if check(filename):
 		return True
 
 	peak, gain = read(filename)
 	if peak is not None and gain is not None:
 		return write(filename, peak, gain)
-	print >>sys.stderr, 'WARNING: no replaygain for %s: peak=%s gain=%s' % (filename, peak, gain)
+	logging.warning('No replaygain for %s: peak=%s gain=%s' % (filename, peak, gain))
 	return False
 
 def check(filename):
@@ -89,7 +85,7 @@ def read(filename, update=True):
 			if value.endswith(' dB'):
 				g = float(value[:-3])
 			else:
-				print >>sys.stderr, 'WARNING: malformed track gain info: "%s" in %s' % (value, filename)
+				logging.warning('Malformed track gain info: "%s" in %s' % (value, filename))
 		return (p, g)
 
 	try: peak, gain = parse_rg(mutagen.File(filename, easy=True))
@@ -151,7 +147,7 @@ def run(args, quiet=True):
 			stdout = stderr = None
 			if quiet:
 				stdout = stderr = subprocess.PIPE
-			print >>sys.stderr, '$ %s' % ' '.join(args)
+			logging.info('$ %s' % ' '.join(args))
 			return subprocess.Popen([exe] + args[1:], stdout=stdout, stderr=stderr).wait() == 0
 	return False
 
@@ -176,10 +172,10 @@ if __name__ == '__main__':
 		f = read
 
 	if not args:
-		print >>sys.stderr, 'Usage: %s [-cr] files...' % sys.argv[0]
-		print >>sys.stderr, 'Options:'
-		print >>sys.stderr, ' -c    clear all tags (updates by default)'
-		print >>sys.stderr, ' -r    read and show tags'
+		print 'Usage: %s [-cr] files...' % sys.argv[0]
+		print 'Options:'
+		print ' -c    clear all tags (updates by default)'
+		print ' -r    read and show tags'
 		sys.exit(1)
 	for filename in args:
 		res = f(filename)

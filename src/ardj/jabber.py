@@ -6,7 +6,6 @@ import re
 import shutil # move()
 import socket # for gethostname()
 import subprocess
-import sys
 import time
 import traceback
 import urllib
@@ -19,13 +18,10 @@ from ardj import xmpp
 import notify
 import tags
 
-def log(msg):
-    print >>sys.stderr, msg
-
 class MyFileReceivingBot(FileBot):
     def is_file_acceptable(self, sender, filename, filesize):
         if not self.check_access(sender):
-            log('Refusing to accept files from %s.' % sender)
+            logging.warning('Refusing to accept files from %s.' % sender)
             raise FileNotAcceptable('I\'m not allowed to receive files from you, sorry.')
         if os.path.splitext(filename.lower())[1] not in ['.mp3', '.ogg']:
             raise FileNotAcceptable('I only accept MP3 and OGG files, which "%s" doesn\'t look like.' % os.path.basename(filename))
@@ -38,7 +34,7 @@ class MyFileReceivingBot(FileBot):
         dst_name = self.add_filename_suffix(os.path.join(dst_path, os.path.basename(filename)))
         shutil.move(filename, dst_name)
 
-        log('Received %s.' % dst_name)
+        logging.info('Received %s.' % dst_name)
         track_id = self.ardj.add_track_from_file(dst_name)
 
         return 'Your file was assigned number %u. Use the "news" command to see last added files, "set playlist to xyz for %u" to move this file from @incoming.' % (track_id, track_id)
@@ -77,7 +73,7 @@ class ardjbot(MyFileReceivingBot):
                 access_token_key=ardj.config.get('twitter/access_token_key'),
                 access_token_secret=ardj.config.get('twitter/access_token_secret'))
             self.twitter = tmp
-            log('Logged in to Twitter.')
+            logging.info('Logged in to Twitter.')
         except: pass
 
         login, password = self.split_login(self.ardj.config.get('jabber/login'))
@@ -102,24 +98,24 @@ class ardjbot(MyFileReceivingBot):
         """
         if time.time() - self.lastping > self.PING_FREQUENCY:
             self.lastping = time.time()
-            log('Pinging the server.')
+            logging.debug('Pinging the server.')
             ping = xmpp.Protocol('iq',typ='get',payload=[xmpp.Node('ping',attrs={'xmlns':'urn:xmpp:ping'})])
             res = self.conn.SendAndWaitForResponse(ping, self.PING_TIMEOUT)
-            log('Got response: ' + str(res))
+            logging.debug('Got response: ' + str(res))
             if res is None:
-                log('Terminating due to PING timeout.')
+                logging.error('Terminating due to PING timeout.')
                 self.quit(1)
         super(ardjbot, self).idle_proc()
 
     def on_connected(self):
-        log('on_connected called.')
+        logging.debug('on_connected called.')
         self.lastping = time.time()
         self.dbtracker = notify.monitor([self.ardj.database.filename], self.on_file_changes)
         if self.pidfile:
             try:
                 open(self.pidfile, 'w').write(str(os.getpid()))
             except IOError, e:
-                print >>sys.stderr, 'Could not write to %s: %s' % (self.pidfile, e)
+                logging.error(u'Could not write to %s: %s' % (self.pidfile, e))
         self.update_status()
 
     def on_file_changes(self, action, path):
@@ -128,20 +124,20 @@ class ardjbot(MyFileReceivingBot):
                 if 'modified' == action:
                     return self.update_status()
         except IOError, e:
-            log('IOError: %s, shutting down.' % e)
+            logging.error('IOError: %s, shutting down.' % e)
             self.quit(1)
         except Exception, e:
-            log('Exception in inotify handler: %s' % e)
+            logging.error('Exception in inotify handler: %s' % e)
             traceback.print_exc()
 
     def shutdown(self):
         # self.on_disconnect() # called by JabberBot afterwards.
-        log('shutdown: shutting down JabberBot.')
+        logging.info('shutdown: shutting down JabberBot.')
         JabberBot.shutdown(self)
         if self.pidfile and os.path.exists(self.pidfile):
-            log('shutdown: removing the pid file.')
+            logging.debug('shutdown: removing the pid file.')
             os.unlink(self.pidfile)
-        log('shutdown: over.')
+        logging.info('shutdown: over.')
 
     def update_status(self, onstart=False):
         """
@@ -186,7 +182,7 @@ class ardjbot(MyFileReceivingBot):
                 if body is not None:
                     is_public = body.strip().split(' ')[0] in self.publicCommands
                     if not is_public and not self.check_access(mess.getFrom().getStripped()):
-                        log('Refusing access to %s.' % mess.getFrom())
+                        logging.warning('Refusing access to %s.' % mess.getFrom())
                         return self.send_simple_reply(mess, 'Available commands: %s.' % ', '.join(self.publicCommands))
             return JabberBot.callback_message(self, conn, mess)
         finally:
@@ -228,7 +224,7 @@ class ardjbot(MyFileReceivingBot):
         track[a1] = a2
         self.ardj.update_track(track)
 
-        log(u'%s changed %s from "%s" to "%s" for %s; #%u @%s' % (self.get_linked_sender(message), a1, old, a2, self.get_linked_title(track), track['id'], track['playlist']))
+        logging.info(u'%s changed %s from "%s" to "%s" for %s; #%u @%s' % (self.get_linked_sender(message), a1, old, a2, self.get_linked_title(track), track['id'], track['playlist']))
 
     @botcmd(hidden=True)
     def delete(self, message, args):
@@ -246,7 +242,7 @@ class ardjbot(MyFileReceivingBot):
         old = track['weight']
         track['weight'] = 0
         self.ardj.update_track(track)
-        log(u'%s changed weight from %s to 0 for %s; #%u @%s' % (self.get_linked_sender(message), old, self.get_linked_title(track), track['id'], track['playlist']))
+        logging.info(u'%s changed weight from %s to 0 for %s; #%u @%s' % (self.get_linked_sender(message), old, self.get_linked_title(track), track['id'], track['playlist']))
         if not args:
             self.skip(message, args)
 
@@ -258,7 +254,7 @@ class ardjbot(MyFileReceivingBot):
             return u'This track\'s weight is %s, not quite zero.' % (track['weight'])
         track['weight'] = 1.
         self.ardj.update_track(track)
-        log(u'%s changed weight from 0 to 1 for %s; #%u @%s' % (self.get_linked_sender(message), self.get_linked_title(track), track['id'], track['playlist']))
+        logging.info(u'%s changed weight from 0 to 1 for %s; #%u @%s' % (self.get_linked_sender(message), self.get_linked_title(track), track['id'], track['playlist']))
 
     @botcmd
     def skip(self, message, args):
@@ -329,7 +325,7 @@ class ardjbot(MyFileReceivingBot):
         if not sql.endswith(';'):
             return u'SQL updates must end with a ; to prevent accidents.'
         self.ardj.database.cursor().execute(sql)
-        log(u'SQL from %s: %s' % (self.get_linked_sender(message), sql))
+        logging.info(u'SQL from %s: %s' % (self.get_linked_sender(message), sql))
 
     @botcmd
     def twit(self, message, args):
@@ -338,7 +334,7 @@ class ardjbot(MyFileReceivingBot):
             return u'Twitter is not enabled in the config file.'
         posting = self.twitter.PostUpdate(args.encode('utf-8'))
         url = 'http://twitter.com/' + posting.GetUser().GetScreenName() + '/status/' + str(posting.GetId())
-        log(u'%s sent <a href="%s">a message</a> to twitter: %s' % (self.get_linked_sender(message), url, args))
+        logging.info(u'%s sent <a href="%s">a message</a> to twitter: %s' % (self.get_linked_sender(message), url, args))
         return url
 
     @botcmd
@@ -621,12 +617,12 @@ class ardjbot(MyFileReceivingBot):
         return conn
 
     def on_disconnect(self):
-        log('on_disconnect called.')
+        logging.debug('on_disconnect called.')
         if self.dbtracker:
-            log('on_disconnect: stopping dbtracker.')
+            logging.debug('on_disconnect: stopping dbtracker.')
             self.dbtracker.stop()
             self.dbtracker = None
-            log('on_disconnect: finished.')
+            logging.debug('on_disconnect: finished.')
 
     def __vote(self, track_id, email, vote):
         return (1, self.ardj.database.add_vote(track_id, email, vote))

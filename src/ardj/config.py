@@ -1,5 +1,6 @@
 # vim: set ts=4 sts=4 sw=4 noet fileencoding=utf-8:
 
+import logging
 import os
 import sys
 
@@ -8,7 +9,7 @@ import notify
 try:
 	import yaml
 except ImportError:
-	print >>sys.stderr, 'Please install PyYAML (python-yaml).'
+	logging.critical(u'Please install PyYAML (python-yaml).')
 	sys.exit(13)
 
 class config:
@@ -55,7 +56,7 @@ class config:
 		If there is no such value, default is returned.
 		"""
 		if self.reload:
-			print >>sys.stderr, 'Reloading ' + self.filename
+			logging.info(u'Reloading ' + self.filename)
 			self.load()
 		data = self.data
 		for k in path.split('/'):
@@ -84,7 +85,7 @@ class config:
 	def get_playlists(self):
 		filename = os.path.join(self.get_music_dir(), 'playlists.yaml')
 		if not os.path.exists(filename):
-			print >>sys.stderr, '%s does not exist, assuming empty.' % filename
+			logging.warning(u'%s does not exist, assuming empty.' % filename)
 			return []
 		return yaml.load(open(filename, 'r').read())
 

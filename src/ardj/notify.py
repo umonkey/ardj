@@ -23,12 +23,13 @@ file changes within a list of paths. This module can also be invoked
 from the command line for testing purposes.
 """
 
+import logging
 import sys
 
 try:
 	import pyinotify
 except ImportError:
-	print >>sys.stderr, 'Please install pyinotify.'
+	logging.critical('Please install pyinotify.')
 	sys.exit(13)
 
 class Dispatcher(pyinotify.ProcessEvent):
@@ -118,7 +119,7 @@ if __name__ == '__main__':
 		print 'callback: action=%s path=%s' % (action, path)
 
 	if len(sys.argv) < 2:
-		print >>sys.stderr, 'Usage: %s paths...' % os.path.basename(sys.argv[0])
+		print 'Usage: %s paths...' % os.path.basename(sys.argv[0])
 		sys.exit(1)
 
 	m = monitor(sys.argv[1:], callback, debug=True)
