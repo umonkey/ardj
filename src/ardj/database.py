@@ -214,11 +214,10 @@ class database:
 			self.debug(sql, params)
 			cur.execute(sql, tuple(params))
 
-		if properties.has_key('labels') and type(properties['labels']) == list:
-			owner = properties.has_key('owner') and properties['owner'] or None
+		if properties.has_key('labels') and type(properties['labels']) == list and properties.has_key('owner'):
 			for label in properties['labels']:
 				sql = 'INSERT INTO labels (track_id, email, label) VALUES (?, ?, ?)'
-				params = (properties['id'], owner, label, )
+				params = (properties['id'], properties['owner'], label, )
 				self.debug(sql, params)
 				cur.execute(sql, params)
 
