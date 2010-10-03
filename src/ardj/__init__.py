@@ -130,7 +130,7 @@ class ardj:
 		for the current playlist; the target playlist must be specified in
 		current playlist's "on_repeat_move_to" property.
 		"""
-		playlist = self.get_playlist_by_name(track['playlist'])
+		playlist = None # self.get_playlist_by_name(track['playlist']) # FIXME
 		if playlist:
 			if playlist.has_key('repeat') and playlist['repeat'] == track['count']:
 				if playlist.has_key('on_repeat_move_to'):
@@ -155,9 +155,9 @@ class ardj:
 		Returns a dictionary that describes the last played track.
 		"""
 		cur = self.database.cursor()
-		row = cur.execute('SELECT id, playlist, filename, artist, title, length, artist_weight, weight, count, last_played FROM tracks ORDER BY last_played DESC LIMIT 1').fetchone()
+		row = cur.execute('SELECT id, filename, artist, title, length, artist_weight, weight, count, last_played FROM tracks ORDER BY last_played DESC LIMIT 1').fetchone()
 		if row is not None:
-			result = { 'id': row[0], 'playlist': row[1], 'filename': row[2], 'artist': row[3], 'title': row[4], 'length': row[5], 'artist_weight': row[6], 'weight': row[7], 'count': row[8], 'last_played': row[9] }
+			result = { 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'length': row[4], 'artist_weight': row[5], 'weight': row[6], 'count': row[7], 'last_played': row[8] }
 			result['labels'] = [row[0] for row in cur.execute('SELECT DISTINCT label FROM labels WHERE track_id = ? ORDER BY label', (result['id'], )).fetchall()]
 			return result
 
@@ -166,9 +166,9 @@ class ardj:
 		Returns a dictionary that describes the specified track.
 		"""
 		cur = cur or self.database.cursor()
-		row = cur.execute('SELECT id, playlist, filename, artist, title, length, artist_weight, weight, count, last_played FROM tracks WHERE id = ?', (id, )).fetchone()
+		row = cur.execute('SELECT id, filename, artist, title, length, artist_weight, weight, count, last_played FROM tracks WHERE id = ?', (id, )).fetchone()
 		if row is not None:
-			result = { 'id': row[0], 'playlist': row[1], 'filename': row[2], 'artist': row[3], 'title': row[4], 'length': row[5], 'artist_weight': row[6], 'weight': row[7], 'count': row[8], 'last_played': row[9] }
+			result = { 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'length': row[4], 'artist_weight': row[5], 'weight': row[6], 'count': row[7], 'last_played': row[8] }
 			result['labels'] = [row[0] for row in cur.execute('SELECT DISTINCT label FROM labels WHERE track_id = ? ORDER BY label', (id, )).fetchall()]
 			return result
 
@@ -442,8 +442,8 @@ class ardj:
 				cur.execute('INSERT INTO labels (track_id, email, label) VALUES (?, ?, ?)', (args['id'], owner, label, ))
 
 		if backup:
-			filename, artist, title, playlist, weight, count, last_played = cur.execute('SELECT filename, artist, title, playlist, weight, count, last_played FROM tracks WHERE id = ?', (args['id'], )).fetchone()
-			comment = u'ardj=1;playlist=%s;weight=%f;count=%u;last_played=%s' % (playlist, weight, count, last_played)
+			filename, artist, title, weight, count, last_played = cur.execute('SELECT filename, artist, title, weight, count, last_played FROM tracks WHERE id = ?', (args['id'], )).fetchone()
+			comment = u'ardj=1;weight=%f;count=%u;last_played=%s' % (weight, count, last_played)
 			try:
 				tags.set(os.path.join(self.config.get_music_dir(), filename.encode('utf-8')), { 'artist': artist, 'title': title, 'ardj': comment })
 			except Exception, e:

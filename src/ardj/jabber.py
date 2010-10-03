@@ -207,7 +207,7 @@ class ardjbot(MyFileReceivingBot):
             result = self.ardj.database.add_labels(track['id'], message.getFrom().getStripped(), labels) or ['none']
             return u'Current labels for %s: %s.' % (self.get_linked_title(track), u', '.join(sorted(result)))
 
-        types = { 'playlist': unicode, 'artist': unicode, 'title': unicode }
+        types = { 'owner': unicode, 'artist': unicode, 'title': unicode }
         if a1 not in types:
             return u'Unknown property: %s, available: %s.' % (a1, u', '.join(types.keys()))
 
@@ -223,7 +223,7 @@ class ardjbot(MyFileReceivingBot):
         track[a1] = a2
         self.ardj.update_track(track)
 
-        logging.info(u'%s changed %s from "%s" to "%s" for %s; #%u @%s' % (self.get_linked_sender(message), a1, old, a2, self.get_linked_title(track), track['id'], track['playlist']))
+        logging.info(u'%s changed %s from "%s" to "%s" for %s; #%u' % (self.get_linked_sender(message), a1, old, a2, self.get_linked_title(track), track['id']))
 
     @botcmd(hidden=True)
     def delete(self, message, args):
@@ -241,7 +241,7 @@ class ardjbot(MyFileReceivingBot):
         old = track['weight']
         track['weight'] = 0
         self.ardj.update_track(track)
-        logging.info(u'%s changed weight from %s to 0 for %s; #%u @%s' % (self.get_linked_sender(message), old, self.get_linked_title(track), track['id'], track['playlist']))
+        logging.info(u'%s changed weight from %s to 0 for %s; #%u' % (self.get_linked_sender(message), old, self.get_linked_title(track), track['id']))
         if not args:
             self.skip(message, args)
 
@@ -253,7 +253,7 @@ class ardjbot(MyFileReceivingBot):
             return u'This track\'s weight is %s, not quite zero.' % (track['weight'])
         track['weight'] = 1.
         self.ardj.update_track(track)
-        logging.info(u'%s changed weight from 0 to 1 for %s; #%u @%s' % (self.get_linked_sender(message), self.get_linked_title(track), track['id'], track['playlist']))
+        logging.info(u'%s changed weight from 0 to 1 for %s; #%u' % (self.get_linked_sender(message), self.get_linked_title(track), track['id']))
 
     @botcmd
     def skip(self, message, args):
@@ -267,12 +267,12 @@ class ardjbot(MyFileReceivingBot):
     @botcmd
     def last(self, message, args):
         "Show last 10 played tracks"
-        rows = [{ 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'playlist': row[4] } for row in self.ardj.database.cursor().execute('SELECT id, filename, artist, title, playlist FROM tracks ORDER BY last_played DESC LIMIT 10').fetchall()]
+        rows = [{ 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3] } for row in self.ardj.database.cursor().execute('SELECT id, filename, artist, title FROM tracks ORDER BY last_played DESC LIMIT 10').fetchall()]
         if not rows:
             return u'Nothing was played yet.'
         message = u'Last played tracks:'
         for row in rows:
-            message += u'<br/>\n%s — @%s, #%u' % (self.get_linked_title(row), row['playlist'], row['id'])
+            message += u'<br/>\n%s — #%u' % (self.get_linked_title(row), row['id'])
         return message
 
     @botcmd
@@ -439,12 +439,12 @@ class ardjbot(MyFileReceivingBot):
     @botcmd
     def shitlist(self, message, args):
         "List tracks with zero weight"
-        tracks = [{ 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'playlist': row[4] } for row in self.ardj.database.cursor().execute('SELECT id, filename, artist, title, playlist FROM tracks WHERE weight = 0 ORDER BY title, artist').fetchall()]
+        tracks = [{ 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3] } for row in self.ardj.database.cursor().execute('SELECT id, filename, artist, title FROM tracks WHERE weight = 0 ORDER BY title, artist').fetchall()]
         if not tracks:
             return u'The shitlist is empty.'
         message = u'The shitlist has %u items:' % len(tracks)
         for track in tracks:
-            message += u'\n<br/>%s — #%u @%s' % (self.get_linked_title(track), track['id'], track['playlist'])
+            message += u'\n<br/>%s — #%u' % (self.get_linked_title(track), track['id'])
         message += u'\n<br/>Use the "purge" command to erase these tracks.'
         return message
 
@@ -452,12 +452,12 @@ class ardjbot(MyFileReceivingBot):
     def hitlist(self, message, args):
         "Shows X top rated tracks"
         limit = args and int(args) or 10
-        tracks = [{ 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'playlist': row[4], 'weight': row[5] } for row in self.ardj.database.cursor().execute('SELECT id, filename, artist, title, playlist, weight FROM tracks WHERE weight > 0 ORDER BY weight DESC LIMIT ' + str(limit)).fetchall()]
+        tracks = [{ 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'weight': row[4] } for row in self.ardj.database.cursor().execute('SELECT id, filename, artist, title, weight FROM tracks WHERE weight > 0 ORDER BY weight DESC LIMIT ' + str(limit)).fetchall()]
         if not tracks:
             return u'The hitlist is empty.'
         message = u'Top %u tracks:' % len(tracks)
         for track in tracks:
-            message += u'\n<br/>  %s — #%u @%s %%%s' % (self.get_linked_title(track), track['id'], track['playlist'], track['weight'])
+            message += u'\n<br/>  %s — #%u %%%s' % (self.get_linked_title(track), track['id'], track['weight'])
         return message
 
     @botcmd
@@ -499,7 +499,7 @@ class ardjbot(MyFileReceivingBot):
         if not args:
             return self.find.__doc__.split('\n\n')[1]
         words = u'%' + u' '.join([l for l in re.split('\s+', args) if not l.startswith('@')]) + u'%'
-        sql = 'SELECT id, filename, artist, title, playlist FROM tracks WHERE (title LIKE ? OR artist LIKE ?) AND weight > 0'
+        sql = 'SELECT id, filename, artist, title FROM tracks WHERE (title LIKE ? OR artist LIKE ?) AND weight > 0'
         params = (words, words, )
         for label in re.split('\s+', args):
             if label.startswith('@'):
@@ -508,7 +508,7 @@ class ardjbot(MyFileReceivingBot):
         sql += ' ORDER BY id'
         self.ardj.database.debug(sql, params)
         cur = self.ardj.database.cursor()
-        tracks = [{ 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'playlist': row[4] } for row in cur.execute(sql, params).fetchall()]
+        tracks = [{ 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3] } for row in cur.execute(sql, params).fetchall()]
         if not tracks:
             return u'No matching tracks.'
         if len(tracks) > 20:
@@ -523,12 +523,12 @@ class ardjbot(MyFileReceivingBot):
     @botcmd
     def news(self, mess, args):
         u"Shows last added tracks"
-        tracks = [{ 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'playlist': row[4] } for row in self.ardj.database.cursor().execute('SELECT id, filename, artist, title, playlist FROM tracks ORDER BY id DESC LIMIT 10').fetchall()]
+        tracks = [{ 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3] } for row in self.ardj.database.cursor().execute('SELECT id, filename, artist, title FROM tracks ORDER BY id DESC LIMIT 10').fetchall()]
         if not tracks:
             return u'No news.'
         message = u'Last %u tracks:' % len(tracks)
         for track in tracks:
-            message += u'\n<br/>  %s — #%u @%s' % (self.get_linked_title(track), track['id'], track['playlist'])
+            message += u'\n<br/>  %s — #%u' % (self.get_linked_title(track), track['id'])
         return message
 
     @botcmd(pattern='^votes(?: for (\d+))?$')
