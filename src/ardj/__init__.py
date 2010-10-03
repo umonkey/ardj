@@ -54,6 +54,7 @@ class ardj:
 			if track is not None:
 				logging.debug(u'Picked track %u (last resort).' % track['id'])
 		if track is not None:
+			track = self.__fix_track_file_name(track, cur)
 			track['count'] += 1
 			track['last_played'] = int(time.time())
 			track = self.check_track_conditions(track)
@@ -117,6 +118,28 @@ class ardj:
 				sql += ' AND id IN (SELECT track_id FROM labels WHERE label = ?)'
 				params.append(label)
 		return sql, params
+
+	def __fix_track_file_name(self, track, cur):
+		"""
+		Makes sure the file name is MD5 based.
+		"""
+		if not re.match('[0-9a-f]/[0-9a-f]/[0-9a-f]{32}', os.path.splitext(filename)[0]):
+			current_path = os.path.join(self.config.get_music_dir(), track['filename']).encode('utf-8')
+			new_name = self.__get_local_file_name(realpath)
+			new_path = os.path.join(self.config.get_music_dir(), new_name)
+			new_dir = os.path.dirname(new_path)
+			if not os.path.exists(new_dir):
+				logging.debug(u'Creating folder ' + new_dir)
+				os.makedirs(new_dir)
+			try:
+				shutil.move(current_path, new_path)
+				logging.info(u'Moved %s to %s' % (track['filename'], new_name))
+				track['filename'] = new_name
+				# This can be done later, but can be not, so let's do it to avoid desync.
+				cur.execute('UPDATE tracks SET filename = ? WHERE id = ?', (new_name, track['id'], ))
+			except:
+				logging.info(u'Could move %s to %s' % (track['filename'], new_name))
+		return track
 
 	def queue_track(self, id, cur=None):
 		"""
@@ -385,7 +408,7 @@ class ardj:
 			if not data:
 				break
 			m.update(data)
-		name = m.hexdigest() + os.path.splitext(filename)[1]
+		name = m.hexdigest() + os.path.splitext(filename)[1].lower()
 		return os.path.join(name[0], name[1], name)
 
 	def __get_track_id(self, filename, cur):
