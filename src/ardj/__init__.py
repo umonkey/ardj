@@ -1,5 +1,6 @@
 # vim: set ts=4 sts=4 sw=4 noet fileencoding=utf-8:
 
+import logging
 import os
 import random
 import sys
@@ -19,6 +20,7 @@ class ardj:
 		self.database = database.Open(self.config.get_db_name())
 		self.scrobbler = scrobbler.Open(self.config)
 		self.debug = False
+		logging.basicConfig(level=logging.DEBUG)
 	def __del__(self):
 		self.close()
 
@@ -40,20 +42,26 @@ class ardj:
 		# Last played artist names.
 		skip = self.get_last_artists(cur=cur)
 
+		logging.debug(u'Looking for tracks in the queue.')
 		track = self.dequeue_track(cur)
 		if track is None:
 			urgent = self.database.get_urgent()
 			if urgent:
+				logging.debug(u'Looking for a track in the urgent playlist.')
 				track = self.get_random_track({'labels':urgent}, skip_artists=skip, cur=cur)
 			else:
 				for playlist in self.get_active_playlists():
+					logging.debug(u'Looking for a track in the %s playlist.' % playlist['name'])
 					track = self.get_random_track(playlist, repeat=playlist['repeat'], skip_artists=skip, cur=cur)
 					if track is not None:
+						cur.execute('UPDATE playlists SET last_played = ? WHERE name = ?', (int(time.time()), playlist['name']))
+						logging.debug(u'Picked track %u.' % track['id'])
 						break
 		if track is None:
+			logging.warning(u'Could NOT find a track, going completely random.')
 			track = self.get_random_track(cur=cur)
 			if track is not None:
-				print >>sys.stderr, 'warning: no tracks in playlists, picked a totally random one.'
+				logging.info(u'Picked track %u.' % track['id'])
 		if track is not None:
 			track['count'] += 1
 			track['last_played'] = int(time.time())
@@ -62,7 +70,6 @@ class ardj:
 			if scrobble and self.scrobbler:
 				self.scrobbler.submit(track)
 			track['filepath'] = os.path.join(self.config.get_music_dir(), track['filename']).encode('utf-8')
-			cur.execute('UPDATE playlists SET last_played = ? WHERE name = ?', (int(time.time()), track['playlist']))
 			self.database.commit() # без этого параллельные обращения будут висеть
 		return track
 
@@ -128,7 +135,7 @@ class ardj:
 		Returns the names of last played artists.
 		"""
 		cur = cur or self.database.cursor()
-		return [row[0] for row in cur.execute('SELECT artist FROM tracks WHERE artist IS NOT NULL AND last_played IS NOT NULL ORDER BY last_played DESC LIMIT ' + str(self.config.get('dupes', 5))).fetchall()]
+		return list(set([row[0] for row in cur.execute('SELECT artist FROM tracks WHERE artist IS NOT NULL AND last_played IS NOT NULL ORDER BY last_played DESC LIMIT ' + str(self.config.get('dupes', 5))).fetchall()]))
 
 	def get_last_track(self):
 		"""
@@ -188,7 +195,7 @@ class ardj:
 				tsql.append('?')
 				params.append(name)
 			sql += ' AND artist NOT IN (' + ', '.join(tsql) + ')'
-		print >>sys.stderr, 'SQL: %s; params: %s.' % (sql, params)
+		self.database.debug(sql, params)
 		# fetch all records
 		rows = cur.execute(sql, tuple(params)).fetchall()
 		if not rows:

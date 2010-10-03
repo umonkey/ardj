@@ -8,6 +8,7 @@
 #   http://xmpp.org/extensions/xep-0096.html
 
 import hashlib
+import logging
 import os
 import socket
 import socks
@@ -63,7 +64,7 @@ class FileBot(DiscoBot):
         If anything is returned, it's sent back to file sender as a message,
         e.g.: "Thank you for this file."
         """
-        self.log('Received file %s from %s.' % (filename, sender))
+        logging.info('Received file %s from %s.' % (filename, sender))
 
     #### You don't want to mess with the following code. ####
 
@@ -128,8 +129,8 @@ class FileBot(DiscoBot):
         except xmpp.NodeProcessed, e:
             raise e
         except Exception, e:
-            self.log('Error negotiating file transfer: %s' % e)
-            self.log(traceback.format_exc(e))
+            logging.error('Error negotiating file transfer: %s' % e)
+            logging.error(traceback.format_exc(e))
 
     def on_bytestream(self, conn, mess):
         """
@@ -159,7 +160,7 @@ class FileBot(DiscoBot):
                         s.connect((target_host, target_port))
                         s.setblocking(0)
                     except Exception, e:
-                        self.log('Could not connect to %s:%u: %s' % (proxy_host, proxy_port, e))
+                        logging.warning('Could not connect to %s:%u: %s' % (proxy_host, proxy_port, e))
                         continue
 
                     self.debug('Socket %s connected to %s:%s, retrieving %u bytes.' % (s, proxy_host, proxy_port, transfer['size']))
@@ -189,8 +190,8 @@ class FileBot(DiscoBot):
         except xmpp.NodeProcessed, e:
             raise e
         except Exception, e:
-            self.log('Error starting transfer: %s: %s' % (e.__class__.__name__, e))
-            self.log(traceback.format_exc(e))
+            logging.error('Error starting transfer: %s: %s' % (e.__class__.__name__, e))
+            logging.error(traceback.format_exc(e))
 
     def idle_proc(self):
         """
@@ -234,7 +235,7 @@ class FileBot(DiscoBot):
                         try: os.rmdir(basename(transfer['name']))
                         except: pass
                 elif transfer['lastseen'] + self.SOCKET_TIMEOUT < int(time.time()):
-                    self.log('File %s from %s timed out.' % (transfer['name'], transfer['from']))
+                    logging.error('File %s from %s timed out.' % (transfer['name'], transfer['from']))
                     self.on_file_aborted(transfer)
                     del self.transfers[sid]
 

@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 import os
 import re
 import sys
@@ -185,6 +186,15 @@ class database:
 		if data:
 			return re.split('[,\s]+', data[0][0])
 		return None
+
+	def debug(self, sql, params):
+		for param in params:
+			param = unicode(param)
+			if param.isdigit():
+				sql = sql.replace(u'?', param, 1)
+			else:
+				sql = sql.replace(u'?', u"'" + param + u"'", 1)
+		logging.debug(u'SQL: ' + sql)
 
 def Open(filename):
     return database(filename)

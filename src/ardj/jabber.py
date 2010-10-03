@@ -282,7 +282,7 @@ class ardjbot(MyFileReceivingBot):
     def show(self, message, args):
         "Show detailed track info"
         if args.strip() == 'labels':
-            result = self.ardj.database.cursor().execute('SELECT label, COUNT(*) AS c FROM labels GROUP BY label ORDER BY c DESC, label').fetchall()
+            result = self.ardj.database.cursor().execute('SELECT label, COUNT(*) FROM labels GROUP BY label ORDER BY label').fetchall()
             if not result:
                 return u'No labels.'
             return u'Label stats: %s.' % u', '.join(['%s (%u)' % (row[0], row[1]) for row in result])
@@ -495,13 +495,24 @@ class ardjbot(MyFileReceivingBot):
         u"Finds a track\n\nUsage: find substring\nLists all tracks that contain this substring in the artist, track or file name. The substring can contain spaces. If you want to see more than 10 matching tracks, use the select command, e.g.: SELECT id, filename FROM tracks WHERE ..."
         if not args:
             return self.find.__doc__.split('\n\n')[1]
+        words = u'%' + u' '.join([l for l in re.split('\s+', args) if not l.startswith('@')]) + u'%'
+        sql = 'SELECT id, filename, artist, title, playlist FROM tracks WHERE (title LIKE ? OR artist LIKE ?) AND weight > 0'
+        params = (words, words, )
+        for label in re.split('\s+', args):
+            if label.startswith('@'):
+                sql += ' AND id IN (SELECT track_id FROM labels WHERE label = ?)'
+                params += (label[1:], )
+        sql += ' ORDER BY id'
+        self.ardj.database.debug(sql, params)
         cur = self.ardj.database.cursor()
-        like = '%' + args + '%'
-        tracks = [{ 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'playlist': row[4] } for row in cur.execute('SELECT id, filename, artist, title, playlist FROM tracks WHERE title LIKE ? OR artist LIKE ? AND weight > 0 ORDER BY id LIMIT 10', (like, like, )).fetchall()]
+        tracks = [{ 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'playlist': row[4] } for row in cur.execute(sql, params).fetchall()]
         if not tracks:
             return u'No matching tracks.'
-        message = u'Found %u tracks:' % len(tracks)
-        for track in tracks:
+        if len(tracks) > 20:
+            message = u'Found %u tracks, showing oldest 20:' % len(tracks)
+        else:
+            message = u'Found %u tracks:' % len(tracks)
+        for track in tracks[:20]:
             labels = ['@' + row[0] for row in cur.execute('SELECT DISTINCT label FROM labels WHERE track_id = ? ORDER BY label', (track['id'], )).fetchall()]
             message += u'\n<br/>  %s — #%u %s' % (self.get_linked_title(track), track['id'], u' '.join(labels))
         return message + u'\n<br/>You might want to use "queue track_ids..." now.'
