@@ -231,5 +231,15 @@ class database:
 				sql = sql.replace(u'?', u"'" + param + u"'", 1)
 		logging.debug(u'SQL: ' + sql)
 
+	def purge(self, cur=None):
+		"""
+		Removes stale data.
+		"""
+		cur = cur or self.cursor()
+		cur.execute('DELETE FROM queue WHERE track_id NOT IN (SELECT id FROM tracks)')
+		cur.execute('DELETE FROM labels WHERE track_id NOT IN (SELECT id FROM tracks)')
+		cur.execute('DELETE FROM votes WHERE track_id NOT IN (SELECT id FROM tracks)')
+		cur.execute('VACUUM')
+
 def Open(filename):
     return database(filename)

@@ -374,6 +374,7 @@ class ardjbot(MyFileReceivingBot):
             if os.path.exists(filename):
                 os.unlink(filename)
         cur.execute('DELETE FROM tracks WHERE weight = 0')
+        self.ardj.database.purge(cur)
         return u'ok'
 
     @botcmd
