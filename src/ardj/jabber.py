@@ -56,10 +56,12 @@ class MyFileReceivingBot(FileBot):
 
     def process_incoming_file(self, sender, filename):
         logging.info('Received %s.' % filename)
-        return self.ardj.add_file(filename, {
+        track_id = self.ardj.add_file(filename, {
             'owner': sender,
             'labels': ['incoming'],
         })
+		self.database.cursor().execute('INSERT INTO queue (track_id, owner) SELECT id, ? FROM tracks WHERE id NOT IN (SELECT track_id FROM queue)', (properties.has_key('owner') and properties['owner'] or None, ))
+        return track_id
 
     def add_filename_suffix(self, filename):
         """

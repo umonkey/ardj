@@ -372,9 +372,6 @@ class ardj:
 		properties['filename'] = filename
 		properties['id'] = self.__get_track_id(filename, cur)
 		self.database.update_track(properties, cur=cur)
-
-		cur.execute('INSERT INTO queue (track_id, owner) VALUES (?, ?)', (properties['id'], properties.has_key('owner') and properties['owner'] or None, ))
-
 		return properties['id']
 
 	def __get_local_file_name(self, filename):
