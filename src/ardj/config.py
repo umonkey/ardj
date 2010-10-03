@@ -61,9 +61,7 @@ class config:
 		data = self.data
 		for k in path.split('/'):
 			if not k in data:
-				if default is not None:
-					return default
-				raise Exception('%s does not define %s' % (self.filename, path))
+				return default
 			data = data[k]
 		return data
 
