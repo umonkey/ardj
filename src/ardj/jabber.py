@@ -1,5 +1,6 @@
 # vim: set ts=4 sts=4 sw=4 et fileencoding=utf-8:
 
+import logging
 import math
 import os
 import re
@@ -279,7 +280,7 @@ class ardjbot(MyFileReceivingBot):
     @botcmd
     def show(self, message, args):
         "Show detailed track info"
-        if args.strip() == 'labels':
+        if args.strip() == 'labels' or args.strip() == 'tags':
             result = self.ardj.database.cursor().execute('SELECT label, COUNT(*) FROM labels GROUP BY label ORDER BY label').fetchall()
             if not result:
                 return u'No labels.'
@@ -569,6 +570,12 @@ class ardjbot(MyFileReceivingBot):
             return u'Current filter: %s.' % u', '.join(current)
         self.ardj.database.set_urgent(args)
         return u'ok'
+
+    @botcmd(hidden=True)
+    def tags(self, mess, args):
+        if not args.strip():
+            return self.show(mess, 'tags')
+        return self.set(mess, u'labels to ' + args.strip())
 
     def send_simple_reply(self, mess, text, private=False):
         """

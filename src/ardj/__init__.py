@@ -19,7 +19,8 @@ class ardj:
 		self.database = database.Open(self.config.get_db_name())
 		self.scrobbler = scrobbler.Open(self.config)
 		self.debug = False
-		logging.basicConfig(level=logging.DEBUG)
+		logging.basicConfig(filename=self.config.get('log', None), level=logging.DEBUG)
+
 	def __del__(self):
 		self.close()
 
