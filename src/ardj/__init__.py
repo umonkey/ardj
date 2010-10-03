@@ -362,7 +362,9 @@ class ardj:
 
 		if not os.path.exists(filepath):
 			logging.debug(u'Copying the uploaded file to %s' % filepath)
-			os.makedirs(os.path.dirname(filepath))
+			dirname = os.path.dirname(filepath)
+			if not os.path.exists(dirname):
+				os.makedirs(dirname)
 			shutil.copyfile(source_filename, filepath)
 
 		cur = self.database.cursor()

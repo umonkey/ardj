@@ -10,6 +10,7 @@ import subprocess
 import time
 import traceback
 import urllib
+import zipfile
 from xml.sax import saxutils
 
 from ardj.jabberbot import JabberBot, botcmd
@@ -24,19 +25,41 @@ class MyFileReceivingBot(FileBot):
         if not self.check_access(sender):
             logging.warning('Refusing to accept files from %s.' % sender)
             raise FileNotAcceptable('I\'m not allowed to receive files from you, sorry.')
-        if os.path.splitext(filename.lower())[1] not in ['.mp3', '.ogg']:
+        if os.path.splitext(filename.lower())[1] not in ['.mp3', '.ogg', '.zip']:
             raise FileNotAcceptable('I only accept MP3 and OGG files, which "%s" doesn\'t look like.' % os.path.basename(filename))
 
     def callback_file(self, sender, filename):
+        tmpname = None
         try:
-            logging.info('Received %s.' % filename)
-            track_id = self.ardj.add_file(filename, {
-                'owner': sender,
-                'labels': ['incoming', 'music'],
-            })
-            return 'Your file was assigned number %u and queued for playing. Use the \'tag\' command to classify it properly.' % track_id
+            ids = []
+            if filename.lower().endswith('.zip'):
+                try:
+                    zip = zipfile.ZipFile(filename)
+                    for zipname in zip.namelist():
+                        ext = os.path.splitext(zipname.lower())[1]
+                        if ext in ('.mp3', '.ogg'):
+                            tmpname = 'tmp' + ext
+                            tmp = open(tmpname, 'wb')
+                            tmp.write(zip.read(zipname))
+                            tmp.close()
+                            ids.append(str(self.process_incoming_file(sender, tmpname)))
+                            os.unlink(tmpname)
+                except zipfile.BadZipfile, e:
+                    return u'Your ZIP file is damaged.'
+            else:
+                ids.append(str(self.process_incoming_file(sender, filename)))
+            return u'Your files were scheduled for playing, their ids are: %s. Use the \'tag\' command to categorize them properly, use the \'news\' command to see more details about the files.' % u', '.join(ids)
         finally:
+            if tmpname is not None and os.path.exists(tmpname):
+                os.unlink(tmpname)
             self.ardj.database.commit()
+
+    def process_incoming_file(self, sender, filename):
+        logging.info('Received %s.' % filename)
+        return self.ardj.add_file(filename, {
+            'owner': sender,
+            'labels': ['incoming'],
+        })
 
     def add_filename_suffix(self, filename):
         """
@@ -488,10 +511,10 @@ class ardjbot(MyFileReceivingBot):
         message = u'Current queue:'
         for track in tracks:
             message += u'\n<br/>%u. %s — #%u' % (track['qid'], self.get_linked_title(track), track['id'])
-            labels = cur.execute('SELECT DISTINCT label FROM labels WHERE track_id = ? ORDER BY label', (track['id'], )).fetchall()
-            if labels:
-                for label in labels:
-                    message += u' @' + label
+            rows = cur.execute('SELECT DISTINCT label FROM labels WHERE track_id = ? ORDER BY label', (track['id'], )).fetchall()
+            if rows:
+                for row in rows:
+                    message += u' @' + row[0]
         return message + u'\n<br/>Use "queue track_id..." to add more tracks and "find xyz" to find some ids.'
 
     @botcmd
