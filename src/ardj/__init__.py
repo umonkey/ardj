@@ -42,26 +42,15 @@ class ardj:
 		# Last played artist names.
 		skip = self.get_last_artists(cur=cur)
 
-		logging.debug(u'Looking for tracks in the queue.')
-		track = self.dequeue_track(cur)
+		track = self.__get_queued_track(cur)
 		if track is None:
-			urgent = self.database.get_urgent()
-			if urgent:
-				logging.debug(u'Looking for a track in the urgent playlist.')
-				track = self.get_random_track({'labels':urgent}, skip_artists=skip, cur=cur)
-			else:
-				for playlist in self.get_active_playlists():
-					logging.debug(u'Looking for a track in the %s playlist.' % playlist['name'])
-					track = self.get_random_track(playlist, repeat=playlist['repeat'], skip_artists=skip, cur=cur)
-					if track is not None:
-						cur.execute('UPDATE playlists SET last_played = ? WHERE name = ?', (int(time.time()), playlist['name']))
-						logging.debug(u'Picked track %u.' % track['id'])
-						break
+			track = self.__get_urgent_track(skip, cur)
 		if track is None:
-			logging.warning(u'Could NOT find a track, going completely random.')
+			track = self.__get_track_from_playlists(skip, cur)
+		if track is None:
 			track = self.get_random_track(cur=cur)
 			if track is not None:
-				logging.info(u'Picked track %u.' % track['id'])
+				logging.debug(u'Picked track %u (last resort).' % track['id'])
 		if track is not None:
 			track['count'] += 1
 			track['last_played'] = int(time.time())
@@ -72,6 +61,39 @@ class ardj:
 			track['filepath'] = os.path.join(self.config.get_music_dir(), track['filename']).encode('utf-8')
 			self.database.commit() # без этого параллельные обращения будут висеть
 		return track
+
+	def __get_queued_track(self, cur):
+		"""
+		Returns a track from the top of the queue or None.
+		"""
+		row = cur.execute('SELECT id, track_id FROM queue ORDER BY id LIMIT 1').fetchone()
+		if row is not None:
+			track = self.get_track_by_id(row[1])
+			logging.debug(u'Picked track %u from the top of the queue.' % track['id'])
+			cur.execute('DELETE FROM queue WHERE id = ?', (row[0], ))
+			return track
+
+	def __get_urgent_track(self, skip, cur):
+		"""
+		Returns a track from the immediate (urgent) playlist.
+		"""
+		labels = self.database.get_urgent()
+		if labels:
+			track = self.get_random_track({'labels':labels}, skip_artists=skip, cur=cur)
+			if track:
+				logging.debug(u'Picked track %u from the urgent playlist.' % track['id'])
+				return track
+
+	def __get_track_from_playlists(self, skip, cur):
+		"""
+		Returns a track from and active playlist.
+		"""
+		for playlist in self.get_active_playlists():
+			track = self.get_random_track(playlist, repeat=playlist['repeat'], skip_artists=skip, cur=cur)
+			if track is not None:
+				logging.debug(u'Picked track %u from playlist %s.' % (track['id'], playlist['name']))
+				cur.execute('UPDATE playlists SET last_played = ? WHERE name = ?', (int(time.time()), playlist['name']))
+				return track
 
 	def __add_labels_filter(self, sql, params, labels):
 		if type(labels) != list:
@@ -93,17 +115,6 @@ class ardj:
 				params.append(label)
 		return sql, params
 
-	def dequeue_track(self, cur=None):
-		"""
-		Returns the top of the queue or None.
-		"""
-		cur = cur or self.database.cursor()
-		row = cur.execute('SELECT id, track_id FROM queue ORDER BY id LIMIT 1').fetchone()
-		if row is not None:
-			track = self.get_track_by_id(row[1])
-			cur.execute('DELETE FROM queue WHERE id = ?', (row[0], ))
-			return track
-
 	def queue_track(self, id, cur=None):
 		"""
 		Adds a track to the end of the queue.
@@ -112,10 +123,10 @@ class ardj:
 
 	def check_track_conditions(self, track):
 		"""
-		Updates track information according to various conditions. Currently can
-		only move it to another playlist when play count reaches the limit for
-		the current playlist; the target playlist must be specified in current
-		playlist's "on_repeat_move_to" property.
+		Updates track information according to various conditions. Currently
+		can only move it to another playlist when play count reaches the limit
+		for the current playlist; the target playlist must be specified in
+		current playlist's "on_repeat_move_to" property.
 		"""
 		playlist = self.get_playlist_by_name(track['playlist'])
 		if playlist:
