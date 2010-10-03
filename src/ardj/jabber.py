@@ -60,7 +60,7 @@ class MyFileReceivingBot(FileBot):
             'owner': sender,
             'labels': ['incoming'],
         })
-        self.database.cursor().execute('INSERT INTO queue (track_id, owner) SELECT id, ? FROM tracks WHERE id NOT IN (SELECT track_id FROM queue)', (properties.has_key('owner') and properties['owner'] or None, ))
+        self.ardj.database.cursor().execute('INSERT INTO queue (track_id, owner) SELECT id, ? FROM tracks WHERE id NOT IN (SELECT track_id FROM queue) AND id = ?', (sender, track_id, ))
         return track_id
 
     def add_filename_suffix(self, filename):

@@ -436,7 +436,7 @@ class ardj:
 		sql = 'UPDATE tracks SET ' + ', '.join(sql) + ' WHERE id = ?'
 		cur.execute(sql, tuple(params))
 
-		if args.has_key('labels'):
+		if args.has_key('labels') and type(args['labels']) == list:
 			owner = args.has_key('owner') and args['owner'] or None
 			for label in args['labels']:
 				cur.execute('INSERT INTO labels (track_id, email, label) VALUES (?, ?, ?)', (args['id'], owner, label, ))
