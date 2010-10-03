@@ -26,10 +26,11 @@ class MyFileReceivingBot(FileBot):
             logging.warning('Refusing to accept files from %s.' % sender)
             raise FileNotAcceptable('I\'m not allowed to receive files from you, sorry.')
         if os.path.splitext(filename.lower())[1] not in ['.mp3', '.ogg', '.zip']:
-            raise FileNotAcceptable('I only accept MP3 and OGG files, which "%s" doesn\'t look like.' % os.path.basename(filename))
+            raise FileNotAcceptable('I only accept MP3, OGG and ZIP files, which "%s" doesn\'t look like.' % os.path.basename(filename))
 
     def callback_file(self, sender, filename):
         tmpname = None
+        sender = sender.split('/')[0] # remove the resource
         try:
             ids = []
             if filename.lower().endswith('.zip'):
@@ -48,7 +49,7 @@ class MyFileReceivingBot(FileBot):
                     return u'Your ZIP file is damaged.'
             else:
                 ids.append(str(self.process_incoming_file(sender, filename)))
-            return u'Your files were scheduled for playing, their ids are: %s. Use the \'tag\' command to categorize them properly, use the \'news\' command to see more details about the files.' % u', '.join(ids)
+            return u'Your files were scheduled for playing, their ids are: %s. Use the \'news\' command to see more details about the files. Use the \'batch tag ...\' command to add tags to uploaded files (will only work once).' % u', '.join(ids)
         finally:
             if tmpname is not None and os.path.exists(tmpname):
                 os.unlink(tmpname)
@@ -61,6 +62,7 @@ class MyFileReceivingBot(FileBot):
             'labels': ['incoming'],
         })
         self.ardj.database.cursor().execute('INSERT INTO queue (track_id, owner) SELECT id, ? FROM tracks WHERE id NOT IN (SELECT track_id FROM queue) AND id = ?', (sender, track_id, ))
+        time.sleep(1) # let ices read some data
         return track_id
 
     def add_filename_suffix(self, filename):
@@ -607,6 +609,20 @@ class ardjbot(MyFileReceivingBot):
         if not args.strip():
             return self.show(mess, 'tags')
         return self.set(mess, u'labels to ' + args.strip())
+
+    @botcmd(pattern='^batch tags\s+(.+)$', hidden=True)
+    def batch_tags(self, mess, args):
+        labels = list(set(re.split('[\s,]+', args[0])))
+        owner = mess.getFrom().getStripped()
+        logging.info('Assigning labels %s to files last uploaded by %s' % (u', '.join(labels), owner))
+        cur = self.ardj.database.cursor()
+        for label in labels:
+            sql = 'INSERT INTO labels (track_id, email, label) SELECT track_id, email, ? FROM labels WHERE email = ? AND label = ?'
+            params = (label, owner, 'incoming', )
+            self.ardj.database.debug(sql, params)
+            cur.execute(sql, params)
+        cur.execute('DELETE FROM labels WHERE email = ? AND label = ?', (owner, 'incoming', ))
+        return u'ok'
 
     def send_simple_reply(self, mess, text, private=False):
         """
