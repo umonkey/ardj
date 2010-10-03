@@ -265,6 +265,7 @@ class ardjbot(MyFileReceivingBot):
             return u'This track is protected (weight=%f), use \'set weight to 0\' if you are sure.' % track['weight']
         old = track['weight']
         track['weight'] = 0
+        track['labels'] = None
         self.ardj.update_track(track)
         logging.info(u'%s changed weight from %s to 0 for %s; #%u' % (self.get_linked_sender(message), old, self.get_linked_title(track), track['id']))
         if not args:
