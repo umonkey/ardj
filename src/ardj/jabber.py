@@ -527,9 +527,12 @@ class ardjbot(MyFileReceivingBot):
         u"Finds a track\n\nUsage: find substring\nLists all tracks that contain this substring in the artist, track or file name. The substring can contain spaces. If you want to see more than 10 matching tracks, use the select command, e.g.: SELECT id, filename FROM tracks WHERE ..."
         if not args:
             return self.find.__doc__.split('\n\n')[1]
+        sql = 'SELECT id, filename, artist, title FROM tracks WHERE weight > 0'
+        params = tuple()
         words = u'%' + u' '.join([l for l in re.split('\s+', args) if not l.startswith('@')]) + u'%'
-        sql = 'SELECT id, filename, artist, title FROM tracks WHERE (title LIKE ? OR artist LIKE ?) AND weight > 0'
-        params = (words, words, )
+        if words != u'%%':
+            sql += u' AND (title LIKE ? OR artist LIKE ?)'
+            params += (words, words, )
         for label in re.split('\s+', args):
             if label.startswith('@'):
                 sql += ' AND id IN (SELECT track_id FROM labels WHERE label = ?)'
