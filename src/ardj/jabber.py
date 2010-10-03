@@ -248,7 +248,7 @@ class ardjbot(MyFileReceivingBot):
             return u'That\'s the current value, yes.'
 
         track[a1] = a2
-        self.ardj.update_track(track)
+        self.ardj.database.update_track(track)
 
         logging.info(u'%s changed %s from "%s" to "%s" for %s; #%u' % (self.get_linked_sender(message), a1, old, a2, self.get_linked_title(track), track['id']))
 
@@ -268,7 +268,7 @@ class ardjbot(MyFileReceivingBot):
         old = track['weight']
         track['weight'] = 0
         track['labels'] = None
-        self.ardj.update_track(track)
+        self.ardj.database.update_track(track)
         logging.info(u'%s changed weight from %s to 0 for %s; #%u' % (self.get_linked_sender(message), old, self.get_linked_title(track), track['id']))
         if not args:
             self.skip(message, args)
@@ -280,7 +280,7 @@ class ardjbot(MyFileReceivingBot):
         if track['weight']:
             return u'This track\'s weight is %s, not quite zero.' % (track['weight'])
         track['weight'] = 1.
-        self.ardj.update_track(track)
+        self.ardj.database.update_track(track)
         logging.info(u'%s changed weight from 0 to 1 for %s; #%u' % (self.get_linked_sender(message), self.get_linked_title(track), track['id']))
 
     @botcmd

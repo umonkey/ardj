@@ -58,7 +58,7 @@ class ardj:
 			track['last_played'] = int(time.time())
 			track = self.check_track_conditions(track)
 			track['labels'] = [] # prevent updating of labels
-			self.update_track(track)
+			self.database.update_track(track, cur)
 			if scrobble and self.scrobbler:
 				self.scrobbler.submit(track)
 			track['filepath'] = os.path.join(self.config.get_music_dir(), track['filename']).encode('utf-8')
@@ -418,39 +418,14 @@ class ardj:
 					props[k] = tg[k]
 		return props
 
-	def update_track(self, args, backup=True, cur=None, commit=True):
-		if type(args) != dict:
-			raise TypeError('ardj.update_track() expects a dictionary.')
-
-		if cur is None:
-			cur = self.database.cursor()
-
-		sql = []
-		params = []
-		for k in args:
-			if k != 'id' and k != 'labels':
-				sql.append(k + ' = ?')
-				params.append(args[k])
-		params.append(args['id'])
-
-		sql = 'UPDATE tracks SET ' + ', '.join(sql) + ' WHERE id = ?'
-		cur.execute(sql, tuple(params))
-
-		if args.has_key('labels') and type(args['labels']) == list:
-			owner = args.has_key('owner') and args['owner'] or None
-			for label in args['labels']:
-				cur.execute('INSERT INTO labels (track_id, email, label) VALUES (?, ?, ?)', (args['id'], owner, label, ))
-
-		if backup:
-			filename, artist, title, weight, count, last_played = cur.execute('SELECT filename, artist, title, weight, count, last_played FROM tracks WHERE id = ?', (args['id'], )).fetchone()
-			comment = u'ardj=1;weight=%f;count=%u;last_played=%s' % (weight, count, last_played)
-			try:
-				tags.set(os.path.join(self.config.get_music_dir(), filename.encode('utf-8')), { 'artist': artist, 'title': title, 'ardj': comment })
-			except Exception, e:
-				logging.error(u'Could not write metadata to %s: %s' % (filename, e))
-
-		if commit:
-			self.database.commit()
+	def backup_track_data(self, args):
+		cur = self.database.cursor()
+		filename, artist, title, weight, count, last_played = cur.execute('SELECT filename, artist, title, weight, count, last_played FROM tracks WHERE id = ?', (args['id'], )).fetchone()
+		comment = u'ardj=1;weight=%f;count=%u;last_played=%s' % (weight, count, last_played)
+		try:
+			tags.set(os.path.join(self.config.get_music_dir(), filename.encode('utf-8')), { 'artist': artist, 'title': title, 'ardj': comment })
+		except Exception, e:
+			logging.error(u'Could not write metadata to %s: %s' % (filename, e))
 
 	def sqlite_randomize(self, id, artist_weight, weight, count):
 		"""
