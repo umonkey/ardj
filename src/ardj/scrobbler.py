@@ -21,7 +21,8 @@ class client:
 		Imports and initializes lastfm.client, reads options from bot's config file.
 		"""
 		self.config = config
-		self.skip = None
+		self.skip_files = None
+		self.skip_labels = self.config.get('lastfm/skip_labels', [])
 		self.folder = self.config.get_music_dir()
 		if have_cli:
 			self.cli = lastfm.client.Daemon('ardj')
@@ -29,10 +30,9 @@ class client:
 		else:
 			print >>sys.stderr, 'Scrobbler disabled: please install lastfmsubmitd.'
 			self.cli = None
-		self.skip = None
-		skip = self.config.get('lastfm/skip', '')
+		skip = self.config.get('lastfm/skip_files', '')
 		if skip:
-			self.skip = re.compile(skip)
+			self.skip_files = re.compile(skip)
 
 	def submit(self, track):
 		"""
@@ -41,8 +41,10 @@ class client:
 		"""
 		if self.cli is not None:
 			try:
-				if self.skip is not None and self.skip.match(track['filename']):
-					print >>sys.stderr, 'scrobbler: skipped %s' % track['filename']
+				if self.__skip_filename(track):
+					pass
+				elif self.__skip_labels(track):
+					pass
 				elif track['artist'] and track['title']:
 					data = { 'artist': track['artist'].strip(), 'title': track['title'].strip(), 'time': time.gmtime(), 'length': track['length'] }
 					self.cli.submit(data)
@@ -51,6 +53,31 @@ class client:
 					print >>sys.stderr, 'scrobbler: no tags in %s' % track['filename'].encode('utf-8')
 			except KeyError, e:
 				print >>sys.stderr, (u'scrobbler: no %s in %s' % (e.args[0], track)).encode('utf-8')
+
+	def __skip_filename(self, track):
+		"""
+		Returns True if the track has a forbidden filename.
+		"""
+		if self.skip_files is None:
+			return False
+		if self.skip_files.match(track['filename']):
+			print >>sys.stderr, u'scrobbler: skipped %s (forbidden file name)' % track['filename']
+			return True
+		return False
+
+	def __skip_labels(self, track):
+		"""
+		Returns True if the track has a label which forbids scrobbling.
+		"""
+		if not self.skip_labels:
+			return False
+		if not track.has_key('labels'):
+			return False
+		for label in self.skip_labels:
+			if label in track['labels']:
+				print >>sys.stderr, 'scrobbler: skipped %s (forbidden label: %s)' % (track['filename'], label)
+				return True
+		return False
 
 def Open(config):
 	if not config.get('lastfm/enable', False):
