@@ -85,14 +85,14 @@ class FileBot(DiscoBot):
         """
         try:
             si = mess.getTag('si')
-            self.debug('Got Stream Initiation request #' + str(si.attrs['id']))
+            logging.debug('Got Stream Initiation request #' + str(si.attrs['id']))
             for field in si.getTag('feature').getTag('x').getTags('field'):
                 if field.attrs['var'] != 'stream-method':
-                    self.debug('Ignoring unsupported field type: ' + field.attrs['var'])
+                    logging.debug('Ignoring unsupported field type: ' + field.attrs['var'])
                 else:
                     for option in field.getTags('option'):
                         if option.getTagData('value') != xmpp.NS_BYTESTREAM:
-                            self.debug('Ignoring unsupported stream type: ' + option.getTagData('value'))
+                            logging.debug('Ignoring unsupported stream type: ' + option.getTagData('value'))
                         else:
                             transfer = {
                                 'from': unicode(mess.getFrom()),
@@ -109,7 +109,7 @@ class FileBot(DiscoBot):
                                     .addChild('x', { 'type': 'submit' }, namespace=xmpp.NS_DATA) \
                                     .addChild('field', { 'var': 'stream-method' }) \
                                     .addChild('value', payload=[xmpp.NS_BYTESTREAM])
-                                self.debug('File transfer table:\n' + str(self.transfers))
+                                logging.debug('File transfer table:\n' + str(self.transfers))
                                 conn.send(reply)
                                 raise xmpp.NodeProcessed
                             except FileNotAcceptable, e:
@@ -125,7 +125,7 @@ class FileBot(DiscoBot):
                                 </error>
                                 </iq>
                                 """
-            self.debug('Could not negotiate Stream Initiation for some reason.')
+            logging.debug('Could not negotiate Stream Initiation for some reason.')
         except xmpp.NodeProcessed, e:
             raise e
         except Exception, e:
@@ -136,14 +136,14 @@ class FileBot(DiscoBot):
         """
         Tries to connect to all specified streamhosts.
         """
-        self.debug('Incoming streamhosts.')
+        logging.debug('Incoming streamhosts.')
         try:
             sid = unicode(mess.getTagAttr('query', 'sid'))
             if not self.transfers.has_key(sid):
-                self.debug('Ignoring streamhosts for unknown transfer: ' + sid)
+                logging.debug('Ignoring streamhosts for unknown transfer: ' + sid)
             else:
                 transfer = self.transfers[sid]
-                self.debug('Got streamhosts for transfer #%s: %s' % (sid, transfer))
+                logging.debug('Got streamhosts for transfer #%s: %s' % (sid, transfer))
 
                 target_host = hashlib.sha1(sid + transfer['from'] + transfer['to']).hexdigest()
                 target_port = 0
@@ -152,7 +152,7 @@ class FileBot(DiscoBot):
                     proxy_host = host.getAttr('host')
                     proxy_port = int(host.getAttr('port'))
 
-                    self.debug('Connecting to %s:%u via %s:%u' % (target_host, target_port, proxy_host, proxy_port))
+                    logging.debug('Connecting to %s:%u via %s:%u' % (target_host, target_port, proxy_host, proxy_port))
 
                     try:
                         s = socks.socksocket()
@@ -163,7 +163,7 @@ class FileBot(DiscoBot):
                         logging.warning('Could not connect to %s:%u: %s' % (proxy_host, proxy_port, e))
                         continue
 
-                    self.debug('Socket %s connected to %s:%s, retrieving %u bytes.' % (s, proxy_host, proxy_port, transfer['size']))
+                    logging.debug('Socket %s connected to %s:%s, retrieving %u bytes.' % (s, proxy_host, proxy_port, transfer['size']))
 
                     # Store the file in a temporary folder to maintain its basename.
                     filename = os.path.join(tempfile.mkdtemp(prefix='jabberbot-'), os.path.basename(transfer['name']))
@@ -215,7 +215,7 @@ class FileBot(DiscoBot):
                 if got:
                     transfer['lastseen'] = int(time.time())
                     self.transfers[sid] = transfer
-                    self.debug('Got %u bytes from socket %s, %u left.' % (got, transfer['socket'].fileno(), transfer['size'] - transfer['received']))
+                    logging.debug('Got %u bytes from socket %s, %u left.' % (got, transfer['socket'].fileno(), transfer['size'] - transfer['received']))
                     if transfer['size'] == transfer['received']:
                         transfer['socket'].close()
                         transfer['file'].close()
@@ -230,7 +230,7 @@ class FileBot(DiscoBot):
                             message.setType('chat')
                             self.connect().send(message)
                         if os.path.exists(transfer['name']):
-                            self.debug('File not processed, removing.')
+                            logging.debug('File not processed, removing.')
                             os.unlink(transfer['name'])
                         try: os.rmdir(basename(transfer['name']))
                         except: pass
