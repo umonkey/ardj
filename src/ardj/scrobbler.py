@@ -44,9 +44,9 @@ class client:
 				if self.skip is not None and self.skip.match(track['filename']):
 					print >>sys.stderr, 'scrobbler: skipped %s' % track['filename']
 				elif track['artist'] and track['title']:
-					data = { 'artist': track['artist'], 'title': track['title'], 'time': time.gmtime(), 'length': track['length'] }
+					data = { 'artist': track['artist'].strip(), 'title': track['title'].strip(), 'time': time.gmtime(), 'length': track['length'] }
 					self.cli.submit(data)
-					print >>sys.stderr, 'scrobbler: sent "%s" by %s' % (track['title'].encode('utf-8'), track['artist'].encode('utf-8'))
+					print >>sys.stderr, 'scrobbler: sent "%s" by %s' % (data['title'].encode('utf-8'), data['artist'].encode('utf-8'))
 				else:
 					print >>sys.stderr, 'scrobbler: no tags in %s' % track['filename'].encode('utf-8')
 			except KeyError, e:
