@@ -156,6 +156,8 @@ class ardjbot(MyFileReceivingBot):
                 else:
                     status = os.path.basename(track['filename'])
                 status += u' — #%u ♺%u ⚖%.2f' % (track['id'], track['count'], track['weight'])
+                for label in track['labels']:
+                    status += u' @' + label
                 self.status_message = status
             if self.ardj.config.get('jabber/tunes', True):
                 self.send_tune(track)
