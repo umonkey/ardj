@@ -57,6 +57,7 @@ class ardj:
 			track['count'] += 1
 			track['last_played'] = int(time.time())
 			track = self.check_track_conditions(track)
+			track['labels'] = [] # prevent updating of labels
 			self.update_track(track)
 			if scrobble and self.scrobbler:
 				self.scrobbler.submit(track)
