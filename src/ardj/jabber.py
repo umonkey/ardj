@@ -28,17 +28,15 @@ class MyFileReceivingBot(FileBot):
             raise FileNotAcceptable('I only accept MP3 and OGG files, which "%s" doesn\'t look like.' % os.path.basename(filename))
 
     def callback_file(self, sender, filename):
-        dst_path = os.path.join(self.ardj.config.get_music_dir(), 'incoming', sender.split('/')[0])
-        if not os.path.exists(dst_path):
-            os.makedirs(dst_path)
-
-        dst_name = self.add_filename_suffix(os.path.join(dst_path, os.path.basename(filename)))
-        shutil.move(filename, dst_name)
-
-        logging.info('Received %s.' % dst_name)
-        track_id = self.ardj.add_track_from_file(dst_name)
-
-        return 'Your file was assigned number %u. Use the "news" command to see last added files, "set playlist to xyz for %u" to move this file from @incoming.' % (track_id, track_id)
+        try:
+            logging.info('Received %s.' % filename)
+            track_id = self.ardj.add_file(filename, {
+                'owner': sender,
+                'labels': ['incoming', 'music'],
+            })
+            return 'Your file was assigned number %u and queued for playing. Use the \'tag\' command to classify it properly.' % track_id
+        finally:
+            self.ardj.database.commit()
 
     def add_filename_suffix(self, filename):
         """
@@ -295,7 +293,9 @@ class ardjbot(MyFileReceivingBot):
         if track is None:
             return u'No such track.'
         result = self.get_linked_title(track)
-        result += u'; #%u weight=%f playcount=%u length=%us, labels=%s' % (track['id'], track['weight'], track['count'], track['length'], u', '.join(track['labels']))
+        result += u'; #%u weight=%f playcount=%u length=%us' % (track['id'], track['weight'] or 0, track['count'] or 0, track['length'] or 0)
+        if track['labels']:
+            result += u', labels: @' + u', @'.join(track['labels'])
         return result.strip()
 
     @botcmd
@@ -481,12 +481,16 @@ class ardjbot(MyFileReceivingBot):
             elif args:
                 for id in [x for x in args.split(' ') if x]:
                     self.ardj.queue_track(int(id), cur)
-        tracks = [{ 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'playlist': row[4], 'qid': row[5] } for row in self.ardj.database.cursor().execute('SELECT t.id, t.filename, t.artist, t.title, t.playlist, q.id FROM tracks t INNER JOIN queue q ON q.track_id = t.id ORDER BY q.id').fetchall()]
+        tracks = [{ 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'qid': row[4] } for row in cur.execute('SELECT t.id, t.filename, t.artist, t.title, q.id FROM tracks t INNER JOIN queue q ON q.track_id = t.id ORDER BY q.id').fetchall()]
         if not tracks:
             return u'Queue empty, use "queue track_id..." to fill.'
         message = u'Current queue:'
         for track in tracks:
-            message += u'\n<br/>%u. %s — #%u @%s' % (track['qid'], self.get_linked_title(track), track['id'], track['playlist'])
+            message += u'\n<br/>%u. %s — #%u' % (track['qid'], self.get_linked_title(track), track['id'])
+            labels = cur.execute('SELECT DISTINCT label FROM labels WHERE track_id = ? ORDER BY label', (track['id'], )).fetchall()
+            if labels:
+                for label in labels:
+                    message += u' @' + label
         return message + u'\n<br/>Use "queue track_id..." to add more tracks and "find xyz" to find some ids.'
 
     @botcmd

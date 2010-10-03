@@ -1,8 +1,10 @@
 # vim: set ts=4 sts=4 sw=4 noet fileencoding=utf-8:
 
+import hashlib
 import logging
 import os
 import random
+import shutil
 import time
 import traceback
 
@@ -330,7 +332,7 @@ class ardj:
 
 		# Добавляем новые файлы.
 		for filename in news:
-			self.add_track_from_file(filename)
+			self.add_file(filename)
 
 		# Обновление статистики исполнителей.
 		for artist, count in cur.execute('SELECT artist, COUNT(*) FROM tracks WHERE weight > 0 GROUP BY artist'):
@@ -343,69 +345,78 @@ class ardj:
 		self.database.commit()
 		return msg
 
-	def add_track_from_file(self, filename):
+	def add_file(self, source_filename, properties=None):
 		"""
-		Добавление файла в базу данных.
+		Adds a file to the database or updates it.  Properties, if specified,
+		must be a dictionary with keys: owner (email), labels (list), artist,
+		title.
+
+		The file is copied to an internal location, the original file can be
+		removed afterwards.
 		"""
-		cur = self.database.cursor()
-		musicdir = self.config.get_music_dir()
-		filepath = os.path.join(musicdir, filename)
+		if not os.path.exists(source_filename):
+			raise Exception('File not found.')
+		filename = self.__get_local_file_name(source_filename)
+		filepath = os.path.join(self.config.get_music_dir(), filename)
 
 		if not os.path.exists(filepath):
-			raise Exception('File %s does not exist.' % filepath)
+			logging.debug(u'Copying the uploaded file to %s' % filepath)
+			os.makedirs(os.path.dirname(filepath))
+			shutil.copyfile(source_filename, filepath)
 
-		# The file might have been added by the full path, which os.path.join()
-		# handles nicely by returning the last component if it's an absolute
-		# path.  We need to check that the file belongs to the musicdir.
-		if not filepath.startswith(musicdir):
-			raise Exception('File %s is outside the music dir.' % filename)
+		cur = self.database.cursor()
+		properties = self.__get_track_properties(filepath, properties)
+		properties['filename'] = filename
+		properties['id'] = self.__get_track_id(filename, cur)
+		self.database.update_track(properties, cur=cur)
 
-		# Strip the musicdir back to be able to guess the playlist later.
-		filename = filepath[len(musicdir)+1:].lstrip(os.path.sep)
+		cur.execute('INSERT INTO queue (track_id, owner) VALUES (?, ?)', (properties['id'], properties.has_key('owner') and properties['owner'] or None, ))
 
-		oldid = cur.execute('SELECT id FROM tracks WHERE filename = ?', (filename.decode('utf-8'), )).fetchone()
-		if oldid:
-			logging.debug(u'Track already exists: %s' % filename)
-			return oldid
+		return properties['id']
 
-		tg = tags.get(filepath)
-		if tg is None:
-			logging.warning(u'Skipped for no tags: %s' % filename)
-			return None
+	def __get_local_file_name(self, filename):
+		"""
+		Returns an MD5 based file name.
+		"""
+		f = open(filename, 'rb')
+		m = hashlib.md5()
+		while True:
+			data = f.read(16384)
+			if not data:
+				break
+			m.update(data)
+		name = m.hexdigest() + os.path.splitext(filename)[1]
+		return os.path.join(name[0], name[1], name)
 
-		args = {
-			'filename': filename.decode('utf-8'),
-			'artist': tg['artist'],
-			'title': tg['title'],
-			'length': tg['length'], # in seconds
-			'count': 0,
+	def __get_track_id(self, filename, cur):
+		"""
+		Returns a new track id or the existing one.
+		"""
+		logging.debug('Looking for an id for file %s' % filename)
+		row = cur.execute('SELECT id FROM tracks WHERE filename = ?', (filename, )).fetchone()
+		if row:
+			logging.debug(u'Reusing track id %u.' % row[0])
+			return row[0]
+		track_id = cur.execute('INSERT INTO tracks (artist) VALUES (NULL)').lastrowid
+		logging.debug(u'New track id is %u.' % track_id)
+		return track_id
+
+	def __get_track_properties(self, filepath, properties):
+		props = {
+			'artist': 'Unknown Artist',
+			'title': 'Untitled',
+			'length': 0,
 			'weight': 1.0,
-			'last_played': None,
-			'playlist': filename.split(os.path.sep)[0].decode('utf-8'),
+			'count': 0,
 		}
-
-		# Загрузка сохранённых метаданных.
-		if tg.has_key('ardj') and tg['ardj'] is not None:
-			saved = dict([x.split('=') for x in tg['ardj'].split(';')])
-			if saved.has_key('ardj') and saved['ardj'] == '1':
-				try:
-					if saved.has_key('count'):
-						args['count'] = int(saved['count'])
-					if saved.has_key('last_played') and saved['last_played'] != 'None':
-						args['last_played'] = int(saved['last_played'])
-					if saved.has_key('weight'):
-						args['weight'] = float(saved['weight'])
-					if saved.has_key('playlist'):
-						args['playlist'] = unicode(saved['playlist'])
-				except Exception, e:
-					logging.error(u'Could not parse metadata from %s: %s' % (filename, e))
-
-		# Сохраняем фиктивную запись, чтобы получить id.
-		args['id'] = cur.execute('INSERT INTO tracks (playlist) VALUES (NULL)').lastrowid
-
-		self.update_track(args, backup=False, cur=cur)
-		logging.info(u'Added ' + filename)
-		return args['id']
+		if type(properties) == dict:
+			props.update(properties)
+		tg = tags.get(filepath)
+		if tg is not None:
+			for k in props.keys():
+				if k in tg:
+					props[k] = tg[k]
+		return props
 
 	def update_track(self, args, backup=True, cur=None, commit=True):
 		if type(args) != dict:
@@ -424,6 +435,11 @@ class ardj:
 
 		sql = 'UPDATE tracks SET ' + ', '.join(sql) + ' WHERE id = ?'
 		cur.execute(sql, tuple(params))
+
+		if args.has_key('labels'):
+			owner = args.has_key('owner') and args['owner'] or None
+			for label in args['labels']:
+				cur.execute('INSERT INTO labels (track_id, email, label) VALUES (?, ?, ?)', (args['id'], owner, label, ))
 
 		if backup:
 			filename, artist, title, playlist, weight, count, last_played = cur.execute('SELECT filename, artist, title, playlist, weight, count, last_played FROM tracks WHERE id = ?', (args['id'], )).fetchone()

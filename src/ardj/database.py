@@ -187,6 +187,41 @@ class database:
 			return re.split('[,\s]+', data[0][0])
 		return None
 
+	def update_track(self, properties, cur=None):
+		"""
+		Updates valid track attributes.
+		"""
+		if type(properties) != dict:
+			raise Exception('Track properties must be passed as a dictionary.')
+		if not properties.has_key('id'):
+			raise Exception('Track properties have no id.')
+		cur = cur or self.cursor()
+
+		logging.debug(u'Updating a track with: %s' % properties)
+
+		sql = []
+		params = []
+		for k in properties:
+			if k in ('filename', 'artist', 'title', 'length', 'artist_weight', 'weight', 'count', 'last_played'):
+				sql.append(k + ' = ?')
+				params.append(properties[k])
+
+		if not sql:
+			logging.debug('No fields to update.')
+		else:
+			params.append(properties['id'])
+			sql = 'UPDATE tracks SET ' + ', '.join(sql) + ' WHERE id = ?'
+			self.debug(sql, params)
+			cur.execute(sql, tuple(params))
+
+		if properties.has_key('labels') and type(properties['labels']) == list:
+			owner = properties.has_key('owner') and properties['owner'] or None
+			for label in properties['labels']:
+				sql = 'INSERT INTO labels (track_id, email, label) VALUES (?, ?, ?)'
+				params = (properties['id'], owner, label, )
+				self.debug(sql, params)
+				cur.execute(sql, params)
+
 	def debug(self, sql, params):
 		for param in params:
 			param = unicode(param)
