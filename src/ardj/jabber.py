@@ -49,7 +49,7 @@ class MyFileReceivingBot(FileBot):
                     return u'Your ZIP file is damaged.'
             else:
                 ids.append(str(self.process_incoming_file(sender, filename)))
-            return u'Your files were scheduled for playing, their ids are: %s. Use the \'news\' command to see more details about the files. Use the \'batch tag ...\' command to add tags to uploaded files (will only work once).' % u', '.join(ids)
+            return u'Your files were scheduled for playing, their ids are: %s. Use the \'news\' command to see more details about the files. Use the \'batch tags ...\' command to add tags to uploaded files (will only work once).' % u', '.join(ids)
         finally:
             if tmpname is not None and os.path.exists(tmpname):
                 os.unlink(tmpname)
