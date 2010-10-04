@@ -70,7 +70,7 @@ if __name__ == '__main__':
 	for option, value in opts:
 		if '--add' == option:
 			for filename in args:
-				ardj.add_file(filename)
+				ardj.add_file(filename, {'labels':tags}, queue=True)
 			ardj.database.commit()
 			args = []
 		if '--backup' == option:

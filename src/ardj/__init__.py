@@ -370,7 +370,7 @@ class ardj:
 		self.database.commit()
 		return msg
 
-	def add_file(self, source_filename, properties=None):
+	def add_file(self, source_filename, properties=None, queue=False):
 		"""
 		Adds a file to the database or updates it.  Properties, if specified,
 		must be a dictionary with keys: owner (email), labels (list), artist,
@@ -396,6 +396,9 @@ class ardj:
 		properties['filename'] = filename
 		properties['id'] = self.__get_track_id(filename, cur)
 		self.database.update_track(properties, cur=cur)
+		if queue:
+			owner = properties.has_key('owner') and properties['owner'] or 'nobody@nowhere.com'
+			cur.execute('INSERT INTO queue (track_id, owner) SELECT id, ? FROM tracks WHERE id NOT IN (SELECT track_id FROM queue) AND id = ?', (owner, properties['id'], ))
 		return properties['id']
 
 	def __get_local_file_name(self, filename):

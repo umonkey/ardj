@@ -60,8 +60,7 @@ class MyFileReceivingBot(FileBot):
         track_id = self.ardj.add_file(filename, {
             'owner': sender,
             'labels': ['incoming'],
-        })
-        self.ardj.database.cursor().execute('INSERT INTO queue (track_id, owner) SELECT id, ? FROM tracks WHERE id NOT IN (SELECT track_id FROM queue) AND id = ?', (sender, track_id, ))
+        }, queue=True)
         time.sleep(1) # let ices read some data
         return track_id
 
