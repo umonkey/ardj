@@ -9,7 +9,8 @@ import traceback
 
 def usage():
 	print "Usage: %s [options]" % os.path.basename(sys.argv[0])
-	print "\nBasic options:"
+	print "\nOptions:"
+	print " --add        adds tracks to the database"
 	print " --backup     save metadata to file tags"
 	print " --config     edit config file"
 	print " --dbconsole  open SQLite console"
@@ -21,6 +22,7 @@ def usage():
 	print " --restart    restart a running jabber bot"
 	print " --scrobble   scrobble track (only makes sense with --next)"
 	print " --stats      show database statistics"
+	print " --tags       specify tags for --add"
 	print " --update     update database"
 	return 1
 
@@ -47,12 +49,14 @@ if __name__ == '__main__':
 	ardj = Open()
 
 	try:
-		opts, args = getopt.getopt(sys.argv[1:], 'i', ['backup', 'config', 'dbconsole', 'debug', 'jabber', 'jabber-child', 'next', 'quiet', 'reset', 'restart', 'scrobble', 'stats', 'update'])
+		opts, args = getopt.getopt(sys.argv[1:], 'i', ['add', 'backup', 'config', 'dbconsole', 'debug', 'jabber', 'jabber-child', 'next', 'quiet', 'reset', 'restart', 'scrobble', 'stats', 'tags=', 'update'])
 	except getopt.GetoptError:
 		sys.exit(usage())
 
 	if not len(opts):
 		sys.exit(usage())
+
+	tags = []
 
 	# prepare for work
 	for option, value in opts:
@@ -60,8 +64,15 @@ if __name__ == '__main__':
 			sys.stderr = None
 		if '--debug' == option:
 			ardj.debug = True
+		if '--tags' == option:
+			tags = value.split(',')
 
 	for option, value in opts:
+		if '--add' == option:
+			for filename in args:
+				ardj.add_file(filename)
+			ardj.database.commit()
+			args = []
 		if '--backup' == option:
 			import db
 			idx, tracks = 1, db.track.get_all()
