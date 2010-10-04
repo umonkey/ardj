@@ -197,8 +197,6 @@ class database:
 			raise Exception('Track properties have no id.')
 		cur = cur or self.cursor()
 
-		logging.debug(u'Updating a track with: %s' % properties)
-
 		sql = []
 		params = []
 		for k in properties:

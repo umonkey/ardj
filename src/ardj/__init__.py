@@ -4,6 +4,7 @@ import hashlib
 import logging
 import os
 import random
+import re
 import shutil
 import time
 import traceback
@@ -123,9 +124,9 @@ class ardj:
 		"""
 		Makes sure the file name is MD5 based.
 		"""
-		if not re.match('[0-9a-f]/[0-9a-f]/[0-9a-f]{32}', os.path.splitext(filename)[0]):
+		if not re.match('[0-9a-f]/[0-9a-f]/[0-9a-f]{32}', os.path.splitext(track['filename'])[0]):
 			current_path = os.path.join(self.config.get_music_dir(), track['filename']).encode('utf-8')
-			new_name = self.__get_local_file_name(realpath)
+			new_name = self.__get_local_file_name(current_path)
 			new_path = os.path.join(self.config.get_music_dir(), new_name)
 			new_dir = os.path.dirname(new_path)
 			if not os.path.exists(new_dir):

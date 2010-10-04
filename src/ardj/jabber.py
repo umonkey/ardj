@@ -250,7 +250,7 @@ class ardjbot(MyFileReceivingBot):
         track[a1] = a2
         self.ardj.database.update_track(track)
 
-        logging.info(u'%s changed %s from "%s" to "%s" for %s; #%u' % (self.get_linked_sender(message), a1, old, a2, self.get_linked_title(track), track['id']))
+        logging.info(u'%s changed %s from "%s" to "%s" for track #%u' % (message.getFrom().getStripped(), a1, old, a2, track['id']))
 
     @botcmd(hidden=True)
     def delete(self, message, args):
@@ -269,19 +269,9 @@ class ardjbot(MyFileReceivingBot):
         track['weight'] = 0
         track['labels'] = None
         self.ardj.database.update_track(track)
-        logging.info(u'%s changed weight from %s to 0 for %s; #%u' % (self.get_linked_sender(message), old, self.get_linked_title(track), track['id']))
+        logging.info(u'%s changed weight from %s to 0 for track #%u' % (message.getFrom().getStripped(), old, track['id']))
         if not args:
             self.skip(message, args)
-
-    @botcmd(hidden=True)
-    def undelete(self, message, args):
-        "Undeletes a track (sets weight to 1)"
-        track = args and self.ardj.get_track_by_id(int(args)) or self.get_current_track()
-        if track['weight']:
-            return u'This track\'s weight is %s, not quite zero.' % (track['weight'])
-        track['weight'] = 1.
-        self.ardj.database.update_track(track)
-        logging.info(u'%s changed weight from 0 to 1 for %s; #%u' % (self.get_linked_sender(message), self.get_linked_title(track), track['id']))
 
     @botcmd
     def skip(self, message, args):
@@ -354,7 +344,7 @@ class ardjbot(MyFileReceivingBot):
         if not sql.endswith(';'):
             return u'SQL updates must end with a ; to prevent accidents.'
         self.ardj.database.cursor().execute(sql)
-        logging.info(u'SQL from %s: %s' % (self.get_linked_sender(message), sql))
+        logging.info(u'SQL from %s: %s' % (message.getFrom(), sql))
 
     @botcmd
     def twit(self, message, args):
