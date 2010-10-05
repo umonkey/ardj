@@ -1,7 +1,9 @@
 .*\.pyc
 \.git
 \.deb
+\.o
 debian/bin
 debian/etc
 debian/usr
 debian/DEBIAN/control
+ices/ices

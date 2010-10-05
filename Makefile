@@ -3,17 +3,22 @@ VERSION=1.0-$(shell date +'%Y.%m.%d.%H%M')
 help:
 	@echo "Targets: deb install release back copy clean."
 
-deb:
+deb: ices/ices
 	rm -rf *deb *zip
 	cat debian/DEBIAN/control.in | sed -e "s/VERSION/${VERSION}/g" > debian/DEBIAN/control
 	mkdir -p debian/usr/lib/python2.6
 	cp -R src/ardj debian/usr/lib/python2.6/ardj
 	cp -R bin debian/usr/bin
 	cp -R share debian/usr/share
+	cp ices/ices debian/usr/bin/ices.ardj
+	strip debian/usr/bin/ices.ardj
 	find debian -name '*.pyc' -delete
 	sudo chown -R root:root debian/usr
 	dpkg -b debian ardj-${VERSION}.deb
 	sudo rm -rf debian/usr
+
+ices/ices:
+	make -C ices
 
 install: deb
 	sudo dpkg -i ardj-${VERSION}.deb
