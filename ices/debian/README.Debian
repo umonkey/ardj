@@ -1,0 +1,8 @@
+Ices configuration
+==================
+
+To use ices you'll have to create a configuration file: /etc/ices.conf.
+A well documented configuration template is provided in
+/usr/share/doc/ices/examples/ices.conf
+
+ -- Gauvain Pocentek <gauvainpocentek@gmail.com>  Tue, 16 Sep 2008 17:41:57 +0200

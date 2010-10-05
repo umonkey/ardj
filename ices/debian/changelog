@@ -1,0 +1,13 @@
+ices (0.4-0medibuntu2) lucid; urgency=low
+
+  * debian/control: update for lucid.
+  * Rebuild for lucid ffad transition.
+
+ -- Lionel Le Folgoc <mrpouit@ubuntu.com>  Sat, 17 Apr 2010 13:00:02 +0200
+
+ices (0.4-0medibuntu1) intrepid; urgency=low
+
+  * Initial release (LP: #236072)
+  * FLAC support is disabled for now (FTBFS)
+
+ -- Gauvain Pocentek <gauvainpocentek@gmail.com>  Tue, 16 Sep 2008 17:41:57 +0200

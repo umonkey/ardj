@@ -1,0 +1,18 @@
+Source: ices
+Section: sound
+Priority: optional
+Maintainer: Medibuntu Packaging Team <admin@lists.medibuntu.org>
+Uploaders: Lionel Le Folgoc <mrpouit@ubuntu.com>, Gauvain Pocentek <gauvainpocentek@gmail.com>
+Build-Depends: debhelper (>= 7), autotools-dev, libshout3-dev, libxml2-dev, python-dev, libperl-dev, libmp3lame-dev, libvorbis-dev, libfaad-dev, libmp4v2-dev
+Standards-Version: 3.8.0
+Homepage: http://www.icecast.org/ices.php
+Vcs-Bzr: lp:~medibuntu-maintainers/medibuntu/ices.lucid
+Vcs-Browser: http://bazaar.launchpad.net/~medibuntu-maintainers/medibuntu/ices.lucid/files
+
+Package: ices
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: streaming source for Icecast 2
+ IceS 0.x is used to source Icecast 2 streaming audio servers with MP3 audio
+ streams.  It supports both live audio input from a soundcard and re-encoding
+ of MP3 files from a playlist.

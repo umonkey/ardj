@@ -1,0 +1,32 @@
+#!/usr/bin/make -f
+
+build: build-stamp
+build-stamp:
+	dh build --before configure
+	dh_auto_configure -- --without-flac --with-docdir=/usr/share/doc/ices/html --with-moddir=/usr/share/ices/modules
+	dh build --after configure
+	touch build-stamp
+
+clean:
+	dh clean
+
+install: build install-stamp
+install-stamp:
+	dh install
+	mv debian/ices/usr/share/ices/modules/ices.pm.dist \
+		debian/ices/usr/share/ices/modules/ices.pm
+	mv debian/ices/usr/share/ices/modules/ices.py.dist \
+		debian/ices/usr/share/ices/modules/ices.py
+	mkdir -p debian/ices/usr/share/doc/ices/examples
+	mv debian/ices/etc/ices.conf.dist \
+		debian/ices/usr/share/doc/ices/examples/ices.conf
+	rmdir --ignore-fail-on-non-empty debian/ices/etc
+	touch install-stamp
+
+binary-arch: install
+	dh binary-arch
+
+binary-indep: install
+	dh binary-indep
+
+binary: binary-arch binary-indep
