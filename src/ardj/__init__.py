@@ -380,7 +380,8 @@ class ardj:
 		removed afterwards.
 		"""
 		if not os.path.exists(source_filename):
-			raise Exception('File not found.')
+			logging.warning('File %s not found, not adding.' % source_filename)
+			return None
 		filename = self.__get_local_file_name(source_filename)
 		filepath = os.path.join(self.config.get_music_dir(), filename)
 

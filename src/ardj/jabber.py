@@ -125,10 +125,14 @@ class ardjbot(MyFileReceivingBot):
             self.lastping = time.time()
             #logging.debug('Pinging the server.')
             ping = xmpp.Protocol('iq',typ='get',payload=[xmpp.Node('ping',attrs={'xmlns':'urn:xmpp:ping'})])
-            res = self.conn.SendAndWaitForResponse(ping, self.PING_TIMEOUT)
-            #logging.debug('Got response: ' + str(res))
-            if res is None:
-                logging.error('Terminating due to PING timeout.')
+            try:
+                res = self.conn.SendAndWaitForResponse(ping, self.PING_TIMEOUT)
+                #logging.debug('Got response: ' + str(res))
+                if res is None:
+                    logging.error('Terminating due to PING timeout.')
+                    self.quit(1)
+            except IOError, e:
+                logging.error('Error pinging the server: %s, shutting down.' % e)
                 self.quit(1)
         super(ardjbot, self).idle_proc()
 
@@ -484,9 +488,13 @@ class ardjbot(MyFileReceivingBot):
         
         The pattern can be a track id or a part of its name, artist or
         filename.  If only one track matches, it's queued, otherwise an error
-        is shown.
+        is shown.  Use 'queue flush' to remove everything.
         """
         cur = self.ardj.database.cursor()
+
+        if args == 'flush':
+            cur.execute('DELETE FROM queue')
+            return u'ok'
 
         # Если есть нецифровые элементы, выполняем поиск.
         if len(args.strip()):

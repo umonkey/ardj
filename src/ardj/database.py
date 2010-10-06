@@ -155,8 +155,13 @@ class database:
 		"""
 		cur = self.cursor()
 		for label in labels:
-			if label.startswith('-'):
-				cur.execute('DELETE FROM labels WHERE track_id = ? AND email = ? AND label = ?', (track_id, email, label[1:], ))
+			neg = label.startswith('-')
+			if neg:
+				label = label[1:]
+			if label.startswith('@'):
+				label = label[1:]
+			if neg:
+				cur.execute('DELETE FROM labels WHERE track_id = ? AND label = ?', (track_id, label[1:], ))
 			elif not cur.execute('SELECT 1 FROM labels WHERE track_id = ? AND email = ? AND label = ?', (track_id, email, label, )).fetchall():
 				cur.execute('INSERT INTO labels (track_id, email, label) VALUES (?, ?, ?)', (track_id, email, label, ))
 		current = [row[0] for row in cur.execute('SELECT DISTINCT label FROM labels WHERE track_id = ? ORDER BY label', (track_id, )).fetchall()]
