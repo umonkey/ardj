@@ -299,11 +299,16 @@ class ardjbot(MyFileReceivingBot):
     @botcmd
     def show(self, message, args):
         "Show detailed track info"
-        if args.strip() == 'labels' or args.strip() == 'tags':
-            result = self.ardj.database.cursor().execute('SELECT label, COUNT(*) FROM labels GROUP BY label ORDER BY label').fetchall()
-            if not result:
+        if args == 'labels' or args == 'tags':
+            rows = self.ardj.database.cursor().execute('SELECT label, COUNT(*) FROM labels GROUP BY label ORDER BY label').fetchall()
+            if not rows:
                 return u'No labels.'
-            return u'Label stats: %s.' % u', '.join(['%s (%u)' % (row[0], row[1]) for row in result])
+            return u'Label stats: %s.' % u', '.join(['%s (%u)' % (row[0], row[1]) for row in rows])
+        if args == 'karma':
+            rows = self.ardj.database.cursor().execute('SELECT email, weight FROM karma ORDER BY weight DESC').fetchall()
+            if not rows:
+                return u'No data.'
+            return u'Current karma: %s.' % u', '.join([u'%s (%.2f)' % (row[0], row[1]) for row in rows])
         args = self.split(args)
         if not args:
             track = self.get_current_track()
