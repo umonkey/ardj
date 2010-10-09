@@ -489,5 +489,24 @@ class ardj:
 			have_jabber = True
 		return jabber.Open(self)
 
+	def find(self, pattern):
+		"""
+		Returns tracks matching the pattern.
+		"""
+        sql = 'SELECT id, filename, artist, title FROM tracks WHERE weight > 0'
+        params = tuple()
+        words = u'%' + u' '.join([l for l in re.split('\s+', pattern) if not l.startswith('@')]) + u'%'
+        if words != u'%%':
+            sql += u' AND (title LIKE ? OR artist LIKE ?)'
+            params += (words, words, )
+        for label in re.split('\s+', pattern):
+            if label.startswith('@'):
+                sql += ' AND id IN (SELECT track_id FROM labels WHERE label = ?)'
+                params += (label[1:], )
+        sql += ' ORDER BY id'
+        self.database.debug(sql, params)
+        cur = self.ardj.database.cursor()
+        return [{ 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3] } for row in cur.execute(sql, params).fetchall()]
+
 def Open():
     return ardj()
