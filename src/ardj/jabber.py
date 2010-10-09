@@ -501,17 +501,12 @@ class ardjbot(MyFileReceivingBot):
             cur.execute('DELETE FROM queue')
             return u'ok'
 
-        # Если есть нецифровые элементы, выполняем поиск.
-        if len(args.strip()):
-            if len([x for x in args.split(' ') if not x.isdigit()]):
-                rows = cur.execute('SELECT id FROM tracks WHERE title LIKE ? ORDER BY title', (u'%' + args + u'%', )).fetchall()
-                if rows:
-                    self.ardj.queue_track(int(rows[0][0]), cur)
-                else:
-                    return u'Ничего похожего нет.'
-            elif args:
-                for id in [x for x in args.split(' ') if x]:
-                    self.ardj.queue_track(int(id), cur)
+        # Add new tracks.
+        cur = self.ardj.database.cursor()
+        for track in self.ardj.find(args):
+            cur.execute('INSERT INTO queue (track_id, owner) VALUES (?, ?)', (track['id'], mess.getFrom().getStripped(), ))
+
+        # Show current queue.
         tracks = [{ 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'qid': row[4] } for row in cur.execute('SELECT t.id, t.filename, t.artist, t.title, q.id FROM tracks t INNER JOIN queue q ON q.track_id = t.id ORDER BY q.id').fetchall()]
         if not tracks:
             return u'Queue empty, use "queue track_id..." to fill.'
