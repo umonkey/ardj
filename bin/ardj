@@ -16,6 +16,7 @@ def usage():
 	print " --dbconsole  open SQLite console"
 	print " --jabber     run a jabber bot"
 	print " --next       show next track"
+	print " --sql        execute an SQL statement"
 	print " --reset      reset database"
 	print " --restart    restart a running jabber bot"
 	print " --stats      show database statistics"
@@ -53,7 +54,7 @@ if __name__ == '__main__':
 	ardj = Open()
 
 	try:
-		opts, args = getopt.getopt(sys.argv[1:], 'i', ['add', 'backup', 'config', 'dbconsole', 'debug', 'delete', 'jabber', 'jabber-child', 'next', 'quiet', 'queue', 'reset', 'restart', 'scrobble', 'stats', 'tags=', 'update'])
+		opts, args = getopt.getopt(sys.argv[1:], 'i', ['add', 'backup', 'config', 'dbconsole', 'debug', 'delete', 'jabber', 'jabber-child', 'next', 'quiet', 'queue', 'reset', 'restart', 'scrobble', 'sql', 'stats', 'tags=', 'update'])
 	except getopt.GetoptError:
 		sys.exit(usage())
 
@@ -135,6 +136,12 @@ if __name__ == '__main__':
 					os.kill(pid, signal.SIGTERM)
 				except OSError: pass
 				subprocess.Popen(['/usr/bin/killall', '-HUP', 'ices']).wait()
+		if '--sql' == option:
+			cur = ardj.database.cursor()
+			for arg in args:
+				cur.execute(arg)
+			ardj.database.commit()
+			cur.execute('VACUUM')
 		if '--stats' == option:
 			stats = ardj.get_stats()
 			print '%u tracks, %.1f hours.' % (stats['tracks'], stats['seconds'] / 60 / 60)
