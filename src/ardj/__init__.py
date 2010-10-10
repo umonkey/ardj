@@ -522,6 +522,18 @@ class ardj:
 		cur = self.database.cursor()
 		return [{ 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'labels': self.__get_track_labels(row[0], cur) } for row in cur.execute(sql, params).fetchall()]
 
+	def purge(self):
+		"""
+        Removes files that were deleted (zero weight) from the database.
+		"""
+		cur = self.database.cursor()
+		musicdir = self.config.get_music_dir()
+		for id, filename in [(row[0], os.path.join(musicdir, row[1].encode('utf-8'))) for row in cur.execute('SELECT id, filename FROM tracks WHERE weight = 0').fetchall()]:
+			if os.path.exists(filename):
+				os.unlink(filename)
+		cur.execute('DELETE FROM tracks WHERE weight = 0')
+		self.database.purge(cur)
+
 	def __get_track_labels(self, track_id, cur):
 		return [row[0] for row in cur.execute('SELECT DISTINCT label FROM labels WHERE track_id = ? ORDER BY label', (track_id, )).fetchall()]
 

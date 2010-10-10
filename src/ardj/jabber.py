@@ -394,13 +394,7 @@ class ardjbot(MyFileReceivingBot):
     @botcmd(hidden=True)
     def purge(self, message, args):
         "Erase tracks with zero weight"
-        cur = self.ardj.database.cursor()
-        musicdir = self.ardj.config.get_music_dir()
-        for id, filename in [(row[0], os.path.join(musicdir, row[1].encode('utf-8'))) for row in cur.execute('SELECT id, filename FROM tracks WHERE weight = 0').fetchall()]:
-            if os.path.exists(filename):
-                os.unlink(filename)
-        cur.execute('DELETE FROM tracks WHERE weight = 0')
-        self.ardj.database.purge(cur)
+        self.ardj.purge()
         return u'ok'
 
     @botcmd

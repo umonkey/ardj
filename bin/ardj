@@ -141,7 +141,7 @@ if __name__ == '__main__':
 			for arg in args:
 				cur.execute(arg)
 			ardj.database.commit()
-			cur.execute('VACUUM')
+			ardj.purge()
 		if '--stats' == option:
 			stats = ardj.get_stats()
 			print '%u tracks, %.1f hours.' % (stats['tracks'], stats['seconds'] / 60 / 60)
