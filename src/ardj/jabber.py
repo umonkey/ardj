@@ -504,7 +504,7 @@ class ardjbot(MyFileReceivingBot):
         # Add new tracks.
         cur = self.ardj.database.cursor()
         for track in self.ardj.find(args):
-            cur.execute('INSERT INTO queue (track_id, owner) VALUES (?, ?)', (track['id'], mess.getFrom().getStripped(), ))
+            cur.execute('INSERT INTO queue (track_id, owner) VALUES (?, ?)', (track['id'], message.getFrom().getStripped(), ))
 
         # Show current queue.
         tracks = [{ 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'qid': row[4] } for row in cur.execute('SELECT t.id, t.filename, t.artist, t.title, q.id FROM tracks t INNER JOIN queue q ON q.track_id = t.id ORDER BY q.id').fetchall()]
@@ -532,7 +532,7 @@ class ardjbot(MyFileReceivingBot):
         else:
             message = u'Found %u tracks:' % len(tracks)
         for track in tracks[:20]:
-            labels = ['@' + row[0] for row in cur.execute('SELECT DISTINCT label FROM labels WHERE track_id = ? ORDER BY label', (track['id'], )).fetchall()]
+            labels = ['@' + l for l in track['labels']]
             message += u'\n<br/>  %s — #%u %s' % (self.get_linked_title(track), track['id'], u' '.join(labels))
         return message + u'\n<br/>You might want to use "queue track_ids..." now.'
 
