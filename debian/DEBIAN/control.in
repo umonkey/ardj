@@ -5,7 +5,7 @@ Priority: optional
 Maintainer: Justin Forest <justin.forest@gmail.com>
 Architecture: all
 Essential: no
-Depends: python, python-yaml, python-pyinotify, python-mutagen (>= 1.19)
+Depends: python, python-yaml, python-mutagen (>= 1.19)
 Suggests: python-dnspython, python-socksipy, ices, icecast2
 Recommends: lastfmsubmitd, sqlite3, podget, python-twitter, screen
 Installed-Size: 660
