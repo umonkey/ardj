@@ -241,6 +241,8 @@ class database:
 		cur.execute('DELETE FROM queue WHERE track_id NOT IN (SELECT id FROM tracks)')
 		cur.execute('DELETE FROM labels WHERE track_id NOT IN (SELECT id FROM tracks)')
 		cur.execute('DELETE FROM votes WHERE track_id NOT IN (SELECT id FROM tracks)')
+		for table in ('playlists', 'tracks', 'queue', 'urgent_playlists', 'labels', 'karma'):
+			cur.execute('ANALYZE ' + table)
 		cur.execute('VACUUM')
 
 def Open(filename):
