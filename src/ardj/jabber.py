@@ -17,7 +17,6 @@ from ardj.jabberbot import JabberBot, botcmd
 from ardj.filebot import FileBot, FileNotAcceptable
 from ardj import twitter
 from ardj import xmpp
-import notify
 import tags
 
 class MyFileReceivingBot(FileBot):
@@ -87,10 +86,10 @@ class ardjbot(MyFileReceivingBot):
     def __init__(self, ardj):
         self.ardj = ardj
         self.twitter = None
-        self.dbtracker = None
         self.lastping = None # время последнего пинга
         self.pidfile = '/tmp/ardj-jabber.pid'
         self.publicCommands = self.ardj.config.get('jabber/public-commands', 'help rocks sucks show last hitlist shitlist ping pong').split(' ')
+        self.database_mtime = None
 
         try:
             tmp = twitter.Api(username=ardj.config.get('twitter/consumer_key'),
@@ -118,8 +117,24 @@ class ardjbot(MyFileReceivingBot):
 
     def idle_proc(self):
         """
-        Sends a ping to self every PING_TIMEOUT/2 seconds.  If last reply was
-        longer than PING_TIMEOUT seconds ago, a suicide is commited.
+        Updates the status, pings the server.
+        """
+        self.__idle_status()
+        self.__idle_ping()
+        super(ardjbot, self).idle_proc()
+
+    def __idle_status(self):
+        """
+        Changes status when the database changes.
+        """
+        stat = os.stat(self.ardj.database.filename)
+        if self.database_mtime is None or self.database_mtime < stat.st_mtime:
+            self.database_mtime = stat.st_mtime
+            self.update_status()
+
+    def __idle_ping(self):
+        """
+        Pings the server, shuts the bot down if no response is received.
         """
         if time.time() - self.lastping > self.PING_FREQUENCY:
             self.lastping = time.time()
@@ -134,30 +149,16 @@ class ardjbot(MyFileReceivingBot):
             except IOError, e:
                 logging.error('Error pinging the server: %s, shutting down.' % e)
                 self.quit(1)
-        super(ardjbot, self).idle_proc()
 
     def on_connected(self):
         logging.debug('on_connected called.')
         self.lastping = time.time()
-        self.dbtracker = notify.monitor([self.ardj.database.filename], self.on_file_changes)
         if self.pidfile:
             try:
                 open(self.pidfile, 'w').write(str(os.getpid()))
             except IOError, e:
                 logging.error(u'Could not write to %s: %s' % (self.pidfile, e))
         self.update_status()
-
-    def on_file_changes(self, action, path):
-        try:
-            if path == self.ardj.database.filename:
-                if 'modified' == action:
-                    return self.update_status()
-        except IOError, e:
-            logging.error('IOError: %s, shutting down.' % e)
-            self.quit(1)
-        except Exception, e:
-            logging.error('Exception in inotify handler: %s' % e)
-            traceback.print_exc()
 
     def shutdown(self):
         # self.on_disconnect() # called by JabberBot afterwards.
@@ -171,7 +172,6 @@ class ardjbot(MyFileReceivingBot):
     def update_status(self, onstart=False):
         """
         Updates the status with the current track name.
-        Called by inotify, if available.
         """
         track = self.get_current_track()
         if track is not None:
@@ -653,11 +653,6 @@ class ardjbot(MyFileReceivingBot):
 
     def on_disconnect(self):
         logging.debug('on_disconnect called.')
-        if self.dbtracker:
-            logging.debug('on_disconnect: stopping dbtracker.')
-            self.dbtracker.stop()
-            self.dbtracker = None
-            logging.debug('on_disconnect: finished.')
 
     def __vote(self, track_id, email, vote):
         return (1, self.ardj.database.add_vote(track_id, email, vote))
