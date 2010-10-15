@@ -448,6 +448,15 @@ class ardjbot(MyFileReceivingBot):
             votes, weight = self.__vote(track['id'], message.getFrom().getStripped(), -1)
             return u'Recorded a vote against %s weight: %s.' % (self.get_linked_title(track), weight)
 
+    @botcmd(hidden=True):
+    def unvote(self, message, args):
+        track = self.get_track(args, 0)
+        if track is None:
+            return 'Nothing is playing.'
+        else:
+            votes, weight = self.__vote(track['id'], message.getFrom().getStripped(), -1)
+            return u'Removed your vote for %s, weight: %s.' % (self.get_linked_title(track), weight)
+
     def get_track(self, args, index):
         if type(args) != tuple:
             raise TypeError("Use the 'help' command to understand how this works.")
@@ -656,16 +665,6 @@ class ardjbot(MyFileReceivingBot):
 
     def __vote(self, track_id, email, vote):
         return (1, self.ardj.database.add_vote(track_id, email, vote))
-
-        cur = self.ardj.database.cursor()
-        # store the vote
-        cur.execute('DELETE FROM votes WHERE track_id = ? AND email = ?', (track_id, email, ))
-        cur.execute('INSERT INTO votes (track_id, email, vote) VALUES (?, ?, ?)', (track_id, email, vote, ))
-        # update track weight
-        votes = cur.execute('SELECT SUM(vote) FROM votes WHERE track_id = ?', (track_id, )).fetchall()[0][0]
-        weight = max(1 + votes * 0.25, 0.1)
-        cur.execute('UPDATE tracks SET weight = ? WHERE id = ?', (weight, track_id, ))
-        return (votes, weight)
 
 def Open(ardj):
     """

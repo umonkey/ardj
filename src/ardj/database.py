@@ -128,8 +128,8 @@ class database:
 		elif vote < 0: vote = -1
 
 		# Skip wrong values.
+		cur.execute('DELETE FROM votes WHERE track_id = ? AND email = ?', (track_id, email, ))
 		if vote != 0:
-			cur.execute('DELETE FROM votes WHERE track_id = ? AND email = ?', (track_id, email, ))
 			cur.execute('INSERT INTO votes (track_id, email, vote) VALUES (?, ?, ?)', (track_id, email, vote, ))
 
 		# Update email's karma.
