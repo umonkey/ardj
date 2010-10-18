@@ -142,7 +142,7 @@ class database:
 		# views (when out of beta).
 		## wtf ?! ## cur.execute('UPDATE tracks SET weight = 1')
 		result = 1
-		for row in cur.execute('SELECT track_id, weight FROM track_weights WHERE track_id IN (SELECT track_id FROM votes WHERE email = ?)', (email, )).fetchall():
+		for row in cur.execute('SELECT track_id, weight FROM track_weights WHERE track_id IN (SELECT track_id FROM votes WHERE email = ?) OR track_id = ?', (email, track_id, )).fetchall():
 			cur.execute('UPDATE tracks SET weight = ? WHERE id = ?', (row[1], row[0], ))
 			if track_id == row[0]:
 				result = row[1]

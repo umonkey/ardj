@@ -319,9 +319,10 @@ class ardjbot(MyFileReceivingBot):
         if track is None:
             return u'No such track.'
         result = self.get_linked_title(track)
-        result += u'; #%u weight=%f playcount=%u length=%us' % (track['id'], track['weight'] or 0, track['count'] or 0, track['length'] or 0)
+        result += u'; #%u weight=%f playcount=%u length=%us filename="%s". ' % (track['id'], track['weight'] or 0, track['count'] or 0, track['length'] or 0, track['filename'])
         if track['labels']:
-            result += u', labels: @' + u', @'.join(track['labels'])
+            result += u'Labels: @' + u', @'.join(track['labels']) + u'. '
+        result += self._get_track_voters(track['id'])
         return result.strip()
 
     @botcmd
@@ -382,6 +383,17 @@ class ardjbot(MyFileReceivingBot):
     def echo(self, message, args):
         "Send back the arguments"
         return args
+
+    def _get_track_voters(self, track_id):
+        "Returns formatted list of likers-haters."
+        votes = self.ardj.database.cursor().execute('SELECT email, vote FROM votes WHERE track_id = ?', (track_id, )).fetchall()
+        pro = [row[0] for row in votes if row[1] > 0]
+        if not pro:
+            pro.append('nobody')
+        contra = [row[0] for row in votes if row[1] < 0]
+        if not contra:
+            contra.append('nobody')
+        return u'Pro: %s, contra: %s. ' % (', '.join(pro), ', '.join(contra))
 
     def split(self, args):
         if not args:
@@ -448,13 +460,13 @@ class ardjbot(MyFileReceivingBot):
             votes, weight = self.__vote(track['id'], message.getFrom().getStripped(), -1)
             return u'Recorded a vote against %s weight: %s.' % (self.get_linked_title(track), weight)
 
-    @botcmd(hidden=True):
+    @botcmd(hidden=True)
     def unvote(self, message, args):
-        track = self.get_track(args, 0)
+        track = self.get_track((None, ), 0)
         if track is None:
             return 'Nothing is playing.'
         else:
-            votes, weight = self.__vote(track['id'], message.getFrom().getStripped(), -1)
+            votes, weight = self.__vote(track['id'], message.getFrom().getStripped(), 0)
             return u'Removed your vote for %s, weight: %s.' % (self.get_linked_title(track), weight)
 
     def get_track(self, args, index):
@@ -559,14 +571,7 @@ class ardjbot(MyFileReceivingBot):
         track = self.get_track(args, 0)
         if track is None:
             return u'Nothing is playing.'
-        votes = self.ardj.database.cursor().execute('SELECT email, vote FROM votes WHERE track_id = ?', (track['id'], )).fetchall()
-        pro = [row[0] for row in votes if row[1] > 0]
-        if not pro:
-            pro.append('nobody')
-        contra = [row[0] for row in votes if row[1] < 0]
-        if not contra:
-            contra.append('nobody')
-        return u'Pro: %s, contra: %s.' % (', '.join(pro), ', '.join(contra))
+        return self._get_track_voters(track['id'])
 
     @botcmd
     def voters(self, mess, args):
