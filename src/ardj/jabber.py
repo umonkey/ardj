@@ -413,6 +413,13 @@ class ardjbot(MyFileReceivingBot):
     def sync(self, message, args):
         "Update database (finds new and dead files)"
         self.ardj.sync()
+
+        # reset all track weights
+        cur = self.ardj.database.cursor()
+        cur.execute('UPDATE tracks SET weight = 1')
+        for track_id, weight in cur.execute('SELECT track_id, weight FROM track_weights').fetchall():
+            cur.execute('UPDATE tracks SET weight = ? WHERE id = ?', (weight, track_id, ))
+
         return self.news(message, args)
 
     def get_linked_title(self, track):
