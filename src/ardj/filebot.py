@@ -27,7 +27,7 @@ class DiscoBot(JabberBot):
         """Add support for XEP-0115."""
         init = not self.conn
         conn = super(DiscoBot, self).connect()
-        if init:
+        if conn and init:
             conn.RegisterHandler('iq', self.on_disco_info, ns=xmpp.NS_DISCO_INFO)
         return conn
 
@@ -74,7 +74,7 @@ class FileBot(DiscoBot):
         """
         init = not self.conn
         conn = super(FileBot, self).connect()
-        if init:
+        if conn and init:
             conn.RegisterHandler('iq', self.si_req_handler, ns=xmpp.NS_SI)
             conn.RegisterHandler('iq', self.on_bytestream, ns=xmpp.NS_BYTESTREAM)
         return conn
