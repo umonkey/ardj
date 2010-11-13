@@ -252,7 +252,8 @@ class ardj:
 		"""
 		Returns information about all known playlists.
 		"""
-		return [{ 'name': row[0] or 'playlist-' + str(row[1]), 'id': row[1], 'priority': row[2], 'repeat': row[3], 'delay': row[4], 'hours': row[5] and [int(x) for x in row[5].split(',')] or None, 'days': row[6] and [int(x) for x in row[6].split(',')] or None, 'last_played': row[7] } for row in self.database.cursor().execute('SELECT name, id, priority, repeat, delay, hours, days, last_played FROM playlists ORDER BY priority DESC').fetchall()]
+		s = lambda cell: cell and re.split(',\s*', cell) or [cell]
+		return [{ 'name': row[0] or 'playlist-' + str(row[1]), 'id': row[1], 'priority': row[2], 'repeat': row[3], 'delay': row[4], 'hours': row[5] and [int(x) for x in row[5].split(',')] or None, 'days': row[6] and [int(x) for x in row[6].split(',')] or None, 'last_played': row[7], 'labels': s(row[8]) } for row in self.database.cursor().execute('SELECT name, id, priority, repeat, delay, hours, days, last_played, labels FROM playlists ORDER BY priority DESC').fetchall()]
 
 	def explain_playlists(self):
 		self.get_active_playlists(explain=True)
@@ -305,13 +306,15 @@ class ardj:
 						saved[item['name']] = { 'name': item['name'], 'last_played': None, 'id': cur.execute('INSERT INTO playlists (name) VALUES (NULL)').lastrowid }
 					else:
 						# очищаем почти все свойства
-						saved[item['name']] = { 'name': item['name'], 'id': saved[item['name']]['id'], 'last_played': saved[item['name']]['last_played'] }
+						saved[item['name']] = { 'name': item['name'], 'id': saved[item['name']]['id'], 'last_played': saved[item['name']]['last_played'], 'labels': None }
 					for k in ('days', 'hours'):
 						if k in item:
 							saved[item['name']][k] = item[k] and ','.join([str(x) for x in item[k]]) or None
 					for k in ('repeat', 'delay'):
 						if k in item:
 							saved[item['name']][k] = int(item[k])
+					if 'labels' in item:
+						saved[item['name']]['labels'] = u','.join(item['labels'])
 					saved[item['name']]['priority'] = priority
 					self.database.update('playlists', saved[item['name']], cur)
 					priority -= 1
