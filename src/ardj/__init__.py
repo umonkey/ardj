@@ -2,6 +2,7 @@
 
 import hashlib
 import logging
+import logging.handlers
 import os
 import random
 import re
@@ -22,7 +23,22 @@ class ardj:
 		self.database = database.Open(self.config.get_db_name())
 		self.scrobbler = scrobbler.Open(self.config)
 		self.debug = False
-		logging.basicConfig(filename=self.config.get('log', None), level=logging.DEBUG)
+
+		self.log = logging.getLogger(__name__)
+		self.log.setLevel(logging.DEBUG)
+
+		h = logging.handlers.RotatingFileHandler(self.config.get('log', 'ardj.log'), maxBytes=1000000, backupCount=5)
+		h.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+		h.setLevel(logging.DEBUG)
+		self.log.addHandler(h)
+
+		"""
+		h = logging.StreamHandler()
+		h.setLevel(logging.WARNING)
+		self.log.addHandler(h)
+		"""
+
+		self.log.info('Logging initialized.')
 
 	def __del__(self):
 		self.close()
@@ -53,7 +69,7 @@ class ardj:
 		if track is None:
 			track = self.get_random_track(cur=cur)
 			if track is not None:
-				logging.debug(u'Picked track %u (last resort).' % track['id'])
+				self.log.info(u'Picked track %u (last resort).' % track['id'])
 		if track is not None:
 			track = self.__fix_track_file_name(track, cur)
 			track['count'] += 1
@@ -74,7 +90,7 @@ class ardj:
 		row = cur.execute('SELECT id, track_id FROM queue ORDER BY id LIMIT 1').fetchone()
 		if row is not None:
 			track = self.get_track_by_id(row[1])
-			logging.debug(u'Picked track %u from the top of the queue.' % track['id'])
+			self.log.info(u'Picked track %u from the top of the queue.' % track['id'])
 			cur.execute('DELETE FROM queue WHERE id = ?', (row[0], ))
 			return track
 
@@ -86,7 +102,7 @@ class ardj:
 		if labels:
 			track = self.get_random_track({'labels':labels}, skip_artists=skip, cur=cur)
 			if track:
-				logging.debug(u'Picked track %u from the urgent playlist.' % track['id'])
+				self.log.info(u'Picked track %u from the urgent playlist.' % track['id'])
 				return track
 
 	def __get_track_from_playlists(self, skip, cur):
@@ -96,7 +112,7 @@ class ardj:
 		for playlist in self.get_active_playlists():
 			track = self.get_random_track(playlist, repeat=playlist['repeat'], skip_artists=skip, cur=cur)
 			if track is not None:
-				logging.debug(u'Picked track %u from playlist %s.' % (track['id'], playlist['name']))
+				self.log.info(u'Picked track %u from playlist %s.' % (track['id'], playlist['name']))
 				cur.execute('UPDATE playlists SET last_played = ? WHERE name = ?', (int(time.time()), playlist['name']))
 				return track
 
@@ -126,20 +142,22 @@ class ardj:
 		"""
 		if not re.match('[0-9a-f]/[0-9a-f]/[0-9a-f]{32}', os.path.splitext(track['filename'])[0]):
 			current_path = os.path.join(self.config.get_music_dir(), track['filename']).encode('utf-8')
+			if not os.path.exists(current_path):
+				return track
 			new_name = self.__get_local_file_name(current_path)
 			new_path = os.path.join(self.config.get_music_dir(), new_name)
 			new_dir = os.path.dirname(new_path)
 			if not os.path.exists(new_dir):
-				logging.debug(u'Creating folder ' + new_dir)
+				self.log.info(u'Creating folder ' + new_dir)
 				os.makedirs(new_dir)
 			try:
 				shutil.move(current_path, new_path)
-				logging.info(u'Moved %s to %s' % (track['filename'], new_name))
+				self.log.info(u'Moved %s to %s' % (track['filename'], new_name))
 				track['filename'] = new_name
 				# This can be done later, but can be not, so let's do it to avoid desync.
 				cur.execute('UPDATE tracks SET filename = ? WHERE id = ?', (new_name, track['id'], ))
 			except:
-				logging.info(u'Could move %s to %s' % (track['filename'], new_name))
+				self.log.info(u'Could move %s to %s' % (track['filename'], new_name))
 		return track
 
 	def queue_track(self, id, cur=None):
@@ -233,6 +251,7 @@ class ardj:
 				tsql.append('?')
 				params.append(name)
 			sql += ' AND artist NOT IN (' + ', '.join(tsql) + ')'
+		self.log.debug('SQL: %s; PARAMS: %s' % (sql, params))
 		self.database.debug(sql, params)
 		# fetch all records
 		rows = cur.execute(sql, tuple(params)).fetchall()
@@ -245,14 +264,14 @@ class ardj:
 			if rnd < row[1]:
 				return row[0]
 			rnd = rnd - row[1]
-		logging.error(u'Could not choose from %u tracks.' % len(rows))
+		self.log.error(u'Could not choose from %u tracks.' % len(rows))
 		return None
 
 	def get_playlists(self):
 		"""
 		Returns information about all known playlists.
 		"""
-		s = lambda cell: cell and re.split(',\s*', cell) or [cell]
+		s = lambda cell: cell and re.split(',\s*', cell) or []
 		return [{ 'name': row[0] or 'playlist-' + str(row[1]), 'id': row[1], 'priority': row[2], 'repeat': row[3], 'delay': row[4], 'hours': row[5] and [int(x) for x in row[5].split(',')] or None, 'days': row[6] and [int(x) for x in row[6].split(',')] or None, 'last_played': row[7], 'labels': s(row[8]) } for row in self.database.cursor().execute('SELECT name, id, priority, repeat, delay, hours, days, last_played, labels FROM playlists ORDER BY priority DESC').fetchall()]
 
 	def explain_playlists(self):
@@ -319,8 +338,8 @@ class ardj:
 					self.database.update('playlists', saved[item['name']], cur)
 					priority -= 1
 				except Exception, e:
-					logging.error(u'Bad playlist: %s: %s' % (e, item))
-					logging.error(traceback.format_exc(e))
+					self.log.error(u'Bad playlist: %s: %s' % (e, item))
+					self.log.error(traceback.format_exc(e))
 
 		for k in [x for x in saved.keys() if not saved[x]['priority']]:
 			cur.execute('DELETE FROM playlists WHERE id = ?', (saved[k]['id'], ))
@@ -355,7 +374,7 @@ class ardj:
 
 		# Удаляем из базы данных несуществующие файлы.
 		for filename in dead:
-			logging.warning(u'Track no longer exists: %s.' % filename)
+			self.log.warning(u'Track no longer exists: %s.' % filename)
 			cur.execute('DELETE FROM tracks WHERE filename = ?', (filename.decode('utf-8'), ))
 
 		# Добавляем новые файлы.
@@ -369,7 +388,7 @@ class ardj:
 		self.update_playlists(cur=cur)
 
 		msg = u'%u files added, %u removed.' % (len(news), len(dead))
-		logging.info(u'sync: ' + msg)
+		self.log.info(u'sync: ' + msg)
 		self.database.commit()
 		return msg
 
@@ -383,13 +402,13 @@ class ardj:
 		removed afterwards.
 		"""
 		if not os.path.exists(source_filename):
-			logging.warning('File %s not found, not adding.' % source_filename)
+			self.log.warning('File %s not found, not adding.' % source_filename)
 			return None
 		filename = self.__get_local_file_name(source_filename)
 		filepath = os.path.join(self.config.get_music_dir(), filename)
 
 		if not os.path.exists(filepath):
-			logging.debug(u'Copying the uploaded file to %s' % filepath)
+			self.log.info(u'Copying the uploaded file to %s' % filepath)
 			dirname = os.path.dirname(filepath)
 			if not os.path.exists(dirname):
 				os.makedirs(dirname)
@@ -423,13 +442,13 @@ class ardj:
 		"""
 		Returns a new track id or the existing one.
 		"""
-		logging.debug('Looking for an id for file %s' % filename)
+		self.log.debug('Looking for an id for file %s' % filename)
 		row = cur.execute('SELECT id FROM tracks WHERE filename = ?', (filename, )).fetchone()
 		if row:
-			logging.debug(u'Reusing track id %u.' % row[0])
+			self.log.debug(u'Reusing track id %u.' % row[0])
 			return row[0]
 		track_id = cur.execute('INSERT INTO tracks (artist) VALUES (NULL)').lastrowid
-		logging.debug(u'New track id is %u.' % track_id)
+		self.log.debug(u'New track id is %u.' % track_id)
 		return track_id
 
 	def __get_track_properties(self, filepath, properties):
@@ -456,7 +475,7 @@ class ardj:
 		try:
 			tags.set(os.path.join(self.config.get_music_dir(), filename.encode('utf-8')), { 'artist': artist, 'title': title, 'ardj': comment })
 		except Exception, e:
-			logging.error(u'Could not write metadata to %s: %s' % (filename, e))
+			self.log.error(u'Could not write metadata to %s: %s' % (filename, e))
 
 	def sqlite_randomize(self, id, artist_weight, weight, count):
 		"""
