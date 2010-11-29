@@ -416,9 +416,9 @@ class ardjbot(MyFileReceivingBot):
 
         # reset all track weights
         cur = self.ardj.database.cursor()
-        cur.execute('UPDATE tracks SET weight = 1')
+        cur.execute('UPDATE tracks SET weight = 1 WHERE weight > 0')
         for track_id, weight in cur.execute('SELECT track_id, weight FROM track_weights').fetchall():
-            cur.execute('UPDATE tracks SET weight = ? WHERE id = ?', (weight, track_id, ))
+            cur.execute('UPDATE tracks SET weight = ? WHERE id = ? AND weight > 0', (weight, track_id, ))
 
         return self.news(message, args)
 
