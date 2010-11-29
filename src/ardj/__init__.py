@@ -404,11 +404,14 @@ class ardj:
 		if not os.path.exists(source_filename):
 			self.log.warning('File %s not found, not adding.' % source_filename)
 			return None
+		if not os.path.splitext(source_filename.lower())[1] in ('.mp3', '.ogg'):
+			self.log.warning('File %s has wrong extension, skipping.' % source_filename)
+			return None
 		filename = self.__get_local_file_name(source_filename)
 		filepath = os.path.join(self.config.get_music_dir(), filename)
 
 		if not os.path.exists(filepath):
-			self.log.info(u'Copying the uploaded file to %s' % filepath)
+			self.log.info(u'Copying a file from %s to %s' % (source_filename, filepath))
 			dirname = os.path.dirname(filepath)
 			if not os.path.exists(dirname):
 				os.makedirs(dirname)
