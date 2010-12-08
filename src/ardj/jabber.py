@@ -467,6 +467,17 @@ class ardjbot(MyFileReceivingBot):
             votes, weight = self.__vote(track['id'], message.getFrom().getStripped(), -1)
             return u'Recorded a vote against %s weight: %s.' % (self.get_linked_title(track), weight)
 
+    @botcmd
+    def ban(self, message, args):
+        """Deletes all tracks by the specified artists."""
+        artist_name = args
+        if not artist_name:
+            return u'Usage: ban artist name'
+        cur = self.ardj.database.cursor()
+        cur.execute('UPDATE tracks SET weight = 0 WHERE artist = ?', (artist_name, ))
+        self.ardj.purge()
+        return u"Who's %s?  Never heard of them." % artist_name
+
     @botcmd(hidden=True)
     def unvote(self, message, args):
         track = self.get_track((None, ), 0)
