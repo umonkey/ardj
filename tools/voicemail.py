@@ -1,21 +1,19 @@
 #!/usr/bin/env python
 # vim: set fileencoding=utf-8:
 #
-# Email to poole gateway script.
-#
-# Retrieves messages from a mailbox and saves the ones that match a certain
-# criteria as blog entries.  Designed to be set up as a cron job.
+# Retrieves messages from a mailbox, retrieves attachments and passes them to
+# an external program.  Designed to be set up as a cron job.
 #
 # Reads ~/.config/tmradio/voicemail.conf of the following format:
 #
-# --- 8< ---
-# host: pop.gmail.com
-# login: john.doe
-# password: secret
-# to: john.doe+voice@gmail.com
-# files: \.amr$
-# command: ./voicemail.sh
-# --- 8< ---
+#     --- 8< ---
+#     host: pop.gmail.com
+#     login: john.doe
+#     password: secret
+#     to: john.doe+voice@gmail.com
+#     files: \.amr$
+#     command: ./voicemail.sh
+#     --- 8< ---
 #
 # With these settings the script will connect to the mailbox for user john.doe
 # at Gmail, find all messages addressed to john.doe+voice@gmail.com, extract
@@ -26,6 +24,10 @@
 #
 # Don't forget to chmod 600 voicemail.conf after you create it, as it contains
 # your mailbox password.
+#
+# To add intro and outro, create files voicemail-pre.wav and voicemail-post.wav
+# in ~/.config/tmradio, also make sure that sox is installed (it's used to
+# concat sound files).
 
 import email.header
 import email.parser
@@ -73,7 +75,7 @@ def decode_subject(header, settings=None):
     if settings is not None and settings.has_key('subject'):
         subject = subject.replace(settings['subject'], '')
     # some shell protection
-    subject = subject.replate('`', "'")
+    subject = subject.replace('`', "'")
     return subject.strip()
 
 
