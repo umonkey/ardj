@@ -38,14 +38,29 @@ import re
 import rfc822
 import subprocess
 import tempfile
+import logging
+import logging.handlers
+
+log = None
+
+
+def init_logging():
+    global log
+    log = logging.getLogger('voicemail')
+    log.setLevel(logging.DEBUG)
+
+    h = logging.handlers.RotatingFileHandler('voicemail.log', maxBytes=1000000, backupCount=5)
+    h.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+    h.setLevel(logging.DEBUG)
+    log.addHandler(h)
 
 
 def exec_command(filename, sender, subject, settings):
     """Выполняет внешнюю программу, передавая ей имя файла.
     """
-
     if not settings.has_key('command'):
         raise Exception('External command not configured.')
+    log.info(u'Running %s for file "%s" received from %s with subject: %s' % (settings['command'], filename.decode('utf-8'), sender, subject))
     res = subprocess.Popen([settings['command'], filename, sender, subject]).wait()
     if res:
         raise Exception('External command failed.')
@@ -64,8 +79,10 @@ def check_message(headers, settings):
     """
     headers = parse(headers)
     if settings['to'] not in headers['to']:
+        log.debug('Recipient mismatch: %s instead of %s' % (headers['to'], settings['to']))
         return False
     if settings.has_key('subject') and settings['subject'] not in headers['subject']:
+        log.debug('Subject mismatch: must have "%s" in it, got: %s' % (settings['subject'], headers['subject']))
         return False
     return True
 
@@ -137,17 +154,16 @@ def scan_mailbox(settings):
     client = poplib.POP3_SSL(settings['host'])
     client.user(settings['login'])
     client.pass_(settings['password'])
-    print client.list()
     for msgid in client.list()[1]:
         number, length = msgid.split(' ', 1)
         if check_message(client.top(number, 0)[1], settings):
-            print 'Found a message.'
+            log.debug('Found a message: %s.' % msgid)
             process_message(parse(client.retr(number)[1]), settings)
             client.dele(number)
-    raise Exception('break')
     client.quit()
 
 if __name__ == '__main__':
+    init_logging()
     settings = open(os.path.expanduser('~/.config/tmradio/voicemail.conf'), 'r').read().decode('utf-8')
     settings = dict([x.split(': ', 1) for x in settings.strip().split('\n')])
     scan_mailbox(settings)

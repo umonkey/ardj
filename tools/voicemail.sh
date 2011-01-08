@@ -1,6 +1,7 @@
 #!/bin/sh
 #
-# Voice mail processor for tmradio.net
+# Voice mail processor for tmradio.net.  Designed to be executed by
+# voicemail.py.
 #
 # To process AMR files on Ubuntu you will need the libavcodec-extra-52 package
 # from the Multiverse repository.
