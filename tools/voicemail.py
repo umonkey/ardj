@@ -32,14 +32,15 @@
 import email.header
 import email.parser
 import email.utils
+import logging
+import logging.handlers
 import os.path
 import poplib
 import re
 import rfc822
 import subprocess
+import sys
 import tempfile
-import logging
-import logging.handlers
 
 log = None
 
@@ -124,7 +125,7 @@ def get_attachments(message):
             filename = email.header.decode_header(att.get_filename())
             if filename[0][1] is not None:
                 filename = filename[0][0].decode(filename[0][1]).encode('utf-8')
-                if r is None or r.search(filename):
+                if r is None or r.search(filename.lower()):
                     data = decode_attachment(att.values()[2], att.get_payload())
                     if data:
                         filepath = os.path.join(tempfile.gettempdir(), filename)
@@ -154,7 +155,11 @@ def scan_mailbox(settings):
     client = poplib.POP3_SSL(settings['host'])
     client.user(settings['login'])
     client.pass_(settings['password'])
-    for msgid in client.list()[1]:
+    messages = client.list()[1]
+    if not len(messages):
+        log.debug('No mail.')
+        return
+    for msgid in messages:
         number, length = msgid.split(' ', 1)
         if check_message(client.top(number, 0)[1], settings):
             log.debug('Found a message: %s.' % msgid)
@@ -163,6 +168,9 @@ def scan_mailbox(settings):
     client.quit()
 
 if __name__ == '__main__':
+    # Go to the script folder.
+    os.chdir(os.path.dirname(os.path.realpath(sys.argv[0])))
+
     init_logging()
     settings = open(os.path.expanduser('~/.config/tmradio/voicemail.conf'), 'r').read().decode('utf-8')
     settings = dict([x.split(': ', 1) for x in settings.strip().split('\n')])
