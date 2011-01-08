@@ -103,9 +103,18 @@ def decode_attachment(encoding, content):
     Параметр encoding содержит значение заголовка Content-Transfer-Encoding
     (обычно base64), content — закодированное содержимое файла.
     """
-    if encoding == 'base64':
+    if encoding.lower() == 'base64':
         return email.base64mime.body_decode(content)
     raise Exception('Unknown transfer encoding: %s' % encoding)
+
+
+def get_att_name(att):
+    tmp = email.header.decode_header(att.get_filename())
+    filename = tmp[0][0]
+    if tmp[0][1] is not None:
+        filename = filename.decode(tmp[0][1])
+    return filename
+
 
 
 def get_attachments(message):
@@ -122,14 +131,12 @@ def get_attachments(message):
     payload = message.get_payload()
     if type(payload) == list:
         for att in payload:
-            filename = email.header.decode_header(att.get_filename())
-            if filename[0][1] is not None:
-                filename = filename[0][0].decode(filename[0][1]).encode('utf-8')
-                if r is None or r.search(filename.lower()):
-                    data = decode_attachment(att.values()[2], att.get_payload())
-                    if data:
-                        filepath = os.path.join(tempfile.gettempdir(), filename)
-                        result.append((filepath, data, ))
+            filename = get_att_name(att)
+            if r is None or r.search(filename.lower()):
+                data = decode_attachment(att.values()[2], att.get_payload())
+                if data:
+                    filepath = os.path.join(tempfile.gettempdir(), filename)
+                    result.append((filepath, data, ))
     return result
 
 
@@ -137,7 +144,10 @@ def process_message(message, settings):
     sender = rfc822.parseaddr(message['from'])[1]
     subject = decode_subject(message['subject'], settings)
 
-    for filepath, data in get_attachments(message):
+    attachments = get_attachments(message)
+    log.info('Got a message from %s, %u files, subject: %s' % (sender, len(attachments), subject))
+
+    for filepath, data in attachments:
         f = open(filepath, 'wb')
         f.write(data)
         f.close()
