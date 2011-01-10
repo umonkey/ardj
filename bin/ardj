@@ -115,12 +115,11 @@ if __name__ == '__main__':
 			ardj.close()
 			sys.exit(ret)
 		if '--next' == option:
-			track = ardj.get_next_track()
+			scrobble = ('--scrobble', '') in opts
+			track = ardj.get_next_track(scrobble=scrobble)
 			if track is None:
 				print >>sys.stderr, 'Could not find a track to play.'
 				sys.exit(1)
-			if ('--scrobble', '') in opts:
-				track.scrobble()
 			print track['filepath']
 		if '--reset' == option:
 			filename = ardj.config.get_db_name()
