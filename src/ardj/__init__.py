@@ -75,10 +75,10 @@ class ardj:
 			track['count'] += 1
 			track['last_played'] = int(time.time())
 			track = self.check_track_conditions(track)
-			track['labels'] = [] # prevent updating of labels
-			self.database.update_track(track, cur)
 			if scrobble and self.scrobbler:
 				self.scrobbler.submit(track)
+			track['labels'] = [] # prevent updating of labels
+			self.database.update_track(track, cur)
 			track['filepath'] = os.path.join(self.config.get_music_dir(), track['filename']).encode('utf-8')
 			self.database.commit() # без этого параллельные обращения будут висеть
 		return track

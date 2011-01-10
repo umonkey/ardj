@@ -95,7 +95,7 @@ class client:
             lc = self.get_listener_count()
             if lc > 0:
                 date = datetime.datetime.now()
-                row = [date.strftime('%Y-%m-%d %H:%M:%S'), track['artist'].encode('utf-8'), track['title'].encode('utf-8'), self.get_listener_count()]
+                row = [date.strftime('%Y-%m-%d %H:%M:%S'), track['id'], track['artist'].encode('utf-8'), track['title'].encode('utf-8'), self.get_listener_count()]
 
                 f = open(logname, 'a')
                 c = csv.writer(f)
