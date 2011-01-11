@@ -64,12 +64,13 @@ class ardj:
         track = self.__get_queued_track(cur)
         if track is None:
             track = self.__get_urgent_track(skip, cur)
-        if track is None:
-            track = self.__get_track_from_playlists(skip, cur)
-        if track is None:
-            track = self.get_random_track(cur=cur)
-            if track is not None:
-                self.log.info(u'Picked track %u (last resort).' % track['id'])
+            if track is None:
+                track = self.__get_track_from_playlists(skip, cur)
+            if track is None:
+                track = self.get_random_track(cur=cur)
+                if track is not None:
+                    self.log.info(u'Picked track %u (last resort).' % track['id'])
+            track = self._get_preroll(track, cur)
         if track is not None:
             track = self.__fix_track_file_name(track, cur)
             track['count'] += 1
@@ -83,6 +84,61 @@ class ardj:
             self.database.commit() # без этого параллельные обращения будут висеть
         return track
 
+    def _get_preroll(self, track, cur):
+        """
+        Finds a preroll for the current track.
+
+        If a preroll is found, it is played instead of the track, which is
+        added to the top of queue (to be played next).
+
+        Prerolls are picked in two steps.  First, tracks by the same artist
+        that have the "preroll" label are selected.  If nothing was found,
+        tracks with the "preroll" label AND one of the current track's labels
+        with the "-preroll" suffixes is selected.  For example, if a track with
+        labels "voicemail" and "funny" was passed in, prerolls must have the
+        "preroll" label and any of "voicemail-preroll" and "funny-preroll".
+        """
+        if track is None:
+            return track
+
+        preroll = self._get_preroll_for_track(track, cur)
+        if preroll is not None:
+            self.log.debug('Playing preroll %s for track %s.' % (preroll['id'], track['id']))
+            self._push_to_queue(track, cur)
+            track = preroll
+
+        return track
+
+    def _get_preroll_for_track(self, track, cur):
+        preroll = self._get_random_track_sql('SELECT id FROM tracks WHERE artist = ? AND id IN (SELECT track_id FROM labels WHERE label = ?) ORDER BY RANDOM() LIMIT 1', (track['artist'], 'preroll', ), cur=cur)
+        if preroll is None and track.has_key('labels') and track['labels']:
+            label = track['labels'][0] + '-preroll'
+            preroll = self._get_random_track_sql('SELECT id FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?) ORDER BY RANDOM() LIMIT 1', (label, ), cur=cur)
+            if preroll:
+                self.log.debug('Found a preroll: %s.' % preroll['id'])
+        return preroll
+
+    def _push_to_queue(self, track, cur):
+        """
+        Adds a track to the top of the queue.
+        """
+        cur.execute('INSERT INTO queue (track_id, owner) VALUES (?, ?)', (track['id'], 'preroll', ))
+
+    def _get_random_track_sql(self, sql, params=None, cur=None):
+        """
+        Returns a random track from those returned by the SQL statement.
+
+        The SQL statement must return a rowset with track id as the first
+        column.  Other columns are ignored and should not be used.
+
+        FIXME: currently returns the first row, add RNG!
+        """
+        cur = cur or self.database.cursor()
+        rows = cur.execute(sql, params).fetchall()
+        if not rows:
+            return None
+        return self.get_track_by_id(rows[0][0], cur)
+
     def __get_queued_track(self, cur):
         """
         Returns a track from the top of the queue or None.
@@ -90,7 +146,7 @@ class ardj:
         row = cur.execute('SELECT id, track_id FROM queue ORDER BY id LIMIT 1').fetchone()
         if row is not None:
             track = self.get_track_by_id(row[1])
-            self.log.info(u'Picked track %u from the top of the queue.' % track['id'])
+            self.log.info(u'Picked track %s from the top of the queue.' % track['id'])
             cur.execute('DELETE FROM queue WHERE id = ?', (row[0], ))
             return track
 
@@ -112,7 +168,7 @@ class ardj:
         for playlist in self.get_active_playlists():
             track = self.get_random_track(playlist, repeat=playlist['repeat'], skip_artists=skip, cur=cur)
             if track is not None:
-                self.log.info(u'Picked track %u from playlist %s.' % (track['id'], playlist['name']))
+                self.log.info(u'Picked track %u from playlist %s ("%s" by %s).' % (track['id'], playlist['name'], track['title'], track['artist']))
                 cur.execute('UPDATE playlists SET last_played = ? WHERE name = ?', (int(time.time()), playlist['name']))
                 return track
 
