@@ -3,11 +3,13 @@ SSH_REMOTE="radio@stream.tmradio.net"
 SSH_ARGS="-i $HOME/.config/tmradio/fetch-news.pvt"
 FORMAT=ogg
 
+PROBLEMS=$HOME/.cache/fetch-news-failed
+
 cd $(dirname $0)
 
 # fetch the new one
 echo "Fetching news."
-mplayer -ao pcm:file=news.wav http://broadcast.echo.msk.ru:9000/content/current.mp3 >/dev/null 2>&1
+http_proxy= mplayer -ao pcm:file=news.wav http://broadcast.echo.msk.ru:9000/content/current.mp3 >/dev/null 2>&1
 if [ -f news.wav ]; then
 	FILESIZE=$(stat -c'%s' news.wav)
 	if [ $FILESIZE -ge 100000000 ]; then
@@ -39,6 +41,16 @@ if [ -f news.wav ]; then
 	ssh $SSH_ARGS $SSH_REMOTE "ardj --sql \"UPDATE tracks SET weight = 0 WHERE artist = 'Echo of Moscow'\"; ardj --tags=news --delete --queue --add \"${FILENAME}\""
 	echo "Cleaning up."
 	rm -rf $FILENAME
+
+	if [ -f "$PROBLEMS" ]; then
+		rm -f "$PROBLEMS"
+		echo "Новости Эха Москвы снова в эфире." | bti-tmradio
+	fi
 else
 	echo "Could not fetch news."
+
+	if [ ! -f "$PROBLEMS" ]; then
+		touch "$PROBLEMS"
+		echo "Наблюдаются проблемы с новостями Эха Москвы." | bti-tmradio
+	fi
 fi

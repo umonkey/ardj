@@ -33,8 +33,19 @@ fi
 test -n "$2" && SENDER="$2" || SENDER="Неизвестный слушатель"
 test -n "$3" && SUBJECT="$3" || SUBJECT="Голосовая почта"
 
-ffmpeg -y -i "$1" -ar 44100 -ac 1 "$1.wav" >/dev/null
+### Декодирование в WAV.
+ffmpeg -y -i "$1" -ar 44100 -ac 1 "$1.wav" >/dev/null 2>&1
 
+
+### Кодирование в MP3 и отправка в RSS (архив).
+FILENAME=$(date +'%Y%m%d-%H%M%S')-$2
+RSS_DIR="/media/storage/sites/files.tmradio.net/voicemail"
+lame --quiet --resample 44.1 --preset extreme "$1.wav" "$FILENAME.mp3"
+scp -q $SSH_ARGS "$FILENAME.mp3" $REMOTE:$RSS_DIR/
+ssh $SSH_ARGS $REMOTE "$RSS_DIR/update.sh '$FILENAME.mp3' '$SENDER' '$SUBJECT'"
+
+
+### Добавление вступления/комментария и загрузка в радио.
 PRE="$HOME/.config/tmradio/voicemail-pre.wav"
 POST="$HOME/.config/tmradio/voicemail-post.wav"
 if [ -f "$PRE" -a -f "$POST" ]; then
@@ -45,6 +56,6 @@ fi
 oggenc -Q -q 9 -a "$SENDER" -t "$SUBJECT" "$1.wav"
 vorbisgain -q "$1.ogg"
 
-scp $SSH_ARGS "$1.ogg" $REMOTE:/tmp/voicemail.ogg
+scp -q $SSH_ARGS "$1.ogg" $REMOTE:/tmp/voicemail.ogg
 ssh $SSH_ARGS $REMOTE "ardj --tags=voicemail --delete --queue --add /tmp/voicemail.ogg"
 rm "$1.ogg"
