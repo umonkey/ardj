@@ -236,7 +236,7 @@ class JabberBot(object):
             response.setTo(mess.getFrom())
             response.setType('chat')
         else:
-            response.setTo(mess.getFrom().getStripped())
+            response.setTo(mess.getFrom()) # was: .getStripped() -- why?!
             response.setType(mess.getType())
         response.setThread(mess.getThread())
         return response
