@@ -605,7 +605,7 @@ class ardjbot(MyFileReceivingBot):
 
     @botcmd
     def play(self, mess, args):
-        """Set custom playlist for next 30 minutes.
+        """Set custom playlist for next 60 minutes.
         
         The playlist is reset to normal automatically or using the 'play all' command.  Arguments are labels: 'play female -rock'.
         """
