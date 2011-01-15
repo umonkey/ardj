@@ -37,9 +37,9 @@ if [ -f news.wav ]; then
 	fi
 	echo "Uploading to $SSH_REMOTE"
 	echo "> scp -l 128 $SSH_ARGS $FILENAME $SSH_REMOTE:"
-	scp -l 128 $SSH_ARGS $FILENAME $SSH_REMOTE:
+	scp -l 128 $SSH_ARGS $FILENAME $SSH_REMOTE: || exit 1
 	echo "Adding to the database."
-	ssh $SSH_ARGS $SSH_REMOTE "ardj --sql \"UPDATE tracks SET weight = 0 WHERE artist = 'Echo of Moscow'\"; ardj --tags=news --delete --queue --add \"${FILENAME}\""
+	ssh $SSH_ARGS $SSH_REMOTE "ardj --sql \"UPDATE tracks SET weight = 0 WHERE artist = 'Echo of Moscow'\"; ardj --tags=news --delete --queue --add \"${FILENAME}\"" || exit 1
 	echo "Cleaning up."
 	rm -rf $FILENAME
 
