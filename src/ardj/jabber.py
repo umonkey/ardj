@@ -319,7 +319,7 @@ class ardjbot(MyFileReceivingBot):
         if track is None:
             return u'No such track.'
         result = self.get_linked_title(track)
-        result += u'; #%u weight=%f playcount=%u length=%us filename="%s" editable=. ' % (track['id'], track['weight'] or 0, track['count'] or 0, track['length'] or 0, track['filename'], self.check_access(message.getFrom().getStripped()))
+        result += u'; #%u weight=%f playcount=%u length=%us filename="%s" editable=%s. ' % (track['id'], track['weight'] or 0, track['count'] or 0, track['length'] or 0, track['filename'], self.check_access(message.getFrom().getStripped()))
         if track['labels']:
             result += u'Labels: @' + u', @'.join(track['labels']) + u'. '
         result += self._get_track_voters(track['id'])
