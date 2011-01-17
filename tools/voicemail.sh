@@ -34,7 +34,7 @@ test -n "$2" && SENDER="$2" || SENDER="Неизвестный слушатель
 test -n "$3" && SUBJECT="$3" || SUBJECT="Голосовая почта"
 
 ### Декодирование в WAV.
-ffmpeg -y -i "$1" -ar 44100 -ac 1 "$1.wav" >/dev/null 2>&1
+ffmpeg -y -i "$1" -ar 44100 -ac 2 "$1.wav" >/dev/null 2>&1
 
 
 ### Кодирование в MP3 и отправка в RSS (архив).
