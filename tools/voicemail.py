@@ -43,25 +43,22 @@ import sys
 import tempfile
 
 log = None
+settings = None
 
 
-def init_logging():
-    global log
-    log = logging.getLogger('voicemail')
-    log.setLevel(logging.DEBUG)
-
-    h = logging.handlers.RotatingFileHandler('voicemail.log', maxBytes=1000000, backupCount=5)
-    h.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
-    h.setLevel(logging.DEBUG)
-    log.addHandler(h)
-
-
-def exec_command(filename, sender, subject, settings):
+def exec_command(filename, sender, subject):
     """Выполняет внешнюю программу, передавая ей имя файла.
     """
     if not settings.has_key('command'):
         raise Exception('External command not configured.')
-    log.info(u'Running %s for file "%s" received from %s with subject: %s' % (settings['command'], filename.decode('utf-8'), sender, subject))
+    if type(filename) == unicode:
+        filename = filename.encode('utf-8')
+    if type(subject) == unicode:
+        subject = subject.encode('utf-8')
+    try:
+        log.info(u'Running %s for file "%s" received from %s with subject: %s' % (settings['command'], filename, sender, subject))
+    except Exception, e:
+        log.info('WTF :(')
     res = subprocess.Popen([settings['command'], filename, sender, subject]).wait()
     if res:
         raise Exception('External command failed.')
@@ -72,7 +69,7 @@ def parse(headers):
     return email.parser.Parser().parsestr('\n'.join(headers))
 
 
-def check_message(headers, settings):
+def check_message(headers):
     """Check if a message should be posted.
 
     Returns True if the message is directed to the right destination
@@ -88,7 +85,7 @@ def check_message(headers, settings):
     return True
 
 
-def decode_subject(header, settings=None):
+def decode_subject(header):
     subject = u' '.join([x[0].decode('utf-8') for x in email.header.decode_header(header)]).strip()
     if settings is not None and settings.has_key('subject'):
         subject = subject.replace(settings['subject'], '')
@@ -133,16 +130,16 @@ def get_attachments(message):
         for att in payload:
             filename = get_att_name(att)
             if r is None or r.search(filename.lower()):
-                data = decode_attachment(att.values()[2], att.get_payload())
+                data = decode_attachment(att['content-transfer-encoding'], att.get_payload())
                 if data:
                     filepath = os.path.join(tempfile.gettempdir(), filename)
                     result.append((filepath, data, ))
     return result
 
 
-def process_message(message, settings):
+def process_message(message):
     sender = rfc822.parseaddr(message['from'])[1]
-    subject = decode_subject(message['subject'], settings)
+    subject = decode_subject(message['subject'])
 
     attachments = get_attachments(message)
     log.info('Got a message from %s, %u files, subject: %s' % (sender, len(attachments), subject))
@@ -151,37 +148,58 @@ def process_message(message, settings):
         f = open(filepath, 'wb')
         f.write(data)
         f.close()
-        exec_command(filepath, sender, subject, settings)
+        exec_command(filepath, sender, subject)
         os.unlink(filepath)
 
 
-def scan_mailbox(settings):
+def get_client():
+    global settings
+    client = poplib.POP3_SSL(settings['host'])
+    client.user(settings['login'])
+    client.pass_(settings['password'])
+    return client
+
+def fetch_messages(client):
+    messages = client.list()[1]
+    if not len(messages):
+        log.debug('No mail.')
+    return messages
+
+def scan_mailbox():
     """Reads and processes the mailbox.
 
     Connects to the mailbox specified in the settings, analyzes all messages,
     retrieves the ones that match and posts them as blog entries (creates
     the necessary files, should be committed separately).
     """
-    client = poplib.POP3_SSL(settings['host'])
-    client.user(settings['login'])
-    client.pass_(settings['password'])
-    messages = client.list()[1]
-    if not len(messages):
-        log.debug('No mail.')
-        return
-    for msgid in messages:
+    client = get_client()
+    for msgid in fetch_messages(client):
         number, length = msgid.split(' ', 1)
-        if check_message(client.top(number, 0)[1], settings):
+        if check_message(client.top(number, 0)[1]):
             log.debug('Found a message: %s.' % msgid)
-            process_message(parse(client.retr(number)[1]), settings)
+            process_message(parse(client.retr(number)[1]))
             client.dele(number)
     client.quit()
+
+def init():
+    global settings
+    settings = open(os.path.expanduser('~/.config/tmradio/voicemail.conf'), 'r').read().decode('utf-8')
+    settings = dict([x.split(': ', 1) for x in settings.strip().split('\n')])
+    init_logging()
+
+def init_logging():
+    global log
+    log = logging.getLogger('voicemail')
+    log.setLevel(logging.DEBUG)
+
+    h = logging.handlers.RotatingFileHandler('voicemail.log', maxBytes=1000000, backupCount=5)
+    h.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+    h.setLevel(logging.DEBUG)
+    log.addHandler(h)
 
 if __name__ == '__main__':
     # Go to the script folder.
     os.chdir(os.path.dirname(os.path.realpath(sys.argv[0])))
 
-    init_logging()
-    settings = open(os.path.expanduser('~/.config/tmradio/voicemail.conf'), 'r').read().decode('utf-8')
-    settings = dict([x.split(': ', 1) for x in settings.strip().split('\n')])
-    scan_mailbox(settings)
+    init()
+    scan_mailbox()
