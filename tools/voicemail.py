@@ -86,7 +86,7 @@ def check_message(headers):
 
 
 def decode_subject(header):
-    subject = u' '.join([x[0].decode('utf-8') for x in email.header.decode_header(header)]).strip()
+    subject = u' '.join([x[0].decode(x[1]) for x in email.header.decode_header(header)]).strip()
     if settings is not None and settings.has_key('subject'):
         subject = subject.replace(settings['subject'], '')
     # some shell protection
@@ -174,11 +174,14 @@ def scan_mailbox():
     """
     client = get_client()
     for msgid in fetch_messages(client):
-        number, length = msgid.split(' ', 1)
-        if check_message(client.top(number, 0)[1]):
-            log.debug('Found a message: %s.' % msgid)
-            process_message(parse(client.retr(number)[1]))
-            client.dele(number)
+        try:
+            number, length = msgid.split(' ', 1)
+            if check_message(client.top(number, 0)[1]):
+                log.debug('Found a message: %s.' % msgid)
+                process_message(parse(client.retr(number)[1]))
+                client.dele(number)
+        except Exception, e:
+            log.error('ERROR processing a message (%s).' % msgid)
     client.quit()
 
 def init():
