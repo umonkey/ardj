@@ -1,0 +1,8 @@
+#!/bin/sh
+cd $(dirname $0)
+while :; do
+  python ardjbot.py $HOME/files/ardj.yaml
+  [ "$?" ] || exit
+  echo "Non-clean shutdown, restarting in 5 seconds."
+  sleep 5
+done
