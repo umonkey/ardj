@@ -180,7 +180,7 @@ class ardjbot(MyFileReceivingBot):
                     status = u'«%s» by %s' % (track['title'], track['artist'])
                 else:
                     status = os.path.basename(track['filename'])
-                status += u' — #%u ♺%u ⚖%.2f' % (track['id'], track['count'], track['weight'])
+                status += u' — #%u ♺%u ⚖%.2f Σ%u' % (track['id'], track['count'], track['weight'], self.ardj.scrobbler.get_listener_count())
                 for label in track['labels']:
                     status += u' @' + label
                 self.status_message = status
@@ -209,7 +209,10 @@ class ardjbot(MyFileReceivingBot):
             if mess.getType() == 'chat':
                 body = mess.getBody()
                 if body is not None:
-                    is_public = body.strip().split(' ')[0] in self.publicCommands
+                    cmd = body.strip().split(' ')[0]
+                    if cmd.isdigit():
+                        cmd = body.strip().split(' ')[1]
+                    is_public = cmd in self.publicCommands
                     if not is_public and not self.check_access(mess.getFrom().getStripped()):
                         logging.warning('Refusing access to %s.' % mess.getFrom())
                         return self.send_simple_reply(mess, 'Available commands: %s.' % ', '.join(self.publicCommands))
