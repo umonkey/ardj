@@ -10,6 +10,10 @@ deb: ices/ices
 	cp -R src/ardj debian/usr/lib/python2.6/ardj
 	cp -R bin debian/usr/bin
 	cp -R share debian/usr/share
+	mkdir -p debian/usr/lib/ardj
+	cp -R src/robots debian/usr/lib/ardj/
+	mkdir -p debian/etc/cron.d
+	cp src/crontab debian/etc/cron.d/ardj
 	cp ices/ices debian/usr/bin/ices.ardj
 	strip debian/usr/bin/ices.ardj
 	find debian -name '*.pyc' -delete

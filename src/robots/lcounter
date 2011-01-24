@@ -1,0 +1,52 @@
+#!/usr/bin/env python
+# vim: set fileencoding=utf-8:
+#
+# The per-track listener counter robot.
+
+import csv
+import glob
+import gzip
+import os
+import sys
+
+PATTERN = '/radio/data/listeners.csv-*.gz'
+OUTPUT = '/radio/data/totals.csv'
+
+def merge(filenames):
+    data = {}
+    for filename in filenames:
+        if filename.endswith('.gz'):
+            f = gzip.open(filename, 'rb')
+        else:
+            f = open(filename, 'rb')
+        r = csv.reader(f)
+        for row in r:
+            if len(row) < 4:
+                continue
+            artist = row[2].strip().decode('utf-8')
+            title = row[3].strip().decode('utf-8')
+            count = int(row[4])
+            if not data.has_key(artist):
+                data[artist] = {}
+            if not data[artist].has_key(title):
+                data[artist][title] = 0
+            data[artist][title] += count
+    return data
+
+def format_data(data, out):
+    f = csv.writer(out)
+    for artist in sorted(data.keys()):
+        tracks = data[artist]
+        for title in sorted(tracks.keys()):
+            f.writerow([artist.encode('utf-8'), title.encode('utf-8'), tracks[title]])
+
+if __name__ == '__main__':
+    filenames = sys.argv[1:]
+    if not len(filenames):
+        filenames = glob.glob(PATTERN)
+    filenames = [f for f in filenames if os.path.exists(f)]
+    if '-c' in sys.argv:
+        out = sys.stdout
+    else:
+        out = open(OUTPUT, 'wb')
+    format_data(merge(filenames), out)
