@@ -22,7 +22,7 @@ import tags
 class MyFileReceivingBot(FileBot):
     def is_file_acceptable(self, sender, filename, filesize):
         if not self.check_access(sender):
-            logging.warning('Refusing to accept files from %s.' % sender)
+            self.ardj.log.warning('Refusing to accept files from %s.' % sender)
             raise FileNotAcceptable('I\'m not allowed to receive files from you, sorry.')
         if os.path.splitext(filename.lower())[1] not in ['.mp3', '.ogg', '.zip']:
             raise FileNotAcceptable('I only accept MP3, OGG and ZIP files, which "%s" doesn\'t look like.' % os.path.basename(filename))
@@ -55,7 +55,7 @@ class MyFileReceivingBot(FileBot):
             self.ardj.database.commit()
 
     def process_incoming_file(self, sender, filename):
-        logging.info('Received %s.' % filename)
+        self.ardj.log.info('Received %s.' % filename)
         track_id = self.ardj.add_file(filename, {
             'owner': sender,
             'labels': ['incoming'],
@@ -97,7 +97,7 @@ class ardjbot(MyFileReceivingBot):
                 access_token_key=ardj.config.get('twitter/access_token_key'),
                 access_token_secret=ardj.config.get('twitter/access_token_secret'))
             self.twitter = tmp
-            logging.info('Logged in to Twitter.')
+            self.ardj.log.info('Logged in to Twitter.')
         except: pass
 
         login, password = self.split_login(self.ardj.config.get('jabber/login'))
@@ -138,36 +138,36 @@ class ardjbot(MyFileReceivingBot):
         """
         if time.time() - self.lastping > self.PING_FREQUENCY:
             self.lastping = time.time()
-            #logging.debug('Pinging the server.')
+            #self.ardj.log.debug('Pinging the server.')
             ping = xmpp.Protocol('iq',typ='get',payload=[xmpp.Node('ping',attrs={'xmlns':'urn:xmpp:ping'})])
             try:
                 res = self.conn.SendAndWaitForResponse(ping, self.PING_TIMEOUT)
-                #logging.debug('Got response: ' + str(res))
+                #self.ardj.log.debug('Got response: ' + str(res))
                 if res is None:
-                    logging.error('Terminating due to PING timeout.')
+                    self.ardj.log.error('Terminating due to PING timeout.')
                     self.quit(1)
             except IOError, e:
-                logging.error('Error pinging the server: %s, shutting down.' % e)
+                self.ardj.log.error('Error pinging the server: %s, shutting down.' % e)
                 self.quit(1)
 
     def on_connected(self):
-        logging.debug('on_connected called.')
+        self.ardj.log.debug('on_connected called.')
         self.lastping = time.time()
         if self.pidfile:
             try:
                 open(self.pidfile, 'w').write(str(os.getpid()))
             except IOError, e:
-                logging.error(u'Could not write to %s: %s' % (self.pidfile, e))
+                self.ardj.log.error(u'Could not write to %s: %s' % (self.pidfile, e))
         self.update_status()
 
     def shutdown(self):
         # self.on_disconnect() # called by JabberBot afterwards.
-        logging.info('shutdown: shutting down JabberBot.')
+        self.ardj.log.info('shutdown: shutting down JabberBot.')
         JabberBot.shutdown(self)
         if self.pidfile and os.path.exists(self.pidfile):
-            logging.debug('shutdown: removing the pid file.')
+            self.ardj.log.debug('shutdown: removing the pid file.')
             os.unlink(self.pidfile)
-        logging.info('shutdown: over.')
+        self.ardj.log.info('shutdown: over.')
 
     def update_status(self, onstart=False):
         """
@@ -214,7 +214,7 @@ class ardjbot(MyFileReceivingBot):
                         cmd = body.strip().split(' ')[1]
                     is_public = cmd in self.publicCommands
                     if not is_public and not self.check_access(mess.getFrom().getStripped()):
-                        logging.warning('Refusing access to %s.' % mess.getFrom())
+                        self.ardj.log.warning('Refusing access to %s.' % mess.getFrom())
                         return self.send_simple_reply(mess, 'Available commands: %s.' % ', '.join(self.publicCommands))
             return JabberBot.callback_message(self, conn, mess)
         finally:
@@ -256,7 +256,7 @@ class ardjbot(MyFileReceivingBot):
         track[a1] = a2
         self.ardj.database.update_track(track)
 
-        logging.info(u'%s changed %s from "%s" to "%s" for track #%u' % (message.getFrom().getStripped(), a1, old, a2, track['id']))
+        self.ardj.log.info(u'%s changed %s from "%s" to "%s" for track #%u' % (message.getFrom().getStripped(), a1, old, a2, track['id']))
 
     @botcmd(hidden=True)
     def delete(self, message, args):
@@ -276,7 +276,7 @@ class ardjbot(MyFileReceivingBot):
         track['labels'] = None
         self.ardj.database.update_track(track)
         self.ardj.update_artist_weight(track['artist'], cur)
-        logging.info(u'%s changed weight from %s to 0 for track #%u' % (message.getFrom().getStripped(), old, track['id']))
+        self.ardj.log.info(u'%s changed weight from %s to 0 for track #%u' % (message.getFrom().getStripped(), old, track['id']))
         if not args:
             self.skip(message, args)
 
@@ -357,7 +357,7 @@ class ardjbot(MyFileReceivingBot):
         if not sql.endswith(';'):
             return u'SQL updates must end with a ; to prevent accidents.'
         self.ardj.database.cursor().execute(sql)
-        logging.info(u'SQL from %s: %s' % (message.getFrom(), sql))
+        self.ardj.log.info(u'SQL from %s: %s' % (message.getFrom(), sql))
 
     @botcmd
     def twit(self, message, args):
@@ -366,7 +366,7 @@ class ardjbot(MyFileReceivingBot):
             return u'Twitter is not enabled in the config file.'
         posting = self.twitter.PostUpdate(args.encode('utf-8'))
         url = 'http://twitter.com/' + posting.GetUser().GetScreenName() + '/status/' + str(posting.GetId())
-        logging.info(u'%s sent <a href="%s">a message</a> to twitter: %s' % (self.get_linked_sender(message), url, args))
+        self.ardj.log.info(u'%s sent <a href="%s">a message</a> to twitter: %s' % (self.get_linked_sender(message), url, args))
         return url
 
     @botcmd
@@ -631,7 +631,7 @@ class ardjbot(MyFileReceivingBot):
     def batch_tags(self, mess, args):
         labels = list(set(re.split('[\s,]+', args[0])))
         owner = mess.getFrom().getStripped()
-        logging.info('Assigning labels %s to files last uploaded by %s' % (u', '.join(labels), owner))
+        self.ardj.log.info('Assigning labels %s to files last uploaded by %s' % (u', '.join(labels), owner))
         cur = self.ardj.database.cursor()
         for label in labels:
             sql = 'INSERT INTO labels (track_id, email, label) SELECT track_id, email, ? FROM labels WHERE email = ? AND label = ?'
@@ -688,7 +688,7 @@ class ardjbot(MyFileReceivingBot):
         return conn
 
     def on_disconnect(self):
-        logging.debug('on_disconnect called.')
+        self.ardj.log.debug('on_disconnect called.')
 
     def __vote(self, track_id, email, vote):
         return (1, self.ardj.database.add_vote(track_id, email, vote))
