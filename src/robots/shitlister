@@ -1,0 +1,9 @@
+#!/bin/sh
+tracks=$(echo "select id from tracks where weight > 0 and id not in (select track_id from labels where label in ('jingle', 'quotes', 'preroll')) order by weight asc limit 10;" | ardj --dbc 2>/dev/null)
+
+# add intro
+## tracks="4361 $tracks"
+
+for id in $tracks; do
+    echo "INSERT INTO queue (track_id, owner) VALUES ($id, 'robot');" | ardj --dbc 2>/dev/null
+done

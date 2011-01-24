@@ -1,3 +1,5 @@
 # /etc/cron.d/ardj: crontab entries for the ardj package
 
 13 *	* * *	radio	/usr/lib/ardj/robots/lcounter
+0 11	* * *	radio	/usr/lib/ardj/robots/shitlister
+0 18	* * *	radio	/usr/lib/ardj/robots/hitlister

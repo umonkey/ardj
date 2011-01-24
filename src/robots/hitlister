@@ -1,0 +1,13 @@
+#!/bin/sh
+tracks=$(echo "select id from tracks where id not in (select track_id from labels where label in ('jingle', 'quotes', 'preroll')) order by weight desc limit 10;" | ardj --dbc 2>/dev/null)
+reversed=""
+for id in $tracks; do
+    reversed="$id $reversed"
+done
+
+# add intro
+reversed="4361 $reversed"
+
+for id in $reversed; do
+    echo "INSERT INTO queue (track_id, owner) VALUES ($id, 'robot');" | ardj --dbc 2>/dev/null
+done
