@@ -17,7 +17,7 @@ deb: ices/ices
 	cp ices/ices debian/usr/bin/ices.ardj
 	strip debian/usr/bin/ices.ardj
 	find debian -name '*.pyc' -delete
-	sudo chown -R root:root debian/usr
+	sudo chown -R root:root debian/usr debian/etc
 	dpkg -b debian ardj-${VERSION}.deb
 	sudo rm -rf debian/usr
 
