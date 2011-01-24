@@ -438,7 +438,7 @@ class ardj:
             self.add_file(filename)
 
         # Обновление статистики исполнителей.
-        for artist, count in cur.execute('SELECT artist, COUNT(*) FROM tracks WHERE weight > 0 GROUP BY artist'):
+        for artist, count in cur.execute('SELECT artist, COUNT(*) FROM tracks WHERE weight > 0 GROUP BY artist').fetchall():
             cur.execute('UPDATE tracks SET artist_weight = ? WHERE artist = ?', (1.0 / count, artist, ))
 
         self.update_playlists(cur=cur)
