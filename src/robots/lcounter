@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # vim: set fileencoding=utf-8:
 #
-# The per-track listener counter robot.
+# The per-track listener counter robot.  Works with files in /radio/data.
+# Reads listeners.csv-*.gz, merges and writes to totals.csv.
 
 import csv
 import glob
