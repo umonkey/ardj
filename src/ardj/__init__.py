@@ -478,10 +478,18 @@ class ardj:
         properties['filename'] = filename
         properties['id'] = self.__get_track_id(filename, cur)
         self.database.update_track(properties, cur=cur)
+        self.update_artist_weight(properties['artist'], cur)
         if queue:
             owner = properties.has_key('owner') and properties['owner'] or 'nobody@nowhere.com'
             cur.execute('INSERT INTO queue (track_id, owner) SELECT id, ? FROM tracks WHERE id NOT IN (SELECT track_id FROM queue) AND id = ?', (owner, properties['id'], ))
         return properties['id']
+
+    def update_artist_weight(self, artist, cur=None):
+        cur = cur or self.database.cursor()
+        row = cur.execute('SELECT COUNT(*) FROM tracks WHERE weight > 0 AND artist = ?', (artist, )).fetchone()
+        if row:
+            count = float(row[0])
+            cur.execute('UPDATE tracks SET artist_weight = ? WHERE artist = ?', (1.0 / count, artist, ))
 
     def __get_local_file_name(self, filename):
         """
