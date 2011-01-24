@@ -256,6 +256,10 @@ class ardjbot(MyFileReceivingBot):
         track[a1] = a2
         self.ardj.database.update_track(track)
 
+        if a1 == 'artist':
+            self.ardj.update_artist_weight(old)
+            self.ardj.update_artist_weight(a2)
+
         self.ardj.log.info(u'%s changed %s from "%s" to "%s" for track #%u' % (message.getFrom().getStripped(), a1, old, a2, track['id']))
 
     @botcmd(hidden=True)
