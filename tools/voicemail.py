@@ -34,7 +34,7 @@ import email.parser
 import email.utils
 import logging
 import logging.handlers
-import os.path
+import os
 import poplib
 import re
 import rfc822
@@ -42,6 +42,7 @@ import subprocess
 import sys
 import tempfile
 import traceback
+import yaml
 
 log = None
 settings = None
@@ -190,16 +191,24 @@ def scan_mailbox():
 
 def init():
     global settings
-    settings = open(os.path.expanduser('~/.config/tmradio/voicemail.conf'), 'r').read().decode('utf-8')
-    settings = dict([x.split(': ', 1) for x in settings.strip().split('\n')])
-    init_logging()
+    for filename in ('~/.config/tmradio.conf', '/etc/tmradio.conf'):
+        filename = os.path.expanduser(filename)
+        if os.path.exists(filename):
+            config = yaml.load(open(filename, 'rb'))
+            if config.has_key('voicemail'):
+                settings = { 'log': 'voicemail.log' }
+                settings.update(config['voicemail'])
+                init_logging()
+                return
+
+    raise Exception('Could not find a config file.')
 
 def init_logging():
     global log
     log = logging.getLogger('voicemail')
     log.setLevel(logging.DEBUG)
 
-    h = logging.handlers.RotatingFileHandler('voicemail.log', maxBytes=1000000, backupCount=5)
+    h = logging.handlers.RotatingFileHandler(settings['log'], maxBytes=1000000, backupCount=5)
     h.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
     h.setLevel(logging.DEBUG)
     log.addHandler(h)
