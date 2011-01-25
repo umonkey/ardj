@@ -1,0 +1,16 @@
+#!/usr/bin/env python
+
+import os
+import sys
+
+if __name__ == '__main__':
+    if not os.path.abspath(sys.argv[0]).startswith('/usr'):
+        src_dir = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '..'))
+        sys.path.insert(0, src_dir)
+
+    import ardj
+    a = ardj.Open()
+    cur = a.database.cursor()
+    cur.execute('DELETE FROM labels WHERE label = ?', ('recent', ))
+    cur.execute('INSERT INTO labels (track_id, label, email) SELECT id, ?, ? FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?) ORDER BY id DESC LIMIT 100', ('recent', 'robot+freshener@tmradio.net', 'music', ))
+    a.database.commit()

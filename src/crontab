@@ -4,3 +4,6 @@
 0 11	* * *	radio	/usr/lib/ardj/robots/shitlister
 0 18	* * *	radio	/usr/lib/ardj/robots/hitlister
 0 3		* * *	radio	/usr/lib/ardj/robots/podcaster
+
+# TODO: изменить время в соответствии с расписанием.
+0 3		* * *	radio	/usr/lib/ardj/robots/freshener
