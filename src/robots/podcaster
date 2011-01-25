@@ -3,6 +3,7 @@
 
 import feedparser
 import os
+import subprocess
 import sys
 import urllib2
 
@@ -13,17 +14,20 @@ def fetch_file(url):
         out = open(filename, 'wb')
         out.write(u.read())
         out.close()
+        subprocess.Popen(['mp3gain', filename]).wait()
         return filename
 
 def add_song(ardj, artist, title, mp3_link, tags):
     cur = ardj.database.cursor()
     track_id = cur.execute('SELECT id FROM tracks WHERE artist = ? AND title = ?', (artist, title, )).fetchone()
     if track_id is None:
-        ardj.log.info('Downloading "%s" by %s' % (artist, title))
+        ardj.log.info('Downloading "%s" by %s' % (title, artist))
         try:
             filename = fetch_file(mp3_link)
             ardj.add_file(filename, { 'artist': artist, 'title': title, 'labels': tags })
+            ardj.database.commit()
             os.unlink(filename)
+            return True
         except Exception, e:
             ardj.log.error('Could not fetch %s: %s' % (mp3_link, e))
 
@@ -36,7 +40,8 @@ def update_feeds(settings):
         for entry in feed['entries']:
             if entry.has_key('enclosures'):
                 for enclosure in entry['enclosures']:
-                    add_song(a, entry['author'], entry['title'], enclosure['href'], podcast['tags'])
+                    if add_song(a, entry['author'], entry['title'], enclosure['href'], podcast['tags']):
+                        pass # return # one at a time, for testing
 
 if __name__ == '__main__':
     if not os.path.abspath(sys.argv[0]).startswith('/usr'):

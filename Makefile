@@ -34,6 +34,7 @@ release: clean deb
 
 back:
 	scp -Bq tmradio.local:/usr/lib/python2.6/ardj/*.py src/ardj/
+	scp -Bq tmradio.local:/usr/lib/ardj/robots/* src/robots/
 
 copy: deb
 	scp -Bq ardj-${VERSION}.deb tmradio.local:

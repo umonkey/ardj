@@ -526,13 +526,13 @@ class ardj:
             'weight': 1.0,
             'count': 0,
         }
-        if type(properties) == dict:
-            props.update(properties)
         tg = tags.get(filepath)
         if tg is not None:
             for k in props.keys():
                 if k in tg:
                     props[k] = tg[k]
+        if type(properties) == dict:
+            props.update(properties)
         return props
 
     def backup_track_data(self, args):
