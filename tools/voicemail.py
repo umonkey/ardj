@@ -41,6 +41,7 @@ import rfc822
 import subprocess
 import sys
 import tempfile
+import traceback
 
 log = None
 settings = None
@@ -86,7 +87,8 @@ def check_message(headers):
 
 
 def decode_subject(header):
-    subject = u' '.join([x[0].decode(x[1]) for x in email.header.decode_header(header)]).strip()
+    decode_part = lambda x: x[1] and x[0].decode(x[1]) or x[0]
+    subject = u' '.join([decode_part(x) for x in email.header.decode_header(header)]).strip()
     if settings is not None and settings.has_key('subject'):
         subject = subject.replace(settings['subject'], '')
     # some shell protection
@@ -181,7 +183,9 @@ def scan_mailbox():
                 process_message(parse(client.retr(number)[1]))
                 client.dele(number)
         except Exception, e:
-            log.error('ERROR processing a message (%s).' % msgid)
+            traceback.print_exc(e)
+            log.error('ERROR processing a message (%s): %s.' % (msgid, e))
+            sys.exit(1) # prevents expunge
     client.quit()
 
 def init():
