@@ -34,13 +34,15 @@ import email.parser
 import email.utils
 import logging
 import logging.handlers
-import os.path
+import os
 import poplib
 import re
 import rfc822
 import subprocess
 import sys
 import tempfile
+import traceback
+import yaml
 
 log = None
 settings = None
@@ -86,7 +88,8 @@ def check_message(headers):
 
 
 def decode_subject(header):
-    subject = u' '.join([x[0].decode(x[1]) for x in email.header.decode_header(header)]).strip()
+    decode_part = lambda x: x[1] and x[0].decode(x[1]) or x[0]
+    subject = u' '.join([decode_part(x) for x in email.header.decode_header(header)]).strip()
     if settings is not None and settings.has_key('subject'):
         subject = subject.replace(settings['subject'], '')
     # some shell protection
@@ -181,21 +184,31 @@ def scan_mailbox():
                 process_message(parse(client.retr(number)[1]))
                 client.dele(number)
         except Exception, e:
-            log.error('ERROR processing a message (%s).' % msgid)
+            traceback.print_exc(e)
+            log.error('ERROR processing a message (%s): %s.' % (msgid, e))
+            sys.exit(1) # prevents expunge
     client.quit()
 
 def init():
     global settings
-    settings = open(os.path.expanduser('~/.config/tmradio/voicemail.conf'), 'r').read().decode('utf-8')
-    settings = dict([x.split(': ', 1) for x in settings.strip().split('\n')])
-    init_logging()
+    for filename in ('~/.config/tmradio.conf', '/etc/tmradio.conf'):
+        filename = os.path.expanduser(filename)
+        if os.path.exists(filename):
+            config = yaml.load(open(filename, 'rb'))
+            if config.has_key('voicemail'):
+                settings = { 'log': 'voicemail.log' }
+                settings.update(config['voicemail'])
+                init_logging()
+                return
+
+    raise Exception('Could not find a config file.')
 
 def init_logging():
     global log
     log = logging.getLogger('voicemail')
     log.setLevel(logging.DEBUG)
 
-    h = logging.handlers.RotatingFileHandler('voicemail.log', maxBytes=1000000, backupCount=5)
+    h = logging.handlers.RotatingFileHandler(settings['log'], maxBytes=1000000, backupCount=5)
     h.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
     h.setLevel(logging.DEBUG)
     log.addHandler(h)
