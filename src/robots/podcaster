@@ -1,0 +1,48 @@
+#!/usr/bin/env python
+# vim: fileencoding=utf-8:
+
+import feedparser
+import os
+import sys
+import urllib2
+
+def fetch_file(url):
+    u = urllib2.urlopen(urllib2.Request(url))
+    if u is not None:
+        filename = 'tmp.mp3'
+        out = open(filename, 'wb')
+        out.write(u.read())
+        out.close()
+        return filename
+
+def add_song(ardj, artist, title, mp3_link, tags):
+    cur = ardj.database.cursor()
+    track_id = cur.execute('SELECT id FROM tracks WHERE artist = ? AND title = ?', (artist, title, )).fetchone()
+    if track_id is None:
+        ardj.log.info('Downloading "%s" by %s' % (artist, title))
+        try:
+            filename = fetch_file(mp3_link)
+            ardj.add_file(filename, { 'artist': artist, 'title': title, 'labels': tags })
+            os.unlink(filename)
+        except Exception, e:
+            ardj.log.error('Could not fetch %s: %s' % (mp3_link, e))
+
+def update_feeds(settings):
+    a = ardj.Open()
+
+    for podcast in settings:
+        print 'Updating %s' % podcast['name'].encode('utf-8')
+        feed = feedparser.parse(podcast['feed'])
+        for entry in feed['entries']:
+            if entry.has_key('enclosures'):
+                for enclosure in entry['enclosures']:
+                    add_song(a, entry['author'], entry['title'], enclosure['href'], podcast['tags'])
+
+if __name__ == '__main__':
+    if not os.path.abspath(sys.argv[0]).startswith('/usr'):
+        src_dir = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '..'))
+        sys.path.insert(0, src_dir)
+
+    import ardj
+    import ardj.settings
+    update_feeds(ardj.settings.load('podcasts'))
