@@ -1,8 +1,21 @@
 #!/bin/sh
+INTRO_ID=4428
+REMINDER_ID=4427
+
 tracks=$(echo "select id from tracks where weight > 0 and id not in (select track_id from labels where label in ('jingle', 'quotes', 'preroll')) order by weight asc limit 10;" | ardj --dbc 2>/dev/null)
 
-# add intro
-## tracks="4361 $tracks"
+# add intro and mid-air reminders
+xtracks="$tracks"
+tracks="$INTRO_ID"
+marks=""
+for id in $xtracks; do
+	if [ "$marks" = ".." ]; then
+		marks=""
+		tracks="$tracks $REMINDER_ID"
+	fi
+	tracks="$tracks $id"
+	marks="${marks}."
+done
 
 for id in $tracks; do
     echo "INSERT INTO queue (track_id, owner) VALUES ($id, 'robot');" | ardj --dbc 2>/dev/null
