@@ -3,3 +3,4 @@
 13 *	* * *	radio	/usr/lib/ardj/robots/lcounter
 0 11	* * *	radio	/usr/lib/ardj/robots/shitlister
 0 18	* * *	radio	/usr/lib/ardj/robots/hitlister
+0 3		* * *	radio	/usr/lib/ardj/robots/podcaster

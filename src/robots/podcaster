@@ -3,9 +3,9 @@
 
 import feedparser
 import os
-import subprocess
 import sys
 import urllib2
+import subprocess
 
 def fetch_file(url):
     u = urllib2.urlopen(urllib2.Request(url))
@@ -24,7 +24,7 @@ def add_song(ardj, artist, title, mp3_link, tags):
         ardj.log.info('Downloading "%s" by %s' % (title, artist))
         try:
             filename = fetch_file(mp3_link)
-            ardj.add_file(filename, { 'artist': artist, 'title': title, 'labels': tags })
+            ardj.add_file(filename, { 'artist': artist, 'title': title, 'labels': tags, 'owner': 'podcaster' })
             ardj.database.commit()
             os.unlink(filename)
             return True
