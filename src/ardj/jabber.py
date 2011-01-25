@@ -279,7 +279,7 @@ class ardjbot(MyFileReceivingBot):
         track['weight'] = 0
         track['labels'] = None
         self.ardj.database.update_track(track)
-        self.ardj.update_artist_weight(track['artist'], cur)
+        self.ardj.update_artist_weight(track['artist'])
         self.ardj.log.info(u'%s changed weight from %s to 0 for track #%u' % (message.getFrom().getStripped(), old, track['id']))
         if not args:
             self.skip(message, args)
