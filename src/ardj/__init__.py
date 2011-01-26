@@ -489,7 +489,8 @@ class ardj:
         row = cur.execute('SELECT COUNT(*) FROM tracks WHERE weight > 0 AND artist = ?', (artist, )).fetchone()
         if row:
             count = float(row[0])
-            cur.execute('UPDATE tracks SET artist_weight = ? WHERE artist = ?', (1.0 / count, artist, ))
+            if count:
+                cur.execute('UPDATE tracks SET artist_weight = ? WHERE artist = ?', (1.0 / count, artist, ))
 
     def __get_local_file_name(self, filename):
         """
