@@ -77,7 +77,7 @@ class database:
 		result = weight or 0
 		if artist_weight is not None:
 			result = result * artist_weight
-		result = result / ((count or 0) + 1)
+		# result = result / ((count or 0) + 1)
 		return result
 
 	def cursor(self):

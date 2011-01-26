@@ -544,18 +544,6 @@ class ardj:
         except Exception, e:
             self.log.error(u'Could not write metadata to %s: %s' % (filename, e))
 
-    def sqlite_randomize(self, id, artist_weight, weight, count):
-        """
-        Implements the SQLite randomize() function.
-        """
-        result = weight or 0
-        if artist_weight is not None:
-            result = result * artist_weight
-        # Fading priorities are disabled for now, would be nice to define this
-        # behaviour in playlist.yaml.
-        ## result = result / ((count or 0) + 1)
-        return result
-
     def get_stats(self):
         """
         Returns information about the database in the form of a dictionary
