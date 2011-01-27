@@ -3,8 +3,9 @@
 import os
 import sys
 
-SET_LABEL = 'good-music'
-GET_LABEL = 'music'
+COMMON_LABEL = 'music'
+GOOD_LABEL = 'good-music'
+BAD_LABEL = 'bad-music'
 THRESHOLD = 1.0
 SIGNATURE = 'robot+better@tmradio.net'
 
@@ -16,6 +17,7 @@ if __name__ == '__main__':
     import ardj
     a = ardj.Open()
     cur = a.database.cursor()
-    cur.execute('DELETE FROM labels WHERE label = ?', (SET_LABEL, ))
-    cur.execute('INSERT INTO labels (track_id, label, email) SELECT id, ?, ? FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?) AND `weight` > ?', (SET_LABEL, SIGNATURE, GET_LABEL, THRESHOLD, ))
+    cur.execute('DELETE FROM labels WHERE label = ?', (GOOD_LABEL, ))
+    cur.execute('INSERT INTO labels (track_id, label, email) SELECT id, ?, ? FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?) AND `weight` > ?', (GOOD_LABEL, SIGNATURE, COMMON_LABEL, THRESHOLD, ))
+    cur.execute('INSERT INTO labels (track_id, label, email) SELECT id, ?, ? FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?) AND `weight` <= ?', (BAD_LABEL, SIGNATURE, COMMON_LABEL, THRESHOLD, ))
     a.database.commit()
