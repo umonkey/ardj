@@ -1,0 +1,21 @@
+#!/usr/bin/env python
+
+import os
+import sys
+
+SET_LABEL = 'good-music'
+GET_LABEL = 'music'
+THRESHOLD = 1.0
+SIGNATURE = 'robot+better@tmradio.net'
+
+if __name__ == '__main__':
+    if not os.path.abspath(sys.argv[0]).startswith('/usr'):
+        src_dir = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '..'))
+        sys.path.insert(0, src_dir)
+
+    import ardj
+    a = ardj.Open()
+    cur = a.database.cursor()
+    cur.execute('DELETE FROM labels WHERE label = ?', (SET_LABEL, ))
+    cur.execute('INSERT INTO labels (track_id, label, email) SELECT id, ?, ? FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?) AND `weight` > ?', (SET_LABEL, SIGNATURE, GET_LABEL, THRESHOLD, ))
+    a.database.commit()
