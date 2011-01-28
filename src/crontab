@@ -5,9 +5,8 @@
 0 18	* * *	radio	/usr/lib/ardj/robots/hitlister
 0 3		* * *	radio	/usr/lib/ardj/robots/podcaster
 
-# Обновление @good-music в 11:50 (начинает играть в 12:00).
-# Отключено, т.к. теперь можно делать это свойством weight плейлистов.
-#50 11	* * *	radio	/usr/lib/ardj/robots/better
+# Обновление @preshow-music перед началом ТСН (18:50 по четвергам).
+50 18	* * *	radio	/usr/lib/ardj/robots/preshow
 
 # TODO: изменить время в соответствии с расписанием.
 0 3		* * *	radio	/usr/lib/ardj/robots/freshener

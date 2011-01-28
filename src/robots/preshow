@@ -21,7 +21,7 @@ if __name__ == '__main__':
     cur.execute('DELETE FROM labels WHERE label = ?', (SET_LABEL, ))
 
     sql = 'INSERT INTO labels (track_id, label, email) SELECT id, ?, ? FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?)'
-    params = (SET_LABEL, SIGNATURE, )
+    params = (SET_LABEL, SIGNATURE, COMMON_LABEL, )
     for user in USERS:
         sql += ' AND id IN (SELECT track_id FROM votes WHERE vote > 0 AND email = ?)'
         params += (user, )
