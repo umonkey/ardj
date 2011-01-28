@@ -12,7 +12,6 @@ import urllib
 import urllib2
 
 COMMON_LABEL = 'music'
-COUNTRIES = ('Russian Federation', )
 ARTIST_NAME_STRIP = re.compile(u'[^a-z0-9а-я]+', re.IGNORECASE|re.UNICODE)
 
 settings = None
@@ -63,10 +62,13 @@ def get_event_map():
     result = {}
     csvname = settings['events.csv']
     update_events_csv()
+
+    countries = settings.has_key('event_countries') and settings['event_countries'] or ('Russian Federation', )
+
     for row in csv.reader(open(csvname, 'rb')):
         name = row[0].decode('utf-8')
         city = row[3].decode('utf-8').split(',')[0]
-        if row[2].decode('utf-8') in COUNTRIES:
+        if row[2].decode('utf-8') in countries:
             date = datetime.datetime.strptime(row[1][:16], '%a, %d %b %Y').strftime('%Y-%m-%d')
             if not result.has_key(date):
                 result[date] = {}
@@ -102,9 +104,14 @@ def speak_event_map(events):
     filename_txt = filename + '.txt'
     filename_wav = filename + '.wav'
 
+    if settings.has_key('events_ogg'):
+        filename_ogg = settings['events_ogg']
+    else:
+        filename_ogg = filename + '.ogg'
+
     open(filename_txt, 'wb').write(get_speech(events).encode('utf-8'))
     subprocess.Popen(['text2wave', '-eval', '(voice_msu_ru_nsh_clunits)', filename_txt, '-o', filename_wav]).wait()
-    subprocess.Popen(['oggenc', '-Q', '-q', '9', '-a', 'Говорящий робот', '-t', u'Расписание концертов', filename_wav])
+    subprocess.Popen(['oggenc', '-Q', '-q', '9', '--resample', '44100', '-a', 'Говорящий робот', '-t', u'Расписание концертов', '-o', filename_ogg, filename_wav])
 
 
 def xlat(key, value, default=None):
