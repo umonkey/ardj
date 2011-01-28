@@ -48,9 +48,11 @@ def get_events(names):
 
 def update_events_csv():
     filename = settings['events.csv']
+    """
     if os.path.exists(filename):
         print '%s exists, not updating.' % filename
         return
+    """
     f = open(filename, 'wb')
     out = csv.writer(f)
     events = get_events(get_artist_names())
@@ -95,7 +97,7 @@ def get_speech(events):
             city_name = xlat('city_names', events[date][artist])
             if city_name:
                 output += u'  %s %s, %s, %s.' % (days[date_.day - 1], months[date_.month - 1], artist_name, city_name)
-    output += u'  Подробную информацию можно найти на сайте ласт эф эм.  Спасибо за внимание.  Слава роботам.'
+    output += u'  Подробную информацию можно найти на сайте ласт эф эм.  Спасибо за внимание.  Слава роботам.  Ха.'
     return output
 
 
@@ -111,7 +113,10 @@ def speak_event_map(events):
 
     open(filename_txt, 'wb').write(get_speech(events).encode('utf-8'))
     subprocess.Popen(['text2wave', '-eval', '(voice_msu_ru_nsh_clunits)', filename_txt, '-o', filename_wav]).wait()
-    subprocess.Popen(['oggenc', '-Q', '-q', '9', '--resample', '44100', '-a', 'Говорящий робот', '-t', u'Расписание концертов', '-o', filename_ogg, filename_wav])
+    subprocess.Popen(['oggenc', '-Q', '-q', '9', '--resample', '44100', '-a', 'Говорящий робот', '-t', u'Расписание концертов', '-o', filename_ogg, filename_wav]).wait()
+
+    print 'Wrote output to %s' % filename_ogg
+    os.unlink(filename_wav)
 
 
 def xlat(key, value, default=None):

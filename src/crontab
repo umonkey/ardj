@@ -5,6 +5,9 @@
 0 18	* * *	radio	/usr/lib/ardj/robots/hitlister
 0 3		* * *	radio	/usr/lib/ardj/robots/podcaster
 
+# Обновление афиши по утрам (в 6:00).
+0 6		* * *	radio	/usr/lib/ardj/robots/tout
+
 # Обновление @preshow-music перед началом ТСН (18:50 по четвергам).
 50 18	* * *	radio	/usr/lib/ardj/robots/preshow
 
