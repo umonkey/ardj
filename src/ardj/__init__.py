@@ -282,7 +282,7 @@ class ardj:
             labels = playlist.has_key('labels') and playlist['labels'] or [playlist['name']]
         else:
             labels = None
-        weight = playlist.has_key('weight') and playlist['weight'] or None
+        weight = playlist and playlist.has_key('weight') and playlist['weight'] or None
         id = self.get_random_track_id(labels, repeat, skip_artists, cur, weight)
         if id is not None:
             return self.get_track_by_id(id, cur)
