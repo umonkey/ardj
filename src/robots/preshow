@@ -1,0 +1,30 @@
+#!/usr/bin/env python
+#
+# Отмечает меткой музыку, которая нравится одновременно хексу и дугу.
+
+import os
+import sys
+
+COMMON_LABEL = 'music'
+SET_LABEL = 'preshow-music'
+USERS = ('dugwin@gmail.com', 'hex@umonkey.net')
+SIGNATURE = 'robot+preshow@tmradio.net'
+
+if __name__ == '__main__':
+    if not os.path.abspath(sys.argv[0]).startswith('/usr'):
+        src_dir = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '..'))
+        sys.path.insert(0, src_dir)
+
+    import ardj
+    a = ardj.Open()
+    cur = a.database.cursor()
+    cur.execute('DELETE FROM labels WHERE label = ?', (SET_LABEL, ))
+
+    sql = 'INSERT INTO labels (track_id, label, email) SELECT id, ?, ? FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?)'
+    params = (SET_LABEL, SIGNATURE, )
+    for user in USERS:
+        sql += ' AND id IN (SELECT track_id FROM votes WHERE vote > 0 AND email = ?)'
+        params += (user, )
+    cur.execute(sql, params)
+
+    a.database.commit()
