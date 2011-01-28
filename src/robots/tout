@@ -56,7 +56,7 @@ def update_events_csv():
     out = csv.writer(f)
     events = get_events(get_artist_names())
     for event in events:
-        out.writerow([cell.encode('utf-8') for cell in event])
+        out.writerow([cell and cell.encode('utf-8') or '' for cell in event])
     f.close()
 
 def get_event_map():
@@ -91,7 +91,8 @@ def get_speech(events):
         for artist in events[date].keys():
             artist_name = xlat('artist_names', artist, ARTIST_NAME_STRIP.sub(lambda a: ' ', artist).strip())
             city_name = xlat('city_names', events[date][artist])
-            output += u'  %s %s, %s, %s.' % (days[date_.day - 1], months[date_.month - 1], artist_name, city_name)
+            if city_name:
+                output += u'  %s %s, %s, %s.' % (days[date_.day - 1], months[date_.month - 1], artist_name, city_name)
     output += u'  Подробную информацию можно найти на сайте ласт эф эм.  Спасибо за внимание.  Слава роботам.'
     return output
 
