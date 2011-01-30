@@ -1,0 +1,39 @@
+#!/usr/bin/env python
+# vim: set fileencoding=utf-8:
+
+import os
+import sys
+import subprocess
+
+DEFAULT_URL = 'http://broadcast.echo.msk.ru:9000/content/current.mp3'
+DEFAULT_OUT = 'news.ogg'
+
+settings = None
+
+def fetch_news():
+    cmd = u"gst-launch-0.10 -q souphttpsrc location=\"%s\" ! decodebin ! audioconvert ! taginject tags=\"title=News,artist=Эхо Москвы\" ! vorbisenc quality=0.5 ! oggmux ! filesink location=\"%s\"" % (settings['url'], settings['out'])
+    try:
+        subprocess.Popen(cmd.split(' ')).wait()
+        subprocess.Popen(['vorbisgain', '-f', '-q', settings['out']]).wait()
+
+        if settings.has_key('queue') and settings['queue']:
+            from ardj import Open
+            ardj = Open()
+            ardj.queue_track(int(settings['queue']))
+            ardj.database.commit()
+    except Exception, e:
+        print >>sys.stderr, 'Could not fetch news: %s' % e
+        return False
+
+if __name__ == '__main__':
+    if not os.path.abspath(sys.argv[0]).startswith('/usr'):
+        src_dir = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '..'))
+        sys.path.insert(0, src_dir)
+
+    import ardj.settings
+    settings = ardj.settings.load('news', defaults={
+        'url': DEFAULT_URL,
+        'out': DEFAULT_OUT,
+    })
+
+    fetch_news()
