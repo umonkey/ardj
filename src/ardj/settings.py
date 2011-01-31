@@ -8,5 +8,8 @@ def load(app, defaults=None):
         if os.path.exists(filename):
             tmp = yaml.load(open(filename, 'rb'))
             if type(tmp) == dict and tmp.has_key(app):
-                defaults.update(tmp[app])
+                if type(tmp[app]) == dict:
+                    defaults.update(tmp[app])
+                else:
+                    defaults = tmp[app]
     return defaults
