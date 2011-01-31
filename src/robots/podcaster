@@ -37,10 +37,17 @@ def update_feeds(settings):
     for podcast in settings:
         print 'Updating %s' % podcast['name'].encode('utf-8')
         feed = feedparser.parse(podcast['feed'])
+
+        feed_author = None
+        if podcast.has_key('author'):
+            feed_author = podcast['author']
+
         for entry in feed['entries']:
             if entry.has_key('enclosures'):
                 for enclosure in entry['enclosures']:
-                    if add_song(a, entry['author'], entry['title'], enclosure['href'], podcast['tags']):
+                    author = feed_author
+                    if entry.has_key('author'): author = entry['author']
+                    if add_song(a, author, entry['title'], enclosure['href'], podcast['tags']):
                         pass # return # one at a time, for testing
 
 if __name__ == '__main__':
