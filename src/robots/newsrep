@@ -11,7 +11,7 @@ DEFAULT_OUT = 'news.ogg'
 settings = None
 
 def fetch_news():
-    cmd = u"gst-launch-0.10 -q souphttpsrc location=\"%s\" ! decodebin ! audioconvert ! taginject tags=\"title=News,artist=Эхо Москвы\" ! vorbisenc quality=0.5 ! oggmux ! filesink location=\"%s\"" % (settings['url'], settings['out'])
+    cmd = u"gst-launch-0.10 -q souphttpsrc location=\"%s\" ! decodebin ! audioconvert ! vorbisenc quality=0.5 ! oggmux ! filesink location=\"%s\"" % (settings['url'], settings['out'])
     try:
         subprocess.Popen(cmd.split(' ')).wait()
         subprocess.Popen(['vorbisgain', '-f', '-q', settings['out']]).wait()
