@@ -135,7 +135,7 @@ class database:
 		# Update email's karma.
 		all = float(cur.execute('SELECT COUNT(*) FROM votes').fetchall()[0][0])
 		his = float(cur.execute('SELECT COUNT(*) FROM votes WHERE email = ?', (email, )).fetchall()[0][0])
-		value = 0.5 # his / all
+		value = 0.25 # his / all
 		cur.execute('DELETE FROM karma WHERE email = ?', (email, ))
 		cur.execute('INSERT INTO karma (email, weight) VALUES (?, ?)', (email, value, ))
 
