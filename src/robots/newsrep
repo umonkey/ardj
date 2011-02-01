@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # vim: set fileencoding=utf-8:
 
+import mutagen
 import os
 import sys
 import subprocess
@@ -19,7 +20,12 @@ def fetch_news():
         if settings.has_key('queue') and settings['queue']:
             from ardj import Open
             ardj = Open()
-            ardj.queue_track(int(settings['queue']))
+            track_id = int(settings['queue'])
+
+            tags = mutagen.File(settings['out'])
+            ardj.database.cursor().execute('UPDATE tracks SET length = ? WHERE id = ?', (int(tags.info.length), track_id, ))
+
+            ardj.queue_track(track_id)
             ardj.database.commit()
     except Exception, e:
         print >>sys.stderr, 'Could not fetch news: %s' % e
