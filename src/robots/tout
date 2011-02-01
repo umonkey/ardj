@@ -89,14 +89,17 @@ def get_speech(events):
     months = [u'января', u'февраля', u'марта', u'апреля', u'мая', u'июня', u'июля', u'августа', u'сентября', u'октября', u'ноября', u'декабря']
     days = [u'первого', u'второго', u'третьего', u'четвёртого', u'пятого', u'шестого', u'седьмого', u'восьмого', u'девятого', u'десятого', u'одиннадцатого', u'двенадцатого', u'тринадцатого', u'четырнадцатого', u'пятнадцатого', u'шестнадцатого', u'семнадцатого', u'восемнадцатого', u'девятнадцатого', u'двадцатого', u'двадцать первого', u'двадцать второго', u'двадцать третьего', u'двадцать четвёртого', u'двадцать пятого', u'двадцать шестого', u'двадцать седьмого', u'двадцать восьмого', u'двадцать девятого', u'тридцатого', u'тридцать первого']
 
-    output = u'Прослушайте афишу ближайших концертов.'
+    now = datetime.datetime.now()
+
+    output = u'Прослушайте афишу концертов на ближайшие две недели.'
     for date in sorted(events.keys()):
         date_ = datetime.datetime.strptime(date, '%Y-%m-%d')
-        for artist in events[date].keys():
-            artist_name = xlat('artist_names', artist, ARTIST_NAME_STRIP.sub(lambda a: ' ', artist).strip())
-            city_name = xlat('city_names', events[date][artist])
-            if city_name:
-                output += u'  %s %s, %s, %s.' % (days[date_.day - 1], months[date_.month - 1], artist_name, city_name)
+        if (date_ - now).days < 14:
+            for artist in events[date].keys():
+                artist_name = xlat('artist_names', artist, ARTIST_NAME_STRIP.sub(lambda a: ' ', artist).strip())
+                city_name = xlat('city_names', events[date][artist])
+                if city_name:
+                    output += u'  %s %s, %s, %s.' % (days[date_.day - 1], months[date_.month - 1], artist_name, city_name)
     output += u'  Подробную информацию можно найти на сайте ласт эф эм.  Спасибо за внимание.  Слава роботам.  Ха.'
     return output
 
