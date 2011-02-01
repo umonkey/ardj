@@ -330,7 +330,7 @@ class ardjbot(MyFileReceivingBot):
         result += u'; #%u weight=%f playcount=%u length=%us filename="%s" editable=%s last_played=%s. ' % (track['id'], track['weight'] or 0, track['count'] or 0, track['length'] or 0, track['filename'], self.check_access(message.getFrom().getStripped()), track['last_played'])
         if track['labels']:
             result += u'Labels: @' + u', @'.join(track['labels']) + u'. '
-        result += self._get_track_voters(track['id'])
+        result += self._get_track_voters(track['id'], message.getFrom().getStripped())
         return result.strip()
 
     @botcmd
@@ -392,9 +392,12 @@ class ardjbot(MyFileReceivingBot):
         "Send back the arguments"
         return args
 
-    def _get_track_voters(self, track_id):
+    def _get_track_voters(self, track_id, me=None):
         "Returns formatted list of likers-haters."
-        votes = self.ardj.database.cursor().execute('SELECT email, vote FROM votes WHERE track_id = ?', (track_id, )).fetchall()
+        if me is None:
+            votes = self.ardj.database.cursor().execute('SELECT email, vote FROM votes WHERE track_id = ?', (track_id, )).fetchall()
+        else:
+            votes = self.ardj.database.cursor().execute('SELECT email, vote FROM votes WHERE track_id = ? AND email = ?', (track_id, me, )).fetchall()
         pro = [row[0] for row in votes if row[1] > 0]
         if not pro:
             pro.append('nobody')
