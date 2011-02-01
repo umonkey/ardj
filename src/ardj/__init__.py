@@ -588,7 +588,7 @@ class ardj:
         words = re.split('\s+', pattern)
         numbers = [w for w in words if w.isdigit()]
         # Basic SQL setup.
-        sql = 'SELECT id, filename, artist, title FROM tracks WHERE'
+        sql = 'SELECT id, filename, artist, title, weight FROM tracks WHERE'
         params = tuple()
         # Process request with numeric values only: exact tracks, even deleted.
         if len(numbers) == len(words):
