@@ -8,6 +8,7 @@ import os
 import re
 import subprocess
 import sys
+import time
 import urllib
 import urllib2
 
@@ -48,11 +49,10 @@ def get_events(names):
 
 def update_events_csv():
     filename = settings['events.csv']
-    """
+
     if os.path.exists(filename):
-        print '%s exists, not updating.' % filename
-        return
-    """
+        if time.time() - os.stat(filename).st_mtime < 600:
+            return
     f = open(filename, 'wb')
     out = csv.writer(f)
     events = get_events(get_artist_names())
