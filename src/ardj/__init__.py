@@ -596,7 +596,7 @@ class ardj:
             params = tuple(numbers)
         # Process full-text search requests.
         else:
-            sql = 'SELECT id, filename, artist, title FROM tracks WHERE weight > 0'
+            sql = 'SELECT id, filename, artist, title, weight FROM tracks WHERE weight > 0'
             params = tuple()
             words = u'%' + u' '.join([l for l in re.split('\s+', pattern) if not l.startswith('@')]) + u'%'
             if words != u'%%':
@@ -609,7 +609,7 @@ class ardj:
         sql += ' ORDER BY id'
         self.database.debug(sql, params)
         cur = self.database.cursor()
-        return [{ 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'labels': self.__get_track_labels(row[0], cur) } for row in cur.execute(sql, params).fetchall()]
+        return [{ 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'weight': row[4], 'labels': self.__get_track_labels(row[0], cur) } for row in cur.execute(sql, params).fetchall()]
 
     def purge(self):
         """

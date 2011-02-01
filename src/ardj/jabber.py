@@ -574,7 +574,7 @@ class ardjbot(MyFileReceivingBot):
             message = u'Found %u tracks:' % len(tracks)
         for track in tracks[:20]:
             labels = ['@' + l for l in track['labels']]
-            message += u'\n<br/>  %s — #%u %s' % (self.get_linked_title(track), track['id'], u' '.join(labels))
+            message += u'\n<br/>  %s — #%u ⚖%s %s' % (self.get_linked_title(track), track['id'], track['weight'], u' '.join(labels))
         return message + u'\n<br/>You might want to use "queue track_ids..." now.'
 
     @botcmd
