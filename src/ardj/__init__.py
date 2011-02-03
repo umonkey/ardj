@@ -398,7 +398,7 @@ class ardj:
                         if k in item:
                             saved[item['name']][k] = int(item[k])
                     if item.has_key('weight'):
-                        saved['weight'] = item['weight']
+                        saved[item['name']]['weight'] = item['weight']
                     if 'labels' in item:
                         saved[item['name']]['labels'] = u','.join(item['labels'])
                     saved[item['name']]['priority'] = priority
