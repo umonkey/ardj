@@ -7,6 +7,8 @@ import os
 import random
 import re
 import shutil
+import subprocess
+import tempfile
 import time
 import traceback
 
@@ -640,6 +642,29 @@ class ardj:
         posting = self.twitter.PostUpdate(message)
         url = 'http://twitter.com/' + posting.GetUser().GetScreenName() + '/status/' + str(posting.GetId())
         return url
+
+    def say(self, message, filename_ogg, track_artist=None, track_title=None):
+        """Renders some text to a wav file."""
+        filename_txt = tempfile.mkstemp()[1]
+        filename_wav = filename_ogg + '.wav'
+
+        if track_artist is None:
+            track_artist = u'Говорящий робот'
+        if track_title is None:
+            track_title = u'Голосовое сообщение'
+
+        f = open(filename_txt, 'wb')
+        f.write(message.encode('utf-8'))
+        f.close()
+
+        try:
+            subprocess.Popen(['text2wave', '-eval', '(voice_msu_ru_nsh_clunits)', filename_txt, '-o', filename_wav]).wait()
+            subprocess.Popen(['oggenc', '-Q', '-q', '9', '--resample', '44100', '-a', track_artist, '-t', track_title, '-o', filename_ogg, filename_wav]).wait()
+        finally:
+            if os.path.exists(filename_wav):
+                os.unlink(filename_wav)
+            if os.path.exists(filename_txt):
+                os.unlink(filename_txt)
 
 def Open():
     return ardj()
