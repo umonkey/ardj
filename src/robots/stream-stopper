@@ -1,0 +1,29 @@
+#!/usr/bin/env python
+# vim: set fileencoding=utf-8:
+
+import os
+import sys
+import time
+
+if __name__ == '__main__':
+    if not os.path.abspath(sys.argv[0]).startswith('/usr'):
+        src_dir = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '..'))
+        sys.path.insert(0, src_dir)
+
+    import ardj.settings
+    settings = ardj.settings.load('stream')
+
+    dirname = os.path.dirname(settings['dump'])
+    filename = os.path.join(dirname, sorted([x for x in os.listdir(dirname) if x.endswith('.mp3')])[-1])
+
+    import mutagen
+    tags = mutagen.File(filename)
+
+    date = time.strptime(filename, settings['dump_rename_to'])
+    twit = time.strftime(settings['twit_end'].encode('utf-8')).decode('utf-8')
+    twit = twit.replace('URL', settings['base_url'] + os.path.basename(filename))
+    twit = twit.replace('LENGTH', str(int(tags.info.length / 60)))
+
+    from ardj import Open
+    ardj = Open()
+    ardj.twit(twit)
