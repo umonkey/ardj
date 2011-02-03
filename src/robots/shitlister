@@ -2,7 +2,7 @@
 INTRO_ID=4428
 REMINDER_ID=4427
 
-tracks=$(echo "select id from tracks where weight > 0 and id not in (select track_id from labels where label in ('jingle', 'quotes', 'preroll')) order by weight asc limit 10;" | ardj --dbc 2>/dev/null)
+tracks=$(echo "select id from tracks where weight > 0 and id in (select track_id from labels where label in ('music')) order by weight asc limit 10;" | ardj --dbc 2>/dev/null)
 
 # add intro and mid-air reminders
 xtracks="$tracks"
