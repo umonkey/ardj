@@ -376,6 +376,20 @@ class ardjbot(MyFileReceivingBot):
         self.ardj.log.info(u'%s sent <a href="%s">a message</a> to twitter: %s' % (self.get_linked_sender(message), url, args))
         return url
 
+    @botcmd
+    def speak(self, message, args):
+        "speak some text"
+        filename = self.ardj.config.get('festival/speak_file')
+        if not filename:
+            return 'festival/speak_file not set.'
+
+        track_id = self.ardj.config.get('festival/speak_track_id')
+        if not track_id:
+            return 'festival/speak_track_id not set.'
+
+        self.ardj.say(args, filename)
+        return self.queue(message, str(track_id))
+
     @botcmd(hidden=True)
     def echo(self, message, args):
         "Send back the arguments"
