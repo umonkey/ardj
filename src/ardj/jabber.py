@@ -90,6 +90,7 @@ class ardjbot(MyFileReceivingBot):
         self.pidfile = '/tmp/ardj-jabber.pid'
         self.publicCommands = self.ardj.config.get('jabber/public-commands', 'help rocks sucks show last hitlist shitlist ping pong').split(' ')
         self.database_mtime = None
+        self.init_command_log()
 
         try:
             tmp = twitter.Api(username=ardj.config.get('twitter/consumer_key'),
@@ -103,6 +104,13 @@ class ardjbot(MyFileReceivingBot):
         login, password = self.split_login(self.ardj.config.get('jabber/login'))
         resource = socket.gethostname() + '/' + str(os.getpid()) + '/'
         super(ardjbot, self).__init__(login, password, res=resource, debug=ardj.debug)
+
+    def init_command_log(self):
+        fn = self.ardj.config.get('jabber/log', None)
+        if fn is None:
+            self.command_log = None
+        else:
+            self.command_log = open(fn, 'a')
 
     def get_users(self):
         """
@@ -216,9 +224,18 @@ class ardjbot(MyFileReceivingBot):
                     if not is_public and not self.check_access(mess.getFrom().getStripped()):
                         self.ardj.log.warning('Refusing access to %s.' % mess.getFrom())
                         return self.send_simple_reply(mess, 'Available commands: %s.' % ', '.join(self.publicCommands))
-            return JabberBot.callback_message(self, conn, mess)
+                if mess.getBody():
+                    self._log_command(mess.getFrom().getStripped(), mess.getBody().strip())
+                return JabberBot.callback_message(self, conn, mess)
         finally:
             self.ardj.database.commit()
+
+    def _log_command(self, sender, command):
+        if self.command_log is not None:
+            track = self.get_current_track()
+            message = u'[%s] %s: %s (np=%s)\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), sender, command, track and track['id'] or None)
+            self.command_log.write(message.encode('utf-8'))
+            self.command_log.flush()
 
     @botcmd
     def set(self, message, args):
