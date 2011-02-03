@@ -1,2 +1,29 @@
-#!/bin/sh
-/usr/lib/ardj/robots/twitter "Начался прямой эфир! http://www.tmradio.net/live.html #tmradio"
+#!/usr/bin/env python
+# vim: set fileencoding=utf-8:
+
+import os
+import sys
+import time
+
+# /usr/lib/ardj/robots/twitter "Начался прямой эфир! http://www.tmradio.net/live.html #tmradio"
+
+if __name__ == '__main__':
+    if not os.path.abspath(sys.argv[0]).startswith('/usr'):
+        src_dir = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '..'))
+        sys.path.insert(0, src_dir)
+
+    import ardj.settings
+    settings = ardj.settings.load('stream')
+
+    src = settings['dump']
+    dst = time.strftime(settings['dump_rename_to'])
+
+    if not os.path.exists(src):
+        print >>sys.stderr, 'False start: %s not found.' % src
+        sys.exit(1)
+
+    os.rename(src, dst)
+
+    from ardj import Open
+    ardj = Open()
+    ardj.twit(settings['twit_begin'])
