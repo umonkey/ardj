@@ -2150,7 +2150,7 @@ class Api(object):
     else:
       u_status = unicode(status, self._input_encoding)
 
-    data = {'status': status}
+    data = {'status': status.encode('utf-8')}
     if in_reply_to_status_id:
       data['in_reply_to_status_id'] = in_reply_to_status_id
     json = self._FetchUrl(url, post_data=data)

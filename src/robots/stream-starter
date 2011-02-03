@@ -5,8 +5,6 @@ import os
 import sys
 import time
 
-# /usr/lib/ardj/robots/twitter "Начался прямой эфир! http://www.tmradio.net/live.html #tmradio"
-
 if __name__ == '__main__':
     if not os.path.abspath(sys.argv[0]).startswith('/usr'):
         src_dir = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '..'))
