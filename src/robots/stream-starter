@@ -1,0 +1,2 @@
+#!/bin/sh
+/usr/lib/ardj/robots/twitter "Начался прямой эфир! http://www.tmradio.net/live.html #tmradio"
