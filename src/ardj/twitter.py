@@ -2141,14 +2141,14 @@ class Api(object):
 
     url = '%s/statuses/update.json' % self.base_url
 
+    if len(status) > CHARACTER_LIMIT:
+      raise TwitterError("Text must be less than or equal to %d characters. "
+                         "Consider using PostUpdates." % CHARACTER_LIMIT)
+
     if isinstance(status, unicode) or self._input_encoding is None:
       u_status = status
     else:
       u_status = unicode(status, self._input_encoding)
-
-    if len(u_status) > CHARACTER_LIMIT:
-      raise TwitterError("Text must be less than or equal to %d characters. "
-                         "Consider using PostUpdates." % CHARACTER_LIMIT)
 
     data = {'status': status}
     if in_reply_to_status_id:
