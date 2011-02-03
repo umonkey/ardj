@@ -15,7 +15,6 @@ from xml.sax import saxutils
 
 from ardj.jabberbot import JabberBot, botcmd
 from ardj.filebot import FileBot, FileNotAcceptable
-from ardj import twitter
 from ardj import xmpp
 import tags
 
@@ -85,21 +84,11 @@ class ardjbot(MyFileReceivingBot):
 
     def __init__(self, ardj):
         self.ardj = ardj
-        self.twitter = None
         self.lastping = None # время последнего пинга
         self.pidfile = '/tmp/ardj-jabber.pid'
         self.publicCommands = self.ardj.config.get('jabber/public-commands', 'help rocks sucks show last hitlist shitlist ping pong').split(' ')
         self.database_mtime = None
         self.init_command_log()
-
-        try:
-            tmp = twitter.Api(username=ardj.config.get('twitter/consumer_key'),
-                password=ardj.config.get('twitter/consumer_secret'),
-                access_token_key=ardj.config.get('twitter/access_token_key'),
-                access_token_secret=ardj.config.get('twitter/access_token_secret'))
-            self.twitter = tmp
-            self.ardj.log.info('Logged in to Twitter.')
-        except: pass
 
         login, password = self.split_login(self.ardj.config.get('jabber/login'))
         resource = socket.gethostname() + '/' + str(os.getpid()) + '/'
@@ -383,26 +372,9 @@ class ardjbot(MyFileReceivingBot):
     @botcmd
     def twit(self, message, args):
         "Send a message to Twitter"
-        if not self.twitter:
-            return u'Twitter is not enabled in the config file.'
-        posting = self.twitter.PostUpdate(args.encode('utf-8'))
-        url = 'http://twitter.com/' + posting.GetUser().GetScreenName() + '/status/' + str(posting.GetId())
+        url = self.ardj.twit(args)
         self.ardj.log.info(u'%s sent <a href="%s">a message</a> to twitter: %s' % (self.get_linked_sender(message), url, args))
         return url
-
-    @botcmd
-    def twits(self, message, args):
-        "Show twitter replies"
-        if not self.twitter:
-            return u'Twitter is not enabled in the config file.'
-        html = u''
-        for reply in self.twitter.GetReplies():
-            html += u'<a href="http://twitter.com/%s/status/%s">%s</a>: %s\n' % (reply.user.screen_name, reply.id, reply.user.screen_name, saxutils.escape(reply.text))
-        for reply in self.twitter.FilterPublicTimeline('#tmradio'):
-            html += u'<a href="http://twitter.com/%s/status/%s">%s</a>: %s\n' % (reply.user.screen_name, reply.id, reply.user.screen_name, saxutils.escape(reply.text))
-        if not len(html):
-            html = u'Nothing.'
-        return html.replace('\n', '<br/>\n')
 
     @botcmd(hidden=True)
     def echo(self, message, args):
