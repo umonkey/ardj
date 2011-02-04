@@ -15,4 +15,13 @@ if __name__ == '__main__':
 
     from ardj import Open
     ardj = Open()
-    print ardj.twit(sys.argv[1])
+
+    if '-replies' in sys.argv:
+        track_id = ardj.config.get('twitter/reply_track_id', fail=True)
+        messages = [(s.user.screen_name, s.text) for s in sorted(ardj.twit_replies(), key=lambda s: s.created_at_in_seconds, reverse=True) if s.text.startswith('@tmradio ')]
+        if messages:
+            nick, text = messages[0]
+            text = u' '.join(text.split(u' ')[1:])
+            ardj.say_to_track(text, track_id, track_artist='@' + nick, queue=True)
+    else:
+        print ardj.twit(sys.argv[1])

@@ -45,7 +45,7 @@ class config:
 	def close(self):
 		pass
 
-	def get(self, path, default=None):
+	def get(self, path, default=None, fail=False):
 		"""
 		Returns the value of a config parameter. Path is of the x/y/z form.
 		If there is no such value, default is returned.
@@ -54,6 +54,8 @@ class config:
 		data = self.config_data
 		for k in path.split('/'):
 			if not k in data:
+				if default is None and fail:
+					raise Exception('Error: the %s parameter is not set.' % path)
 				return default
 			data = data[k]
 		return data

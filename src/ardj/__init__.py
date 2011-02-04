@@ -631,6 +631,14 @@ class ardj:
 
     def twit(self, message):
         """Sends a message to twitter."""
+        posting = self._get_twitter_api().PostUpdate(message)
+        url = 'http://twitter.com/' + posting.GetUser().GetScreenName() + '/status/' + str(posting.GetId())
+        return url
+
+    def twit_replies(self):
+        return self._get_twitter_api().GetReplies()
+
+    def _get_twitter_api(self):
         if self.twitter is None:
             from ardj import twitter
             tmp = twitter.Api(username=self.config.get('twitter/consumer_key'),
@@ -639,14 +647,32 @@ class ardj:
                 access_token_secret=self.config.get('twitter/access_token_secret'))
             self.log.info('Logged in to Twitter.')
             self.twitter = tmp
-        posting = self.twitter.PostUpdate(message)
-        url = 'http://twitter.com/' + posting.GetUser().GetScreenName() + '/status/' + str(posting.GetId())
-        return url
+        return self.twitter
+
+    def say_to_track(self, message, track_id, track_artist, track_title=None, queue=False):
+        """Renders some text to a track."""
+        cur = self.database.cursor()
+        track = self.get_track_by_id(int(track_id), cur=cur)
+        filename = os.path.join(self.config.get_music_dir(), track['filename'])
+        length = self.say(message, filename, track_artist, track_title)
+        if length:
+            self.database.update_track({'id': int(track_id), 'length': length }, cur=cur)
+            if True:
+                self.queue_track(int(track_id), cur=cur)
+                self.log.info(u'Added track %s to queue.' % track_id)
 
     def say(self, message, filename_ogg, track_artist=None, track_title=None):
         """Renders some text to a wav file."""
         filename_txt = tempfile.mkstemp()[1]
         filename_wav = filename_ogg + '.wav'
+
+        self.log.info(u'Rendering text "%s" to file %s' % (message, filename_ogg))
+
+        if os.path.exists(filename_ogg):
+            tg = tags.raw(filename_ogg)
+            if tg.has_key('comment') and tg['comment'][0] == message:
+                self.log.debug(u'File has that message already, not updating.')
+                return False
 
         if track_artist is None:
             track_artist = u'Говорящий робот'
@@ -660,6 +686,10 @@ class ardj:
         try:
             subprocess.Popen(['text2wave', '-eval', '(voice_msu_ru_nsh_clunits)', filename_txt, '-o', filename_wav]).wait()
             subprocess.Popen(['oggenc', '-Q', '-q', '9', '--resample', '44100', '-a', track_artist, '-t', track_title, '-o', filename_ogg, filename_wav]).wait()
+            tg = tags.raw(filename_ogg)
+            tg['comment'] = message
+            tg.save()
+            return tg.info.length
         finally:
             if os.path.exists(filename_wav):
                 os.unlink(filename_wav)
