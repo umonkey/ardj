@@ -286,11 +286,12 @@ class ardj:
         else:
             labels = None
         weight = playlist and playlist.has_key('weight') and playlist['weight'] or None
-        id = self.get_random_track_id(labels, repeat, skip_artists, cur, weight)
+        delay = playlist and playlist.has_key('track_delay') and playlist['track_delay'] or None
+        id = self.get_random_track_id(labels, repeat, skip_artists, cur, weight, delay)
         if id is not None:
             return self.get_track_by_id(id, cur)
 
-    def get_random_track_id(self, labels=None, repeat=None, skip_artists=None, cur=None, weight=None):
+    def get_random_track_id(self, labels=None, repeat=None, skip_artists=None, cur=None, weight=None, delay=None):
         """
         Returns a random track's id.
         """
@@ -319,6 +320,11 @@ class ardj:
             elif weight.endswith('-'):
                 sql += ' AND w <= ?'
                 params.append(float(weight[:-1]))
+        # delay some tracks
+        if delay is not None:
+            ts_limit = int(time.time()) - int(delay) * 60;
+            sql += ' AND last_played <= ?'
+            params.append(ts_limit)
         self.log.debug('SQL: %s; PARAMS: %s' % (sql, params))
         self.database.debug(sql, params)
         # fetch all records
@@ -340,7 +346,7 @@ class ardj:
         Returns information about all known playlists.
         """
         s = lambda cell: cell and re.split(',\s*', cell) or []
-        return [{ 'name': row[0] or 'playlist-' + str(row[1]), 'id': row[1], 'priority': row[2], 'repeat': row[3], 'delay': row[4], 'hours': row[5] and [int(x) for x in row[5].split(',')] or None, 'days': row[6] and [int(x) for x in row[6].split(',')] or None, 'last_played': row[7], 'labels': s(row[8]), 'weight': row[9] } for row in self.database.cursor().execute('SELECT name, id, priority, repeat, delay, hours, days, last_played, labels, weight FROM playlists ORDER BY priority DESC').fetchall()]
+        return [{ 'name': row[0] or 'playlist-' + str(row[1]), 'id': row[1], 'priority': row[2], 'repeat': row[3], 'delay': row[4], 'hours': row[5] and [int(x) for x in row[5].split(',')] or None, 'days': row[6] and [int(x) for x in row[6].split(',')] or None, 'last_played': row[7], 'labels': s(row[8]), 'weight': row[9], 'track_delay': row[10] } for row in self.database.cursor().execute('SELECT name, id, priority, repeat, delay, hours, days, last_played, labels, weight, track_delay FROM playlists ORDER BY priority DESC').fetchall()]
 
     def explain_playlists(self):
         self.get_active_playlists(explain=True)
@@ -397,7 +403,7 @@ class ardj:
                     for k in ('days', 'hours'):
                         if k in item:
                             saved[item['name']][k] = item[k] and ','.join([str(x) for x in item[k]]) or None
-                    for k in ('repeat', 'delay'):
+                    for k in ('repeat', 'delay', 'track_delay'):
                         if k in item:
                             saved[item['name']][k] = int(item[k])
                     if item.has_key('weight'):
@@ -685,9 +691,13 @@ class ardj:
 
         try:
             subprocess.Popen(['text2wave', '-eval', '(voice_msu_ru_nsh_clunits)', filename_txt, '-o', filename_wav]).wait()
-            subprocess.Popen(['oggenc', '-Q', '-q', '9', '--resample', '44100', '-a', track_artist, '-t', track_title, '-o', filename_ogg, filename_wav]).wait()
+            subprocess.Popen(['oggenc', '-Q', '-q', '9', '--resample', '44100', '-o', filename_ogg, filename_wav]).wait()
             tg = tags.raw(filename_ogg)
             tg['comment'] = message
+            if track_artist is not None:
+                tg['artist'] = track_artist
+            if track_title is not None:
+                tg['title'] = track_title
             tg.save()
             return tg.info.length
         finally:

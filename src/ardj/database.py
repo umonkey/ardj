@@ -41,7 +41,7 @@ class database:
 		self.db = sqlite.connect(self.filename, check_same_thread=False)
 		self.db.create_function('randomize', 4, self.sqlite_randomize)
 		cur = self.db.cursor()
-		cur.execute('CREATE TABLE IF NOT EXISTS playlists (id INTEGER PRIMARY KEY, priority REAL, name TEXT, repeat INTEGER, delay INTEGER, hours TEXT, days TEXT, last_played INTEGER, labels TEXT, weight TEXT)')
+		cur.execute('CREATE TABLE IF NOT EXISTS playlists (id INTEGER PRIMARY KEY, priority REAL, name TEXT, repeat INTEGER, delay INTEGER, track_delay INTEGER, hours TEXT, days TEXT, last_played INTEGER, labels TEXT, weight TEXT)')
 		cur.execute('CREATE TABLE IF NOT EXISTS tracks (id INTEGER PRIMARY KEY, owner TEXT, filename TEXT, artist TEXT, title TEXT, length INTEGER, artist_weight REAL, weight REAL, count INTEGER, last_played INTEGER)')
 		cur.execute('CREATE INDEX IF NOT EXISTS idx_tracks_owner ON tracks (owner)')
 		cur.execute('CREATE INDEX IF NOT EXISTS idx_tracks_last ON tracks (last_played)')
