@@ -17,15 +17,15 @@ def fetch_news():
         subprocess.Popen(cmd.split(' ')).wait()
         subprocess.Popen(['vorbisgain', '-f', '-q', settings['out']]).wait()
 
-        if settings.has_key('queue') and settings['queue']:
+        if settings.has_key('track_id') and settings['track_id']:
             from ardj import Open
             ardj = Open()
             track_id = int(settings['queue'])
-
             tags = mutagen.File(settings['out'])
             ardj.database.cursor().execute('UPDATE tracks SET length = ? WHERE id = ?', (int(tags.info.length), track_id, ))
-
             ardj.queue_track(track_id)
+            if settings.has_key('queue') and settings['queue'] == 'yes':
+                ardj.queue_track(track_id)
             ardj.database.commit()
     except Exception, e:
         print >>sys.stderr, 'Could not fetch news: %s' % e
