@@ -149,9 +149,10 @@ class ardj:
         row = cur.execute('SELECT id, track_id FROM queue ORDER BY id LIMIT 1').fetchone()
         if row is not None:
             track = self.get_track_by_id(row[1])
-            self.log.info(u'Picked track %s from the top of the queue.' % track['id'])
-            cur.execute('DELETE FROM queue WHERE id = ?', (row[0], ))
-            return track
+            if track is not None:
+                self.log.info(u'Picked track %s from the top of the queue.' % track['id'])
+                cur.execute('DELETE FROM queue WHERE id = ?', (row[0], ))
+                return track
 
     def __get_urgent_track(self, skip, cur):
         """
