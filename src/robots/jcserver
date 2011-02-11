@@ -11,6 +11,10 @@ words: your jid, jabber password, jabber chat room and the fifo to use.  Example
 
   alice@example.com secret tmradio@conference.jabber.ru /tmp/jcserver.fifo
 
+To send a message:
+
+  echo "alice_1 hello, world." > /tmp/jcserver.fifo
+
 To shut down the server press ^C.
 
 This version uses JabberBot from the ardj package.  To run without installing
