@@ -5,6 +5,16 @@ import os
 import sys
 import time
 
+MAX_FILE_AGE_DAYS = 7
+
+def purge(dirname):
+    limit = time.time() - MAX_FILE_AGE_DAYS * 86400
+    for filename in os.listdir(dirname):
+        ctime = os.stat(filename).st_ctime
+        if ctime < limit:
+            print 'Delete file:', filename
+
+
 if __name__ == '__main__':
     if not os.path.abspath(sys.argv[0]).startswith('/usr'):
         src_dir = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '..'))
