@@ -23,12 +23,14 @@ the package use this command:
   PYTHONPATH=../ ./jcserver
 """
 
+import cgi
 import os
 import socket
 import sys
 import threading
 import time
 import xmpp
+import BaseHTTPServer
 
 JABBER_LOGIN = None
 JABBER_PASSWORD = None
@@ -44,7 +46,7 @@ class client(threading.Thread):
         threading.Thread.__init__(self)
         self.__nickname = nickname
         self.__on_end = on_end
-        self.__messages = []
+        self.__messages = [None, None] # some delay
         self.__jid = None
         self.__conn = None
         self.__lastmsg = time.time()
@@ -108,13 +110,14 @@ class client(threading.Thread):
         self.__conn.send(msg)
 
     def __talk(self, text):
-        msg = xmpp.protocol.Message(body=text)
-        msg.setTo(JABBER_CHAT_ROOM)
-        msg.setType('groupchat')
-        self.__conn.send(msg)
+        if text:
+            msg = xmpp.protocol.Message(body=text)
+            msg.setTo(JABBER_CHAT_ROOM)
+            msg.setType('groupchat')
+            self.__conn.send(msg)
 
 
-class server(object):
+class server:
     def __init__(self):
         self.clients = {}
 
@@ -123,11 +126,14 @@ class server(object):
             while True:
                 nickname, message = self.read()
                 if nickname and message:
-                    if not self.clients.has_key(nickname):
-                        self.clients[nickname] = client(nickname, on_end=lambda: self.detach(nickname))
-                    self.clients[nickname].post_message(message)
+                    self.on_message(nickname, message)
         finally:
             self.shutdown()
+
+    def on_message(self, nickname, message):
+        if not self.clients.has_key(nickname):
+            self.clients[nickname] = client(nickname, on_end=lambda: self.detach(nickname))
+        self.clients[nickname].post_message(message)
 
     def shutdown(self):
         pass
@@ -163,11 +169,39 @@ class fifo_server(server):
             os.unlink(fname)
 
 
+class http_server(server):
+    u"""HTTP version.
+
+    To send a test message:
+    curl --data 'nickname=umonkey_1&message=hello,+world.' http://localhost:8000/
+    """
+    def __init__(self):
+        server.__init__(self)
+        self.httpd = BaseHTTPServer.HTTPServer(('', 8000), http_request_handler)
+        self.httpd.on_message = self.on_message
+
+    def run(self):
+        self.httpd.serve_forever()
+
+
+class http_request_handler(BaseHTTPServer.BaseHTTPRequestHandler):
+    def __init__(self, addr, handler, server):
+        BaseHTTPServer.BaseHTTPRequestHandler.__init__(self, addr, handler, server)
+        self.server = server
+
+    def do_POST(self, *args, **kwargs):
+        form = cgi.FieldStorage(fp=self.rfile, headers=self.headers, environ={'REQUEST_METHOD':'POST', 'CONTENT_TYPE':self.headers['Content-Type']})
+        self.server.on_message(form['nickname'].value, form['message'].value)
+        self.send_response(200, 'OK')
+        self.end_headers()
+        self.wfile.write('OK\n')
+
+
 if __name__ == '__main__':
     data = open(os.path.expanduser('~/.jcserver'), 'rb').read().strip().split(' ')
     JABBER_LOGIN, JABBER_PASSWORD, JABBER_CHAT_ROOM, JABBER_FIFO = data[0:4]
 
     try:
-        fifo_server().run()
+        http_server().run()
     except KeyboardInterrupt:
         shutting_down = True

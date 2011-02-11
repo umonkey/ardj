@@ -1,0 +1,27 @@
+	<input type=hidden value=0 id='storedUserNick'>
+	<input type=hidden value=0 id='lastMessageNum'>
+	<div id='loginForm'>
+		Введите ник:
+		<input id='nickField' value=''>
+		<button type='button' id='acceptNick'>Войти</button>
+	</div>
+	<div id='chatForm' style='display: none;'>
+		<div id='chatMessages' style='
+				background-color: white; 
+				width:500px; height:200px;
+	            border: 4px ridge gold;
+				margin: 0px; padding:5px;
+				font-size: 12pt;
+				opacity: 1;
+				overflow: auto;
+				'>
+		</div>
+		<input type="checkbox" id="autoUpdateCheckBox", checked> Автообновление<br>
+	</div>
+	<div id='sendMessageForm' style='display: none'>
+		Введите сообщение:<br>
+		<input id='postTextInput'>
+		<button type='button' id='sendText'>Отправить в чат</button>
+	</div>
+
+	<div id='logs'></div>
