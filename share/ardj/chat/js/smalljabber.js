@@ -17,7 +17,7 @@
 srvUrl="/"; //ссылка на сервер, пишется перед chatTemplateFile и прочими
 chatTemplateFile='chattemplate.txt';	//файл шаблона чатика, html
 getChatLogUrl='getlogs.php'; //адрес откуда спрашиваются сообщения чата
-sendPostsUrl='http://stream.tmradio.net:8000/'; //адрес куда отправляются POST запросы
+sendPostsUrl='/'; //адрес куда отправляются POST запросы
 //alert('start!');
 
 //подгружаем файл шаблона и выставляем на странцу
@@ -120,6 +120,7 @@ function sendMessage(msg){
 			$('#logs').append('<br>'+data);
 		}, error: function (a, b, c) {
 			// ... handle me ...
+			alert(c);
 		}
 	});	
 };
