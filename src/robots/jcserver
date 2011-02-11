@@ -53,12 +53,23 @@ class ChatClient(JabberBot):
     def join(self):
         self.connect().send(xmpp.Presence(JABBER_CHAT_ROOM + u'/' + self.nickname))
 
+    def leave(self):
+        msg = xmpp.Presence()
+        msg.setTo(JABBER_CHAT_ROOM + u'/' + self.nickname)
+        msg.setType('unavailable')
+        self.connect().send(msg)
+
     def post_message(self, message):
         self.messages.append(message)
         self.lastmsg = time.time()
 
     def idle_proc(self):
-        if shutting_down:
+        shutdown = shutting_down
+        if time.time() - self.lastmsg > JABBER_TIMEOUT:
+            print '%s timed out' % self.nickname
+            shutdown = True
+        if shutdown:
+            self.leave()
             self.quit(1)
         elif self.messages:
             text = self.messages.pop()
@@ -66,14 +77,13 @@ class ChatClient(JabberBot):
             msg.setTo(JABBER_CHAT_ROOM)
             msg.setType('groupchat')
             self.connect().send(msg)
-        elif time.time() - self.lastmsg > JABBER_TIMEOUT:
-            self.quit(2)
 
 
 class client(threading.Thread):
-    def __init__(self, nickname):
+    def __init__(self, nickname, on_end):
         threading.Thread.__init__(self)
         self.nickname = nickname
+        self.on_end = on_end
         self.cli = ChatClient(JABBER_LOGIN, JABBER_PASSWORD, nickname=self.nickname, res=self.nickname, debug=False)
         self.start()
 
@@ -84,31 +94,38 @@ class client(threading.Thread):
         print 'Client %s thread started.' % self.nickname
         self.cli.serve_forever()
         print 'Client %s thread stopped.' % self.nickname
+        self.on_end()
+        del self.cli
 
 
-def start_listening():
-    clients = {}
+class server(object):
+    def __init__(self):
+        self.clients = {}
 
-    fname = JABBER_FIFO
-    if os.path.exists(fname):
-        os.unlink(fname)
-
-    os.mkfifo(fname)
-
-    try:
-        f = open(fname, 'rb')
-        while True:
-            data = f.read(1024)
-            if data:
-                parts = data.strip().split(' ', 1)
-                if len(parts) == 2:
-                    nickname, message = parts
-                    if not clients.has_key(nickname):
-                        clients[nickname] = client(nickname)
-                    clients[nickname].post_message(message)
-    finally:
+    def run(self):
+        fname = JABBER_FIFO
         if os.path.exists(fname):
             os.unlink(fname)
+        os.mkfifo(fname)
+        try:
+            f = open(fname, 'rb')
+            while True:
+                data = f.read(1024)
+                if data:
+                    parts = data.strip().split(' ', 1)
+                    if len(parts) == 2:
+                        nickname, message = parts
+                        if not self.clients.has_key(nickname):
+                            self.clients[nickname] = client(nickname, on_end=lambda: self.detach(nickname))
+                        self.clients[nickname].post_message(message)
+        finally:
+            if os.path.exists(fname):
+                os.unlink(fname)
+
+    def detach(self, nickname):
+        if self.clients.has_key(nickname):
+            print 'Detaching %s' % nickname
+            del self.clients[nickname]
 
 
 if __name__ == '__main__':
@@ -116,6 +133,6 @@ if __name__ == '__main__':
     JABBER_LOGIN, JABBER_PASSWORD, JABBER_CHAT_ROOM, JABBER_FIFO = data[0:4]
 
     try:
-        start_listening()
+        server().run()
     except KeyboardInterrupt:
         shutting_down = True
