@@ -62,6 +62,7 @@ class client(threading.Thread):
         self.__conn = self.connect()
         self.__join()
 
+        global shutting_down
         while not self.__shutdown and not shutting_down:
             try:
                 self.__conn.Process(1)
@@ -72,7 +73,6 @@ class client(threading.Thread):
                 elif self.__messages:
                     self.__talk(self.__messages.pop())
             except KeyboardInterrupt:
-                global shutting_down
                 shutdown = True
 
         print 'Client %s thread stopped.' % self.__nickname
