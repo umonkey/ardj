@@ -35,8 +35,6 @@ JABBER_FIFO = None
 shutting_down = False
 
 class ChatClient(JabberBot):
-    chat_jid = JABBER_CHAT_ROOM
-
     def __init__(self, *args, **kwargs):
         self.nickname = kwargs['nickname']
         del kwargs['nickname']
@@ -45,7 +43,7 @@ class ChatClient(JabberBot):
         self.join()
 
     def join(self):
-        self.connect().send(xmpp.Presence(self.chat_jid + u'/' + self.nickname))
+        self.connect().send(xmpp.Presence(JABBER_CHAT_ROOM + u'/' + self.nickname))
 
     def post_message(self, message):
         self.messages.append(message)
@@ -56,7 +54,7 @@ class ChatClient(JabberBot):
         elif self.messages:
             text = self.messages.pop()
             msg = xmpp.protocol.Message(body=text)
-            msg.setTo(self.chat_jid)
+            msg.setTo(JABBER_CHAT_ROOM)
             msg.setType('groupchat')
             self.connect().send(msg)
 
