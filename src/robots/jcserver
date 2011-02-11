@@ -31,6 +31,7 @@ import socket
 import sys
 import threading
 import time
+import urllib
 import xmpp
 import BaseHTTPServer
 
@@ -60,6 +61,7 @@ class client(threading.Thread):
 
     def post_message(self, message):
         self.__messages.append(message)
+        self.__lastmsg = time.time()
 
     def run(self):
         print 'Client %s thread started.' % self.__nickname
@@ -111,18 +113,18 @@ class client(threading.Thread):
         return logs
 
     def __join(self):
-        self.__conn.send(xmpp.Presence(JABBER_CHAT_ROOM + u'/' + self.__nickname))
+        self.__conn.send(xmpp.Presence(u'/'.join((JABBER_CHAT_ROOM, self.__nickname))))
 
     def __leave(self):
         msg = xmpp.Presence()
-        msg.setTo(JABBER_CHAT_ROOM + u'/' + self.__nickname)
+        msg.setTo(unicode(JABBER_CHAT_ROOM) + u'/' + self.__nickname)
         msg.setType('unavailable')
         self.__conn.send(msg)
 
     def __talk(self, text):
         if text:
             msg = xmpp.protocol.Message(body=text)
-            msg.setTo(JABBER_CHAT_ROOM)
+            msg.setTo(unicode(JABBER_CHAT_ROOM))
             msg.setType('groupchat')
             self.__conn.send(msg)
 
@@ -139,11 +141,12 @@ class client(threading.Thread):
             print e
 
     def __get_msg_ts(self, msg):
+        now = datetime.datetime.now().strftime('%H:%M')
         delay = msg.getTag('delay')
         if not delay:
-            return None
+            return now
         if not 'stamp' in delay.attrs:
-            return None
+            return now
         return datetime.datetime.strptime(delay.attrs['stamp'][:19], '%Y-%m-%dT%H:%M:%S').strftime('%H:%M')
 
 
@@ -161,14 +164,15 @@ class server:
             self.shutdown()
 
     def on_message(self, nickname, message):
-        if not self.clients.has_key(nickname):
-            self.clients[nickname] = client(nickname, on_end=lambda: self.detach(nickname))
-        self.clients[nickname].post_message(message)
+        self.get_client(nickname).post_message(message)
 
     def get_logs(self, nickname):
-        if self.clients.has_key(nickname):
-            return self.clients[nickname].get_logs()
-        return []
+        return self.get_client(nickname).get_logs()
+
+    def get_client(self, nickname):
+        if not self.clients.has_key(nickname):
+            self.clients[nickname] = client(nickname, on_end=lambda: self.detach(nickname))
+        return self.clients[nickname]
 
     def shutdown(self):
         pass
@@ -227,7 +231,7 @@ class http_request_handler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     def do_POST(self, *args, **kwargs):
         form = cgi.FieldStorage(fp=self.rfile, headers=self.headers, environ={'REQUEST_METHOD':'POST', 'CONTENT_TYPE':self.headers['Content-Type']})
-        self.server.on_message(form['nickname'].value, form['message'].value)
+        self.server.on_message(form['nickname'].value.decode('utf-8'), form['message'].value.decode('utf-8'))
         self.send_response(200, 'OK')
         self.end_headers()
         self.wfile.write('OK\n')
@@ -264,7 +268,7 @@ class http_request_handler(BaseHTTPServer.BaseHTTPRequestHandler):
     def get_logs(self):
         args = self.path.split('?', 1)[1]
         if args.startswith('nickname='):
-            nickname = args.split('=', 1)[1]
+            nickname = urllib.unquote_plus(args.split('=', 1)[1]).decode('utf-8')
             logs = self.server.get_logs(nickname)
             if logs:
                 print 'Sending %u log messages to %s.' % (len(logs), nickname)
