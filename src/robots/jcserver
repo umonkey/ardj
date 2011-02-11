@@ -119,24 +119,18 @@ class server(object):
         self.clients = {}
 
     def run(self):
-        fname = JABBER_FIFO
-        if os.path.exists(fname):
-            os.unlink(fname)
-        os.mkfifo(fname)
         try:
-            f = open(fname, 'rb')
             while True:
-                data = f.read(1024)
-                if data:
-                    parts = data.strip().split(' ', 1)
-                    if len(parts) == 2:
-                        nickname, message = parts
-                        if not self.clients.has_key(nickname):
-                            self.clients[nickname] = client(nickname, on_end=lambda: self.detach(nickname))
-                        self.clients[nickname].post_message(message)
+                nickname, message = self.read()
+                if nickname and message:
+                    if not self.clients.has_key(nickname):
+                        self.clients[nickname] = client(nickname, on_end=lambda: self.detach(nickname))
+                    self.clients[nickname].post_message(message)
         finally:
-            if os.path.exists(fname):
-                os.unlink(fname)
+            self.shutdown()
+
+    def shutdown(self):
+        pass
 
     def detach(self, nickname):
         if self.clients.has_key(nickname):
@@ -144,11 +138,36 @@ class server(object):
             del self.clients[nickname]
 
 
+class fifo_server(server):
+    def __init__(self):
+        server.__init__(self)
+
+        fname = JABBER_FIFO
+        if os.path.exists(fname):
+            os.unlink(fname)
+        os.mkfifo(fname)
+        self.f = open(fname, 'rb')
+
+    def read(self):
+        nickname, message = None, None
+        data = self.f.read(1024)
+        if data:
+            parts = data.strip().split(' ', 1)
+            if len(parts) == 2:
+                nickname, message = parts
+        return nickname, message
+
+    def shutdown(self):
+        fname = JABBER_FIFO
+        if os.path.exists(fname):
+            os.unlink(fname)
+
+
 if __name__ == '__main__':
     data = open(os.path.expanduser('~/.jcserver'), 'rb').read().strip().split(' ')
     JABBER_LOGIN, JABBER_PASSWORD, JABBER_CHAT_ROOM, JABBER_FIFO = data[0:4]
 
     try:
-        server().run()
+        fifo_server().run()
     except KeyboardInterrupt:
         shutting_down = True
