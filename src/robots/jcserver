@@ -1,0 +1,112 @@
+#!/usr/bin/env python
+# vim: set fileencoding=utf-8:
+
+"""Multi-user chat server for the MUC web interface.
+
+Reads messages of the "nickname text..." form from a fifo, spawns a new client
+for each new nickname, sends the messages out.
+
+Configuration is read from ~/.jcserver, which must be a text file containing 4
+words: your jid, jabber password, jabber chat room and the fifo to use.  Example:
+
+  alice@example.com secret tmradio@conference.jabber.ru /tmp/jcserver.fifo
+
+To shut down the server press ^C.
+
+This version uses JabberBot from the ardj package.  To run without installing
+the package use this command:
+
+  PYTHONPATH=../ ./jcserver
+"""
+
+import os
+import socket
+import sys
+import threading
+import xmpp
+from ardj.jabberbot import JabberBot, botcmd
+
+JABBER_LOGIN = None
+JABBER_PASSWORD = None
+JABBER_NICK = 'chat-server'
+JABBER_CHAT_ROOM = None
+JABBER_FIFO = None
+
+shutting_down = False
+
+class ChatClient(JabberBot):
+    chat_jid = JABBER_CHAT_ROOM
+
+    def __init__(self, *args, **kwargs):
+        self.nickname = kwargs['nickname']
+        del kwargs['nickname']
+        JabberBot.__init__(self, *args, **kwargs)
+        self.messages = []
+        self.join()
+
+    def join(self):
+        self.connect().send(xmpp.Presence(self.chat_jid + u'/' + self.nickname))
+
+    def post_message(self, message):
+        self.messages.append(message)
+
+    def idle_proc(self):
+        if shutting_down:
+            self.quit(1)
+        elif self.messages:
+            text = self.messages.pop()
+            msg = xmpp.protocol.Message(body=text)
+            msg.setTo(self.chat_jid)
+            msg.setType('groupchat')
+            self.connect().send(msg)
+
+
+class client(threading.Thread):
+    def __init__(self, nickname):
+        threading.Thread.__init__(self)
+        self.nickname = nickname
+        self.cli = ChatClient(JABBER_LOGIN, JABBER_PASSWORD, nickname=self.nickname, res=self.nickname, debug=False)
+        self.start()
+
+    def post_message(self, message):
+        self.cli.post_message(message)
+
+    def run(self):
+        print 'Client %s thread started.' % self.nickname
+        self.cli.serve_forever()
+        print 'Client %s thread stopped.' % self.nickname
+
+
+def start_listening():
+    clients = {}
+
+    fname = JABBER_FIFO
+    if os.path.exists(fname):
+        os.unlink(fname)
+
+    os.mkfifo(fname)
+
+    try:
+        f = open(fname, 'rb')
+        while True:
+            data = f.read(1024)
+            if data:
+                parts = data.strip().split(' ', 1)
+                if len(parts) == 2:
+                    nickname, message = parts
+                    if not clients.has_key(nickname):
+                        clients[nickname] = client(nickname)
+                    clients[nickname].post_message(message)
+    finally:
+        if os.path.exists(fname):
+            os.unlink(fname)
+
+
+if __name__ == '__main__':
+    data = open(os.path.expanduser('~/.jcserver'), 'rb').read().strip().split(' ')
+    JABBER_LOGIN, JABBER_PASSWORD, JABBER_CHAT_ROOM, JABBER_FIFO = data[0:4]
+
+    try:
+        start_listening()
+    except KeyboardInterrupt:
+        shutting_down = True
