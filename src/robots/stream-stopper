@@ -12,7 +12,7 @@ def purge(dirname):
     for filename in os.listdir(dirname):
         ctime = os.stat(filename).st_ctime
         if ctime < limit:
-            print 'Delete file:', filename
+            print 'Delete file:', filename, limit, ctime
 
 
 if __name__ == '__main__':
@@ -24,6 +24,7 @@ if __name__ == '__main__':
     settings = ardj.settings.load('stream')
 
     dirname = os.path.dirname(settings['dump'])
+    purge(dirname)
     filename = os.path.join(dirname, sorted([x for x in os.listdir(dirname) if x.endswith('.mp3')])[-1])
 
     import mutagen
