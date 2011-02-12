@@ -151,8 +151,10 @@ class ardj:
             track = self.get_track_by_id(row[1])
             if track is not None:
                 self.log.info(u'Picked track %s from the top of the queue.' % track['id'])
-                cur.execute('DELETE FROM queue WHERE id = ?', (row[0], ))
-                return track
+            else:
+                self.log.info(u'Picked a non-existing track from the queue.')
+            cur.execute('DELETE FROM queue WHERE id = ?', (row[0], ))
+            return track
 
     def __get_urgent_track(self, skip, cur):
         """
@@ -324,7 +326,7 @@ class ardj:
         # delay some tracks
         if delay is not None:
             ts_limit = int(time.time()) - int(delay) * 60;
-            sql += ' AND last_played <= ?'
+            sql += ' AND (last_played IS NULL OR last_played <= ?)'
             params.append(ts_limit)
         self.log.debug('SQL: %s; PARAMS: %s' % (sql, params))
         self.database.debug(sql, params)
