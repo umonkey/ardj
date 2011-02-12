@@ -1,0 +1,58 @@
+#!/usr/bin/env python
+# vim: set fileencoding=utf-8:
+
+import glob
+import gzip
+import os
+import sys
+import time
+
+# database related
+from sqlite3 import dbapi2 as sqlite
+
+DATABASE = '/var/log/icecast2/access.sqlite'
+FILES = '/var/log/icecast2/access.log.*.gz'
+
+def parse_log_line(line):
+    # 127.0.0.1 - - [30/Jan/2011:07:45:13 +0300] "GET /admin/stats.xml HTTP/1.1" 200 1523 "-" "collectd/4.8.2" 1
+    remote_addr, date, uri, status, length, duration, agent = (None,) * 7
+    try:
+        parts = line.strip().split(' ')
+        remote_addr = parts[0]
+        date = time.strftime('%Y-%m-%d %H:%M:%S', time.strptime(parts[3][1:], '%d/%b/%Y:%H:%M:%S'))
+        #date = time.strptime(parts[3][1:], '%d/%b/%Y:%H:%M:%S')
+        uri = parts[6]
+        status = parts[8]
+        length = parts[9]
+        duration = parts[-1]
+        agent = u' '.join(parts[11:-2]).lstrip('"')
+    except Exception, e:
+        print >>sys.stderr, 'Unable to parse log line: %s\n%s' % (e, line)
+    return date, remote_addr, uri or '', status, length, duration, agent
+
+def update_files(filenames, dbname):
+    db = sqlite.connect(dbname)
+    cur = db.cursor()
+    cur.execute('CREATE TABLE IF NOT EXISTS log (date TEXT, remote_addr TEXT, uri TEXT, seconds INTEGER, bytes INTEGER)')
+
+    for filename in filenames:
+        f = gzip.open(filename, 'rb')
+        while True:
+            line = f.readline(16384)
+            if line == '':
+                break
+            date, remote_addr, uri, status, length, duration, agent = parse_log_line(line)
+            if uri.endswith('.mp3') and status == '200' and duration:
+                cur.execute('INSERT INTO log VALUES (?, ?, ?, ?, ?)', (date, remote_addr, uri, duration, length, ))
+        try:
+            os.unlink(filename)
+            db.commit()
+        except Exception, e:
+            print >>sys.stderr, 'Could not remove file %s: %s' % (filename, e)
+            db.rollback()
+
+if __name__ == '__main__':
+    dbname = DATABASE
+    if len(sys.argv) > 1:
+        dbname = sys.argv[1]
+    update_files(glob.glob(FILES), dbname)
