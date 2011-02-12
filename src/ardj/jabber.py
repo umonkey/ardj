@@ -644,11 +644,11 @@ class ardjbot(MyFileReceivingBot):
         self.ardj.log.info('Assigning labels %s to files last uploaded by %s' % (u', '.join(labels), owner))
         cur = self.ardj.database.cursor()
         for label in labels:
-            sql = 'INSERT INTO labels (track_id, email, label) SELECT track_id, email, ? FROM labels WHERE email = ? AND label = ?'
-            params = (label, owner, 'incoming', )
+            sql = 'INSERT INTO labels (track_id, email, label) SELECT track_id, email, ? FROM labels WHERE label = ?'
+            params = (label, 'incoming', )
             self.ardj.database.debug(sql, params)
             cur.execute(sql, params)
-        cur.execute('DELETE FROM labels WHERE email = ? AND label = ?', (owner, 'incoming', ))
+        cur.execute('DELETE FROM labels WHERE label = ?', ('incoming', ))
         return u'ok'
 
     def send_simple_reply(self, mess, text, private=False):
