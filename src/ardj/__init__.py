@@ -299,7 +299,7 @@ class ardj:
         Returns a random track's id.
         """
         cur = cur or self.database.cursor()
-        sql = 'SELECT id, randomize(id, artist_weight, weight, count) AS w, count FROM tracks WHERE w > 0'
+        sql = 'SELECT id, weight, artist FROM tracks WHERE weight > 0'
         params = []
         # filter by labels
         if labels:
@@ -318,10 +318,10 @@ class ardj:
         # filter by weight
         if weight is not None:
             if weight.endswith('+'):
-                sql += ' AND w >= ?'
+                sql += ' AND weight >= ?'
                 params.append(float(weight[:-1]))
             elif weight.endswith('-'):
-                sql += ' AND w <= ?'
+                sql += ' AND weight <= ?'
                 params.append(float(weight[:-1]))
         # delay some tracks
         if delay is not None:
@@ -330,18 +330,36 @@ class ardj:
             params.append(ts_limit)
         self.log.debug('SQL: %s; PARAMS: %s' % (sql, params))
         self.database.debug(sql, params)
-        # fetch all records
-        rows = cur.execute(sql, tuple(params)).fetchall()
-        if not rows:
-            return None
-        # pick a random track
-        probability_sum = sum([row[1] for row in rows])
-        init_rnd = rnd = random.random() * probability_sum
+        return self.get_random_row(cur.execute(sql, tuple(params)).fetchall())
+
+    def get_random_row(self, rows):
+        """Picks a random track from a set."""
+        ID_COL, WEIGHT_COL, NAME_COL = 0, 1, 2
+
+        artist_counts = {}
         for row in rows:
-            if rnd < row[1]:
-                return row[0]
-            rnd = rnd - row[1]
-        self.log.error(u'Could not choose from %u tracks.' % len(rows))
+            name = row[NAME_COL].lower()
+            if not artist_counts.has_key(name):
+                artist_counts[name] = 0
+            artist_counts[name] += 1
+
+        probability_sum = 0
+        for row in rows:
+            name = row[NAME_COL].lower()
+            probability_sum += row[WEIGHT_COL] / artist_counts[name]
+
+        rnd = random.random() * probability_sum
+        for row in rows:
+            name = row[NAME_COL].lower()
+            weight = row[WEIGHT_COL] / artist_counts[name]
+            if rnd < weight:
+                return row[ID_COL]
+            rnd -= weight
+
+        if len(rows):
+            self.log.warning(u'Bad RND logic, returning first track.')
+            return rows[0][ID_COL]
+
         return None
 
     def get_playlists(self):
