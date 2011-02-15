@@ -33,7 +33,7 @@ release: clean deb
 	googlecode_upload.py -s "ardj v${VERSION}" -p ardj -l Featured,Type-Source,OpSys-All ardj-${VERSION}.zip
 
 back:
-	scp -Bq tmradio.local:/usr/lib/python2.6/ardj/*.py src/ardj/
+	scp -Bqr tmradio.local:/usr/lib/python2.6/ardj/ src/
 	scp -Bq tmradio.local:/usr/lib/ardj/robots/* src/robots/
 
 copy: deb
