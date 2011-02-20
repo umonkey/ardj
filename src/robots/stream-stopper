@@ -10,7 +10,7 @@ MAX_FILE_AGE_DAYS = 7
 def purge(dirname):
     limit = time.time() - MAX_FILE_AGE_DAYS * 86400
     for filename in os.listdir(dirname):
-        ctime = os.stat(filename).st_ctime
+        ctime = os.stat(os.path.join(dirname, filename)).st_ctime
         if ctime < limit:
             print 'Delete file:', filename, limit, ctime
 
