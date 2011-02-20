@@ -1,6 +1,16 @@
 #!/bin/sh
+if [ -z "$PAM_USER" ]; then
+	echo "ERROR: set the PAM_USER envar."
+	exit 1
+fi
+
+if [ -z "$PAM_TYPE" ]; then
+	echo "ERROR: this script should be called by pam, the PAM_TYPE envar must contain 'close_session'."
+	exit 1
+fi
+
 INCOMING_DIR=/home/$PAM_USER/incoming
-IMPORT_SCRIPT_NAME=/usr/share/ardj/import-music-dir
+IMPORT_SCRIPT_NAME=/usr/lib/ardj/robots/logout-handler
 RADIO_USER=radio
 
 test -f /etc/ardj && . /etc/ardj
