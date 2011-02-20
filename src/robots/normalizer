@@ -1,0 +1,69 @@
+#!/usr/bin/env python
+
+import os
+import sys
+import mutagen
+import subprocess
+from mutagen.apev2 import APEv2
+from mutagen.id3 import ID3, TXXX
+
+update = True
+explain = False
+
+usage = u"""Usage: %s [options] filename.mp3 ...
+Options:
+  -v  = show each file's status
+  -n  = disable updates (read only mode)
+"""
+
+def process_file(filename):
+    try:
+        id3 = ID3(filename)
+    except mutagen.id3.error:
+        id3 = ID3()
+
+    if 'RVA2:track' in id3:
+        if explain:
+            rva = id3['RVA2:track']
+            print '%s: ID3v2: gain=%s peak=%s' % (filename, rva.gain, rva.peak)
+        return True
+
+    try:
+        ape = APEv2(filename)
+        if 'REPLAYGAIN_TRACK_GAIN' in ape:
+            track_gain = float(ape['REPLAYGAIN_TRACK_GAIN'][0][:-3])
+            track_peak = float(ape['REPLAYGAIN_TRACK_PEAK'][0])
+            # u'RVA2:track': RVA2(desc=u'track', channel=1, gain=-6.208984375, peak=1.1454467778771402)
+            if explain:
+                print '%s: APEv2: gain=%s peak=%s' % (filename, track_gain, track_peak)
+            if update:
+                id3['RVA2:track'] = mutagen.id3.RVA2(desc=u'track', channel=1, gain=track_gain, peak=track_peak)
+                id3.save()
+            return True
+    except mutagen.apev2.error:
+        pass
+
+    try:
+        print '%s: n/a' % filename
+        if update:
+            subprocess.Popen(['mp3gain', '-s', 'i', filename]).wait()
+    except Exception, e:
+        print >>sys.stderr, 'mp3gain failed: %s' % e
+
+    return None
+
+
+if __name__ == '__main__':
+    if '-n' in sys.argv:
+        update = False
+    if '-v' in sys.argv:
+        explain = True
+
+    filenames = [fn for fn in sys.argv[1:] if not fn.startswith('-')]
+    if not filenames:
+        print >>sys.stderr, usage % sys.argv[0]
+        sys.exit(1)
+
+    for filename in filenames:
+        if os.path.exists(filename):
+            process_file(filename)
