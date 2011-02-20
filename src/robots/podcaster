@@ -14,7 +14,7 @@ def fetch_file(url):
         out = open(filename, 'wb')
         out.write(u.read())
         out.close()
-        subprocess.Popen(['mp3gain', filename]).wait()
+        subprocess.Popen(['/usr/lib/ardj/robots/normalizer', filename]).wait()
         return filename
 
 def add_song(ardj, artist, title, mp3_link, tags):

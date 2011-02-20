@@ -2,6 +2,7 @@
 WORKDIR="."
 SSH_REMOTE=radio@stream.tmradio.net
 SSH_ARGS="-i $HOME/.config/tmradio/podcasts.pvt"
+ROBOTS_DIR="/usr/lib/ardj/robots"
 
 cd $(dirname $0)
 
@@ -12,7 +13,7 @@ cd $(dirname $0)
 find podcasts -iregex '.*\.\(m4a\|m5a\)$' -exec sh podcasts.transcode {} \;
 
 # Calculate replay gain.
-find . -name '*.mp3' -exec nice -n 20 mp3gain -s i \{\} \; >/dev/null
+find . -name '*.mp3' -exec nice -n 20 "$ROBOTS_DIR/normalizer" \{\} \; >/dev/null
 find . -name '*.ogg' -exec nice -n 20 vorbisgain -f -q \{\} \;
 
 # Upload.
