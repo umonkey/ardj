@@ -48,7 +48,7 @@ def get_events(names):
                 result.append([name, date, country, city])
             print '%02u events for %s' % (len(events), name)
         except Exception, e:
-            print >>sys.stderr, u'Could not read events for %s: %s' % (name, e)
+            print >>sys.stderr, 'Could not read events for %s: %s' % (name.encode('utf-8'), e)
     return result
 
 def update_events_csv():
@@ -95,7 +95,7 @@ def get_speech(events):
 
     now = datetime.datetime.now()
 
-    output = u'Прослушайте афишу концертов на ближайшие две недели.'
+    output = u'Прослушайте афишу концертов на ближайшие две недели.\n'
     for date in sorted(events.keys()):
         date_ = datetime.datetime.strptime(date, '%Y-%m-%d')
         if (date_ - now).days < ANNOUNCE_DAYS_LIMIT:
@@ -103,8 +103,8 @@ def get_speech(events):
                 artist_name = xlat('artist_names', artist, ARTIST_NAME_STRIP.sub(lambda a: ' ', artist).strip())
                 city_name = xlat('city_names', events[date][artist])
                 if city_name:
-                    output += u'  %s %s, %s, %s.' % (days[date_.day - 1], months[date_.month - 1], artist_name, city_name)
-    output += u'  Подробную информацию можно найти на сайте ласт эф эм.  Спасибо за внимание.  Слава роботам.  Ха.'
+                    output += u'%s %s, %s, %s.\n' % (days[date_.day - 1], months[date_.month - 1], artist_name, city_name)
+    output += u'Подробную информацию можно найти на сайте ласт эф эм.\nСпасибо за внимание.\nСлава роботам.\n'
     return output
 
 
@@ -120,7 +120,7 @@ def speak_event_map(events):
 
     open(filename_txt, 'wb').write(get_speech(events).encode('utf-8'))
     subprocess.Popen(['text2wave', '-eval', '(voice_msu_ru_nsh_clunits)', filename_txt, '-o', filename_wav]).wait()
-    subprocess.Popen(['oggenc', '-Q', '-q', '9', '--resample', '44100', '-a', 'Говорящий робот', '-t', u'Расписание концертов', '-o', filename_ogg, filename_wav]).wait()
+    subprocess.Popen(['oggenc', '-Q', '-q', '9', '--resample', '44100', '-a', 'Говорящий робот', '-t', 'Расписание концертов', '-o', filename_ogg, filename_wav]).wait()
 
     print 'Wrote output to %s' % filename_ogg
     os.unlink(filename_wav)
