@@ -46,7 +46,8 @@ def update_feeds(settings):
             if entry.has_key('enclosures'):
                 for enclosure in entry['enclosures']:
                     author = feed_author
-                    if entry.has_key('author'): author = entry['author']
+                    if not author and entry.has_key('author'):
+                        author = entry['author']
                     if add_song(a, author, entry['title'], enclosure['href'], podcast['tags']):
                         pass # return # one at a time, for testing
 
