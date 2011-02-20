@@ -508,7 +508,7 @@ class ardj:
         filepath = os.path.join(self.config.get_music_dir(), filename)
 
         if not os.path.exists(filepath):
-            self.log.info(u'Copying a file from %s to %s' % (source_filename, filepath))
+            self.log.info('Copying a file from %s to %s' % (source_filename, filepath))
             dirname = os.path.dirname(filepath)
             if not os.path.exists(dirname):
                 os.makedirs(dirname)
