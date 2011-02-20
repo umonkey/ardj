@@ -3,7 +3,7 @@ import os
 
 def load(app, defaults=None):
     defaults = defaults or {}
-    for filename in ('/etc/ardj.conf', '~/.config/ardj.conf'):
+    for filename in ('~/.config/ardj/default.yaml', '/etc/ardj.yaml'):
         filename = os.path.expanduser(filename)
         if os.path.exists(filename):
             tmp = yaml.load(open(filename, 'rb'))
