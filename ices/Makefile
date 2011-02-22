@@ -21,3 +21,6 @@ src/stream.c: src/id3.h src/in_mp4.h src/in_vorbis.h src/metadata.h src/replayga
 
 %.o: %.c src/definitions.h
 	gcc -o $@ ${COMPILE_FLAGS} $<
+
+test:
+	make -C testing test
