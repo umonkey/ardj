@@ -24,9 +24,7 @@
 #ifdef _WIN32
 # include <win32config.h>
 #else
-# ifdef HAVE_CONFIG_H
-#  include "config.h"
-# endif
+# include "config.h"
 #endif
 
 /**

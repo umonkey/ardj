@@ -1,4 +1,4 @@
-.*\.pyc
+.*\.(pyc|mp3|ogg)
 \.git
 \.deb
 \.o
