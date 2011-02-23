@@ -1,5 +1,6 @@
 # vim: set ts=4 sts=4 sw=4 et fileencoding=utf-8:
 
+import json
 import logging
 import math
 import os
@@ -86,7 +87,7 @@ class ardjbot(MyFileReceivingBot):
         self.ardj = ardj
         self.lastping = None # время последнего пинга
         self.pidfile = '/tmp/ardj-jabber.pid'
-        self.publicCommands = self.ardj.config.get('jabber/public-commands', 'help rocks sucks show last hitlist shitlist ping pong').split(' ')
+        self.publicCommands = self.ardj.config.get('jabber/public-commands', 'dump help rocks sucks show last hitlist shitlist ping pong').split(' ')
         self.database_mtime = None
         self.init_command_log()
 
@@ -309,6 +310,29 @@ class ardjbot(MyFileReceivingBot):
         for row in rows:
             message += u'<br/>\n%s — #%u' % (self.get_linked_title(row), row['id'])
         return message
+
+    @botcmd
+    def dump(self, message, args):
+        u"""Show track info in JSON.
+        
+        Usage: dump track_id"""
+        if not args:
+            return u'Usage: dump track_id'
+        track_id = args.split(' ')[-1]
+        if not track_id.isdigit():
+            return u'Usage: dump track_id'
+
+        track = self.ardj.get_track_by_id(int(track_id))
+        if track is None:
+            return u'Track %s not found.' % track_id
+
+        email = message.getFrom().getStripped()
+        track['editable'] = self.check_access(email)
+
+        votes = self.ardj.database.cursor().execute('SELECT vote FROM votes WHERE track_id = ? AND email = ?', (int(track_id), email)).fetchall()
+        track['vote'] = votes and votes[0][0] or None
+
+        return json.dumps(track, ensure_ascii=False)
 
     @botcmd
     def show(self, message, args):
