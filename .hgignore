@@ -1,4 +1,4 @@
-.*\.(pyc|mp3|ogg)
+.*\.(pyc)
 \.git
 \.deb
 \.o
@@ -7,5 +7,6 @@ debian/etc
 debian/usr
 debian/DEBIAN/control
 ices/ices
+ices/testing/.*\.(log|pid|mp3|ogg)
 tools/podcasts/
 tools/.*\.log
