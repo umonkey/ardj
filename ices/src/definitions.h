@@ -193,9 +193,6 @@ ices_plugin_t *crossfade_plugin(int secs);
 void rg_set_track_gain(double);
 void rg_set_track_gain(double gain);
 double rg_get_track_gain(void);
-/*
-ices_plugin_t *replaygain_plugin();
-*/
 
 #define BUFSIZE 8192
 #define ICES_DEFAULT_HOST "127.0.0.1"
