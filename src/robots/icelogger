@@ -43,7 +43,7 @@ def update_files(filenames, dbname):
                 break
             date, remote_addr, uri, status, length, duration, agent = parse_log_line(line)
             if uri.endswith('.mp3') and status == '200' and duration:
-                cur.execute('INSERT INTO log VALUES (?, ?, ?, ?, ?)', (date, remote_addr, uri, duration, length, ))
+                cur.execute('INSERT INTO log VALUES (?, ?, ?, ?, ?, ?)', (date, remote_addr, uri, duration, length, agent, ))
         try:
             os.unlink(filename)
             db.commit()
@@ -51,8 +51,31 @@ def update_files(filenames, dbname):
             print >>sys.stderr, 'Could not remove file %s: %s' % (filename, e)
             db.rollback()
 
+def show_agent_stats(dbname):
+    db = sqlite.connect(DATABASE)
+    cur = db.cursor()
+
+    result = {}
+    for row in cur.execute('SELECT agent FROM log WHERE agent IS NOT NULL').fetchall():
+        if row[0]:
+            agent = row[0].split(' ')[0]
+            agent = agent.split('/')[0]
+            if not result.has_key(agent):
+                result[agent] = 0
+            result[agent] += 1
+
+    total = float(sum(result.values()))
+
+    for row in sorted([(x, result[x]) for x in result], key=lambda r: r[1], reverse=True):
+        print '%s: %.2f%%' % (row[0], float(row[1]) / total * 100.0)
+
 if __name__ == '__main__':
     dbname = DATABASE
+
+    if '-agents' in sys.argv:
+        show_agent_stats(dbname)
+        sys.exit(0)
+        
     if len(sys.argv) > 1:
         dbname = sys.argv[1]
     update_files(glob.glob(FILES), dbname)
