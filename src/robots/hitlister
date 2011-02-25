@@ -3,19 +3,22 @@
 
 from ardj import Open
 
+MUSIC_LABEL = 'music'
+JINGLE_LABELS = [ 'hitlist-begin', 'hitlist-mid', 'hitlist-mid', 'hitlist-end' ]
+
 def pick_jingle(cur, label):
     row = cur.execute('SELECT track_id FROM labels WHERE label = ? ORDER BY RANDOM() LIMIT 1', (label, )).fetchone()
     if row:
         return row[0]
 
 def get_tracks(cur):
-    rows = cur.execute('SELECT id FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?) ORDER BY weight DESC LIMIT 10', ('music', )).fetchall():
-    return [row[0] for row in tracks]
+    rows = cur.execute('SELECT id FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?) ORDER BY weight DESC LIMIT 10', (MUSIC_LABEL, )).fetchall()
+    return [row[0] for row in rows]
 
 def get_queue_tracks(cur):
     queue_ids = []
-    jlabels = [ 'hitlist-begin', 'hitlist-mid', 'hitlist-mid', 'hitlist-end' ]
-    for track_id in get_tracks(cur):
+    jlabels = JINGLE_LABELS
+    for track_id in reversed(get_tracks(cur)):
         if len(queue_ids) % 4 == 0:
             queue_ids.append(pick_jingle(cur, jlabels[0]))
             del jlabels[0]
@@ -24,7 +27,7 @@ def get_queue_tracks(cur):
 
 def queue_tracks(cur, track_ids):
     for track_id in track_ids:
-        cur.execute('INSERT INTO queue (track_id, owner) VALUE (?, ?)', (track_id, 'robot', ))
+        cur.execute('INSERT INTO queue (track_id, owner) VALUES (?, ?)', (track_id, 'robot', ))
 
 ardj = Open()
 cur = ardj.database.cursor()
