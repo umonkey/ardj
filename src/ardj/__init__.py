@@ -363,83 +363,52 @@ class ardj:
         return None
 
     def get_playlists(self):
-        """
-        Returns information about all known playlists.
-        """
-        s = lambda cell: cell and re.split(',\s*', cell) or []
-        return [{ 'name': row[0] or 'playlist-' + str(row[1]), 'id': row[1], 'priority': row[2], 'repeat': row[3], 'delay': row[4], 'hours': row[5] and [int(x) for x in row[5].split(',')] or None, 'days': row[6] and [int(x) for x in row[6].split(',')] or None, 'last_played': row[7], 'labels': s(row[8]), 'weight': row[9], 'track_delay': row[10] } for row in self.database.cursor().execute('SELECT name, id, priority, repeat, delay, hours, days, last_played, labels, weight, track_delay FROM playlists ORDER BY priority DESC').fetchall()]
+        "Returns information about all known playlists."
+        stats = dict(self.database.cursor().execute('SELECT name, last_played FROM playlists WHERE name IS NOT NULL AND last_played IS NOT NULL').fetchall())
+        def expand(lst):
+            result = []
+            for item in lst:
+                if '-' in str(item):
+                    bounds = item.split('-')
+                    result += range(int(bounds[0]), int(bounds[1]) + 1)
+                else:
+                    result.append(item)
+            return result
+        def add_ts(p):
+            p['last_played'] = 0
+            if stats.has_key(p['name']):
+                p['last_played'] = stats[p['name']]
+            if p.has_key('days'):
+                p['days'] = expand(p['days'])
+            if p.has_key('hours'):
+                p['hours'] = expand(p['hours'])
+            return p
+        return [add_ts(p) for p in self.config.get_playlists()]
 
-    def explain_playlists(self):
-        self.get_active_playlists(explain=True)
+    def get_active_playlists(self, timestamp=None, explain=False):
+        "Returns playlists active at the specified time."
+        now = time.localtime(timestamp)
 
-    def get_active_playlists(self, explain=False):
-        """
-        Returns a dictionary with currently active playlists.
-        """
-        def is_active(playlist):
-            if not playlist['priority']:
-                if explain: print '%s: zero priority' % playlist['name']
+        now_ts = time.mktime(now)
+        now_day = int(time.strftime('%w', now))
+        now_hour = int(time.strftime('%H', now))
+
+        def is_active(p):
+            if p.has_key('delay') and p['delay'] * 60 + p['last_played'] >= now_ts:
+                if explain:
+                    print '%s: delayed' % p['name']
                 return False
-            if playlist['delay'] and playlist['last_played'] and playlist['delay'] * 60 + playlist['last_played'] > int(time.time()):
-                if explain: print '%s: delayed' % playlist['name']
+            if p.has_key('hours') and now_hour not in p['hours']:
+                if explain:
+                    print '%s: wrong hour (%s not in %s)' % (p['name'], now_hour, p['hours'])
                 return False
-            if playlist['hours']:
-                now = int(time.strftime('%H'))
-                if now not in playlist['hours']:
-                    if explain: print '%s: wrong hour (%s vs %s)' % (playlist['name'], now, playlist['hours'])
-                    return False
-            if playlist['days']:
-                day = int(time.strftime('%w')) or 7
-                if day not in playlist['days']:
-                    if explain: print '%s: wrong day (%s vs %s)' % (playlist['name'], day, playlist['days'])
-                    return False
-            if explain: print '%s: ready' % playlist['name']
+            if p.has_key('days') and now_day not in p['days']:
+                if explain:
+                    print '%s: wrong day (%s not in %s)' % (p['name'], now_day, p['days'])
+                return False
             return True
+
         return [p for p in self.get_playlists() if is_active(p)]
-
-    def update_playlists(self, cur=None):
-        """
-        Reads playlists.yaml from the files folder and updates the playlists table.
-        """
-        cur = cur or self.database.cursor()
-        cur.execute('UPDATE playlists SET priority = 0')
-
-        saved = dict([(x['name'], x) for x in self.get_playlists()])
-
-        # Сбрасываем приоритеты, чтобы потом удалить лишние плейтисты.
-        for k in saved.keys():
-            saved[k]['priority'] = 0
-
-        playlists = self.config.get_playlists()
-        if playlists is not None:
-            priority = len(playlists) + 1
-            for item in playlists:
-                try:
-                    if not saved.has_key(item['name']):
-                        # создаём новый плейлист
-                        saved[item['name']] = { 'name': item['name'], 'last_played': None, 'id': cur.execute('INSERT INTO playlists (name) VALUES (NULL)').lastrowid }
-                    else:
-                        # очищаем почти все свойства
-                        saved[item['name']] = { 'name': item['name'], 'id': saved[item['name']]['id'], 'last_played': saved[item['name']]['last_played'], 'labels': None, 'weight': None }
-                    for k in ('days', 'hours'):
-                        if k in item:
-                            saved[item['name']][k] = item[k] and ','.join([str(x) for x in item[k]]) or None
-                    for k in ('repeat', 'delay', 'track_delay'):
-                        if k in item:
-                            saved[item['name']][k] = int(item[k])
-                    if item.has_key('weight'):
-                        saved[item['name']]['weight'] = item['weight']
-                    if 'labels' in item:
-                        saved[item['name']]['labels'] = u','.join(item['labels'])
-                    saved[item['name']]['priority'] = priority
-                    self.database.update('playlists', saved[item['name']], cur)
-                    priority -= 1
-                except Exception, e:
-                    self.log.error(u'Bad playlist: %s: %s' % (e, item))
-                    self.log.error(traceback.format_exc(e))
-
-        for k in [x for x in saved.keys() if not saved[x]['priority']]:
-            cur.execute('DELETE FROM playlists WHERE id = ?', (saved[k]['id'], ))
 
     def close(self):
         """
@@ -481,8 +450,6 @@ class ardj:
         # Обновление статистики исполнителей.
         for artist, count in cur.execute('SELECT artist, COUNT(*) FROM tracks WHERE weight > 0 GROUP BY artist').fetchall():
             cur.execute('UPDATE tracks SET artist_weight = ? WHERE artist = ?', (1.0 / count, artist, ))
-
-        self.update_playlists(cur=cur)
 
         msg = u'%u files added, %u removed.' % (len(news), len(dead))
         self.log.info(u'sync: ' + msg)
