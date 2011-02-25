@@ -1,22 +1,35 @@
-#!/bin/sh
-INTRO_ID=4428
-REMINDER_ID=4427
+#!/usr/bin/env python
+# vim: set fileencoding=utf-8:
 
-tracks=$(echo "select id from tracks where weight > 0 and id in (select track_id from labels where label in ('music')) order by weight asc limit 10;" | ardj --dbc 2>/dev/null)
+from ardj import Open
 
-# add intro and mid-air reminders
-xtracks="$tracks"
-tracks="$INTRO_ID"
-marks=""
-for id in $xtracks; do
-	if [ "$marks" = ".." ]; then
-		marks=""
-		tracks="$tracks $REMINDER_ID"
-	fi
-	tracks="$tracks $id"
-	marks="${marks}."
-done
+MUSIC_LABEL = 'music'
+JINGLE_LABELS = [ 'shitlist-begin', 'shitlist-mid', 'shitlist-mid', 'shitlist-end' ]
 
-for id in $tracks; do
-    echo "INSERT INTO queue (track_id, owner) VALUES ($id, 'robot');" | ardj --dbc 2>/dev/null
-done
+def pick_jingle(cur, label):
+    row = cur.execute('SELECT track_id FROM labels WHERE label = ? ORDER BY RANDOM() LIMIT 1', (label, )).fetchone()
+    if row:
+        return row[0]
+
+def get_tracks(cur):
+    rows = cur.execute('SELECT id FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?) ORDER BY weight, id LIMIT 10', (MUSIC_LABEL, )).fetchall()
+    return [row[0] for row in rows]
+
+def get_queue_tracks(cur):
+    queue_ids = []
+    jlabels = JINGLE_LABELS
+    for track_id in get_tracks(cur):
+        if len(queue_ids) % 4 == 0:
+            queue_ids.append(pick_jingle(cur, jlabels[0]))
+            del jlabels[0]
+        queue_ids.append(track_id)
+    return queue_ids
+
+def queue_tracks(cur, track_ids):
+    for track_id in track_ids:
+        cur.execute('INSERT INTO queue (track_id, owner) VALUES (?, ?)', (track_id, 'robot', ))
+
+ardj = Open()
+cur = ardj.database.cursor()
+queue_tracks(cur, get_queue_tracks(cur))
+ardj.database.commit()
