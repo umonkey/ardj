@@ -87,7 +87,7 @@ class ardjbot(MyFileReceivingBot):
         self.ardj = ardj
         self.lastping = None # время последнего пинга
         self.pidfile = '/tmp/ardj-jabber.pid'
-        self.publicCommands = self.ardj.config.get('jabber/public-commands', 'dump help rocks sucks show last hitlist shitlist ping pong').split(' ')
+        self.publicCommands = self.ardj.config.get('jabber/public-commands', u'dump help rocks sucks кщслы ыгслы show last hitlist shitlist ping pong').split(' ')
         self.database_mtime = None
         self.init_command_log()
 
@@ -479,7 +479,7 @@ class ardjbot(MyFileReceivingBot):
         except Exception, e:
             return unicode(e)
 
-    @botcmd(pattern='^(?:(\d+)\s+)?(?:rocks)$')
+    @botcmd(pattern=u'^(?:(\d+)\s+)?(?:(rocks|кщслы))$')
     def rocks(self, message, args):
         """Express your love for the current track
         
@@ -492,7 +492,7 @@ class ardjbot(MyFileReceivingBot):
             votes, weight = self.__vote(track['id'], message.getFrom().getStripped(), 1)
             return u'Recorded a vote for %s, weight: %s.' % (self.get_linked_title(track), weight)
 
-    @botcmd(pattern='^(?:(\d+)\s+)?(?:sucks)$')
+    @botcmd(pattern=u'^(?:(\d+)\s+)?(?:(sucks|ыгслы))$')
     def sucks(self, message, args):
         """Express your hate for the current track
         
