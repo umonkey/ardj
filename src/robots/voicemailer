@@ -152,7 +152,8 @@ def process_message(message):
         f.write(data)
         f.close()
         exec_command(filepath, sender, subject)
-        os.unlink(filepath)
+        if os.path.exists(filepath):
+            os.unlink(filepath)
 
 
 def get_client():
