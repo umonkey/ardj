@@ -36,7 +36,7 @@ def get_events(names):
     result = []
     first = lambda x: x and x[0] or None
     for name in names:
-        url = 'http://ws.audioscrobbler.com/2.0/?method=artist.getevents&artist=%s&api_key=%s' % (urllib.quote(name.encode('utf-8')), settings['key'])
+        url = 'http://ws.audioscrobbler.com/2.0/?method=artist.getevents&artist=%s&api_key=%s' % (urllib.quote(name.encode('utf-8')), settings.get('key'))
         try:
             xml = urllib2.urlopen(urllib2.Request(url)).read()
             doc = etree.XML(xml)
@@ -52,7 +52,7 @@ def get_events(names):
     return result
 
 def update_events_csv():
-    filename = settings['events.csv']
+    filename = settings.getpath('events.csv')
 
     if os.path.exists(filename):
         if time.time() - os.stat(filename).st_mtime < 600:
@@ -66,10 +66,10 @@ def update_events_csv():
 
 def get_event_map():
     result = {}
-    csvname = settings['events.csv']
+    csvname = settings.getpath('events.csv')
     update_events_csv()
 
-    countries = settings.has_key('event_countries') and settings['event_countries'] or ('Russian Federation', )
+    countries = settings.get('event_countries', ['Russian Federation'])
 
     for row in csv.reader(open(csvname, 'rb')):
         name = row[0].decode('utf-8')
@@ -109,14 +109,11 @@ def get_speech(events):
 
 
 def speak_event_map(events):
-    filename = settings['events.csv']
+    filename = settings.getpath('events.csv')
     filename_txt = filename + '.txt'
     filename_wav = filename + '.wav'
 
-    if settings.has_key('events_ogg'):
-        filename_ogg = settings['events_ogg']
-    else:
-        filename_ogg = filename + '.ogg'
+    filename_ogg = settings.getpath('events_ogg', filename + '.ogg')
 
     open(filename_txt, 'wb').write(get_speech(events).encode('utf-8'))
     subprocess.Popen(['text2wave', '-eval', '(voice_msu_ru_nsh_clunits)', filename_txt, '-o', filename_wav]).wait()

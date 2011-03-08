@@ -13,8 +13,8 @@ if __name__ == '__main__':
     import ardj.settings
     settings = ardj.settings.load('stream')
 
-    src = settings['dump']
-    dst = time.strftime(settings['dump_rename_to'])
+    src = settings.getpath('dump')
+    dst = time.strftime(settings.getpath('dump_rename_to'))
 
     if not os.path.exists(src):
         print >>sys.stderr, 'False start: %s not found.' % src
@@ -24,4 +24,4 @@ if __name__ == '__main__':
 
     from ardj import Open
     ardj = Open()
-    ardj.twit(settings['twit_begin'])
+    ardj.twit(settings.get('twit_begin'))

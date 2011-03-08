@@ -37,12 +37,12 @@ RSS_ITEM = u'''<item>
 
 def get_fqfn(filename):
     if os.path.dirname(filename) == '':
-        dirname = os.path.dirname(settings['dump'])
+        dirname = os.path.dirname(settings.getpath('dump'))
         filename = os.path.join(dirname, filename)
     return filename
 
 def get_air_time(filename):
-    return time.strptime(get_fqfn(filename), settings['dump_rename_to'])
+    return time.strptime(get_fqfn(filename), settings.getpath('dump_rename_to'))
 
 def get_air_duration(filename):
     tags = mutagen.File(filename)
@@ -58,11 +58,11 @@ def purge(dirname):
 
 def twit_file(filename):
     dur = get_air_duration(filename)
-    if dur < settings['twit_duration_min']:
+    if dur < settings.get('twit_duration_min', 10):
         return
     date = get_air_time(filename)
-    twit = time.strftime(settings['twit_end'].encode('utf-8')).decode('utf-8')
-    twit = twit.replace('URL', settings['base_url'] + os.path.basename(filename))
+    twit = time.strftime(settings.get('twit_end').encode('utf-8')).decode('utf-8')
+    twit = twit.replace('URL', settings.get('base_url') + os.path.basename(filename))
     twit = twit.replace('LENGTH', str(dur))
 
     if '-silent' not in sys.argv:
@@ -78,13 +78,13 @@ def update_rss(dirname):
         xml += RSS_ITEM % {
             'date': time.strftime('%d.%m.%Y, %H:%M', date),
             'duration': get_air_duration(filename),
-            'link': settings['base_url'] + filename,
+            'link': settings.get('base_url', '') + filename,
             'length': os.stat(filename).st_size,
             'rss_date': email.utils.formatdate(time.mktime(date)),
         }
 
     xml = RSS_CHANNEL.replace('###ITEMS###', xml)
-    open(settings['rss_name'], 'wb').write(xml.encode('utf-8'))
+    open(settings.getpath('rss_name'), 'wb').write(xml.encode('utf-8'))
 
 if __name__ == '__main__':
     if not os.path.abspath(sys.argv[0]).startswith('/usr'):
@@ -94,7 +94,7 @@ if __name__ == '__main__':
     import ardj.settings
     settings = ardj.settings.load('stream')
 
-    dirname = os.path.dirname(settings['dump'])
+    dirname = os.path.dirname(settings.getpath('dump'))
     purge(dirname)
 
     filename = os.path.join(dirname, sorted([x for x in os.listdir(dirname) if x.endswith('.mp3')])[-1])
