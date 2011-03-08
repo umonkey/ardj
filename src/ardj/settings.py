@@ -17,6 +17,9 @@ class wrapper:
             value = os.path.expanduser(value)
         return value
 
+    def list(self):
+        return type(self.data) == list and self.data or []
+
     def has_key(self, key):
         return self.data and self.data.has_key(key)
 
@@ -27,7 +30,8 @@ class wrapper:
         return '<ardj.settings.wrapper data=%s>' % self.data
 
 def load(app, defaults=None):
-    defaults = defaults or {}
+    if defaults is None:
+        defaults = {}
     for filename in ('~/.config/ardj/default.yaml', '/etc/ardj.yaml'):
         filename = os.path.expanduser(filename)
         if os.path.exists(filename):
