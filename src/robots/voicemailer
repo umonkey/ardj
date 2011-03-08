@@ -4,20 +4,17 @@
 # Retrieves messages from a mailbox, retrieves attachments and passes them to
 # an external program.  Designed to be set up as a cron job.
 #
-# Reads ~/.config/tmradio/voicemail.conf of the following format:
+# Reads the "voicemailer" section of ardj.yaml, must look like this:
 #
-#     --- 8< ---
-#     host: pop.gmail.com
-#     login: john.doe
-#     password: secret
-#     to: john.doe+voice@gmail.com
-#     files: \.amr$
-#     command: ./voicemail.sh
-#     --- 8< ---
+# voicemailer:
+#   host: pop.gmail.com
+#   login: john.doe
+#   password: secret
+#   to: voice@example.com
 #
 # With these settings the script will connect to the mailbox for user john.doe
-# at Gmail, find all messages addressed to john.doe+voice@gmail.com, extract
-# *.amr files and pass them to the ./voicemail.sh command.
+# at Gmail, find all messages addressed to voice@example.com, extract audio
+# files and pass them to the ./voicemail.sh command.
 #
 # If you want to only process messages that have a certain word in the subject
 # line, define it as "subject: keyword".
@@ -33,59 +30,28 @@ import email.header
 import email.parser
 import email.utils
 import logging
-import logging.handlers
+import mutagen
 import os
 import poplib
 import re
 import rfc822
 import subprocess
 import sys
+import time
 import tempfile
 import traceback
 import yaml
 
-log = None
+TMPREFIX = time.strftime('vm-%y%m%d-')
+
 settings = None
 
+def log(message):
+    print >>sys.stderr, message
 
-def exec_command(filename, sender, subject):
-    """Выполняет внешнюю программу, передавая ей имя файла.
-    """
-    if not settings.has_key('command'):
-        raise Exception('External command not configured.')
-    if type(filename) == unicode:
-        filename = filename.encode('utf-8')
-    if type(subject) == unicode:
-        subject = subject.encode('utf-8')
-    try:
-        log.info(u'Running %s for file "%s" received from %s with subject: %s' % (settings['command'], filename, sender, subject))
-    except Exception, e:
-        log.info('WTF :(')
-    res = subprocess.Popen([settings['command'], filename, sender, subject]).wait()
-    if res:
-        raise Exception('External command failed.')
-
-
-def parse(headers):
-    """Parses headers, returns a Message instance."""
-    return email.parser.Parser().parsestr('\n'.join(headers))
-
-
-def check_message(headers):
-    """Check if a message should be posted.
-
-    Returns True if the message is directed to the right destination
-    and contains a marker in the subject line.
-    """
-    headers = parse(headers)
-    if settings['to'] not in headers['to']:
-        log.debug('Recipient mismatch: %s instead of %s' % (headers['to'], settings['to']))
-        return False
-    if settings.has_key('subject') and settings['subject'] not in headers['subject']:
-        log.debug('Subject mismatch: must have "%s" in it, got: %s' % (settings['subject'], headers['subject']))
-        return False
-    return True
-
+def run(command):
+    log('exec: ' + ' '.join(command))
+    subprocess.Popen(command).wait()
 
 def decode_subject(header):
     decode_part = lambda x: x[1] and x[0].decode(x[1]) or x[0]
@@ -97,126 +63,153 @@ def decode_subject(header):
     return subject.strip()
 
 
-def decode_attachment(encoding, content):
-    """Возвращает декодированное содержимое файла.
-
-    Параметр encoding содержит значение заголовка Content-Transfer-Encoding
-    (обычно base64), content — закодированное содержимое файла.
-    """
-    if encoding.lower() == 'base64':
-        return email.base64mime.body_decode(content)
-    raise Exception('Unknown transfer encoding: %s' % encoding)
-
-
-def get_att_name(att):
-    tmp = email.header.decode_header(att.get_filename())
-    filename = tmp[0][0]
-    if tmp[0][1] is not None:
-        filename = filename.decode(tmp[0][1])
-    return filename
-
-
-
 def get_attachments(message):
-    """Возвращает список вложений.
-
-    Если вложений нет, список будет пустым.
-    """
+    """Extracts attachments from the message.
+    
+    Returns a list of tuples (filename, contents)."""
     result = []
-
-    r = None
-    if settings.has_key('files'):
-        r = re.compile(settings['files'])
-
-    payload = message.get_payload()
-    if type(payload) == list:
-        for att in payload:
-            filename = get_att_name(att)
-            if r is None or r.search(filename.lower()):
-                data = decode_attachment(att['content-transfer-encoding'], att.get_payload())
-                if data:
-                    filepath = os.path.join(tempfile.gettempdir(), filename)
-                    result.append((filepath, data, ))
+    for i in message.walk():
+        if i.is_multipart():
+            continue
+        if i.get_content_maintype() == 'text':
+            continue
+        att_name = i.get_filename(None)
+        if att_name and os.path.splitext(att_name)[1].lower() in ('.wav', '.amr', '.mp3', '.ogg'):
+            result.append((att_name, i.get_payload(decode=True)))
     return result
 
 
-def process_message(message):
-    sender = rfc822.parseaddr(message['from'])[1]
-    subject = decode_subject(message['subject'])
+def fetch_raw_messages(settings):
+    "Retrieves messages from the mailbox."
+    client = poplib.POP3_SSL(settings['pop3_host'])
+    client.user(settings['pop3_login'])
+    client.pass_(settings['pop3_password'])
 
-    attachments = get_attachments(message)
-    log.info('Got a message from %s, %u files, subject: %s' % (sender, len(attachments), subject))
-
-    for filepath, data in attachments:
-        f = open(filepath, 'wb')
-        f.write(data)
-        f.close()
-        exec_command(filepath, sender, subject)
-        if os.path.exists(filepath):
-            os.unlink(filepath)
-
-
-def get_client():
-    global settings
-    client = poplib.POP3_SSL(settings['host'])
-    client.user(settings['login'])
-    client.pass_(settings['password'])
-    return client
-
-def fetch_messages(client):
-    messages = client.list()[1]
-    if not len(messages):
-        log.debug('No mail.')
-    return messages
-
-def scan_mailbox():
-    """Reads and processes the mailbox.
-
-    Connects to the mailbox specified in the settings, analyzes all messages,
-    retrieves the ones that match and posts them as blog entries (creates
-    the necessary files, should be committed separately).
-    """
-    client = get_client()
-    for msgid in fetch_messages(client):
+    result = []
+    for msgid in client.list()[1]:
+        delete = None
         try:
             number, length = msgid.split(' ', 1)
-            if check_message(client.top(number, 0)[1]):
-                log.debug('Found a message: %s.' % msgid)
-                process_message(parse(client.retr(number)[1]))
-                client.dele(number)
+            headers = email.parser.Parser().parsestr('\n'.join(client.top(number, 0)[1]))
+
+            if settings.get('to') in headers['to']:
+                headers = client.retr(number)[1]
+                message = email.parser.Parser().parsestr('\n'.join(headers))
+                result.append(message)
+                delete = number
         except Exception, e:
             traceback.print_exc(e)
-            log.error('ERROR processing a message (%s): %s.' % (msgid, e))
-            sys.exit(1) # prevents expunge
-    client.quit()
+            logging.error('ERROR processing a message (%s): %s.' % (msgid, e))
+        if delete is not None:
+            client.dele(delete)
 
-def init():
-    global settings
-    for filename in ('~/.config/tmradio.conf', '/etc/tmradio.conf'):
-        filename = os.path.expanduser(filename)
-        if os.path.exists(filename):
-            config = yaml.load(open(filename, 'rb'))
-            if config.has_key('voicemail'):
-                settings = { 'log': 'voicemail.log' }
-                settings.update(config['voicemail'])
-                init_logging()
-                return
+    if not settings.get('debug'):
+        client.quit()
 
-    raise Exception('Could not find a config file.')
+    return result
 
-def init_logging():
-    global log
-    log = logging.getLogger('voicemail')
-    log.setLevel(logging.DEBUG)
 
-    h = logging.handlers.RotatingFileHandler(settings['log'], maxBytes=1000000, backupCount=5)
-    h.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
-    h.setLevel(logging.DEBUG)
-    log.addHandler(h)
+def extract_messages(messages):
+    "Extracts files from the message."
+    result = []
+
+    for message in messages:
+        subject = decode_subject(message['subject'])
+
+        sender = rfc822.parseaddr(message['from'])[1]
+        if message['X-Asterisk-CallerID']:
+            sender = message['X-Asterisk-CallerID']
+            subject = 'GSM hotline'
+
+        for filepath, data in get_attachments(message):
+            filename = tempfile.mkstemp(prefix=TMPREFIX, suffix=os.path.splitext(filepath)[1].lower())[1]
+            f = open(filename, 'wb')
+            f.write(data)
+            f.close()
+            result.append({ 'sender': sender, 'subject': subject, 'filename': filename })
+    return result
+
+
+def transcode(filenames):
+    "Combines all input files to one WAV file."
+    tmps = []
+    for filename in filenames:
+        tmps.append(tempfile.mkstemp(prefix=TMPREFIX, suffix='.wav')[1])
+        run(['ffmpeg', '-i', filename, '-ar', '44100', '-ac', '2', '-y', tmps[-1]])
+
+    output = tempfile.mkstemp(prefix=TMPREFIX, suffix='.ogg')[1]
+    run(['sox'] + tmps + [output, 'norm'])
+
+    for tmp in tmps:
+        os.unlink(tmp)
+
+    return output
+
+
+def transcode_messages(messages, settings):
+    result = []
+    for message in messages:
+        filenames = [ settings.getpath('prepend'), message['filename'], settings.getpath('append') ]
+        combined = transcode([fn for fn in filenames if fn])
+
+        # Calculate ReplayGain.
+        run([ 'vorbisgain', combined ])
+
+        m = mutagen.File(combined)
+        m['artist'] = message['sender']
+        m['title'] = message['subject']
+        m.save()
+
+        os.unlink(message['filename'])
+        message['filename'] = combined
+        result.append(message)
+
+    return result
+
+
+def fetch_messages(settings):
+    """Scans the mail box for messages.
+
+    Returns a list of dictionaries with keys: author, subject, filename.  Each
+    file is a temporary file which should be deleted after processing."""
+
+    result = []
+    for message in transcode_messages(extract_messages(fetch_raw_messages(settings)), settings):
+        result.append(message)
+    return result
+
+
+def upload_messages(messages, settings):
+    ssh_login = settings.get('ssh_login')
+    ssh_path = settings.get('ssh_path')
+
+    if ssh_login and ssh_path:
+        ssh_command = [ 'ssh' ]
+        scp_command = [ 'scp' ]
+
+        keyfile = settings.getpath('ssh_key')
+        if keyfile:
+            ssh_command += [ '-i', keyfile ]
+            scp_command += [ '-i', keyfile ]
+
+        for message in messages:
+            if os.path.exists(message['filename']):
+                target = os.path.join(ssh_path, os.path.basename(message['filename'] ))
+                run(scp_command + [ message['filename'], ssh_login + ':' + ssh_path ])
+                run(ssh_command + [ ssh_login, 'ardj --tags=voicemail --queue --add ' + target])
+                if not settings.get('debug'):
+                    os.unlink(message['filename'])
+
 
 if __name__ == '__main__':
-    # Go to the script folder.
-    os.chdir(os.path.dirname(os.path.realpath(sys.argv[0])))
+    if not os.path.abspath(sys.argv[0]).startswith('/usr'):
+        src_dir = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '..'))
+        sys.path.insert(0, src_dir)
 
-    init()
-    scan_mailbox()
+    import ardj.settings
+    settings = ardj.settings.load('voicemailer')
+    if settings is None:
+        sys.exit(0)
+
+    msgs = fetch_messages(settings)
+    upload_messages(msgs, settings)
