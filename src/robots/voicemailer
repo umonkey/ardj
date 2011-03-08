@@ -139,6 +139,7 @@ def transcode(filenames):
 
     output = tempfile.mkstemp(prefix=TMPREFIX, suffix='.ogg')[1]
     run(['sox'] + tmps + [output, 'norm'])
+    os.chmod(output, 0664)
 
     for tmp in tmps:
         os.unlink(tmp)
