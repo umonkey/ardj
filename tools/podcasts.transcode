@@ -1,3 +1,0 @@
-ffmpeg -y -vn -sn -i "$1" -acodec libvorbis -ar 44100 -aq 80 -ab 256k "$1.ogg"
-mutagen-copy-tags "$1" "$1.ogg"
-rm "$1"
