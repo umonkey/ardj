@@ -3,8 +3,11 @@
 
 import mutagen
 import os
-import sys
+import shutil
 import subprocess
+import sys
+import tempfile
+import traceback
 
 DEFAULT_URL = 'http://broadcast.echo.msk.ru:9000/content/current.mp3'
 DEFAULT_OUT = 'news.ogg'
@@ -12,10 +15,16 @@ DEFAULT_OUT = 'news.ogg'
 settings = None
 
 def fetch_news():
-    cmd = u"gst-launch-0.10 -q souphttpsrc location=\"%s\" ! decodebin ! audioconvert ! vorbisenc quality=0.5 ! oggmux ! filesink location=\"%s\"" % (settings['url'], settings['out'])
+    output_fn = tempfile.mkstemp(suffix='.ogg')[1]
+    cmd = u"gst-launch-0.10 -q souphttpsrc location=\"%s\" ! decodebin ! audioconvert ! vorbisenc quality=0.5 ! oggmux ! filesink location=\"%s\"" % (settings['url'], output_fn)
     try:
         subprocess.Popen(cmd.split(' ')).wait()
-        subprocess.Popen(['vorbisgain', '-f', '-q', settings['out']]).wait()
+        subprocess.Popen(['vorbisgain', '-f', '-q', output_fn]).wait()
+
+        if os.path.exists(settings['out']):
+            os.unlink(settings['out'])
+        os.chmod(output_fn, 0664)
+        shutil.move(output_fn, settings['out'])
 
         if settings.has_key('track_id') and settings['track_id']:
             from ardj import Open
@@ -29,6 +38,7 @@ def fetch_news():
             ardj.database.commit()
     except Exception, e:
         print >>sys.stderr, 'Could not fetch news: %s' % e
+        traceback.print_exc(e)
         return False
 
 if __name__ == '__main__':
