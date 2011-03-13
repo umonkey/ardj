@@ -2,19 +2,34 @@
 # vim: fileencoding=utf-8:
 
 import feedparser
+import httplib2
 import os
 import sys
+import time
 import urllib2
+import urlparse
 import subprocess
+
+import ardj
+import ardj.settings
+
+def run_command(args):
+    print '> ' + ' '.join(args)
+    subprocess.Popen(args).wait()
 
 def fetch_file(url):
     u = urllib2.urlopen(urllib2.Request(url))
     if u is not None:
+        print 'Downloading %s' % url
         filename = 'tmp.mp3'
         out = open(filename, 'wb')
         out.write(u.read())
         out.close()
-        subprocess.Popen(['/usr/lib/ardj/robots/normalizer', filename]).wait()
+
+        normalizer = '/usr/lib/ardj/robots/normalizer'
+        if os.path.exists(normalizer):
+            run_command(['/usr/lib/ardj/robots/normalizer', filename])
+
         return filename
 
 def add_song(ardj, artist, title, mp3_link, tags):
@@ -51,11 +66,94 @@ def update_feeds(settings):
                     if add_song(a, author, entry['title'], enclosure['href'], podcast['tags']):
                         pass # return # one at a time, for testing
 
-if __name__ == '__main__':
-    if not os.path.abspath(sys.argv[0]).startswith('/usr'):
-        src_dir = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '..'))
-        sys.path.insert(0, src_dir)
+class Podcaster:
+    def __init__(self):
+        self.settings = ardj.settings.load('podcasts')
 
-    import ardj
-    import ardj.settings
-    update_feeds(ardj.settings.load('podcasts', []))
+    def get_entries(self):
+        """Returns a list of available episodes."""
+        items = []
+        for podcast in self.settings.get('feeds', []):
+            feed = feedparser.parse(podcast['feed'])
+
+            feed_author = None
+            if podcast.has_key('author'):
+                feed_author = podcast['author']
+
+            for entry in feed['entries']:
+                if entry.has_key('enclosures'):
+                    for enclosure in entry['enclosures']:
+                        author = feed_author
+                        if not author and entry.has_key('author'):
+                            author = entry['author']
+                        item = {
+                            'author': author,
+                            'date': entry['updated_parsed'],
+                            'description': entry['summary'],
+                            'file': enclosure['href'],
+                            'filesize': self.get_enclosure_size(enclosure, entry),
+                            'tags': podcast['tags'],
+                            'title': entry['title'],
+                        }
+                        if podcast.has_key('filename'):
+                            item['filename'] = time.strftime(podcast['filename'], entry['updated_parsed'])
+                        items.append(item)
+        return items
+
+    def get_enclosure_size(self, enclosure, entry):
+        if enclosure.has_key('length'):
+            return int(enclosure['length'])
+        return 0
+
+    def process_entries(self, entries):
+        rebuild = False
+        post_dir = os.path.join(self.settings.getpath('site_root'), self.settings.getpath('site_post_dir'))
+        for entry in entries:
+            if entry.has_key('filename'):
+                post_fn = os.path.join(post_dir, entry['filename'] + '.md')
+                if not os.path.exists(post_fn):
+                    self.upload_entry(entry)
+                    self.publish_entry(entry, post_fn)
+                    rebuild = True
+        if rebuild:
+            run_command([ 'make', '-C', self.settings.getpath('site_root'), 'update' ])
+
+    def publish_entry(self, entry, filename):
+        e = entry
+        print 'Reposting %s' % os.path.basename(filename)
+        e['file_backup'] = self.settings.get('file_base').rstrip('/') + '/' + entry['filename'] + '.mp3'
+        e['labels'] = u', '.join(entry['tags'])
+        e['date_time'] = time.strftime('%Y-%m-%d %H:%M', entry['date'])
+        e['filesize'] = self.get_filesize(entry)
+        text = u'title: %(title)s\nauthor: %(author)s\nfile: %(file)s\nfile_backup: %(file_backup)s\nfilesize: %(filesize)u\nlabels: %(labels)s\ndate: %(date_time)s\n---\n%(description)s' % e
+
+        f = open(filename, 'wb')
+        f.write(text.encode('utf-8'))
+        f.close()
+
+    def upload_entry(self, entry):
+        upath = urlparse.urlparse(self.settings.get('file_upload'))
+        src_filename = fetch_file(entry['file'])
+        dst_filename = upath.path.rstrip('/') + '/' + entry['filename'] + '.mp3'
+
+        if upath.scheme == 'sftp':
+            target = upath.netloc + ':' + dst_filename
+            run_command([ 'scp', '-q', src_filename, target ])
+        else:
+            print >>sys.stderr, "Don't know how to upload to %s" % upath.scheme
+
+    def get_filesize(self, entry):
+        if entry['filesize']:
+            return entry['filesize']
+
+        h = httplib2.Http()
+        r = h.request(entry['file'], 'HEAD')[0]
+        if r['status'] == '200':
+            return int(r['content-length'])
+
+        return 0
+
+
+if __name__ == '__main__':
+    obj = Podcaster()
+    obj.process_entries(obj.get_entries())
