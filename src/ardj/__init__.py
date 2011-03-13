@@ -172,7 +172,7 @@ class ardj:
         Returns a track from and active playlist.
         """
         for playlist in self.get_active_playlists():
-            track = self.get_random_track(playlist, repeat=playlist['repeat'], skip_artists=skip, cur=cur)
+            track = self.get_random_track(playlist, repeat=playlist.has_key('repeat') and playlist['repeat'] or None, skip_artists=skip, cur=cur)
             if track is not None:
                 self.log.info(u'Picked track %u from playlist %s ("%s" by %s).' % (track['id'], playlist['name'], track['title'], track['artist']))
                 cur.execute('UPDATE playlists SET last_played = ? WHERE name = ?', (int(time.time()), playlist['name']))
@@ -299,7 +299,7 @@ class ardj:
         Returns a random track's id.
         """
         cur = cur or self.database.cursor()
-        sql = 'SELECT id, weight, artist FROM tracks WHERE weight > 0'
+        sql = 'SELECT id, weight, artist FROM tracks WHERE weight > 0 AND artist is not NULL'
         params = []
         # filter by labels
         if labels:
