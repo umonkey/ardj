@@ -42,6 +42,8 @@ import tempfile
 import traceback
 import yaml
 
+import ardj.settings
+
 TMPREFIX = time.strftime('vm-%y%m%d-')
 
 settings = None
@@ -59,7 +61,7 @@ def decode_subject(header):
     if settings is not None and settings.has_key('subject'):
         subject = subject.replace(settings['subject'], '')
     # some shell protection
-    subject = subject.replace('`', "'")
+    #subject = subject.replace('`', "'")
     return subject.strip()
 
 
@@ -73,7 +75,7 @@ def get_attachments(message):
             continue
         if i.get_content_maintype() == 'text':
             continue
-        att_name = i.get_filename(None)
+        att_name = decode_subject(i.get_filename(None))
         if att_name and os.path.splitext(att_name)[1].lower() in ('.wav', '.amr', '.mp3', '.ogg'):
             result.append((att_name, i.get_payload(decode=True)))
     return result
@@ -97,6 +99,9 @@ def fetch_raw_messages(settings):
                 message = email.parser.Parser().parsestr('\n'.join(headers))
                 result.append(message)
                 delete = number
+                print 'Message #%s matches (%s bytes).' % (number, length)
+            else:
+                print 'Message #%s does not match.' % number
         except Exception, e:
             traceback.print_exc(e)
             logging.error('ERROR processing a message (%s): %s.' % (msgid, e))
@@ -121,7 +126,10 @@ def extract_messages(messages):
             sender = message['X-Asterisk-CallerID']
             subject = 'GSM hotline'
 
-        for filepath, data in get_attachments(message):
+        attachments = get_attachments(message)
+        print 'Message "%s" has %u files.' % (subject, len(attachments))
+
+        for filepath, data in attachments:
             filename = tempfile.mkstemp(prefix=TMPREFIX, suffix=os.path.splitext(filepath)[1].lower())[1]
             f = open(filename, 'wb')
             f.write(data)
@@ -203,11 +211,6 @@ def upload_messages(messages, settings):
 
 
 if __name__ == '__main__':
-    if not os.path.abspath(sys.argv[0]).startswith('/usr'):
-        src_dir = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '..'))
-        sys.path.insert(0, src_dir)
-
-    import ardj.settings
     settings = ardj.settings.load('voicemailer')
     if settings is None:
         sys.exit(0)
