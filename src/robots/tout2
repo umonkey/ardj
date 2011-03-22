@@ -132,25 +132,25 @@ def update_announce():
     print 'Wrote speech wave to %s' % speech_fn
 
     result_fn = tempfile.mkstemp(prefix='ardj_tout_', suffix='.ogg')[1]
-    subprocess.Popen(['sox', speech_fn, '-r', '44100', result_fn, 'pad', '10', '15']).wait()
+    subprocess.Popen(['sox', speech_fn, '-r', '44100', result_fn, 'pad', '3', '5']).wait()
     os.chmod(result_fn, 0664)
     print 'Wrote result to %s' % result_fn
+
+    target_fn = settings.getpath('announce_file')
+    if os.path.exists(target_fn):
+        os.unlink(target_fn)
+        shutil.move(result_fn, target_fn)
+        result_fn = target_fn
 
     track_id = int(settings.get('track_id', '0'))
     if track_id:
         a = ardj.Open()
-        track = a.get_track_by_id(track_id) # 4583
-        track_fn = os.path.join(a.config.get_music_dir(), track['filename'])
-        shutil.move(result_fn, track_fn)
-
-        length = ardj.tags.raw(track_fn).info.length
-        ardj.database.cursor().execute('UPDATE tracks SET length = ? WHERE id = ?', (length, track_id, ))
-        ardj.database.commit()
+        length = ardj.tags.raw(result_fn).info.length
+        a.database.cursor().execute('UPDATE tracks SET length = ? WHERE id = ?', (length, track_id, ))
+        a.database.commit()
 
     os.unlink(text_fn)
     os.unlink(speech_fn)
-    if os.path.exists(result_fn):
-        os.unlink(result_fn)
 
 def get_background_fn():
     filename = settings.getpath('announce_background', '~/this file should not exist')
@@ -190,5 +190,5 @@ if __name__ == '__main__':
     settings = ardj.settings.load('tout')
     if settings.get('website_js'):
         update_website()
-    if settings.get('announce_ogg'):
+    if settings.get('announce_file'):
         update_announce()

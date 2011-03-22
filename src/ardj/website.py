@@ -6,6 +6,6 @@ def update():
     settings = ardj.settings.load('website')
     dirname = settings.getpath('dirname', '~/.config/ardj/website')
     if os.path.exists(dirname):
-        subprocess.Popen([ 'make', '-C', dirname, 'update' ]).wait()
+        subprocess.Popen([ 'make', '-C', dirname, 'autoupdate' ]).wait()
         return True
     return False
