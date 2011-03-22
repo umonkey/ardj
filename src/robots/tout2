@@ -4,10 +4,15 @@
 import ardj
 import ardj.settings
 import ardj.website
+import ardj.tags
 import datetime
 import json
 import os
+import random
+import shutil
 import sys
+import subprocess
+import tempfile
 import time
 import urllib
 import urllib2
@@ -88,6 +93,102 @@ def update_website():
 
     ardj.website.update()
 
+def get_announce_text():
+    u"Возвращает текст для диктовки роботом."
+    data = {}
+    date_limit = time.strftime('%Y-%m-%d', time.localtime(time.time() + int(settings.get('announce_time_limit', 86400*14))))
+
+    countries = settings.get('announce_countries')
+    for event in fetch_events():
+        if not countries or event['country'] in countries:
+            date = event['startDate']
+            if date < date_limit:
+                city = event['city'].split(',')[0]
+                if not data.has_key(date):
+                    data[date] = {}
+                if not data[date].has_key(city):
+                    data[date][city] = []
+                if event['artist'] not in data[date][city]:
+                    data[date][city].append(event['artist'])
+
+    output = settings.get('announce_prefix', u'').strip() + u'\n\n'
+    for date in sorted(data.keys()):
+        output += xlat_date(date) + u'.\n'
+        for city in sorted(data[date].keys()):
+            output += xlat_city(city)
+            for artist in sorted(data[date][city]):
+                output += u', ' + xlat_artist(artist)
+            output += u'.\n\n'
+    output += settings.get('announce_suffix', u'')
+    return output.strip()
+
+def update_announce():
+    text_fn = tempfile.mkstemp(prefix='ardj_tout_', suffix='.txt')[1]
+    open(text_fn, 'wb').write(get_announce_text().encode('utf-8'))
+    print 'Wrote speech text to %s' % text_fn
+
+    speech_fn = tempfile.mkstemp(prefix='ardj_tout_', suffix='.wav')[1]
+    subprocess.Popen(['text2wave', '-eval', '(voice_msu_ru_nsh_clunits)', text_fn, '-o', speech_fn]).wait()
+    print 'Wrote speech wave to %s' % speech_fn
+
+    result_fn = tempfile.mkstemp(prefix='ardj_tout_', suffix='.ogg')[1]
+    subprocess.Popen(['sox', speech_fn, '-r', '44100', result_fn, 'pad', '10', '15']).wait()
+    os.chmod(result_fn, 0664)
+    print 'Wrote result to %s' % result_fn
+
+    track_id = int(settings.get('track_id', '0'))
+    if track_id:
+        a = ardj.Open()
+        track = a.get_track_by_id(track_id) # 4583
+        track_fn = os.path.join(a.config.get_music_dir(), track['filename'])
+        shutil.move(result_fn, track_fn)
+
+        length = ardj.tags.raw(track_fn).info.length
+        ardj.database.cursor().execute('UPDATE tracks SET length = ? WHERE id = ?', (length, track_id, ))
+        ardj.database.commit()
+
+    os.unlink(text_fn)
+    os.unlink(speech_fn)
+    if os.path.exists(result_fn):
+        os.unlink(result_fn)
+
+def get_background_fn():
+    filename = settings.getpath('announce_background', '~/this file should not exist')
+    if not os.path.exists(filename):
+        a = ardj.Open()
+        cur = a.database.cursor()
+        tracks = sorted([row[0] for row in cur.execute('SELECT filename FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?) ORDER BY weight DESC LIMIT 10', (settings.get('label', 'music'), )).fetchall()])
+        if not len(tracks):
+            return None
+        filename = os.path.join(a.config.get_music_dir(), tracks[random.randrange(0, len(tracks))])
+    if not os.path.exists(filename):
+        return None
+    return filename
+
+def xlat_date(date):
+    months = [u'января', u'февраля', u'марта', u'апреля', u'мая', u'июня', u'июля', u'августа', u'сентября', u'октября', u'ноября', u'декабря']
+    days = [u'Первого', u'Второго', u'Третьего', u'Четвёртого', u'Пятого', u'Шестого', u'Седьмого', u'Восьмого', u'Девятого', u'Десятого', u'Одиннадцатого', u'Двенадцатого', u'Тринадцатого', u'Четырнадцатого', u'Пятнадцатого', u'Шестнадцатого', u'Семнадцатого', u'Восемнадцатого', u'Девятнадцатого', u'Двадцатого', u'Двадцать первого', u'Двадцать второго', u'Двадцать третьего', u'Двадцать четвёртого', u'Двадцать пятого', u'Двадцать шестого', u'Двадцать седьмого', u'Двадцать восьмого', u'Двадцать девятого', u'Тридцатого', u'Тридцать первого']
+
+    date = datetime.datetime.strptime(date, '%Y-%m-%d')
+    output = u'%s %s' % (days[date.day - 1], months[date.month - 1])
+
+    return output
+
+def xlat_city(city):
+    table = settings.get('city_map', {})
+    if table.has_key(city):
+        return table[city]
+    return city
+
+def xlat_artist(artist):
+    table = settings.get('artist_map', {})
+    if table.has_key(artist):
+        return table[artist]
+    return artist
+
 if __name__ == '__main__':
     settings = ardj.settings.load('tout')
-    update_website()
+    if settings.get('website_js'):
+        update_website()
+    if settings.get('announce_ogg'):
+        update_announce()
