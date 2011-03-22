@@ -42,3 +42,4 @@ copy: deb
 
 clean:
 	rm -rf *deb *zip
+	find -name '*.orig' -delete
