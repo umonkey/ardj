@@ -89,7 +89,7 @@ class Podcaster:
                         item = {
                             'author': author,
                             'date': entry['updated_parsed'],
-                            'description': entry['summary'],
+                            'description': u'<p>Полное описание можно найти на <a href="%s">сайте автора</a>.</p>' % entry['link'],
                             'file': enclosure['href'],
                             'filesize': self.get_enclosure_size(enclosure, entry),
                             'tags': podcast['tags'],
