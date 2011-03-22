@@ -1,0 +1,93 @@
+#!/usr/bin/env python
+# vim: set fileencoding=utf-8:
+
+import ardj
+import ardj.settings
+import ardj.website
+import datetime
+import json
+import os
+import sys
+import time
+import urllib
+import urllib2
+
+settings = None
+
+def get_artist_names():
+    cur = ardj.Open().database.cursor()
+    return sorted([row[0] for row in cur.execute('SELECT DISTINCT artist FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?) AND weight >= ?', (settings.get('label', 'music'), float(settings.get('weight', '1.0')), )).fetchall()])
+
+def fetch_artist_events(artist_name):
+    events = []
+
+    try:
+        url = 'http://ws.audioscrobbler.com/2.0/?method=artist.getEvents&artist=%s&api_key=%s&format=json&autocorrect=1' % (urllib.quote(artist_name.encode('utf-8')), settings.get('lastfm_api_key'))
+        data = json.loads(urllib2.urlopen(urllib2.Request(url)).read())
+
+        if not data.has_key('events'):
+            print 'Oops: %s had no "events" block -- no such artist?' % artist_name.encode('utf-8')
+            return []
+        data = data['events']
+
+        if data.has_key('artist'):
+            artist_name = data['artist']
+        elif data.has_key('@attr') and data['@attr'].has_key('artist'):
+            artist_name = data['@attr']['artist']
+
+        if data.has_key('event'):
+            for event in (type(data['event']) == list) and data['event'] or [data['event']]:
+                if event['cancelled'] != '0':
+                    continue
+                events.append({
+                    'id': int(event['id']),
+                    'artist': artist_name,
+                    'startDate': time.strftime('%Y-%m-%d', time.strptime(event['startDate'][:16], '%a, %d %b %Y')),
+                    'url': event['url'],
+                    'country': event['venue']['location']['country'],
+                    'city': event['venue']['location']['city'],
+                    'venue': event['venue']['name'],
+                    'venue_url': event['venue']['url'],
+                    'venue_location': event['venue']['location']['geo:point'],
+                })
+    except Exception, e:
+        print >>sys.stderr, 'ERROR fetching events for %s: %s' % (artist_name.encode('utf-8'), e)
+    return events
+
+def fetch_events():
+    cache_fn = settings.getpath('cache', '~/.config/ardj/events.json')
+
+    if os.path.exists(cache_fn):
+        if time.time() - os.stat(cache_fn).st_mtime < int(settings.get('cache_ttl', '3600')):
+            return json.loads(open(cache_fn, 'rb').read())
+
+    events = []
+    for artist_name in sorted(list(set([n.lower() for n in get_artist_names()]))):
+        events += fetch_artist_events(artist_name)
+
+    open(cache_fn, 'wb').write(json.dumps(events))
+    return events
+
+def update_website():
+    data = { 'bounds': [], 'markers': [] }
+    for event in fetch_events():
+        if event['venue_location']['geo:long'] and event['venue_location']['geo:lat']:
+            data['markers'].append({
+                'll': [float(event['venue_location']['geo:lat']), float(event['venue_location']['geo:long'])],
+                'html': u'<p><strong>%s</strong><br/>%s, %s<br/>%s</p><p class="more"><a href="%s" target="_blank">Подробности</a></p>' % (event['artist'], event['venue'], event['city'], '.'.join(reversed(event['startDate'].split('-'))), event['url']),
+            })
+    data['bounds'].append(min([e['ll'][0] for e in data['markers']]))
+    data['bounds'].append(max([e['ll'][0] for e in data['markers']]))
+    data['bounds'].append(min([e['ll'][1] for e in data['markers']]))
+    data['bounds'].append(max([e['ll'][1] for e in data['markers']]))
+
+    filename = settings.getpath('website_js', '~/.config/ardj/event-map.js')
+    output = 'var map_data = %s;' % json.dumps(data)
+    open(filename, 'wb').write(output)
+    print 'Wrote %s' % filename
+
+    ardj.website.update()
+
+if __name__ == '__main__':
+    settings = ardj.settings.load('tout')
+    update_website()

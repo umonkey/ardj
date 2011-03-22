@@ -6,7 +6,7 @@ Maintainer: Justin Forest <justin.forest@gmail.com>
 Architecture: all
 Essential: no
 Depends: python, python-yaml, python-mutagen (>= 1.19)
-Suggests: python-dnspython, python-socksipy, ices, icecast2, python-lxml, festival, festvox-ru
+Suggests: python-dnspython, python-socksipy, ices, icecast2, python-simplejson, festival, festvox-ru
 Recommends: lastfmsubmitd, sqlite3, podget, python-twitter
 Installed-Size: 660
 Description: An artificial DJ for your icecast2 based internet radio.
