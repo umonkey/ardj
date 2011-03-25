@@ -15,31 +15,40 @@ DEFAULT_OUT = 'news.ogg'
 settings = None
 
 def fetch_news():
+    track_length = 0
     output_fn = tempfile.mkstemp(suffix='.ogg')[1]
     cmd = u"gst-launch-0.10 -q souphttpsrc location=\"%s\" ! decodebin ! audioconvert ! vorbisenc quality=0.5 ! oggmux ! filesink location=\"%s\"" % (settings['url'], output_fn)
+
+    from ardj import Open
+    ardj = Open()
+
     try:
         subprocess.Popen(cmd.split(' ')).wait()
-        subprocess.Popen(['vorbisgain', '-f', '-q', output_fn]).wait()
+        if os.stat(output_fn).st_size:
+            subprocess.Popen(['vorbisgain', '-f', '-q', output_fn]).wait()
 
-        if os.path.exists(settings['out']):
-            os.unlink(settings['out'])
-        os.chmod(output_fn, 0664)
-        shutil.move(output_fn, settings['out'])
+            if os.path.exists(settings['out']):
+                os.unlink(settings['out'])
+            os.chmod(output_fn, 0664)
+            shutil.move(output_fn, settings['out'])
 
-        if settings.has_key('track_id') and settings['track_id']:
-            from ardj import Open
-            ardj = Open()
-            track_id = int(settings['queue'])
             tags = mutagen.File(settings['out'])
-            ardj.database.cursor().execute('UPDATE tracks SET length = ? WHERE id = ?', (int(tags.info.length), track_id, ))
-            ardj.queue_track(track_id)
-            if settings.has_key('queue') and settings['queue'] == 'yes':
-                ardj.queue_track(track_id)
-            ardj.database.commit()
+            if tags:
+                track_length = int(tags.info.length)
     except Exception, e:
         print >>sys.stderr, 'Could not fetch news: %s' % e
         traceback.print_exc(e)
-        return False
+
+    if settings.has_key('track_id') and settings['track_id']:
+        track_id = int(settings['track_id'])
+        ardj.database.cursor().execute('UPDATE tracks SET length = ? WHERE id = ?', (track_length, track_id, ))
+        ardj.queue_track(track_id)
+        if settings.has_key('queue') and settings['queue'] == 'yes':
+            ardj.queue_track(track_id)
+        ardj.database.commit()
+
+    return track_length != 0
+
 
 if __name__ == '__main__':
     if not os.path.abspath(sys.argv[0]).startswith('/usr'):
