@@ -5,6 +5,7 @@ import logging
 import math
 import os
 import re
+import signal
 import shutil # move()
 import socket # for gethostname()
 import subprocess
@@ -295,7 +296,7 @@ class ardjbot(MyFileReceivingBot):
     def skip(self, message, args):
         "Skip to next track"
         try:
-            self.send_signal('USR1', 'ices')
+            self.send_ices_signal(signal.SIGUSR1)
             return u'ok'
         except Exception, e:
             return unicode(e)
@@ -474,7 +475,7 @@ class ardjbot(MyFileReceivingBot):
     def reload(self, message, args):
         "Reload ices config and playlist scripts"
         try:
-            self.send_signal('HUP', 'ices')
+            self.send_ices_signal(signal.SIGHUP)
             return u'Ices will be reinitialized when the track changes.'
         except Exception, e:
             return unicode(e)
@@ -701,15 +702,18 @@ class ardjbot(MyFileReceivingBot):
         name, host = message.getFrom().getStripped().split('@')
         return u'<a href="xmpp:%s@%s">%s</a>' % (name, host, name)
 
-    def send_signal(self, sig, prog):
+    def send_ices_signal(self, sig):
         """
         Sends a signal to the specified program. Returns True on success.
         """
-        cmd = '/usr/bin/killall'
-        if not os.path.exists(cmd):
-            raise Exception(u'%s is not available.' % cmd)
-        if subprocess.Popen([cmd, '-' + sig, prog]).wait():
-            raise Exception(u'Could not skip. Is '+ prog +' running?')
+        pidfile = self.ardj.config.get('jabber/ices_pid')
+        if not pidfile:
+            raise Exception('jabber/ices_pidfile not set.')
+        if not os.path.exists(pidfile):
+            raise Exception('%s does not exist.' % pidfile)
+        pid = int(open(pidfile, 'rb').read().strip())
+        os.kill(pid, sig)
+        self.ardj.log.debug('sent signal %s to process %s.' % (sig, pid))
         return True
 
     def connect(self):
