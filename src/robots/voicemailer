@@ -127,7 +127,7 @@ def extract_messages(messages):
             subject = 'GSM hotline'
 
         attachments = get_attachments(message)
-        print 'Message "%s" has %u files.' % (subject, len(attachments))
+        print 'Message "%s" has %u files.' % (subject.encode('utf-8'), len(attachments))
 
         for filepath, data in attachments:
             filename = tempfile.mkstemp(prefix=TMPREFIX, suffix=os.path.splitext(filepath)[1].lower())[1]
