@@ -27,6 +27,7 @@ def fetch_artist_events(artist_name):
     events = []
 
     try:
+        print 'Fetching events for %s ...' % artist_name.encode('utf-8')
         url = 'http://ws.audioscrobbler.com/2.0/?method=artist.getEvents&artist=%s&api_key=%s&format=json&autocorrect=1' % (urllib.quote(artist_name.encode('utf-8')), settings.get('lastfm_api_key'))
         data = json.loads(urllib2.urlopen(urllib2.Request(url)).read())
 
@@ -81,17 +82,19 @@ def update_website():
                 'll': [float(event['venue_location']['geo:lat']), float(event['venue_location']['geo:long'])],
                 'html': u'<p><strong>%s</strong><br/>%s, %s<br/>%s</p><p class="more"><a href="%s" target="_blank">Подробности</a></p>' % (event['artist'], event['venue'], event['city'], '.'.join(reversed(event['startDate'].split('-'))), event['url']),
             })
-    data['bounds'].append(min([e['ll'][0] for e in data['markers']]))
-    data['bounds'].append(max([e['ll'][0] for e in data['markers']]))
-    data['bounds'].append(min([e['ll'][1] for e in data['markers']]))
-    data['bounds'].append(max([e['ll'][1] for e in data['markers']]))
 
-    filename = settings.getpath('website_js', '~/.config/ardj/event-map.js')
-    output = 'var map_data = %s;' % json.dumps(data)
-    open(filename, 'wb').write(output)
-    print 'Wrote %s' % filename
-
-    ardj.website.update()
+    if len(data['markers']):
+        data['bounds'].append(min([e['ll'][0] for e in data['markers']]))
+        data['bounds'].append(max([e['ll'][0] for e in data['markers']]))
+        data['bounds'].append(min([e['ll'][1] for e in data['markers']]))
+        data['bounds'].append(max([e['ll'][1] for e in data['markers']]))
+        filename = settings.getpath('website_js', '~/.config/ardj/event-map.js')
+        output = 'var map_data = %s;' % json.dumps(data)
+        open(filename, 'wb').write(output)
+        print 'Wrote %s' % filename
+        ardj.website.update('update-map')
+    else:
+        print 'No data, not updating web site.'
 
 def get_announce_text():
     u"Возвращает текст для диктовки роботом."
