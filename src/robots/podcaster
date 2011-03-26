@@ -6,12 +6,14 @@ import httplib2
 import os
 import sys
 import time
+import tempfile
 import urllib2
 import urlparse
 import subprocess
 
 import ardj
 import ardj.settings
+import ardj.website
 
 def run_command(args):
     print '> ' + ' '.join(args)
@@ -21,10 +23,11 @@ def fetch_file(url):
     u = urllib2.urlopen(urllib2.Request(url))
     if u is not None:
         print 'Downloading %s' % url
-        filename = 'tmp.mp3'
+        filename = tempfile.mkstemp(suffix='.mp3')[1]
         out = open(filename, 'wb')
         out.write(u.read())
         out.close()
+        os.chmod(filename, 0664)
 
         normalizer = '/usr/lib/ardj/robots/normalizer'
         if os.path.exists(normalizer):
@@ -36,7 +39,7 @@ def add_song(ardj, artist, title, mp3_link, tags):
     cur = ardj.database.cursor()
     track_id = cur.execute('SELECT id FROM tracks WHERE artist = ? AND title = ?', (artist, title, )).fetchone()
     if track_id is None:
-        ardj.log.info('Downloading "%s" by %s' % (title, artist))
+        print 'Downloading "%s" by %s' % (title, artist)
         try:
             filename = fetch_file(mp3_link)
             ardj.add_file(filename, { 'artist': artist, 'title': title, 'labels': tags, 'owner': 'podcaster' })
@@ -116,7 +119,7 @@ class Podcaster:
                     self.publish_entry(entry, post_fn)
                     rebuild = True
         if rebuild:
-            run_command([ 'make', '-C', self.settings.getpath('site_root'), 'update' ])
+            ardj.website.update('update-podcasts')
 
     def publish_entry(self, entry, filename):
         e = entry
@@ -141,6 +144,7 @@ class Podcaster:
             run_command([ 'scp', '-q', src_filename, target ])
         else:
             print >>sys.stderr, "Don't know how to upload to %s" % upath.scheme
+        os.unlink(src_filename)
 
     def get_filesize(self, entry):
         if entry['filesize']:
