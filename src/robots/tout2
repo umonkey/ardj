@@ -16,8 +16,25 @@ import tempfile
 import time
 import urllib
 import urllib2
+import wave
 
 settings = None
+temp_files = []
+
+def mktemp(suffix=None):
+    fn = tempfile.mkstemp(prefix='ardj_tout_', suffix=suffix)[1]
+    os.chmod(fn, 0664)
+    temp_files.append(fn)
+    return fn
+
+def sox(args, suffix='.wav'):
+    output_fn = mktemp(suffix=suffix)
+    args = [(arg == 'OUTPUT') and output_fn or arg for arg in args]
+    args.insert(0, 'sox')
+    print '> ' + ' '.join(args)
+    subprocess.Popen(args).wait()
+    return output_fn
+
 
 def get_artist_names():
     cur = ardj.Open().database.cursor()
@@ -87,11 +104,11 @@ def update_website():
     data['bounds'].append(max([e['ll'][1] for e in data['markers']]))
 
     filename = settings.getpath('website_js', '~/.config/ardj/event-map.js')
-    output = 'var map_data = %s;' % json.dumps(data)
+    output = 'var map_data = %s;' % json.dumps(data, indent=True)
     open(filename, 'wb').write(output)
     print 'Wrote %s' % filename
 
-    ardj.website.update()
+    ardj.website.update('update-map')
 
 def get_announce_text():
     u"Возвращает текст для диктовки роботом."
@@ -123,17 +140,24 @@ def get_announce_text():
     return output.strip()
 
 def update_announce():
-    text_fn = tempfile.mkstemp(prefix='ardj_tout_', suffix='.txt')[1]
+    text_fn = mktemp(suffix='.txt')
     open(text_fn, 'wb').write(get_announce_text().encode('utf-8'))
     print 'Wrote speech text to %s' % text_fn
 
-    speech_fn = tempfile.mkstemp(prefix='ardj_tout_', suffix='.wav')[1]
+    speech_fn = mktemp(suffix='.wav')
     subprocess.Popen(['text2wave', '-eval', '(voice_msu_ru_nsh_clunits)', text_fn, '-o', speech_fn]).wait()
     print 'Wrote speech wave to %s' % speech_fn
 
-    result_fn = tempfile.mkstemp(prefix='ardj_tout_', suffix='.ogg')[1]
-    subprocess.Popen(['sox', speech_fn, '-r', '44100', result_fn, 'pad', '3', '5']).wait()
-    os.chmod(result_fn, 0664)
+    speech_fn = sox([ speech_fn, '-r', '44100', '-c', '2', 'OUTPUT', 'pad', '3', '5'] )
+    length = get_wav_length(speech_fn)
+    print 'Resampled speech length is %u seconds.' % length
+
+    if settings.get('background'):
+        background_fn = get_background_fn(length)
+        if background_fn:
+            speech_fn = sox([ '--combine', 'mix-power', '-v', '0.25', background_fn, speech_fn, 'OUTPUT' ])
+
+    result_fn = sox([ speech_fn, 'OUTPUT' ], suffix='.ogg')
     print 'Wrote result to %s' % result_fn
 
     target_fn = settings.getpath('announce_file')
@@ -152,18 +176,22 @@ def update_announce():
     os.unlink(text_fn)
     os.unlink(speech_fn)
 
-def get_background_fn():
+def get_wav_length(filename):
+    f = wave.open(filename, 'r')
+    return f.getnframes() / f.getframerate()
+
+def get_background_fn(length):
     filename = settings.getpath('announce_background', '~/this file should not exist')
     if not os.path.exists(filename):
         a = ardj.Open()
         cur = a.database.cursor()
-        tracks = sorted([row[0] for row in cur.execute('SELECT filename FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?) ORDER BY weight DESC LIMIT 10', (settings.get('label', 'music'), )).fetchall()])
+        tracks = sorted([row[0] for row in cur.execute('SELECT filename FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?) ORDER BY weight DESC LIMIT 10', (settings.get('background_label', settings.get('label', 'music')), )).fetchall()])
         if not len(tracks):
             return None
         filename = os.path.join(a.config.get_music_dir(), tracks[random.randrange(0, len(tracks))])
     if not os.path.exists(filename):
         return None
-    return filename
+    return sox([ filename, '-r', '44100', '-c', '2', 'OUTPUT', 'trim', '0', str(length) ])
 
 def xlat_date(date):
     months = [u'января', u'февраля', u'марта', u'апреля', u'мая', u'июня', u'июля', u'августа', u'сентября', u'октября', u'ноября', u'декабря']
@@ -192,3 +220,6 @@ if __name__ == '__main__':
         update_website()
     if settings.get('announce_file'):
         update_announce()
+    for f in temp_files:
+        if os.path.exists(f):
+            os.unlink(f)
