@@ -76,3 +76,7 @@ def load():
 def get(key, default=None):
     """get(k, v) <==> load().get(k, v)"""
     return load().get(key, default)
+
+def getpath(key, default=None):
+    """getpath(k, v) <==> load().getpath(k, v)"""
+    return load().getpath(key, default)
