@@ -26,7 +26,6 @@ class ardj:
         self.database = database.Open(self.config.get_db_name())
         self.scrobbler = scrobbler.Open(self.config)
         self.debug = False
-        self.twitter = None
 
         self.log = logging.getLogger(__name__)
         self.log.setLevel(logging.DEBUG)
@@ -623,26 +622,6 @@ class ardj:
 
     def __get_track_labels(self, track_id, cur):
         return [row[0] for row in cur.execute('SELECT DISTINCT label FROM labels WHERE track_id = ? ORDER BY label', (track_id, )).fetchall()]
-
-    def twit(self, message):
-        """Sends a message to twitter."""
-        posting = self._get_twitter_api().PostUpdate(message)
-        url = 'http://twitter.com/' + posting.GetUser().GetScreenName() + '/status/' + str(posting.GetId())
-        return url
-
-    def twit_replies(self):
-        return self._get_twitter_api().GetReplies()
-
-    def _get_twitter_api(self):
-        if self.twitter is None:
-            from ardj import twitter
-            tmp = twitter.Api(username=self.config.get('twitter/consumer_key'),
-                password=self.config.get('twitter/consumer_secret'),
-                access_token_key=self.config.get('twitter/access_token_key'),
-                access_token_secret=self.config.get('twitter/access_token_secret'))
-            self.log.info('Logged in to Twitter.')
-            self.twitter = tmp
-        return self.twitter
 
     def say_to_track(self, message, track_id, track_artist, track_title=None, queue=False):
         """Renders some text to a track."""

@@ -18,6 +18,7 @@ from xml.sax import saxutils
 from ardj.jabberbot import JabberBot, botcmd
 from ardj.filebot import FileBot, FileNotAcceptable
 from ardj import xmpp
+import ardj.twitter
 import tags
 
 class MyFileReceivingBot(FileBot):
@@ -397,7 +398,7 @@ class ardjbot(MyFileReceivingBot):
     @botcmd
     def twit(self, message, args):
         "Send a message to Twitter"
-        url = self.ardj.twit(args)
+        url = ardj.twitter.twit(args)
         self.ardj.log.info(u'%s sent <a href="%s">a message</a> to twitter: %s' % (self.get_linked_sender(message), url, args))
         return url
 

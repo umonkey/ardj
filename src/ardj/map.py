@@ -86,6 +86,7 @@ def export_map(markers):
     print 'Wrote %s' % filename
 
 def update_listeners(args=None):
+    """Updates the listeners map."""
     ips = get_recent_ips()
     if not len(ips):
         print >>sys.stderr, 'No listeners.'

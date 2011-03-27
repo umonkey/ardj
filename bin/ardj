@@ -145,6 +145,8 @@ COMMAND_MAP = [
     ('find-orphans', 'orphans', 'mark'),
     ('map-listeners', 'map', 'update_listeners'),
     ('count-ears', 'ears', 'aggregate'),
+    ('twit', 'twitter', 'twit'),
+    ('say', 'speech', 'render_text_cli'),
 ]
 
 def find_command(command_name):
@@ -159,7 +161,8 @@ def find_command(command_name):
     for cmd, mod, fun in sorted(COMMAND_MAP, key=lambda x: x[0]):
         m = __import__('ardj.' + mod)
         m = getattr(m, mod)
-        doc = getattr(m, '__doc__') or 'No description.'
+        f = getattr(m, fun)
+        doc = getattr(f, '__doc__') or 'No description.'
         print '  %-20s   %s' % (cmd, doc.split('\n')[0])
     sys.exit(1)
 

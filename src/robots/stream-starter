@@ -6,6 +6,7 @@ import sys
 import time
 
 import ardj.settings
+import ardj.twitter
 
 if __name__ == '__main__':
     src = ardj.settings.getpath('stream/dump')
@@ -17,6 +18,4 @@ if __name__ == '__main__':
 
     os.rename(src, dst)
 
-    from ardj import Open
-    ardj = Open()
-    ardj.twit(ardj.settings.get('stream/twit_begin'))
+    ardj.twitter.twit(ardj.settings.get('stream/twit_begin'))

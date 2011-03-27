@@ -24,7 +24,7 @@ def raw(filename):
 			return t
 		return mutagen.File(filename)
 	except Exception, e:
-		logging.error('No tags in %s' % filename)
+		logging.error('No tags in %s: %s' % (filename, e))
 		return None
 
 def get(filename):

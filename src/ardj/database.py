@@ -28,6 +28,8 @@ except ImportError:
     logging.critical(u'Please install pysqlite2.')
     sys.exit(13)
 
+import ardj.settings
+
 class database:
     """
     Interface to the database.

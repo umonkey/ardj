@@ -8,6 +8,7 @@ import sys
 import time
 
 import ardj.settings
+import ardj.twitter
 
 MAX_FILE_AGE_DAYS = 7
 
@@ -68,9 +69,7 @@ def twit_file(filename):
     twit = twit.replace('LENGTH', str(dur))
 
     if '-silent' not in sys.argv:
-        from ardj import Open
-        ardj = Open()
-        ardj.twit(twit)
+        ardj.twitter.twit(twit)
 
 def update_rss(dirname):
     xml = u''

@@ -33,5 +33,6 @@ def process_labels(labels, set_label='orphan', quiet=False):
     db.commit()
 
 def mark(args=None, quiet=False):
+    """Marks tracks that don't belong to a playlist."""
     labels = get_used_labels()
     process_labels(labels, quiet=quiet)
