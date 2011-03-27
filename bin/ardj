@@ -141,20 +141,33 @@ def oldstyle():
         if '--update' == option:
             ardj.sync()
 
+COMMAND_MAP = [
+    ('find-orphans', 'orphans', 'mark'),
+    ('map-listeners', 'map', 'update_listeners'),
+    ('count-ears', 'ears', 'aggregate'),
+]
+
+def find_command(command_name):
+    for cmd, mod, fun in COMMAND_MAP:
+        if command_name == cmd:
+            m = __import__('ardj.' + mod)
+            m = getattr(m, mod)
+            f = getattr(m, fun)
+            return f
+
+    print 'Unknown command: "%s", available commands:' % command_name
+    for cmd, mod, fun in sorted(COMMAND_MAP, key=lambda x: x[0]):
+        m = __import__('ardj.' + mod)
+        m = getattr(m, mod)
+        doc = getattr(m, '__doc__') or 'No description.'
+        print '  %-20s   %s' % (cmd, doc.split('\n')[0])
+    sys.exit(1)
+
 if __name__ == '__main__':
     if len(sys.argv) >= 2 and not sys.argv[1].startswith('-'):
-        command = sys.argv[1]
-        if command == 'find-orphans':
-            import ardj.orphans
-            ardj.orphans.mark()
-        elif command == 'map-listeners':
-            import ardj.map
-            ardj.map.update_listeners()
-        elif command == 'count-ears':
-            import ardj.ears
-            ardj.ears.aggregate(sys.argv[2:])
-        else:
-            print >>sys.stderr, 'Unknown command: %s' % sys.argv[1]
-            sys.exit(1)
-        sys.exit(0)
+        handler = find_command(sys.argv[1])
+        if handler is not None:
+            sys.exit(handler(sys.argv[2:]))
+        print >>sys.stderr, 'Unknown command: %s' % sys.argv[1]
+        sys.exit(1)
     oldstyle()

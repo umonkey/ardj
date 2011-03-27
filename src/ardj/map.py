@@ -85,7 +85,7 @@ def export_map(markers):
     open(filename, 'wb').write(js.encode('utf-8'))
     print 'Wrote %s' % filename
 
-def update_listeners():
+def update_listeners(args=None):
     ips = get_recent_ips()
     if not len(ips):
         print >>sys.stderr, 'No listeners.'

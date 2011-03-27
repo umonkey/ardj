@@ -32,6 +32,6 @@ def process_labels(labels, set_label='orphan', quiet=False):
 
     db.commit()
 
-def mark(quiet=False):
+def mark(args=None, quiet=False):
     labels = get_used_labels()
     process_labels(labels, quiet=quiet)
