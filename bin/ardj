@@ -147,6 +147,9 @@ if __name__ == '__main__':
 		if command == 'find-orphans':
 			import ardj.orphans
 			ardj.orphans.mark()
+		elif command == 'map-listeners':
+			import ardj.map
+			ardj.map.update_listeners()
 		else:
 			print >>sys.stderr, 'Unknown command: %s' % sys.argv[1]
 			sys.exit(1)
