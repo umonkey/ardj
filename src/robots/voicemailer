@@ -46,8 +46,6 @@ import ardj.settings
 
 TMPREFIX = time.strftime('vm-%y%m%d-')
 
-settings = None
-
 def log(message):
     print >>sys.stderr, message
 
@@ -58,8 +56,7 @@ def run(command):
 def decode_subject(header):
     decode_part = lambda x: x[1] and x[0].decode(x[1]) or x[0]
     subject = u' '.join([decode_part(x) for x in email.header.decode_header(header)]).strip()
-    if settings is not None and settings.has_key('subject'):
-        subject = subject.replace(settings['subject'], '')
+    subject = subject.replace(ardj.settings.get('voicemailer/subject'), '')
     # some shell protection
     #subject = subject.replace('`', "'")
     return subject.strip()
@@ -81,11 +78,14 @@ def get_attachments(message):
     return result
 
 
-def fetch_raw_messages(settings):
+def fetch_raw_messages():
     "Retrieves messages from the mailbox."
-    client = poplib.POP3_SSL(settings['pop3_host'])
-    client.user(settings['pop3_login'])
-    client.pass_(settings['pop3_password'])
+    pop3_host = ardj.settings.get('voicemailer/pop3_host')
+    if not pop3_host:
+        return []
+    client = poplib.POP3_SSL(pop3_host)
+    client.user(ardj.settings.get('voicemailer/pop3_login'))
+    client.pass_(ardj.settings.get('voicemailer/pop3_password'))
 
     result = []
     for msgid in client.list()[1]:
@@ -94,7 +94,7 @@ def fetch_raw_messages(settings):
             number, length = msgid.split(' ', 1)
             headers = email.parser.Parser().parsestr('\n'.join(client.top(number, 0)[1]))
 
-            if settings.get('to') in headers['to']:
+            if ardj.settings.get('voicemailer/to') in headers['to']:
                 headers = client.retr(number)[1]
                 message = email.parser.Parser().parsestr('\n'.join(headers))
                 result.append(message)
@@ -108,7 +108,7 @@ def fetch_raw_messages(settings):
         if delete is not None:
             client.dele(delete)
 
-    if not settings.get('debug'):
+    if not ardj.settings.get('voicemailer/debug'):
         client.quit()
 
     return result
@@ -155,10 +155,10 @@ def transcode(filenames):
     return output
 
 
-def transcode_messages(messages, settings):
+def transcode_messages(messages):
     result = []
     for message in messages:
-        filenames = [ settings.getpath('prepend'), message['filename'], settings.getpath('append') ]
+        filenames = [ ardj.settings.getpath('voicemailer/prepend'), message['filename'], ardj.settings.getpath('voicemailer/append') ]
         combined = transcode([fn for fn in filenames if fn])
 
         # Calculate ReplayGain.
@@ -176,27 +176,27 @@ def transcode_messages(messages, settings):
     return result
 
 
-def fetch_messages(settings):
+def fetch_messages():
     """Scans the mail box for messages.
 
     Returns a list of dictionaries with keys: author, subject, filename.  Each
     file is a temporary file which should be deleted after processing."""
 
     result = []
-    for message in transcode_messages(extract_messages(fetch_raw_messages(settings)), settings):
+    for message in transcode_messages(extract_messages(fetch_raw_messages())):
         result.append(message)
     return result
 
 
-def upload_messages(messages, settings):
-    ssh_login = settings.get('ssh_login')
-    ssh_path = settings.get('ssh_path')
+def upload_messages(messages):
+    ssh_login = ardj.settings.get('voicemailer/ssh_login')
+    ssh_path = ardj.settings.get('voicemailer/ssh_path')
 
     if ssh_login and ssh_path:
         ssh_command = [ 'ssh' ]
         scp_command = [ 'scp' ]
 
-        keyfile = settings.getpath('ssh_key')
+        keyfile = ardj.settings.getpath('voicemailer/ssh_key')
         if keyfile:
             ssh_command += [ '-i', keyfile ]
             scp_command += [ '-i', keyfile ]
@@ -206,14 +206,10 @@ def upload_messages(messages, settings):
                 target = os.path.join(ssh_path, os.path.basename(message['filename'] ))
                 run(scp_command + [ message['filename'], ssh_login + ':' + ssh_path ])
                 run(ssh_command + [ ssh_login, 'ardj --tags=voicemail --queue --add ' + target])
-                if not settings.get('debug'):
+                if not ardj.settings.get('voicemailer/debug'):
                     os.unlink(message['filename'])
 
 
 if __name__ == '__main__':
-    settings = ardj.settings.load('voicemailer')
-    if settings is None:
-        sys.exit(0)
-
-    msgs = fetch_messages(settings)
-    upload_messages(msgs, settings)
+    msgs = fetch_messages()
+    upload_messages(msgs)

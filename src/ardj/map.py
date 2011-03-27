@@ -14,8 +14,6 @@ DEFAULT_DATABASE = '/var/log/icecast2/access.sqlite'
 DEFAULT_CACHE_FILE = '/tmp/ardj-listeners.json'
 DEFAULT_MAP_FILE = '/tmp/ardj-listeners.js'
 
-settings = None
-
 def fetch(url):
     return urllib2.urlopen(urllib2.Request(url)).read()
 
@@ -31,7 +29,7 @@ def locate_ip(ip):
     return data
 
 def get_recent_ips():
-    dbname = settings.getpath('database', DEFAULT_DATABASE)
+    dbname = ardj.settings.getpath('listeners_map/database', DEFAULT_DATABASE)
     if not os.path.exists(dbname):
         print >>sys.stderr, 'SQLite database not found: %s' % dbname
         return {}
@@ -42,7 +40,7 @@ def get_recent_ips():
 
 def locate_ips(ips):
     cache = {}
-    cache_fn = settings.getpath('cache', DEFAULT_CACHE_FILE)
+    cache_fn = ardj.settings.getpath('listeners_map/cache', DEFAULT_CACHE_FILE)
     if os.path.exists(cache_fn):
         cache = json.loads(open(cache_fn, 'rb').read())
 
@@ -83,14 +81,11 @@ def get_bounds(markers):
 
 def export_map(markers):
     js = 'var map_data = %s;' % json.dumps({ 'bounds': get_bounds(markers), 'markers': markers }, indent=True)
-    filename = settings.getpath('data_js', DEFAULT_MAP_FILE)
+    filename = ardj.settings.getpath('listeners_map/data_js', DEFAULT_MAP_FILE)
     open(filename, 'wb').write(js.encode('utf-8'))
     print 'Wrote %s' % filename
 
 def update_listeners():
-    global settings
-    settings = ardj.settings.load('listeners_map')
-
     ips = get_recent_ips()
     if not len(ips):
         print >>sys.stderr, 'No listeners.'
@@ -99,4 +94,4 @@ def update_listeners():
     ips = locate_ips(ips)
     markers = get_stats(ips)
     export_map(markers)
-    ardj.website.update(settings.get('make_target', 'autoupdate'))
+    ardj.website.update(ardj.settings.get('listeners_map/make_target'))

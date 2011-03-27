@@ -12,14 +12,14 @@ import time
 import urllib
 import urllib2
 
+import ardj
+import ardj.settings
+
 COMMON_LABEL = 'music'
 ARTIST_NAME_STRIP = re.compile(u'[^a-z0-9а-я]+', re.IGNORECASE|re.UNICODE)
 ANNOUNCE_DAYS_LIMIT = 14
 SOON_DAYS_LIMIT = 3
 SOON_LABEL = 'concert-soon'
-
-
-settings = None
 
 def get_artist_names():
     cur = ardj.Open().database.cursor()
@@ -36,7 +36,7 @@ def get_events(names):
     result = []
     first = lambda x: x and x[0] or None
     for name in names:
-        url = 'http://ws.audioscrobbler.com/2.0/?method=artist.getevents&artist=%s&api_key=%s' % (urllib.quote(name.encode('utf-8')), settings.get('key'))
+        url = 'http://ws.audioscrobbler.com/2.0/?method=artist.getevents&artist=%s&api_key=%s' % (urllib.quote(name.encode('utf-8')), ardj.settings.get('last.fm/key'))
         try:
             xml = urllib2.urlopen(urllib2.Request(url)).read()
             doc = etree.XML(xml)
@@ -52,7 +52,7 @@ def get_events(names):
     return result
 
 def update_events_csv():
-    filename = settings.getpath('events.csv')
+    filename = ardj.settings.getpath('last.fm/events.csv')
 
     if os.path.exists(filename):
         if time.time() - os.stat(filename).st_mtime < 600:
@@ -66,10 +66,10 @@ def update_events_csv():
 
 def get_event_map():
     result = {}
-    csvname = settings.getpath('events.csv')
+    csvname = ardj.settings.getpath('last.fm/events.csv')
     update_events_csv()
 
-    countries = settings.get('event_countries', ['Russian Federation'])
+    countries = ardj.settings.get('last.fm/event_countries', ['Russian Federation'])
 
     for row in csv.reader(open(csvname, 'rb')):
         name = row[0].decode('utf-8')
@@ -109,11 +109,11 @@ def get_speech(events):
 
 
 def speak_event_map(events):
-    filename = settings.getpath('events.csv')
+    filename = ardj.settings.getpath('last.fm/events.csv')
     filename_txt = filename + '.txt'
     filename_wav = filename + '.wav'
 
-    filename_ogg = settings.getpath('events_ogg', filename + '.ogg')
+    filename_ogg = ardj.settings.getpath('last.fm/events_ogg', filename + '.ogg')
 
     open(filename_txt, 'wb').write(get_speech(events).encode('utf-8'))
     subprocess.Popen(['text2wave', '-eval', '(voice_msu_ru_nsh_clunits)', filename_txt, '-o', filename_wav]).wait()
@@ -124,8 +124,9 @@ def speak_event_map(events):
 
 
 def xlat(key, value, default=None):
-    if settings.has_key(key) and settings[key].has_key(value):
-        return settings[key][value]
+    found = ardj.settings.get('last.fm/' + key + '/' + value)
+    if found is not None:
+        return found
     if default is None:
         default = value
     return default
@@ -152,15 +153,6 @@ def update_tags(events):
 
 
 if __name__ == '__main__':
-    if not os.path.abspath(sys.argv[0]).startswith('/usr'):
-        src_dir = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '..'))
-        sys.path.insert(0, src_dir)
-
-    import ardj
-    import ardj.settings
-
-    settings = ardj.settings.load('last.fm')
-
     events = get_event_map()
     speak_event_map(events)
     update_tags(events)

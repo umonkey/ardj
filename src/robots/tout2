@@ -1,10 +1,6 @@
 #!/usr/bin/env python
 # vim: set fileencoding=utf-8:
 
-import ardj
-import ardj.settings
-import ardj.website
-import ardj.tags
 import datetime
 import json
 import os
@@ -18,7 +14,11 @@ import urllib
 import urllib2
 import wave
 
-settings = None
+import ardj
+import ardj.settings
+import ardj.website
+import ardj.tags
+
 temp_files = []
 
 def mktemp(suffix=None):
@@ -38,13 +38,13 @@ def sox(args, suffix='.wav'):
 
 def get_artist_names():
     cur = ardj.Open().database.cursor()
-    return sorted([row[0] for row in cur.execute('SELECT DISTINCT artist FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?) AND weight >= ?', (settings.get('label', 'music'), float(settings.get('weight', '1.0')), )).fetchall()])
+    return sorted([row[0] for row in cur.execute('SELECT DISTINCT artist FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?) AND weight >= ?', (ardj.settings.get('tout/label', 'music'), float(ardj.settings.get('tout/weight', '1.0')), )).fetchall()])
 
 def fetch_artist_events(artist_name):
     events = []
 
     try:
-        url = 'http://ws.audioscrobbler.com/2.0/?method=artist.getEvents&artist=%s&api_key=%s&format=json&autocorrect=1' % (urllib.quote(artist_name.encode('utf-8')), settings.get('lastfm_api_key'))
+        url = 'http://ws.audioscrobbler.com/2.0/?method=artist.getEvents&artist=%s&api_key=%s&format=json&autocorrect=1' % (urllib.quote(artist_name.encode('utf-8')), ardj.settings.get('last.fm/key'))
         data = json.loads(urllib2.urlopen(urllib2.Request(url)).read())
 
         if not data.has_key('events'):
@@ -77,10 +77,10 @@ def fetch_artist_events(artist_name):
     return events
 
 def fetch_events():
-    cache_fn = settings.getpath('cache', '~/.config/ardj/events.json')
+    cache_fn = ardj.settings.getpath('tout/cache', '~/.config/ardj/events.json')
 
     if os.path.exists(cache_fn):
-        if time.time() - os.stat(cache_fn).st_mtime < int(settings.get('cache_ttl', '3600')):
+        if time.time() - os.stat(cache_fn).st_mtime < int(ardj.settings.get('tout/cache_ttl', '3600')):
             return json.loads(open(cache_fn, 'rb').read())
 
     events = []
@@ -103,7 +103,7 @@ def update_website():
     data['bounds'].append(min([e['ll'][1] for e in data['markers']]))
     data['bounds'].append(max([e['ll'][1] for e in data['markers']]))
 
-    filename = settings.getpath('website_js', '~/.config/ardj/event-map.js')
+    filename = ardj.settings.getpath('tout/website_js', '~/.config/ardj/event-map.js')
     output = 'var map_data = %s;' % json.dumps(data, indent=True)
     open(filename, 'wb').write(output)
     print 'Wrote %s' % filename
@@ -113,9 +113,9 @@ def update_website():
 def get_announce_text():
     u"Возвращает текст для диктовки роботом."
     data = {}
-    date_limit = time.strftime('%Y-%m-%d', time.localtime(time.time() + int(settings.get('announce_time_limit', 86400*14))))
+    date_limit = time.strftime('%Y-%m-%d', time.localtime(time.time() + int(ardj.settings.get('tout/announce_time_limit', 86400*14))))
 
-    countries = settings.get('announce_countries')
+    countries = ardj.settings.get('tout/announce_countries')
     for event in fetch_events():
         if not countries or event['country'] in countries:
             date = event['startDate']
@@ -128,7 +128,7 @@ def get_announce_text():
                 if event['artist'] not in data[date][city]:
                     data[date][city].append(event['artist'])
 
-    output = settings.get('announce_prefix', u'').strip() + u'\n\n'
+    output = ardj.settings.get('tout/announce_prefix', u'').strip() + u'\n\n'
     for date in sorted(data.keys()):
         output += xlat_date(date) + u'.\n'
         for city in sorted(data[date].keys()):
@@ -136,7 +136,7 @@ def get_announce_text():
             for artist in sorted(data[date][city]):
                 output += u', ' + xlat_artist(artist)
             output += u'.\n\n'
-    output += settings.get('announce_suffix', u'')
+    output += ardj.settings.get('tout/announce_suffix', u'')
     return output.strip()
 
 def update_announce():
@@ -152,7 +152,7 @@ def update_announce():
     length = get_wav_length(speech_fn)
     print 'Resampled speech length is %u seconds.' % length
 
-    if settings.get('background'):
+    if ardj.settings.get('tout/background'):
         background_fn = get_background_fn(length)
         if background_fn:
             speech_fn = sox([ '--combine', 'mix-power', '-v', '0.25', background_fn, speech_fn, 'OUTPUT' ])
@@ -160,13 +160,13 @@ def update_announce():
     result_fn = sox([ speech_fn, 'OUTPUT' ], suffix='.ogg')
     print 'Wrote result to %s' % result_fn
 
-    target_fn = settings.getpath('announce_file')
+    target_fn = ardj.settings.getpath('tout/announce_file')
     if os.path.exists(target_fn):
         os.unlink(target_fn)
         shutil.move(result_fn, target_fn)
         result_fn = target_fn
 
-    track_id = int(settings.get('track_id', '0'))
+    track_id = int(ardj.settings.get('tout/track_id', '0'))
     if track_id:
         a = ardj.Open()
         length = ardj.tags.raw(result_fn).info.length
@@ -181,11 +181,11 @@ def get_wav_length(filename):
     return f.getnframes() / f.getframerate()
 
 def get_background_fn(length):
-    filename = settings.getpath('announce_background', '~/this file should not exist')
+    filename = ardj.settings.getpath('tout/announce_background', '~/this file should not exist')
     if not os.path.exists(filename):
         a = ardj.Open()
         cur = a.database.cursor()
-        tracks = sorted([row[0] for row in cur.execute('SELECT filename FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?) ORDER BY weight DESC LIMIT 10', (settings.get('background_label', settings.get('label', 'music')), )).fetchall()])
+        tracks = sorted([row[0] for row in cur.execute('SELECT filename FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?) ORDER BY weight DESC LIMIT 10', (ardj.settings.get('tout/background_label', ardj.settings.get('tout/label', 'music')), )).fetchall()])
         if not len(tracks):
             return None
         filename = os.path.join(a.config.get_music_dir(), tracks[random.randrange(0, len(tracks))])
@@ -203,22 +203,21 @@ def xlat_date(date):
     return output
 
 def xlat_city(city):
-    table = settings.get('city_map', {})
+    table = ardj.settings.get('tout/city_map', {})
     if table.has_key(city):
         return table[city]
     return city
 
 def xlat_artist(artist):
-    table = settings.get('artist_map', {})
+    table = ardj.settings.get('tout/artist_map', {})
     if table.has_key(artist):
         return table[artist]
     return artist
 
 if __name__ == '__main__':
-    settings = ardj.settings.load('tout')
-    if settings.get('website_js'):
+    if ardj.settings.get('website_js'):
         update_website()
-    if settings.get('announce_file'):
+    if ardj.settings.get('announce_file'):
         update_announce()
     for f in temp_files:
         if os.path.exists(f):

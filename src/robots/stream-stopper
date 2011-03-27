@@ -7,6 +7,8 @@ import os
 import sys
 import time
 
+import ardj.settings
+
 MAX_FILE_AGE_DAYS = 7
 
 RSS_CHANNEL = u'''<?xml version="1.0"?>
@@ -37,12 +39,12 @@ RSS_ITEM = u'''<item>
 
 def get_fqfn(filename):
     if os.path.dirname(filename) == '':
-        dirname = os.path.dirname(settings.getpath('dump'))
+        dirname = os.path.dirname(ardj.settings.getpath('stream/dump'))
         filename = os.path.join(dirname, filename)
     return filename
 
 def get_air_time(filename):
-    return time.strptime(get_fqfn(filename), settings.getpath('dump_rename_to'))
+    return time.strptime(get_fqfn(filename), ardj.settings.getpath('stream/dump_rename_to'))
 
 def get_air_duration(filename):
     tags = mutagen.File(filename)
@@ -58,11 +60,11 @@ def purge(dirname):
 
 def twit_file(filename):
     dur = get_air_duration(filename)
-    if dur < settings.get('twit_duration_min', 10):
+    if dur < ardj.settings.get('stream/twit_duration_min', 10):
         return
     date = get_air_time(filename)
-    twit = time.strftime(settings.get('twit_end').encode('utf-8')).decode('utf-8')
-    twit = twit.replace('URL', settings.get('base_url') + os.path.basename(filename))
+    twit = time.strftime(ardj.settings.get('stream/twit_end').encode('utf-8')).decode('utf-8')
+    twit = twit.replace('URL', ardj.settings.get('stream/base_url') + os.path.basename(filename))
     twit = twit.replace('LENGTH', str(dur))
 
     if '-silent' not in sys.argv:
@@ -78,23 +80,16 @@ def update_rss(dirname):
         xml += RSS_ITEM % {
             'date': time.strftime('%d.%m.%Y, %H:%M', date),
             'duration': get_air_duration(filename),
-            'link': settings.get('base_url', '') + filename,
+            'link': ardj.settings.get('stream/base_url', '') + filename,
             'length': os.stat(filename).st_size,
             'rss_date': email.utils.formatdate(time.mktime(date)),
         }
 
     xml = RSS_CHANNEL.replace('###ITEMS###', xml)
-    open(settings.getpath('rss_name'), 'wb').write(xml.encode('utf-8'))
+    open(ardj.settings.getpath('stream/rss_name'), 'wb').write(xml.encode('utf-8'))
 
 if __name__ == '__main__':
-    if not os.path.abspath(sys.argv[0]).startswith('/usr'):
-        src_dir = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '..'))
-        sys.path.insert(0, src_dir)
-
-    import ardj.settings
-    settings = ardj.settings.load('stream')
-
-    dirname = os.path.dirname(settings.getpath('dump'))
+    dirname = os.path.dirname(ardj.settings.getpath('stream/dump'))
     purge(dirname)
 
     filename = os.path.join(dirname, sorted([x for x in os.listdir(dirname) if x.endswith('.mp3')])[-1])

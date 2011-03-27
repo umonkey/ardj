@@ -9,15 +9,15 @@ import sys
 import tempfile
 import traceback
 
-DEFAULT_URL = 'http://broadcast.echo.msk.ru:9000/content/current.mp3'
-DEFAULT_OUT = 'news.ogg'
+import ardj.settings
 
-settings = None
+DEFAULT_URL = 'http://broadcast.echo.msk.ru:9000/content/current.mp3'
+DEFAULT_OUT = '/tmp/ardj-news.ogg'
 
 def fetch_news():
     track_length = 0
     output_fn = tempfile.mkstemp(suffix='.ogg')[1]
-    cmd = u"gst-launch-0.10 -q souphttpsrc location=\"%s\" ! decodebin ! audioconvert ! vorbisenc quality=0.5 ! oggmux ! filesink location=\"%s\"" % (settings['url'], output_fn)
+    cmd = u"gst-launch-0.10 -q souphttpsrc location=\"%s\" ! decodebin ! audioconvert ! vorbisenc quality=0.5 ! oggmux ! filesink location=\"%s\"" % (ardj.settings.get('news/url', DEFAULT_URL), output_fn)
 
     from ardj import Open
     ardj = Open()
@@ -27,23 +27,24 @@ def fetch_news():
         if os.stat(output_fn).st_size:
             subprocess.Popen(['vorbisgain', '-f', '-q', output_fn]).wait()
 
-            if os.path.exists(settings['out']):
-                os.unlink(settings['out'])
+            target_fn = ardj.settings.getpath('news/out', DEFAULT_OUT)
+            if os.path.exists(target_fn):
+                os.unlink(target_fn)
             os.chmod(output_fn, 0664)
-            shutil.move(output_fn, settings['out'])
+            shutil.move(output_fn, target_fn)
 
-            tags = mutagen.File(settings['out'])
+            tags = mutagen.File(target_fn)
             if tags:
                 track_length = int(tags.info.length)
     except Exception, e:
         print >>sys.stderr, 'Could not fetch news: %s' % e
         traceback.print_exc(e)
 
-    if settings.has_key('track_id') and settings['track_id']:
-        track_id = int(settings['track_id'])
+    track_id = int(ardj.settings.get('news/track_id', '0')
+    if track_id:
         ardj.database.cursor().execute('UPDATE tracks SET length = ? WHERE id = ?', (track_length, track_id, ))
         ardj.queue_track(track_id)
-        if settings.has_key('queue') and settings['queue'] == 'yes':
+        if ardj.settings.get('queue') == 'yes':
             ardj.queue_track(track_id)
         ardj.database.commit()
 
@@ -51,14 +52,4 @@ def fetch_news():
 
 
 if __name__ == '__main__':
-    if not os.path.abspath(sys.argv[0]).startswith('/usr'):
-        src_dir = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '..'))
-        sys.path.insert(0, src_dir)
-
-    import ardj.settings
-    settings = ardj.settings.load('news', defaults={
-        'url': DEFAULT_URL,
-        'out': DEFAULT_OUT,
-    })
-
     fetch_news()

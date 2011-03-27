@@ -15,14 +15,11 @@ def mkpodcast(source):
     
     Source is the name of the dump file created by icecast.  Returns a
     temporary MP3 file name which must be moved somewhere else or deleted."""
-
-    settings = ardj.settings.load('postproduction')
-
-    noise_profile = settings.getpath('noise_profile')
+    noise_profile = ardj.settings.getpath('postproduction/noise_profile')
     if not os.path.exists(noise_profile):
         print >>sys.stderr, 'WARNING: postproduction/noise_profile not set.'
     else:
-        noise_strength = str(settings.get('noise_strength', '0.3'))
+        noise_strength = str(ardj.settings.get('postproduction/noise_strength', '0.3'))
         source = sox([ source, 'OUTPUT', 'noisered', noise_profile, noise_strength, 'silence', '-l', '1', '0.2', '-50d', '-1', '0.2', '-50d', 'norm' ])
 
     output = ardj.util.mktemp(suffix='.mp3')

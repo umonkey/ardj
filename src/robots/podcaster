@@ -49,10 +49,10 @@ def add_song(ardj, artist, title, mp3_link, tags):
         except Exception, e:
             ardj.log.error('Could not fetch %s: %s' % (mp3_link, e))
 
-def update_feeds(settings):
+def update_feeds():
     a = ardj.Open()
 
-    for podcast in settings.list():
+    for podcast in ardj.settings.get('podcasts/feeds', []):
         print 'Updating %s' % podcast['name'].encode('utf-8')
         feed = feedparser.parse(podcast['feed'])
 
@@ -71,12 +71,12 @@ def update_feeds(settings):
 
 class Podcaster:
     def __init__(self):
-        self.settings = ardj.settings.load('podcasts')
+        pass
 
     def get_entries(self):
         """Returns a list of available episodes."""
         items = []
-        for podcast in self.settings.get('feeds', []):
+        for podcast in ardj.settings.get('podcasts/feeds', []):
             feed = feedparser.parse(podcast['feed'])
 
             feed_author = None
@@ -110,7 +110,7 @@ class Podcaster:
 
     def process_entries(self, entries):
         rebuild = False
-        post_dir = os.path.join(self.settings.getpath('site_root'), self.settings.getpath('site_post_dir'))
+        post_dir = os.path.join(ardj.settings.getpath('podcasts/site_root'), ardj.settings.getpath('podcasts/site_post_dir'))
         for entry in entries:
             if entry.has_key('filename'):
                 post_fn = os.path.join(post_dir, entry['filename'] + '.md')
@@ -124,7 +124,7 @@ class Podcaster:
     def publish_entry(self, entry, filename):
         e = entry
         print 'Reposting %s' % os.path.basename(filename)
-        e['file_backup'] = self.settings.get('file_base').rstrip('/') + '/' + entry['filename'] + '.mp3'
+        e['file_backup'] = ardj.settings.get('podcasts/file_base').rstrip('/') + '/' + entry['filename'] + '.mp3'
         e['labels'] = u', '.join(entry['tags'])
         e['date_time'] = time.strftime('%Y-%m-%d %H:%M', entry['date'])
         e['filesize'] = self.get_filesize(entry)
@@ -135,7 +135,7 @@ class Podcaster:
         f.close()
 
     def upload_entry(self, entry):
-        upath = urlparse.urlparse(self.settings.get('file_upload'))
+        upath = urlparse.urlparse(ardj.settings.get('podcasts/file_upload'))
         src_filename = fetch_file(entry['file'])
         dst_filename = upath.path.rstrip('/') + '/' + entry['filename'] + '.mp3'
 
