@@ -8,6 +8,7 @@ import urllib2
 from sqlite3 import dbapi2 as sqlite
 
 import ardj.settings
+import ardj.website
 
 DEFAULT_DATABASE = '/var/log/icecast2/access.sqlite'
 DEFAULT_CACHE_FILE = '/tmp/ardj-listeners.json'
@@ -98,3 +99,4 @@ def update_listeners():
     ips = locate_ips(ips)
     markers = get_stats(ips)
     export_map(markers)
+    ardj.website.update(settings.get('make_target', 'autoupdate'))

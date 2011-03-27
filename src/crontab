@@ -18,6 +18,9 @@ MAILTO=hex@umonkey.net
 # Обновление афиши по утрам (в 6:00).
 0 6		* * *	radio	/usr/lib/ardj/robots/tout2
 
+# Обновление карты слушателей.
+0 6		* * *	radio	ardj map-listeners >/dev/null
+
 # Обновление @preshow-music перед началом ТСН (18:50 по четвергам).
 50 18	* * *	radio	/usr/lib/ardj/robots/preshow
 

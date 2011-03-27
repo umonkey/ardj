@@ -9,4 +9,5 @@ def update(task_name='autoupdate'):
     if os.path.exists(dirname):
         subprocess.Popen([ 'make', '-C', dirname, task_name ]).wait()
         return True
+    print 'Web site not updated: %s does not exist.' % dirname
     return False
