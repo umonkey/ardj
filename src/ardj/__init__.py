@@ -18,6 +18,7 @@ import ardj.scrobbler as scrobbler
 import ardj.tags as tags
 
 have_jabber = False
+ardj_instance = None
 
 class ardj:
     def __init__(self):
@@ -695,4 +696,7 @@ class ardj:
                 os.unlink(filename_txt)
 
 def Open():
-    return ardj()
+    global ardj_instance
+    if ardj_instance is None:
+        ardj_instance = ardj()
+    return ardj_instance
