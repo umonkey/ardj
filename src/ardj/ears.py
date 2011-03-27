@@ -1,15 +1,27 @@
-#!/usr/bin/env python
 # vim: set fileencoding=utf-8:
-#
-# Details:
-# http://code.google.com/p/ardj/wiki/Statistics
+
+"""Aggregates play counts.
+
+Reads files specified at the command line, sums listeners, prints results in
+CSV to stdout.  Files are of the form:
+
+artist,title,listeners
+
+This command is designed for use with the logrotate daemon.
+"""
 
 import csv
+import os
 import sys
+
+import ardj.settings
 
 def merge(filenames):
     data = {}
     for filename in filenames:
+        if not os.path.exists(filename):
+            print 'WARNING: file %s not found.' % filename
+            continue
         r = csv.reader(open(filename, 'rb'))
         for row in r:
             if len(row) < 4:
@@ -31,5 +43,6 @@ def format_data(data):
         for title in sorted(tracks.keys()):
             f.writerow([artist.encode('utf-8'), title.encode('utf-8'), tracks[title]])
 
-if __name__ == '__main__':
-    format_data(merge(sys.argv[1:]))
+def aggregate(args):
+    """Aggregates play counts."""
+    format_data(merge(args))

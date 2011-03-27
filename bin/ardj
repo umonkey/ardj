@@ -150,6 +150,9 @@ if __name__ == '__main__':
 		elif command == 'map-listeners':
 			import ardj.map
 			ardj.map.update_listeners()
+		elif command == 'count-ears':
+			import ardj.ears
+			ardj.ears.aggregate(sys.argv[2:])
 		else:
 			print >>sys.stderr, 'Unknown command: %s' % sys.argv[1]
 			sys.exit(1)
