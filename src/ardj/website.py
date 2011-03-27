@@ -1,6 +1,7 @@
-import ardj.settings
 import subprocess
 import os
+
+import ardj.settings
 
 def update(task_name='autoupdate'):
     settings = ardj.settings.load('website')
