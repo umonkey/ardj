@@ -259,5 +259,7 @@ instance = None
 def Open(filename=None):
     global instance
     if instance is None:
-        instance = database(filename or ardj.settings.getpath('database', '~/.config/ardj/ardj.sqlite'))
+        if filename is None:
+            filename = ardj.settings.getpath('database', '~/.config/ardj/ardj.sqlite')
+        instance = database(filename)
     return instance
