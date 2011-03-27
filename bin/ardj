@@ -1,160 +1,160 @@
 #!/usr/bin/env python
-# vim: set ts=4 sts=4 sw=4 noet fileencoding=utf-8:
+# vim: set ts=4 sts=4 sw=4 et fileencoding=utf-8:
 
 import os
 import sys
 
 def usage():
-	print "Usage: %s [options]" % os.path.basename(sys.argv[0])
-	print "\nCommand options:"
-	print " --add        adds tracks to the database"
-	print " --backup     save metadata to file tags"
-	print " --config     edit config file"
-	print " --dbconsole  open SQLite console"
-	print " --jabber     run a jabber bot"
-	print " --next       show next track"
-	print " --sql        execute an SQL statement"
-	print " --reset      reset database"
-	print " --restart    restart a running jabber bot"
-	print " --stats      show database statistics"
-	print " --update     update database"
-	print ""
-	print "Control options:"
-	print " --debug      enable extra logging"
-	print " --delete     delete files after --adding"
-	print " --queue      queue tracks after --adding"
-	print " --quiet      suppress log messages (stderr)"
-	print " --scrobble   scrobble track (only makes sense with --next)"
-	print " --tags       specify tags for --add"
-	return 1
+    print "Usage: %s [options]" % os.path.basename(sys.argv[0])
+    print "\nCommand options:"
+    print " --add        adds tracks to the database"
+    print " --backup     save metadata to file tags"
+    print " --config     edit config file"
+    print " --dbconsole  open SQLite console"
+    print " --jabber     run a jabber bot"
+    print " --next       show next track"
+    print " --sql        execute an SQL statement"
+    print " --reset      reset database"
+    print " --restart    restart a running jabber bot"
+    print " --stats      show database statistics"
+    print " --update     update database"
+    print ""
+    print "Control options:"
+    print " --debug      enable extra logging"
+    print " --delete     delete files after --adding"
+    print " --queue      queue tracks after --adding"
+    print " --quiet      suppress log messages (stderr)"
+    print " --scrobble   scrobble track (only makes sense with --next)"
+    print " --tags       specify tags for --add"
+    return 1
 
 def run(commands, args):
-	if type(commands) != list:
-		commands = [commands]
-	dirs = os.getenv('PATH').split(os.pathsep)
-	for command in [x for x in commands if x]:
-		for dir in dirs:
-			cmd = os.path.join(dir, command)
-			if command and os.path.exists(cmd):
-				args.insert(0, os.path.basename(cmd))
-				return os.execv(cmd, args)
-	print >>sys.stderr, '%s not found in $PATH.' % '|'.join(commands)
-	sys.exit(1)
+    if type(commands) != list:
+        commands = [commands]
+    dirs = os.getenv('PATH').split(os.pathsep)
+    for command in [x for x in commands if x]:
+        for dir in dirs:
+            cmd = os.path.join(dir, command)
+            if command and os.path.exists(cmd):
+                args.insert(0, os.path.basename(cmd))
+                return os.execv(cmd, args)
+    print >>sys.stderr, '%s not found in $PATH.' % '|'.join(commands)
+    sys.exit(1)
 
 def oldstyle():
-	import getopt
-	from ardj import Open
-	ardj = Open()
+    import getopt
+    from ardj import Open
+    ardj = Open()
 
-	try:
-		opts, args = getopt.getopt(sys.argv[1:], 'i', ['add', 'backup', 'config', 'dbconsole', 'debug', 'delete', 'jabber', 'jabber-child', 'next', 'quiet', 'queue', 'reset', 'restart', 'scrobble', 'sql', 'stats', 'tags=', 'update'])
-	except getopt.GetoptError:
-		sys.exit(usage())
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], 'i', ['add', 'backup', 'config', 'dbconsole', 'debug', 'delete', 'jabber', 'jabber-child', 'next', 'quiet', 'queue', 'reset', 'restart', 'scrobble', 'sql', 'stats', 'tags=', 'update'])
+    except getopt.GetoptError:
+        sys.exit(usage())
 
-	if not len(opts):
-		sys.exit(usage())
+    if not len(opts):
+        sys.exit(usage())
 
-	tags = []
-	queue = delete = False
+    tags = []
+    queue = delete = False
 
-	# prepare for work
-	for option, value in opts:
-		if '--quiet' == option:
-			sys.stderr = None
-		if '--debug' == option:
-			ardj.debug = True
-		if '--delete' == option:
-			delete = True
-		if '--tags' == option:
-			tags = value.split(',')
-		if '--queue' == option:
-			queue = True
+    # prepare for work
+    for option, value in opts:
+        if '--quiet' == option:
+            sys.stderr = None
+        if '--debug' == option:
+            ardj.debug = True
+        if '--delete' == option:
+            delete = True
+        if '--tags' == option:
+            tags = value.split(',')
+        if '--queue' == option:
+            queue = True
 
-	for option, value in opts:
-		if '--add' == option:
-			for filename in args:
-				if os.path.exists(filename):
-					ardj.add_file(filename, {'labels':tags, 'owner': 'console'}, queue=queue)
-					if delete:
-						os.unlink(filename)
-			ardj.database.commit()
-			args = []
-		if '--backup' == option:
-			import db
-			idx, tracks = 1, db.track.get_all()
-			for track in tracks:
-				if os.path.exists(track.path):
-					print '%u/%u\r' % (idx, len(tracks)),
-					sys.stdout.flush()
-					track.backup()
-				idx += 1
-			print
-		if '--dbconsole' == option:
-			run('sqlite3', [ardj.config.get_db_name()])
-		if '--config' == option:
-			run([os.getenv('EDITOR'), 'editor'], [ardj.config.filename])
-		if '--jabber' == option:
-			import subprocess, time
-			while True:
-				args = [sys.argv[0], '--jabber-child']
-				if ardj.debug:
-					args.append('--debug')
-				if not subprocess.Popen(args).wait():
-					sys.exit(0)
-				print >>sys.stderr, 'Unclean shutdown, restarting in 5 seconds.'
-				time.sleep(5)
-		if '--jabber-child' == option:
-			ret = ardj.get_bot().run()
-			ardj.close()
-			sys.exit(ret)
-		if '--next' == option:
-			scrobble = ('--scrobble', '') in opts
-			track = ardj.get_next_track(scrobble=scrobble)
-			if track is None:
-				print >>sys.stderr, 'Could not find a track to play.'
-				sys.exit(1)
-			print track['filepath']
-		if '--reset' == option:
-			filename = ardj.config.get_db_name()
-			if os.path.exists(filename):
-				os.unlink(filename)
-				print 'OK'
-		if '--restart' == option:
-			import signal
-			import subprocess
-			pidfile = '/tmp/ardj-jabber.pid'
-			if os.path.exists(pidfile):
-				pid = int(open(pidfile).read().strip())
-				try:
-					os.kill(pid, signal.SIGTERM)
-				except OSError: pass
-				subprocess.Popen(['/usr/bin/killall', '-HUP', 'ices']).wait()
-		if '--sql' == option:
-			cur = ardj.database.cursor()
-			for arg in args:
-				cur.execute(arg)
-			ardj.database.commit()
-			ardj.purge()
-		if '--stats' == option:
-			stats = ardj.get_stats()
-			print '%u tracks, %.1f hours.' % (stats['tracks'], stats['seconds'] / 60 / 60)
-		if '--update' == option:
-			ardj.sync()
+    for option, value in opts:
+        if '--add' == option:
+            for filename in args:
+                if os.path.exists(filename):
+                    ardj.add_file(filename, {'labels':tags, 'owner': 'console'}, queue=queue)
+                    if delete:
+                        os.unlink(filename)
+            ardj.database.commit()
+            args = []
+        if '--backup' == option:
+            import db
+            idx, tracks = 1, db.track.get_all()
+            for track in tracks:
+                if os.path.exists(track.path):
+                    print '%u/%u\r' % (idx, len(tracks)),
+                    sys.stdout.flush()
+                    track.backup()
+                idx += 1
+            print
+        if '--dbconsole' == option:
+            run('sqlite3', [ardj.config.get_db_name()])
+        if '--config' == option:
+            run([os.getenv('EDITOR'), 'editor'], [ardj.config.filename])
+        if '--jabber' == option:
+            import subprocess, time
+            while True:
+                args = [sys.argv[0], '--jabber-child']
+                if ardj.debug:
+                    args.append('--debug')
+                if not subprocess.Popen(args).wait():
+                    sys.exit(0)
+                print >>sys.stderr, 'Unclean shutdown, restarting in 5 seconds.'
+                time.sleep(5)
+        if '--jabber-child' == option:
+            ret = ardj.get_bot().run()
+            ardj.close()
+            sys.exit(ret)
+        if '--next' == option:
+            scrobble = ('--scrobble', '') in opts
+            track = ardj.get_next_track(scrobble=scrobble)
+            if track is None:
+                print >>sys.stderr, 'Could not find a track to play.'
+                sys.exit(1)
+            print track['filepath']
+        if '--reset' == option:
+            filename = ardj.config.get_db_name()
+            if os.path.exists(filename):
+                os.unlink(filename)
+                print 'OK'
+        if '--restart' == option:
+            import signal
+            import subprocess
+            pidfile = '/tmp/ardj-jabber.pid'
+            if os.path.exists(pidfile):
+                pid = int(open(pidfile).read().strip())
+                try:
+                    os.kill(pid, signal.SIGTERM)
+                except OSError: pass
+                subprocess.Popen(['/usr/bin/killall', '-HUP', 'ices']).wait()
+        if '--sql' == option:
+            cur = ardj.database.cursor()
+            for arg in args:
+                cur.execute(arg)
+            ardj.database.commit()
+            ardj.purge()
+        if '--stats' == option:
+            stats = ardj.get_stats()
+            print '%u tracks, %.1f hours.' % (stats['tracks'], stats['seconds'] / 60 / 60)
+        if '--update' == option:
+            ardj.sync()
 
 if __name__ == '__main__':
-	if len(sys.argv) >= 2 and not sys.argv[1].startswith('-'):
-		command = sys.argv[1]
-		if command == 'find-orphans':
-			import ardj.orphans
-			ardj.orphans.mark()
-		elif command == 'map-listeners':
-			import ardj.map
-			ardj.map.update_listeners()
-		elif command == 'count-ears':
-			import ardj.ears
-			ardj.ears.aggregate(sys.argv[2:])
-		else:
-			print >>sys.stderr, 'Unknown command: %s' % sys.argv[1]
-			sys.exit(1)
-		sys.exit(0)
-	oldstyle()
+    if len(sys.argv) >= 2 and not sys.argv[1].startswith('-'):
+        command = sys.argv[1]
+        if command == 'find-orphans':
+            import ardj.orphans
+            ardj.orphans.mark()
+        elif command == 'map-listeners':
+            import ardj.map
+            ardj.map.update_listeners()
+        elif command == 'count-ears':
+            import ardj.ears
+            ardj.ears.aggregate(sys.argv[2:])
+        else:
+            print >>sys.stderr, 'Unknown command: %s' % sys.argv[1]
+            sys.exit(1)
+        sys.exit(0)
+    oldstyle()
