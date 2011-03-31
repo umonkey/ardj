@@ -27,5 +27,6 @@ MAILTO=hex@umonkey.net
 # TODO: изменить время в соответствии с расписанием.
 0 3		* * *	radio	/usr/lib/ardj/robots/freshener
 
-# Добавление черновика выпуска в четверг вечером.
+# Так себе новости.
 0 21	* * 4	radio	ardj tsn prepare >/dev/null
+0 3		* * 5	radio	ardj tsn email >/dev/null

@@ -7,6 +7,7 @@ import sys
 import time
 
 import ardj.settings
+import ardj.util
 import ardj.website
 
 u"""Подготовка выпуска «Так себе новостей».
@@ -89,16 +90,22 @@ def run_prepare():
     ardj.website.update()
 
 def run_email():
+    to = ardj.settings.get('tsn/mail_to', None)
+    if not to:
+        print 'tsn/mail_to not set, not sending email.'
+        return 0
+
     filename = find_last_episode()
     page = ardj.website.load_page(filename)
     page_id = int(filename.split(os.path.sep)[-2])
 
     links = u''.join([u'- %s\n  %s\n' % (l[1], l[0]) for l in re.findall('<a href="([^"]+)">([^<]+)</a>', page['text'])])
+    page_date = time.strptime(page['date'][:10], '%Y-%m-%d')
 
     args = {
-        'dd': time.strftime('%d'),
-        'mm': time.strftime('%m'),
-        'yyyy': time.strftime('%Y'),
+        'dd': time.strftime('%d', page_date),
+        'mm': time.strftime('%m', page_date),
+        'yyyy': time.strftime('%Y', page_date),
         'episode': int(page_id),
         'links': links.strip(),
     }
@@ -106,7 +113,7 @@ def run_email():
     text = EMAIL_TEMPLATE % args
     subject = EMAIL_SUBJECT % args
 
-    print text
+    ardj.util.send_mail(to, subject, text)
 
 def run(args):
     args = args or ['default']

@@ -37,9 +37,14 @@ class mktemp:
 def send_mail(to, subject, message, files=None):
     if files and type(files) != list:
         files = [files]
+    if type(to) != list:
+        to = [to]
+
+    if type(message) == unicode:
+        message = message.encode('utf-8')
 
     msg = MIMEMultipart()
-    msg.attach(MIMEText(message))
+    msg.attach(MIMEText(message, _charset='utf-8'))
 
     if files:
         for filename in files:
@@ -70,6 +75,8 @@ def send_mail(to, subject, message, files=None):
     s.login(login, password)
     s.sendmail(login, to, msg.as_string())
     s.quit()
+
+    print 'Sent mail to %s' % to[0]
 
 def send_mail_cli(args):
     if not args:
