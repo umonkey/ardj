@@ -17,3 +17,9 @@ def update(task_name=None):
         return True
     print 'Web site not updated: %s does not exist.' % dirname
     return False
+
+def load_page(filename):
+    head, text = open(filename, 'rb').read().decode('utf-8').split('---\n', 1)
+    page = dict([[x.strip() for x in l.strip().split(':', 1)] for l in head.split('\n') if l.strip()])
+    page['text'] = text
+    return page

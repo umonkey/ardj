@@ -7,26 +7,26 @@ class wrapper:
         """Initializes the instance without any checking."""
         self.data = data
 
-    def get(self, key, default=None):
+    def get(self, key, default=None, fail=False):
         """Returns the value of the specified key.
 
         Key can be a path separated by slashes, e.g. foo/bar = ['foo']['bar'].
         If the path could not be resolved, default is returned."""
         data = self.data
         for key in key.split('/'):
-            if type(data) != dict:
-                return default
-            if not data.has_key(key):
+            if type(data) != dict or not data.has_key(key):
+                if fail:
+                    raise Exception('ERROR: %s not set.' % key)
                 return default
             data = data[key]
         return data
 
-    def getpath(self, key, default=None):
+    def getpath(self, key, default=None, fail=False):
         """Returns a path specified by key.
 
         The value returned by get() is processed with os.path.expanduser()
         which makes the ~/ prefix available."""
-        value = self.get(key, default)
+        value = self.get(key, default, fail=fail)
         if value:
             value = os.path.expanduser(value)
         return value
@@ -73,10 +73,10 @@ def load():
         wrapper_instance = wrapper(data)
     return wrapper_instance
 
-def get(key, default=None):
+def get(key, default=None, fail=False):
     """get(k, v) <==> load().get(k, v)"""
-    return load().get(key, default)
+    return load().get(key, default, fail=fail)
 
-def getpath(key, default=None):
+def getpath(key, default=None, fail=False):
     """getpath(k, v) <==> load().getpath(k, v)"""
-    return load().getpath(key, default)
+    return load().getpath(key, default, fail=fail)
