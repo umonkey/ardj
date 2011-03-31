@@ -142,15 +142,16 @@ def oldstyle():
             ardj.sync()
 
 COMMAND_MAP = [
-    ('find-orphans', 'orphans', 'mark'),
-    ('map-listeners', 'map', 'update_listeners'),
-    ('count-ears', 'ears', 'aggregate'),
-    ('twit', 'twitter', 'twit'),
-    ('say', 'speech', 'render_text_cli'),
+    ('count-ears', 'ears', 'aggregate', 'aggregates play counts'),
+    ('find-orphans', 'orphans', 'mark', 'marks tracks that don\'t belong to any playlist'),
+    ('map-listeners', 'map', 'update_listeners', 'updates the listeners map'),
+    ('news', 'news', 'update', 'updates news from echo.msk.ru'),
+    ('say', 'speech', 'render_text_cli', 'renders text to voice using festival, then plays it'),
+    ('twit', 'twitter', 'twit', 'interacts with the twitter account'),
 ]
 
 def find_command(command_name):
-    for cmd, mod, fun in COMMAND_MAP:
+    for cmd, mod, fun, doc in COMMAND_MAP:
         if command_name == cmd:
             m = __import__('ardj.' + mod)
             m = getattr(m, mod)
@@ -158,12 +159,8 @@ def find_command(command_name):
             return f
 
     print 'Unknown command: "%s", available commands:' % command_name
-    for cmd, mod, fun in sorted(COMMAND_MAP, key=lambda x: x[0]):
-        m = __import__('ardj.' + mod)
-        m = getattr(m, mod)
-        f = getattr(m, fun)
-        doc = getattr(f, '__doc__') or 'No description.'
-        print '  %-20s   %s' % (cmd, doc.split('\n')[0])
+    for cmd, mod, fun, doc in sorted(COMMAND_MAP, key=lambda x: x[0]):
+        print '  %-20s   %s' % (cmd, doc)
     sys.exit(1)
 
 if __name__ == '__main__':

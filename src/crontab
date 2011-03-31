@@ -7,7 +7,7 @@ MAILTO=hex@umonkey.net
 0 3		* * *	radio	/usr/lib/ardj/robots/podcaster
 
 # Загрузка новостей в дневное время.  При успешной загрузке они ставятся в очередь.
-15,45 7-23 * * * radio /usr/lib/ardj/robots/newsrep >/dev/null
+15,45 7-23 * * * radio	ardj news >/dev/null
 
 # Загрузка сообщений из твиттера.
 */5 *   * * *   radio   /usr/lib/ardj/robots/twitter -replies >/dev/null
