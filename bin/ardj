@@ -9,7 +9,6 @@ def usage():
     print "\nCommand options:"
     print " --add        adds tracks to the database"
     print " --backup     save metadata to file tags"
-    print " --config     edit config file"
     print " --dbconsole  open SQLite console"
     print " --jabber     run a jabber bot"
     print " --next       show next track"
@@ -47,7 +46,7 @@ def oldstyle():
     ardj = Open()
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'i', ['add', 'backup', 'config', 'dbconsole', 'debug', 'delete', 'jabber', 'jabber-child', 'next', 'quiet', 'queue', 'reset', 'restart', 'scrobble', 'sql', 'stats', 'tags=', 'update'])
+        opts, args = getopt.getopt(sys.argv[1:], 'i', ['add', 'backup', 'dbconsole', 'debug', 'delete', 'jabber', 'jabber-child', 'next', 'quiet', 'queue', 'reset', 'restart', 'scrobble', 'sql', 'stats', 'tags=', 'update'])
     except getopt.GetoptError:
         sys.exit(usage())
 
@@ -91,8 +90,6 @@ def oldstyle():
             print
         if '--dbconsole' == option:
             run('sqlite3', [ardj.config.get_db_name()])
-        if '--config' == option:
-            run([os.getenv('EDITOR'), 'editor'], [ardj.config.filename])
         if '--jabber' == option:
             import subprocess, time
             while True:
@@ -142,6 +139,7 @@ def oldstyle():
             ardj.sync()
 
 COMMAND_MAP = [
+    ('config', 'settings', 'edit_cli', 'edit settings'),
     ('count-ears', 'ears', 'aggregate', 'aggregates play counts'),
     ('find-orphans', 'orphans', 'mark', 'marks tracks that don\'t belong to any playlist'),
     ('mail', 'util', 'send_mail_cli', 'send some mail'),

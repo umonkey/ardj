@@ -1,11 +1,12 @@
-import yaml
 import os
+import yaml
 
 class wrapper:
     """Wraps a dictionary for easier access."""
-    def __init__(self, data):
+    def __init__(self, data, filename):
         """Initializes the instance without any checking."""
         self.data = data
+        self.filename = filename
 
     def get(self, key, default=None, fail=False):
         """Returns the value of the specified key.
@@ -71,7 +72,7 @@ def load():
             if os.path.exists(filename):
                 data = yaml.load(open(filename, 'rb'))
                 break
-        wrapper_instance = wrapper(data)
+        wrapper_instance = wrapper(data, filename)
     return wrapper_instance
 
 def get(key, default=None, fail=False):
@@ -81,3 +82,7 @@ def get(key, default=None, fail=False):
 def getpath(key, default=None, fail=False):
     """getpath(k, v) <==> load().getpath(k, v)"""
     return load().getpath(key, default, fail=fail)
+
+def edit_cli(args):
+    editor = os.getenv('EDITOR', 'editor')
+    os.system(editor + ' ' + load().filename)
