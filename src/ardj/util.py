@@ -1,6 +1,16 @@
 import os
 import subprocess
+import sys
 import tempfile
+
+# email sending
+import smtplib
+from email import encoders
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+
+import ardj.settings
 
 def run(command):
     command = [str(x) for x in command]
@@ -23,3 +33,48 @@ class mktemp:
 
     def __unicode__(self):
         return unicode(self.filename)
+
+def send_mail(to, subject, message, files=None):
+    if files and type(files) != list:
+        files = [files]
+
+    msg = MIMEMultipart()
+    msg.attach(MIMEText(message))
+
+    if files:
+        for filename in files:
+            att = MIMEBase('application', 'octet-stream')
+            attname = os.path.basename(filename)
+            data = file(filename, 'rb').read()
+
+            att.set_payload(data)
+            encoders.encode_base64(att)
+            att.add_header('content-disposition', 'attachment', filename=attname)
+            msg.attach(att)
+
+    login = ardj.settings.get('mail/smtp/login', fail=True)
+    password = ardj.settings.get('mail/smtp/password', fail=True)
+
+    msg['Subject'] = subject
+    msg['From'] = ardj.settings.get('mail/from', login)
+
+    msg['To'] = to[0]
+    if len(to) > 1:
+        msg['Cc'] = ', '.join(to[1:])
+
+    s = smtplib.SMTP(ardj.settings.get('mail/smtp/server', 'smtp.gmail.com'), int(ardj.settings.get('mail/smtp/port', '25')))
+    s.ehlo()
+    if ardj.settings.get('mail/smtp/tls') == True:
+        s.starttls()
+    s.ehlo()
+    s.login(login, password)
+    s.sendmail(login, to, msg.as_string())
+    s.quit()
+
+def send_mail_cli(args):
+    if not args:
+        print 'Usage: ardj mail to [subject]'
+        return 1
+    if len(args) < 2:
+        args.append('no subject')
+    send_mail([args[0]], args[1], sys.stdin.read())

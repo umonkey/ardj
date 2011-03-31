@@ -144,6 +144,7 @@ def oldstyle():
 COMMAND_MAP = [
     ('count-ears', 'ears', 'aggregate', 'aggregates play counts'),
     ('find-orphans', 'orphans', 'mark', 'marks tracks that don\'t belong to any playlist'),
+    ('mail', 'util', 'send_mail_cli', 'send some mail'),
     ('map-listeners', 'map', 'update_listeners', 'updates the listeners map'),
     ('news', 'news', 'update', 'updates news from echo.msk.ru'),
     ('say', 'speech', 'render_text_cli', 'renders text to voice using festival, then plays it'),
