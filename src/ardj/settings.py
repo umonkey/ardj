@@ -13,10 +13,11 @@ class wrapper:
         Key can be a path separated by slashes, e.g. foo/bar = ['foo']['bar'].
         If the path could not be resolved, default is returned."""
         data = self.data
+        src_key = key
         for key in key.split('/'):
             if type(data) != dict or not data.has_key(key):
                 if fail:
-                    raise Exception('ERROR: %s not set.' % key)
+                    raise Exception('ERROR: %s not set.' % src_key)
                 return default
             data = data[key]
         return data
