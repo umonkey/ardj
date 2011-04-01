@@ -23,6 +23,7 @@ class Logger:
         return cls.instance
 
 def debug(text):
+    print text.strip()
     Logger.get().log.debug(text)
 
 def info(text):
