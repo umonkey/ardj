@@ -2,6 +2,8 @@ import os
 import subprocess
 import sys
 import tempfile
+import urllib
+import urllib2
 
 # email sending
 import smtplib
@@ -86,3 +88,16 @@ def send_mail_cli(args):
     if len(args) < 2:
         args.append('no subject')
     send_mail([args[0]], args[1], sys.stdin.read())
+
+
+def fetch(url, suffix=None):
+    u = urllib2.urlopen(urllib2.Request(url))
+    if u is not None:
+        ardj.log.info('Downloading %s' % url)
+        if suffix is None:
+            suffix = os.path.splitext(url)[1]
+        filename = mktemp(suffix=suffix)
+        out = open(str(filename), 'wb')
+        out.write(u.read())
+        out.close()
+        return filename
