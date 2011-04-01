@@ -1,5 +1,6 @@
 # vim: fileencoding=utf-8:
 
+import feedparser
 import glob
 import os
 import re
@@ -90,6 +91,72 @@ def run_prepare():
     ardj.info('Wrote %s' % filename)
     ardj.website.update()
 
+def find_tsn_url():
+    news_feed = ardj.settings.get('tsn/live_feed')
+    if not news_feed:
+        ardj.log.debug('tsn/live_feed not set.')
+        return None
+
+    filename = find_last_episode()
+    page = ardj.website.load_page(filename)
+    page_date = page['date'].split(' ')[0].replace('-', '')
+
+    feed = feedparser.parse(news_feed)
+    for entry in feed['entries']:
+        for enc in entry['enclosures']:
+            efn = enc['href'].split('/')[-1]
+            if efn.startswith('live-') and efn.endswith('.mp3'):
+                parts = efn.split('.')[0].split('-')
+                efn_time = int(parts[2])
+                if page_date == parts[1]:
+                    if efn_time >= 2030 and efn_time < 2200:
+                        return enc['href']
+
+def run_process():
+    tsn_url = find_tsn_url()
+    if not tsn_url:
+        return 0
+
+    filename = ardj.util.fetch(tsn_url)
+    if filename is None:
+        ardj.log.error('Could not fetch %s' % tsn_url)
+        return 1
+
+    output_wav = ardj.util.mktemp(suffix='.wav')
+    command = [ 'sox', filename, output_wav ]
+
+    if ardj.settings.get('tsn/noise/profile'):
+        command.append('noisered')
+        command.append(ardj.settings.getpath('tsn/noise/profile'))
+        command.append(ardj.settings.get('tsn/noise/level', '0.3'))
+
+        if ardj.settings.get('tsn/silence'):
+            strength = ardj.settings.get('tsn/silence/strength', '0.2')
+            level = ardj.settings.get('tsn/silence/level', '-50d')
+            command.append('silence')
+            command.append('-l')
+            command.append('1')
+            command.append(strength)
+            command.append(level)
+            command.append('-1')
+            command.append(strength)
+            command.append(level)
+
+    command.append('norm')
+    ardj.util.run(command)
+
+    output_mp3 = ardj.util.mktemp(suffix='.mp3')
+    mp3_bitrate = ardj.settings.get('tsn/mp3_bitrate', '96')
+    ardj.util.run([ 'lame', '-m', 'm', '-b', mp3_bitrate, '-B', mp3_bitrate, '--resample', '44100', output_wav, output_mp3 ])
+
+    ardj.util.run([ 'mp3gain', output_mp3 ])
+
+    tags = ardj.tags.get(output_mp3)
+    tags['artist'] = u'Тоже мне радио'
+    tags['album'] = u'Так себе новости'
+    tags['title'] = u'Выпуск ТСН от %s' % time.strftime('%d.%m.%Y') # FIXME: брать из заголовка страницы
+    ardj.tags.set(output_mp3, tags)
+
 def run_email():
     to = ardj.settings.get('tsn/mail_to', None)
     if not to:
@@ -121,6 +188,8 @@ def run(args):
 
     if args[0] == 'prepare':
         return run_prepare()
+    if args[0] == 'process':
+        return run_process()
     if args[0] == 'email':
         return run_email()
 
