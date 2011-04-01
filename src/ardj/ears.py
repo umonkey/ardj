@@ -14,13 +14,14 @@ import csv
 import os
 import sys
 
+import ardj.log
 import ardj.settings
 
 def merge(filenames):
     data = {}
     for filename in filenames:
         if not os.path.exists(filename):
-            print 'WARNING: file %s not found.' % filename
+            ardj.log.info('WARNING: file %s not found.' % filename)
             continue
         r = csv.reader(open(filename, 'rb'))
         for row in r:

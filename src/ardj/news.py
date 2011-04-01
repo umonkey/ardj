@@ -4,6 +4,7 @@ import sys
 import traceback
 
 import ardj
+import ardj.log
 import ardj.settings
 import ardj.tags
 import ardj.util
@@ -31,8 +32,8 @@ def fetch_news():
             if tags:
                 track_length = int(tags.info.length)
     except Exception, e:
-        print >>sys.stderr, 'Could not fetch news: %s' % e
-        traceback.print_exc(e)
+        ardj.log.error('Could not fetch news: %s' % e)
+        ardj.log.error(traceback.format_exc(e))
 
     track_id = int(ardj.settings.get('news/track_id', '0'))
     if track_id:

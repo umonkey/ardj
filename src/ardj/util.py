@@ -10,11 +10,12 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 
+import ardj.log
 import ardj.settings
 
 def run(command):
     command = [str(x) for x in command]
-    print '> ' + ' '.join(command)
+    ardj.log.debug('> ' + ' '.join(command))
     subprocess.Popen(command).wait()
     return True
 
@@ -25,7 +26,7 @@ class mktemp:
 
     def __del__(self):
         if os.path.exists(self.filename):
-            print 'Deleting temporary file %s' % self.filename
+            ardj.log.debug('Deleting temporary file %s' % self.filename)
             os.unlink(self.filename)
 
     def __str__(self):
@@ -76,7 +77,7 @@ def send_mail(to, subject, message, files=None):
     s.sendmail(login, to, msg.as_string())
     s.quit()
 
-    print 'Sent mail to %s' % to[0]
+    ardj.log.info('Sent mail to %s' % to[0])
 
 def send_mail_cli(args):
     if not args:

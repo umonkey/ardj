@@ -40,5 +40,4 @@ copy: deb
 	ssh -t tmradio.local 'sudo dpkg -i ardj-${VERSION}.deb; rm -f ardj-*.deb'
 
 clean:
-	rm -rf *deb *zip
-	find -name '*.orig' -delete
+	find -regex '.*\.\(pyc\|rej\|orig\|deb\|zip\)$$' -delete

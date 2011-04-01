@@ -6,6 +6,7 @@ Uses festival to render text."""
 
 import sys
 
+import ardj.log
 import ardj.settings
 import ardj.tags
 import ardj.util
@@ -46,7 +47,7 @@ def render_text(text, artist=None, title=None, play=False):
     if type(text) == unicode:
         text = text.encode('utf-8')
     open(str(filename), 'wb').write(text)
-    print 'Rendering text: %s' % text
+    ardj.log.info('Rendering text: %s' % text)
     filename, length = render_text_file(filename, artist, title)
     if play and length:
         ardj.util.run([ 'play', str(filename) ])

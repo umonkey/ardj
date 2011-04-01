@@ -6,6 +6,7 @@ import re
 import sys
 import time
 
+import ardj.log
 import ardj.settings
 import ardj.util
 import ardj.website
@@ -69,7 +70,7 @@ def run_prepare():
 
     labels = [l.strip() for l in page['labels'].split(',')]
     if 'draft' in labels:
-        print >>sys.stderr, 'ERROR: last page has the "draft" label.'
+        ardj.log.error('Last page has the "draft" label.')
         return 1
 
     parts = filename.split(os.path.sep)
@@ -86,13 +87,13 @@ def run_prepare():
     os.mkdir(os.path.dirname(filename))
     open(filename, 'wb').write(text.encode('utf-8'))
     
-    print 'Wrote %s' % filename
+    ardj.info('Wrote %s' % filename)
     ardj.website.update()
 
 def run_email():
     to = ardj.settings.get('tsn/mail_to', None)
     if not to:
-        print 'tsn/mail_to not set, not sending email.'
+        ardj.log.debug('tsn/mail_to not set, not sending email.')
         return 0
 
     filename = find_last_episode()
