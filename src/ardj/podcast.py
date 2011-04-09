@@ -1,59 +1,40 @@
-#!/usr/bin/env python
-# vim: fileencoding=utf-8:
+# vim: set fileencoding=utf-8:
 
 import feedparser
 import httplib2
 import os
-import sys
 import time
-import tempfile
-import urllib2
 import urlparse
-import subprocess
 
-import ardj
+import ardj.database
+import ardj.log
 import ardj.settings
+import ardj.util
 import ardj.website
 
-def run_command(args):
-    print '> ' + ' '.join(args)
-    subprocess.Popen(args).wait()
-
 def fetch_file(url):
-    u = urllib2.urlopen(urllib2.Request(url))
-    if u is not None:
-        print 'Downloading %s' % url
-        filename = tempfile.mkstemp(suffix='.mp3')[1]
-        out = open(filename, 'wb')
-        out.write(u.read())
-        out.close()
-        os.chmod(filename, 0664)
+    filename = ardj.util.fetch(url, '.mp3')
+    #normalizer = '/usr/lib/ardj/robots/normalizer'
+    #if os.path.exists(normalizer):
+    #    ardj.util.run(['/usr/lib/ardj/robots/normalizer', filename])
+    return filename
 
-        normalizer = '/usr/lib/ardj/robots/normalizer'
-        if os.path.exists(normalizer):
-            run_command(['/usr/lib/ardj/robots/normalizer', filename])
-
-        return filename
-
-def add_song(ardj, artist, title, mp3_link, tags):
-    cur = ardj.database.cursor()
+def add_song(artist, title, mp3_link, tags):
+    cur = ardj.database.Open().cursor()
     track_id = cur.execute('SELECT id FROM tracks WHERE artist = ? AND title = ?', (artist, title, )).fetchone()
     if track_id is None:
-        print 'Downloading "%s" by %s' % (title, artist)
+        ardj.log.info('Downloading "%s" by %s' % (title, artist))
         try:
             filename = fetch_file(mp3_link)
-            ardj.add_file(filename, { 'artist': artist, 'title': title, 'labels': tags, 'owner': 'podcaster' })
+            ardj.add_file(str(filename), { 'artist': artist, 'title': title, 'labels': tags, 'owner': 'podcaster' })
             ardj.database.commit()
-            os.unlink(filename)
             return True
         except Exception, e:
             ardj.log.error('Could not fetch %s: %s' % (mp3_link, e))
 
 def update_feeds():
-    a = ardj.Open()
-
     for podcast in ardj.settings.get('podcasts/feeds', []):
-        print 'Updating %s' % podcast['name'].encode('utf-8')
+        ardj.log.info('Updating %s' % podcast['name'].encode('utf-8'))
         feed = feedparser.parse(podcast['feed'])
 
         feed_author = None
@@ -66,7 +47,7 @@ def update_feeds():
                     author = feed_author
                     if not author and entry.has_key('author'):
                         author = entry['author']
-                    if add_song(a, author, entry['title'], enclosure['href'], podcast['tags']):
+                    if add_song(author, entry['title'], enclosure['href'], podcast['tags']):
                         pass # return # one at a time, for testing
 
 class Podcaster:
@@ -123,7 +104,7 @@ class Podcaster:
 
     def publish_entry(self, entry, filename):
         e = entry
-        print 'Reposting %s' % os.path.basename(filename)
+        ardj.log.info('Reposting %s' % os.path.basename(filename))
         e['file_backup'] = ardj.settings.get('podcasts/file_base').rstrip('/') + '/' + entry['filename'] + '.mp3'
         e['labels'] = u', '.join(entry['tags'])
         e['date_time'] = time.strftime('%Y-%m-%d %H:%M', entry['date'])
@@ -141,9 +122,9 @@ class Podcaster:
 
         if upath.scheme == 'sftp':
             target = upath.netloc + ':' + dst_filename
-            run_command([ 'scp', '-q', src_filename, target ])
+            ardj.util.run([ 'scp', '-q', src_filename, target ])
         else:
-            print >>sys.stderr, "Don't know how to upload to %s" % upath.scheme
+            ardj.log.error("Don't know how to upload to %s" % upath.scheme)
         os.unlink(src_filename)
 
     def get_filesize(self, entry):
@@ -157,7 +138,7 @@ class Podcaster:
 
         return 0
 
-
-if __name__ == '__main__':
+def run_cli(args):
+    """CLI interface to the podcast module."""
     obj = Podcaster()
     obj.process_entries(obj.get_entries())
