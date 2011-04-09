@@ -56,7 +56,7 @@ def run(command):
 def decode_subject(header):
     decode_part = lambda x: x[1] and x[0].decode(x[1]) or x[0]
     subject = u' '.join([decode_part(x) for x in email.header.decode_header(header)]).strip()
-    subject = subject.replace(ardj.settings.get('voicemailer/subject'), '')
+    subject = subject.replace(ardj.settings.get('voicemailer/subject', ''), '')
     # some shell protection
     #subject = subject.replace('`', "'")
     return subject.strip()
