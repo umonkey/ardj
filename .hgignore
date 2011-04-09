@@ -1,7 +1,4 @@
-.*\.(pyc)
-\.git
-\.deb
-\.o
+.*\.(pyc|tar\.gz|deb|git|o)$
 debian/bin
 debian/etc
 debian/usr
