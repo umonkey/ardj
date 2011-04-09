@@ -38,14 +38,14 @@ def update_feeds():
         feed = feedparser.parse(podcast['feed'])
 
         feed_author = None
-        if podcast.has_key('author'):
+        if 'author' in podcast:
             feed_author = podcast['author']
 
         for entry in feed['entries']:
-            if entry.has_key('enclosures'):
+            if 'enclosures' in entry:
                 for enclosure in entry['enclosures']:
                     author = feed_author
-                    if not author and entry.has_key('author'):
+                    if not author and 'author' in entry:
                         author = entry['author']
                     if add_song(author, entry['title'], enclosure['href'], podcast['tags']):
                         pass # return # one at a time, for testing
@@ -61,14 +61,14 @@ class Podcaster:
             feed = feedparser.parse(podcast['feed'])
 
             feed_author = None
-            if podcast.has_key('author'):
+            if 'author' in podcast:
                 feed_author = podcast['author']
 
             for entry in feed['entries']:
-                if entry.has_key('enclosures'):
+                if 'enclosures' in entry:
                     for enclosure in entry['enclosures']:
                         author = feed_author
-                        if not author and entry.has_key('author'):
+                        if not author and 'author' in entry:
                             author = entry['author']
                         item = {
                             'author': author,
@@ -79,13 +79,13 @@ class Podcaster:
                             'tags': podcast['tags'],
                             'title': entry['title'],
                         }
-                        if podcast.has_key('filename'):
+                        if 'filename' in podcast:
                             item['filename'] = time.strftime(podcast['filename'], entry['updated_parsed'])
                         items.append(item)
         return items
 
     def get_enclosure_size(self, enclosure, entry):
-        if enclosure.has_key('length'):
+        if 'length' in enclosure and enclosure['length'].isdigit():
             return int(enclosure['length'])
         return 0
 
@@ -93,7 +93,7 @@ class Podcaster:
         rebuild = False
         post_dir = os.path.join(ardj.settings.getpath('podcasts/site_root'), ardj.settings.getpath('podcasts/site_post_dir'))
         for entry in entries:
-            if entry.has_key('filename'):
+            if 'filename' in entry:
                 post_fn = os.path.join(post_dir, entry['filename'] + '.md')
                 if not os.path.exists(post_fn):
                     self.upload_entry(entry)
