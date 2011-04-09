@@ -1,43 +1,38 @@
 VERSION=1.0-$(shell date +'%Y.%m.%d.%H%M')
+DEB=ardj-${VERSION}.deb
+ZIP=ardj-${VERSION}.zip
+TAR=ardj-${VERSION}.tar.gz
 
 help:
 	@echo "Targets: deb install release back copy clean."
 
-deb: ices/ices
-	rm -rf *deb *zip
-	cat debian/DEBIAN/control.in | sed -e "s/VERSION/${VERSION}/g" > debian/DEBIAN/control
-	mkdir -p debian/usr/lib/python2.6
-	cp -R src/ardj debian/usr/lib/python2.6/ardj
-	cp -R bin debian/usr/bin
-	cp -R share debian/usr/share
-	mkdir -p debian/usr/lib/ardj
-	cp -R src/robots debian/usr/lib/ardj/
-	mkdir -p debian/etc/cron.d
-	cp src/crontab debian/etc/cron.d/ardj
-	cp ices/ices debian/usr/bin/ices.ardj
-	strip debian/usr/bin/ices.ardj
-	find debian -name '*.pyc' -delete
-	fakeroot dpkg -b debian ardj-${VERSION}.deb
-	rm -rf debian/usr debian/etc
+install:
+	sudo python setup.py install --record install.log
 
-ices/ices:
-	make -C ices
-
-install: deb
-	sudo dpkg -i ardj-${VERSION}.deb
+uninstall:
+	cat install.log | xargs sudo rm -f
 
 release: clean deb
 	hg archive -t zip ardj-${VERSION}.zip
 	googlecode_upload.py -s "ardj v${VERSION}" -p ardj -l Featured,Type-Package,OpSys-Linux ardj-${VERSION}.deb
 	googlecode_upload.py -s "ardj v${VERSION}" -p ardj -l Featured,Type-Source,OpSys-All ardj-${VERSION}.zip
 
-back:
-	scp -Bqr tmradio.local:/usr/lib/python2.6/ardj/ src/
-	scp -Bq tmradio.local:/usr/lib/ardj/robots/* src/robots/
-
-copy: deb
-	scp -Bq ardj-${VERSION}.deb tmradio.local:
-	ssh -t tmradio.local 'sudo dpkg -i ardj-${VERSION}.deb; rm -f ardj-*.deb'
-
 clean:
-	find -regex '.*\.\(pyc\|rej\|orig\|deb\|zip\)$$' -delete
+	find -regex '.*\.\(pyc\|rej\|orig\|deb\|zip\|tar\.gz\)$$' -delete
+
+bdist: clean ices/ices.ardj
+	python setup.py bdist
+	mv dist/*.tar.gz ${TAR}
+	rm -rf build dist
+
+deb: bdist
+	rm -rf *.deb debian/usr
+	cat debian/DEBIAN/control.in | sed -e "s/VERSION/${VERSION}/g" > debian/DEBIAN/control
+	tar xfz ${TAR} -C debian
+	mv debian/usr/local/* debian/usr/
+	rm -rf debian/usr/local
+	fakeroot dpkg -b debian ${DEB}
+	rm -rf debian/usr debian/DEBIAN/control
+
+ices/ices.ardj:
+	make -C ices
