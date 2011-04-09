@@ -91,7 +91,7 @@ class Podcaster:
 
     def process_entries(self, entries):
         rebuild = False
-        post_dir = os.path.join(ardj.settings.getpath('podcasts/site_root'), ardj.settings.getpath('podcasts/site_post_dir'))
+        post_dir = os.path.join(ardj.settings.getpath('website/root_dir'), ardj.settings.getpath('podcasts/site_post_dir'))
         for entry in entries:
             if 'filename' in entry:
                 post_fn = os.path.join(post_dir, entry['filename'] + '.md')
@@ -125,7 +125,6 @@ class Podcaster:
             ardj.util.run([ 'scp', '-q', src_filename, target ])
         else:
             ardj.log.error("Don't know how to upload to %s" % upath.scheme)
-        os.unlink(src_filename)
 
     def get_filesize(self, entry):
         if entry['filesize']:

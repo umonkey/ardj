@@ -11,8 +11,8 @@ class Logger:
         self.log = logging.getLogger('ardj')
         self.log.setLevel(logging.DEBUG)
 
-        h = logging.handlers.RotatingFileHandler(ardj.settings.getpath('log', 'ardj.log'), maxBytes=1000000, backupCount=5)
-        h.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+        h = logging.handlers.RotatingFileHandler(ardj.settings.getpath('log', '~/ardj.log'), maxBytes=1000000, backupCount=5)
+        h.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
         h.setLevel(logging.DEBUG)
         self.log.addHandler(h)
 
