@@ -29,6 +29,7 @@ except ImportError:
     sys.exit(13)
 
 import ardj.settings
+import ardj.log
 
 class database:
     """
@@ -40,7 +41,11 @@ class database:
         """
         self.filename = filename
         isnew = not os.path.exists(self.filename)
-        self.db = sqlite.connect(self.filename, check_same_thread=False)
+        try:
+            self.db = sqlite.connect(self.filename, check_same_thread=False)
+        except Exception, e:
+            ardj.log.error('Could not open database %s: %s' % (filename, e))
+            raise
         self.db.create_function('randomize', 4, self.sqlite_randomize)
         cur = self.db.cursor()
         cur.execute('CREATE TABLE IF NOT EXISTS playlists (id INTEGER PRIMARY KEY, name TEXT, last_played INTEGER)')
