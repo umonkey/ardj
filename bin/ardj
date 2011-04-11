@@ -142,6 +142,7 @@ COMMAND_MAP = [ # (command, module, function, description)
     ('config', 'settings', 'edit_cli', 'edit settings'),
     ('count-ears', 'ears', 'aggregate', 'aggregates play counts'),
     ('find-orphans', 'orphans', 'mark', 'marks tracks that don\'t belong to any playlist'),
+    ('hotline', 'hotline', 'run_cli', 'work with the hotline'),
     ('mail', 'mail', 'run_cli', 'send or receive mail'),
     ('map-listeners', 'map', 'update_listeners', 'updates the listeners map'),
     ('news', 'news', 'update', 'updates news from echo.msk.ru'),

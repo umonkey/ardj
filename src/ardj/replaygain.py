@@ -34,13 +34,14 @@ Command line usage:
 
 import logging
 import os
-import subprocess
 import sys
 
 import mutagen
 from mutagen.mp3 import MP3
 from mutagen.id3 import RVA2, TXXX
 from mutagen.apev2 import APEv2 
+
+import ardj.util
 
 def update(filename):
 	if check(filename):
@@ -107,7 +108,7 @@ def read(filename, update=True):
 		elif ext in ('.flac'):
 			scanner = ['metaflac', '--add-replay-gain', filename]
 		# If the scan is successful, retry reading the tags but only once.
-		if scanner is not None and run(scanner):
+		if scanner is not None and ardj.util.run(scanner, quiet=True):
 			peak, gain = read(filename, update=False)
 
 	return (peak, gain)
@@ -137,18 +138,6 @@ def write(filename, peak, gain):
 			tags.save(filename)
 		return True
 	except: pass
-	return False
-
-def run(args, quiet=True):
-	"Runs an external program, returns True on success."
-	for path in os.getenv('PATH').split(os.pathsep):
-		exe = os.path.join(path, args[0])
-		if os.path.exists(exe):
-			stdout = stderr = None
-			if quiet:
-				stdout = stderr = subprocess.PIPE
-			logging.info('$ %s' % ' '.join(args))
-			return subprocess.Popen([exe] + args[1:], stdout=stdout, stderr=stderr).wait() == 0
 	return False
 
 def purge(filename):

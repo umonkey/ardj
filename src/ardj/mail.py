@@ -5,18 +5,20 @@
 
 """
 
-import os
-import sys
-import poplib
-import smtplib
-import urllib
-import email
-import email.parser
-import email.header
 from email import encoders
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+import email
+import email.header
+import email.parser
+import os
+import poplib
+import rfc822
+import smtplib
+import sys
+import time
+import urllib
 
 # local modules
 import ardj.settings
@@ -71,13 +73,24 @@ class Message:
         """Returns a particular header value."""
         return self.decode_header(self.get_headers()[name]) or default
 
+    def get_addr(self, name, default=None):
+        value = self.get_header(name, default)
+        if value:
+            return rfc822.parseaddr(value)
+        return (None, None)
+
+    def get_date(self):
+        value = rfc822.parsedate(self.get_header('date'))
+        if not value:
+            value = time.localtime()
+        return value
+
     def get_attachments(self, extensions=None):
         """Retrieves message attachments.
 
         Returns a list where each element is a tuple (file_name, contents)."""
         if self.body is None:
-            self.headers = self.client.retr(self.number)[1]
-            self.body = email.parser.Parser().parsestr('\n'.join(self.client.retr(self.number)[1]))
+            self.headers = self.body = email.parser.Parser().parsestr('\n'.join(self.client.retr(self.number)[1]))
 
         result = []
         for i in self.body.walk():
@@ -100,6 +113,8 @@ class Message:
 
     def decode_header(self, value):
         """Decodes the header value to Unicode."""
+        if not value:
+            return None
         decode_part = lambda x: x[1] and x[0].decode(x[1]) or x[0]
         value = u' '.join([decode_part(x) for x in email.header.decode_header(value)]).strip()
         return value.strip()
@@ -168,7 +183,8 @@ def process_mailbox(url, callback):
 
     Connects to the specified mailbox, retrieves messages and passes them to
     the callback, one by one.  If callback returns True, the message is deleted
-    from the server.
+    from the server.  The function itself returns True if at least one message
+    was successfully processed.
     
     url is of the form pop3[s]://user:pass@host[:port].
     
@@ -176,7 +192,10 @@ def process_mailbox(url, callback):
     the whole message body.  To fetch attachments, use get_attachments()
     function."""
     if ':' not in url:
+        rurl = url
         url = ardj.settings.get('mail/boxes/%s/fetch' % url)
+        if url is None:
+            raise Exception("Don't know how to read from mailbox \"%s\"." % rurl)
 
     params = parse_url(url)
     if params['scheme'] == 'pop3':
@@ -189,16 +208,23 @@ def process_mailbox(url, callback):
     client.user(params['login'])
     client.pass_(params['password'])
 
-    expunge = False
+    result = expunge = False
+
     for msgid in client.list()[1]:
         number, length = msgid.split(' ', 1)
-        if callback(Message(client, number)):
-            client.dele(number)
-            expunge = True
-            ardj.log.debug('Deleted message %s from mailbox %s' % (number, params['login']))
+        try:
+            if callback(Message(client, number)):
+                client.dele(number)
+                expunge = True
+                ardj.log.debug('Deleted message %s from mailbox %s' % (number, params['login']))
+            result = True
+        except Exception, e:
+            ardj.log.error('Could not process message: %s' % e)
 
     if expunge:
         client.quit()
+
+    return result
 
 def run_cli(args):
     """Implements the "ardj mail" command."""

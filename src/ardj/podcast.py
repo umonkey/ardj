@@ -1,6 +1,7 @@
 # vim: set fileencoding=utf-8:
 
 import feedparser
+import glob
 import httplib2
 import os
 import time
@@ -52,10 +53,28 @@ def update_feeds():
 
 class Podcaster:
     def __init__(self):
-        pass
+        self.last_episode = 0
+        self.known_urls = self.get_known_urls()
+
+    def get_known_urls(self):
+        """Returns a list of URLs of local episodes.
+
+        Local episodes are those that have a page on the local web site.  This
+        is used to avoid duplicates."""
+        result = []
+        wdir = ardj.settings.getpath('website/root_dir')
+        ldir = ardj.settings.getpath('podcasts/site_post_dir')
+        if wdir and ldir:
+            expr = os.path.join(wdir, ldir, '*', 'index.md')
+            for filename in glob.glob(expr):
+                self.last_episode = max(self.last_episode, int(filename.split(os.path.sep)[-2]))
+                page = ardj.website.load_page(filename)
+                if 'file' in page:
+                    result.append(page['file'])
+        return result
 
     def get_entries(self):
-        """Returns a list of available episodes."""
+        """Returns a list of all available episodes."""
         items = []
         for podcast in ardj.settings.get('podcasts/feeds', []):
             feed = feedparser.parse(podcast['feed'])
@@ -93,14 +112,26 @@ class Podcaster:
         rebuild = False
         post_dir = os.path.join(ardj.settings.getpath('website/root_dir'), ardj.settings.getpath('podcasts/site_post_dir'))
         for entry in entries:
-            if 'filename' in entry:
-                post_fn = os.path.join(post_dir, entry['filename'] + '.md')
-                if not os.path.exists(post_fn):
-                    self.upload_entry(entry)
-                    self.publish_entry(entry, post_fn)
-                    rebuild = True
+            if entry['file'] not in self.known_urls:
+                post_fn = self.get_new_episode_fn()
+                self.upload_entry(entry)
+                self.publish_entry(entry, post_fn)
+                rebuild = True
         if rebuild:
             ardj.website.update('update-podcasts')
+
+    def get_new_episode_fn(self):
+        """Prepares a file for a new episode.
+
+        Returns the name of the file.  Creates directories if needed."""
+        post_dir = os.path.join(ardj.settings.getpath('website/root_dir'), ardj.settings.getpath('podcasts/site_post_dir'))
+
+        while True:
+            edir = os.path.join(post_dir, str(self.last_episode + 1))
+            self.last_episode += 1
+            if not os.path.exists(edir):
+                os.mkdir(edir)
+                return os.path.join(edir, 'index.md')
 
     def publish_entry(self, entry, filename):
         e = entry
@@ -116,15 +147,10 @@ class Podcaster:
         f.close()
 
     def upload_entry(self, entry):
-        upath = urlparse.urlparse(ardj.settings.get('podcasts/file_upload'))
-        src_filename = fetch_file(entry['file'])
-        dst_filename = upath.path.rstrip('/') + '/' + entry['filename'] + '.mp3'
-
-        if upath.scheme == 'sftp':
-            target = upath.netloc + ':' + dst_filename
-            ardj.util.run([ 'scp', '-q', src_filename, target ])
-        else:
-            ardj.log.error("Don't know how to upload to %s" % upath.scheme)
+        try:
+            ardj.util.upload(fetch_file(entry['file']), ardj.settings.get('podcasts/file_upload'))
+        except Exception, e:
+            ardj.log.error(str(e))
 
     def get_filesize(self, entry):
         if entry['filesize']:

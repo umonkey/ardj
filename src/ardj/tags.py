@@ -5,6 +5,7 @@ import sys
 
 try:
 	import mutagen as mutagen
+	import mutagen.mp3 as mp3
 	import mutagen.easyid3 as easyid3
 	from mutagen.apev2 import APEv2 
 	easyid3.EasyID3.RegisterTXXXKey('ardj', 'ardj metadata')

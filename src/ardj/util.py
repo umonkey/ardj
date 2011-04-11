@@ -9,11 +9,13 @@ import urlparse
 import ardj.log
 import ardj.settings
 
-def run(command):
+def run(command, quiet=False):
     command = [str(x) for x in command]
     ardj.log.debug('> ' + ' '.join(command))
-    subprocess.Popen(command).wait()
-    return True
+    stdout = stderr = None
+    if quiet:
+        stdout = stderr = subprocess.PIPE
+    return subprocess.Popen(command, stdout=stdout, stderr=stderr).wait() == 0
 
 class mktemp:
     def __init__(self, suffix=''):
@@ -44,12 +46,12 @@ def fetch(url, suffix=None):
         return filename
 
 def upload(source, target):
-    "Uploads a file using SFTP."
+    """Uploads a file using SFTP."""
     if not os.path.exists(str(source)):
         raise Exception('Source file not found: %s' % source)
 
     upath = urlparse.urlparse(str(target))
     if upath.scheme == 'sftp':
-        run([ 'scp', '-q', str(source), str(target) ])
+        run([ 'scp', '-q', str(source), str(target)[5:] ])
     else:
         raise Excepion("Don't know how to upload to %s." % upath.scheme)

@@ -13,7 +13,7 @@ MAILTO=hex@umonkey.net
 */5 *   * * *   radio   /usr/lib/ardj/robots/twitter -replies >/dev/null
 
 # Обработка голосовой почты (включается в /etc/ardj.yaml).
-*/5 *	* * *	radio	/usr/lib/ardj/robots/voicemailer
+*/5 *	* * *	radio	ardj hotline process
 
 # Обновление афиши по утрам (в 6:00).
 0 6		* * *	radio	/usr/lib/ardj/robots/tout2
