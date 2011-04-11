@@ -8,13 +8,22 @@ import urlparse
 
 import ardj.log
 import ardj.settings
+import ardj.util
 
-def run(command, quiet=False):
+def run(command, quiet=False, stdin_data=None):
     command = [str(x) for x in command]
+
+    if stdin_data is not None:
+        filename = ardj.util.mktemp(suffix='.txt')
+        open(str(filename), 'wb').write(stdin_data)
+        command.append('<')
+        command.append(str(filename))
+
     ardj.log.debug('> ' + ' '.join(command))
     stdout = stderr = None
     if quiet:
         stdout = stderr = subprocess.PIPE
+
     return subprocess.Popen(command, stdout=stdout, stderr=stderr).wait() == 0
 
 class mktemp:
