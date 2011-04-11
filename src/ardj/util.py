@@ -4,6 +4,7 @@ import sys
 import tempfile
 import urllib
 import urllib2
+import urlparse
 
 # email sending
 import smtplib
@@ -101,3 +102,14 @@ def fetch(url, suffix=None):
         out.write(u.read())
         out.close()
         return filename
+
+def upload(source, target):
+    "Uploads a file using SFTP."
+    if not os.path.exists(str(source)):
+        raise Exception('Source file not found: %s' % source)
+
+    upath = urlparse.urlparse(str(target))
+    if upath.scheme == 'sftp':
+        run([ 'scp', '-q', str(source), str(target) ])
+    else:
+        raise Excepion("Don't know how to upload to %s." % upath.scheme)

@@ -43,6 +43,7 @@ import traceback
 import yaml
 
 import ardj.settings
+import ardj.util
 
 TMPREFIX = time.strftime('vm-%y%m%d-')
 
@@ -158,7 +159,8 @@ def transcode(filenames):
 def transcode_messages(messages):
     result = []
     for message in messages:
-        filenames = [ ardj.settings.getpath('voicemailer/prepend'), message['filename'], ardj.settings.getpath('voicemailer/append') ]
+        #filenames = [ ardj.settings.getpath('voicemailer/prepend'), message['filename'], ardj.settings.getpath('voicemailer/append') ]
+        filenames = [ message['filename'] ]
         combined = transcode([fn for fn in filenames if fn])
 
         # Calculate ReplayGain.
@@ -189,25 +191,10 @@ def fetch_messages():
 
 
 def upload_messages(messages):
-    ssh_login = ardj.settings.get('voicemailer/ssh_login')
-    ssh_path = ardj.settings.get('voicemailer/ssh_path')
-
-    if ssh_login and ssh_path:
-        ssh_command = [ 'ssh' ]
-        scp_command = [ 'scp' ]
-
-        keyfile = ardj.settings.getpath('voicemailer/ssh_key')
-        if keyfile:
-            ssh_command += [ '-i', keyfile ]
-            scp_command += [ '-i', keyfile ]
-
-        for message in messages:
-            if os.path.exists(message['filename']):
-                target = os.path.join(ssh_path, os.path.basename(message['filename'] ))
-                run(scp_command + [ message['filename'], ssh_login + ':' + ssh_path ])
-                run(ssh_command + [ ssh_login, 'ardj --tags=voicemail --queue --add ' + target])
-                if not ardj.settings.get('voicemailer/debug'):
-                    os.unlink(message['filename'])
+    remote = ardj.settings.get('voicemailer/upload')
+    for message in messages:
+        if os.path.exists(message['filename']):
+            ardj.util.upload(message['filename'], remote)
 
 
 if __name__ == '__main__':
