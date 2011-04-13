@@ -9,16 +9,10 @@ import urlparse
 
 import ardj.database
 import ardj.log
+import ardj.replaygain
 import ardj.settings
 import ardj.util
 import ardj.website
-
-def fetch_file(url):
-    filename = ardj.util.fetch(url, '.mp3')
-    #normalizer = '/usr/lib/ardj/robots/normalizer'
-    #if os.path.exists(normalizer):
-    #    ardj.util.run(['/usr/lib/ardj/robots/normalizer', filename])
-    return filename
 
 def add_song(artist, title, mp3_link, tags):
     cur = ardj.database.Open().cursor()
@@ -26,7 +20,7 @@ def add_song(artist, title, mp3_link, tags):
     if track_id is None:
         ardj.log.info('Downloading "%s" by %s' % (title, artist))
         try:
-            filename = fetch_file(mp3_link)
+            filename = ardj.util.fetch(mp3_link)
             ardj.add_file(str(filename), { 'artist': artist, 'title': title, 'labels': tags, 'owner': 'podcaster' })
             ardj.database.commit()
             return True
@@ -134,6 +128,12 @@ class Podcaster:
                 return os.path.join(edir, 'index.md')
 
     def publish_entry(self, entry, filename):
+        """Adds a page for the episode.
+
+        Creates the source file for the page (index.md); to actually create the
+        web page, ardj.website.update() must be called.
+        
+        TODO: use ardj.website.add_page()."""
         e = entry
         ardj.log.info('Reposting %s' % os.path.basename(filename))
         e['file_backup'] = ardj.settings.get('podcasts/file_base').rstrip('/') + '/' + entry['filename'] + '.mp3'
@@ -148,7 +148,7 @@ class Podcaster:
 
     def upload_entry(self, entry):
         try:
-            ardj.util.upload(fetch_file(entry['file']), ardj.settings.get('podcasts/file_upload'))
+            ardj.util.upload(ardj.util.fetch(entry['file']), ardj.settings.get('podcasts/file_upload'))
         except Exception, e:
             ardj.log.error(str(e))
 

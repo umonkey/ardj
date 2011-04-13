@@ -7,6 +7,7 @@ import urllib2
 import urlparse
 
 import ardj.log
+import ardj.replaygain
 import ardj.settings
 import ardj.util
 
@@ -52,6 +53,8 @@ def fetch(url, suffix=None):
         out = open(str(filename), 'wb')
         out.write(u.read())
         out.close()
+        if os.path.splitext(str(filename).lower()) in ('.mp3', '.ogg', '.flac'):
+            ardj.replaygain.update(str(filename))
         return filename
 
 def upload(source, target):
