@@ -15,7 +15,9 @@ import ardj.util
 USAGE = """Usage: ardj client command args...
 
 Commands:
-  purge       -- remove dead files
+  purge                        -- remove dead files
+  queue track_id               -- queue a track
+  add_track filename [-queue]  -- add a file to the database and queue it
 """
 
 class LocalClient:
@@ -23,6 +25,7 @@ class LocalClient:
         if not os.path.exists(path):
             raise Exception('Local database does not exists: %s' % path)
         self.database = path
+
 
 class RemoteClient:
     def __init__(self, config):
@@ -39,11 +42,12 @@ class RemoteClient:
             'args': [track_id],
         }])
 
-    def add_track(self, filename):
+    def add_track(self, filename, queue=False):
         """Add a track to the database."""
         self.call_remote([{
             'method': 'add_track',
             'args': [filename],
+            'kwargs': { 'queue': queue }
         }])
 
     def get_stats(self):
@@ -62,6 +66,7 @@ class RemoteClient:
         data = json.dumps(args)
         ardj.log.debug('Calling remote ardj with: ' + data)
         ardj.util.run([ 'ssh', self.host, self.path, 'client', 'exec' ], stdin_data=data)
+
 
 def Open():
     """Returns an instance of the client."""
