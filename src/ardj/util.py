@@ -64,6 +64,6 @@ def upload(source, target):
 
     upath = urlparse.urlparse(str(target))
     if upath.scheme == 'sftp':
-        run([ 'scp', '-q', str(source), str(target)[5:] ])
+        run([ 'scp', '-q', str(source), str(target)[5:].lstrip('/') ])
     else:
         raise Excepion("Don't know how to upload to %s." % upath.scheme)
