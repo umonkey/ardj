@@ -111,6 +111,7 @@ def process_messages(msg):
                 'file': public_url,
                 'filesize': str(os.stat(str(temp)).st_size),
                 'labels': 'hotline',
+                'date': time.strftime('%Y-%m-%d %H:%M:%S', date),
                 'text': u'Сообщение получено по %s.' % (phone and u'телефону' or u'почте'),
             })
 
