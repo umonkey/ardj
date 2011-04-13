@@ -15,6 +15,10 @@ import ardj.util
 import ardj.website
 
 def add_song(artist, title, mp3_link, tags):
+    """Adds a song to the database.
+
+    Does nothing if the song is already in the database (only artist/title are
+    checked).  TODO: check duration and file size also."""
     cur = ardj.database.Open().cursor()
     track_id = cur.execute('SELECT id FROM tracks WHERE artist = ? AND title = ?', (artist, title, )).fetchone()
     if track_id is None:
@@ -27,7 +31,12 @@ def add_song(artist, title, mp3_link, tags):
         except Exception, e:
             ardj.log.error('Could not fetch %s: %s' % (mp3_link, e))
 
+
 def update_feeds():
+    """Updates all feeds.
+    
+    Scans all feeds described in podcasts/feeds, then calls add_song() for each
+    episode."""
     for podcast in ardj.settings.get('podcasts/feeds', []):
         ardj.log.info('Updating %s' % podcast['name'].encode('utf-8'))
         feed = feedparser.parse(podcast['feed'])
