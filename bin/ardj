@@ -4,6 +4,8 @@
 import os
 import sys
 
+import ardj.log
+
 def usage():
     print "Usage: %s [options]" % os.path.basename(sys.argv[0])
     print "\nCommand options:"
@@ -37,7 +39,7 @@ def run(commands, args):
             if command and os.path.exists(cmd):
                 args.insert(0, os.path.basename(cmd))
                 return os.execv(cmd, args)
-    print >>sys.stderr, '%s not found in $PATH.' % '|'.join(commands)
+    ardj.log.error('%s not found in $PATH.' % '|'.join(commands))
     sys.exit(1)
 
 def oldstyle():
@@ -98,7 +100,7 @@ def oldstyle():
                     args.append('--debug')
                 if not subprocess.Popen(args).wait():
                     sys.exit(0)
-                print >>sys.stderr, 'Unclean shutdown, restarting in 5 seconds.'
+                ardj.log.error('Unclean shutdown, restarting in 5 seconds.')
                 time.sleep(5)
         if '--jabber-child' == option:
             ret = ardj.get_bot().run()
@@ -162,10 +164,14 @@ COMMAND_MAP = [ # (command, module, function, description)
 def find_command(command_name):
     for cmd, mod, fun, doc in COMMAND_MAP:
         if command_name == cmd:
-            m = __import__('ardj.' + mod)
-            m = getattr(m, mod)
-            f = getattr(m, fun)
-            return f
+            try:
+                m = __import__('ardj.' + mod)
+                m = getattr(m, mod)
+                f = getattr(m, fun)
+                return f
+            except Exception, e:
+                ardj.log.error('Command "ardj %s" is broken: %s' % (cmd, e))
+
 
     print 'Unknown command: "%s", available commands:' % command_name
     for cmd, mod, fun, doc in sorted(COMMAND_MAP, key=lambda x: x[0]):
@@ -176,7 +182,11 @@ if __name__ == '__main__':
     if len(sys.argv) >= 2 and not sys.argv[1].startswith('-'):
         handler = find_command(sys.argv[1])
         if handler is not None:
-            sys.exit(handler(sys.argv[2:]))
-        print >>sys.stderr, 'Unknown command: %s' % sys.argv[1]
+            try:
+                sys.exit(handler(sys.argv[2:]) and 0 or 1)
+            except Exception, e:
+                ardj.log.error('ERROR handling command %s: %s' % (sys.argv[1], e))
+                sys.exit(1)
+        ardj.log.error('Unknown command: %s' % sys.argv[1])
         sys.exit(1)
     oldstyle()
