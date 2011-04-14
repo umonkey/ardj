@@ -19,7 +19,7 @@ MAILTO=hex@umonkey.net
 0 6		* * *	radio	ardj events >/dev/null
 
 # Обновление всякой фигни в базе данных.
-0 6		* * *	radio	ardj db mark-good-bad mark-recent purge >/dev/null
+0 6		* * *	radio	ardj db mark-good-bad mark-recent mark-orphans purge >/dev/null
 
 # Обновление карты слушателей.
 0 6		* * *	radio	ardj map-listeners >/dev/null

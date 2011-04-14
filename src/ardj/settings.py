@@ -6,6 +6,8 @@
 import os
 import yaml
 
+import ardj.log
+
 class wrapper:
     """Wraps a dictionary for easier access."""
     def __init__(self, data, filename):

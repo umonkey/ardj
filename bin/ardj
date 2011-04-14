@@ -74,7 +74,6 @@ COMMAND_MAP = [ # (command, module, function, description)
     ('count-ears', 'ears', 'aggregate', 'aggregates play counts'),
     ('db', 'database', 'run_cli', 'database functions'),
     ('events', 'tout', 'run_cli', 'works with the upcoming events'),
-    ('find-orphans', 'orphans', 'mark', 'marks tracks that don\'t belong to any playlist'),
     ('hotline', 'hotline', 'run_cli', 'work with the hotline'),
     ('icelog', 'icelogger', 'run_cli', 'work with Icecast logs'),
     ('jabber', 'jabber', 'run_cli', 'run the jabber bot'),

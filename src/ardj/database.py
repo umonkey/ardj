@@ -377,6 +377,32 @@ class database:
         self.commit()
         return msg
 
+    def mark_orphans(self, set_label='orphan'):
+        """Labels orphan tracks with "orphan".
+
+        Orphans are tracks that don't belong to a playlist."""
+        used_labels = []
+        for playlist in ardj.settings.load().get_playlists():
+            if 'labels' in playlist:
+                labels = playlist['labels']
+            else:
+                labels = [playlist['name']]
+            used_labels += [l for l in labels if not l.startswith('-')]
+        used_labels = list(set(used_labels))
+
+        cur = ardj.database.Open().cursor()
+        cur.execute('DELETE FROM labels WHERE label = ?', (set_label, ))
+
+        sql = 'SELECT id, artist, title FROM tracks WHERE id NOT IN (SELECT track_id FROM labels WHERE label IN (%s)) ORDER BY artist, title' % ', '.join(['?'] * len(used_labels))
+        cur.execute(sql, used_labels)
+        rows = cur.fetchall()
+
+        if rows:
+            print '%u orphan tracks found:' % len(rows)
+            for row in rows:
+                print '%8u; %s -- %s' % (row[0], row[1].encode('utf-8'), row[2].encode('utf-8'))
+                cur.execute('INSERT INTO labels (track_id, email, label) VALUES (?, ?, ?)', (int(row[0]), 'ardj', set_label))
+
 
 def Open(filename=None):
     """Returns the active database instance."""
@@ -433,6 +459,7 @@ Commands:
   console           -- open SQLite console
   flush-queue       -- remove everything from queue
   mark-good-bad     -- mark good and bad music
+  mark-orphans      -- mark tracks that don't belong to a playlist
   mark-preshow      -- marks preshow music
   mark-recent       -- mark last 100 tracks with "recent"
   purge             -- remove dead data
@@ -463,6 +490,9 @@ def run_cli(args):
         ok = True
     if 'mark-recent' in args:
         db.mark_recent_music()
+        ok = True
+    if 'mark-orphans' in args:
+        db.mark_orphans()
         ok = True
     if 'queue-hitlist' in args:
         queue_hitlist(db)
