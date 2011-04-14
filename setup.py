@@ -7,6 +7,7 @@ from distutils.core import setup
 # Files to install:
 data_files = [
     ('etc/cron.d/ardj', ['src/crontab']),
+    ('etc/logrotate.d/icecast2', ['share/logrotate-icecast']),
     ('share/doc/examples', glob('share/doc/ardj/examples/*')),
     ('share/ices/modules', ['share/ices/modules/tmradio.py']),
     ('share/ardj/screen/', glob('share/ardj/screen/*')),

@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # vim: set fileencoding=utf-8:
 
 import glob
@@ -7,11 +6,17 @@ import os
 import sys
 import time
 
-# database related
 from sqlite3 import dbapi2 as sqlite
 
-DATABASE = '/var/log/icecast2/access.sqlite'
-FILES = '/var/log/icecast2/access.log.*.gz'
+import ardj.log
+import ardj.settings
+
+USAGE = """Usage: ardj icelog command
+
+Commands:
+    show-agents     -- print statistics
+    add             -- add new files to the database
+"""
 
 def parse_log_line(line):
     # 127.0.0.1 - - [30/Jan/2011:07:45:13 +0300] "GET /admin/stats.xml HTTP/1.1" 200 1523 "-" "collectd/4.8.2" 1
@@ -27,10 +32,10 @@ def parse_log_line(line):
         duration = parts[-1]
         agent = u' '.join(parts[11:-2]).lstrip('"')
     except Exception, e:
-        print >>sys.stderr, 'Unable to parse log line: %s\n%s' % (e, line)
+        ardj.log.error('Unable to parse log line: %s; %s' % (e, line))
     return date, remote_addr, uri or '', status, length, duration, agent
 
-def update_files(filenames, dbname):
+def add_files(filenames, dbname):
     db = sqlite.connect(dbname)
     cur = db.cursor()
     cur.execute('CREATE TABLE IF NOT EXISTS log (date TEXT, remote_addr TEXT, uri TEXT, seconds INTEGER, bytes INTEGER)')
@@ -48,11 +53,12 @@ def update_files(filenames, dbname):
             os.unlink(filename)
             db.commit()
         except Exception, e:
-            print >>sys.stderr, 'Could not remove file %s: %s' % (filename, e)
+            ardj.log.error('Could not remove file %s: %s' % (filename, e))
             db.rollback()
 
 def show_agent_stats(dbname):
-    db = sqlite.connect(DATABASE)
+    """Shows overall user-agent statistics."""
+    db = sqlite.connect(dbname)
     cur = db.cursor()
 
     result = {}
@@ -69,13 +75,14 @@ def show_agent_stats(dbname):
     for row in sorted([(x, result[x]) for x in result], key=lambda r: r[1], reverse=True):
         print '%s: %.2f%%' % (row[0], float(row[1]) / total * 100.0)
 
-if __name__ == '__main__':
-    dbname = DATABASE
 
-    if '-agents' in sys.argv:
-        show_agent_stats(dbname)
-        sys.exit(0)
-        
-    if len(sys.argv) > 1:
-        dbname = sys.argv[1]
-    update_files(glob.glob(FILES), dbname)
+def run_cli(args):
+    """Implements the "ardj icelog" command."""
+    dbname = ardj.settings.getpath('icecast/access_log_db', fail=True)
+    if not os.path.exists(dbname):
+        raise Exception('Icecast logs db %s does not exist.' % dbname)
+    if len(args) and args[0] == 'show-agents':
+        return show_agent_stats(dbname)
+    if len(args) and args[0] == 'add':
+        return add_files(glob.glob(ardj.settings.get('icecast/access_log_files', '/var/log/icecast2/access.log.*.gz')), dbname)
+    print USAGE
