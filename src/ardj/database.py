@@ -28,6 +28,7 @@ except ImportError:
     sys.exit(13)
 
 import ardj.log
+import ardj.replaygain
 import ardj.settings
 import ardj.util
 
@@ -190,6 +191,11 @@ class database:
         current = [row[0] for row in cur.execute('SELECT DISTINCT label FROM labels WHERE track_id = ? ORDER BY label', (track_id, )).fetchall()]
         self.commit()
         return current
+
+    def add_file(self, filename):
+        ardj.log.info('Adding from %s' % filename)
+        ardj.replaygain.update(filename)
+        return False
 
     def set_urgent(self, labels, expires=None):
         """Sets the music filter.
@@ -403,6 +409,26 @@ class database:
                 print '%8u; %s -- %s' % (row[0], row[1].encode('utf-8'), row[2].encode('utf-8'))
                 cur.execute('INSERT INTO labels (track_id, email, label) VALUES (?, ?, ?)', (int(row[0]), 'ardj', set_label))
 
+    def import_new_files(self):
+        """Adds files from a predefined location.
+
+        The location is defined in database/incoming."""
+        folder = ardj.settings.getpath('database/incoming')
+        if not folder:
+            ardj.log.warning('Import failed: database/incoming not set.')
+            return False
+        if not os.path.exists(folder):
+            ardj.log.warning('Import failed: %s does not exist.' % folder)
+            return False
+
+        for folder, folders, files in os.walk(folder):
+            for filename in files:
+                filename = os.path.join(folder, filename)
+                if os.path.splitext(filename.lower())[1] in ('.mp3', '.ogg', '.flac', '.jpg'):
+                    if self.add_file(filename):
+                        ardj.log.debug('Removing %s (added OK)' % filename)
+                        os.unlink(filename)
+
 
 def Open(filename=None):
     """Returns the active database instance."""
@@ -458,6 +484,7 @@ USAGE = """Usage: ardj db commands...
 Commands:
   console           -- open SQLite console
   flush-queue       -- remove everything from queue
+  import            -- add tracks from a public "drop box"
   mark-good-bad     -- mark good and bad music
   mark-orphans      -- mark tracks that don't belong to a playlist
   mark-preshow      -- marks preshow music
@@ -479,8 +506,8 @@ def run_cli(args):
     if 'flush-queue' in args:
         db.cursor().execute('DELETE FROM queue')
         ok = True
-    if 'purge' in args:
-        db.purge()
+    if 'import' in args:
+        db.import_new_files()
         ok = True
     if 'mark-good-bad' in args:
         db.mark_good_music()
@@ -493,6 +520,9 @@ def run_cli(args):
         ok = True
     if 'mark-orphans' in args:
         db.mark_orphans()
+        ok = True
+    if 'purge' in args:
+        db.purge()
         ok = True
     if 'queue-hitlist' in args:
         queue_hitlist(db)
