@@ -1,0 +1,9 @@
+/radio/data/listeners.csv {
+	daily
+	missingok
+	rotate 512
+	compress
+	notifempty
+	create 664 radio radio
+	dateext
+}

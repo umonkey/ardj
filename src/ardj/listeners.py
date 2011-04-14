@@ -1,8 +1,4 @@
-#!/usr/bin/env python
 # vim: set fileencoding=utf-8:
-#
-# The per-track listener counter robot.  Works with files in /radio/data.
-# Reads listeners.csv-*.gz, merges and writes to totals.csv.
 
 import csv
 import glob
@@ -10,10 +6,10 @@ import gzip
 import os
 import sys
 
-PATTERN = '/radio/data/listeners.csv-*.gz'
-OUTPUT = '/radio/data/totals.csv'
+USAGE = """Usage: ardj listeners print|update"""
 
 def merge(filenames):
+    """Reads specified files, merges track listener counts."""
     data = {}
     for filename in filenames:
         if filename.endswith('.gz'):
@@ -41,13 +37,18 @@ def format_data(data, out):
         for title in sorted(tracks.keys()):
             f.writerow([artist.encode('utf-8'), title.encode('utf-8'), tracks[title]])
 
-if __name__ == '__main__':
-    filenames = sys.argv[1:]
-    if not len(filenames):
-        filenames = glob.glob(PATTERN)
-    filenames = [f for f in filenames if os.path.exists(f)]
-    if '-c' in sys.argv:
-        out = sys.stdout
+def run_cli(args):
+    """Implements the "ardj listeners" command."""
+    if len(args) and args[0] == 'print':
+        output = sys.stdout
+    elif len(args) and args[0] == 'update':
+        output = open('/radio/data/totals.csv', 'wb')
     else:
-        out = open(OUTPUT, 'wb')
+        print USAGE
+        return
+
+    filenames = glob.glob('/radio/data/listeners.csv-*.gz')
+    if not filenames:
+        print 'No files to merge.'
+        return
     format_data(merge(filenames), out)

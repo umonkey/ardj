@@ -146,6 +146,7 @@ COMMAND_MAP = [ # (command, module, function, description)
     ('find-orphans', 'orphans', 'mark', 'marks tracks that don\'t belong to any playlist'),
     ('hotline', 'hotline', 'run_cli', 'work with the hotline'),
     ('icelog', 'icelogger', 'run_cli', 'work with Icecast logs'),
+    ('listeners', 'listeners', 'run_cli', 'summarizes listeners.csv'),
     ('mail', 'mail', 'run_cli', 'send or receive mail'),
     ('map-listeners', 'map', 'update_listeners', 'updates the listeners map'),
     ('news', 'news', 'update', 'updates news from echo.msk.ru'),
