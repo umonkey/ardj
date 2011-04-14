@@ -18,6 +18,9 @@ MAILTO=hex@umonkey.net
 # Обновление афиши по утрам (в 6:00).
 0 6		* * *	radio	/usr/lib/ardj/robots/tout2
 
+# Обновление всякой фигни в базе данных.
+0 6		* * *	radio	ardj db mark-good-bad purge >/dev/null
+
 # Обновление карты слушателей.
 0 6		* * *	radio	ardj map-listeners >/dev/null
 

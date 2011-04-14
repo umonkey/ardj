@@ -15,7 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import logging
 import os
 import re
 import sys
@@ -25,7 +24,7 @@ try:
     from sqlite3 import dbapi2 as sqlite
     from sqlite3 import OperationalError
 except ImportError:
-    logging.critical(u'Please install pysqlite2.')
+    print >>sys.stderr, 'Please install pysqlite2.'
     sys.exit(13)
 
 import ardj.log
@@ -36,6 +35,8 @@ class database:
     """
     Interface to the database.
     """
+    instance = None
+
     def __init__(self, filename):
         """
         Opens the database, creates tables if necessary.
@@ -76,12 +77,19 @@ class database:
 
     def __del__(self):
         self.commit()
-        logging.info(u'Database closed.')
+        ardj.log.debug(u'Database closed.')
+
+    @classmethod
+    def get_instance(cls):
+        if cls.instance is None:
+            filename = ardj.settings.getpath('database/local')
+            if filename is None:
+                raise Exception('This ardj instance does not have a local database (see database/local config option).')
+            cls.instance = cls(filename)
+        return cls.instance
 
     def sqlite_randomize(self, id, artist_weight, weight, count):
-        """
-        The randomize() function for SQLite.
-        """
+        """The randomize() function for SQLite."""
         result = weight or 0
         if artist_weight is not None:
             result = result * artist_weight
@@ -90,24 +98,25 @@ class database:
         return result
 
     def cursor(self):
-        """
-        Returns a new SQLite cursor, for internal use.
-        """
+        """Returns a new SQLite cursor, for internal use."""
         return self.db.cursor()
 
     def commit(self):
-        """
-        Commits current transaction, for internal use.
-        """
+        """Commits current transaction, for internal use. """
         self.db.commit()
 
     def rollback(self):
-        """
-        Cancel pending changes.
-        """
+        """Cancel pending changes."""
         self.db.rollback()
 
     def update(self, table, args, cur=None):
+        """Performs update on a label.
+
+        Updates the table with values from the args dictionary, key "id" must
+        identify the record.  Example:
+
+        db.update('tracks', { 'weight': 1, 'id': 123 })
+        """
         if cur is None:
             cur = self.cursor()
 
@@ -122,13 +131,15 @@ class database:
         cur.execute('UPDATE %s SET %s WHERE id = ?' % (table, ', '.join(sql)), tuple(params))
 
     def add_vote(self, track_id, email, vote):
-        """Adds a vote for/against a track, returns track's current weight.
+        """Adds a vote for/against a track.
 
         The process is: 1) add a record to the votes table, 2) update email's
         record in the karma table, 3) update weight for all tracks email voted
         for/against.
 
         Votes other than +1 and -1 are skipped.
+
+        Returns track's current weight.
         """
         cur = self.cursor()
 
@@ -161,7 +172,9 @@ class database:
         return result
 
     def add_labels(self, track_id, email, labels):
-        """Adds labels to a track.  Labels prefixed with a dash are removed.
+        """Adds labels to a track.
+        
+        Labels prefixed with a dash are removed.
         """
         cur = self.cursor()
         for label in labels:
@@ -179,7 +192,8 @@ class database:
         return current
 
     def set_urgent(self, labels, expires=None):
-        """
+        """Sets the music filter.
+
         Sets music filter to be used for picking random tracks.  If set, only
         matching tracks will be played, regardless of playlists.yaml.  Labels
         must be specified as a string, using spaces or commas as separators.
@@ -194,8 +208,7 @@ class database:
         self.commit()
 
     def get_urgent(self):
-        """
-        Returns current playlist preferences.
+        """Returns current playlist preferences.
         """
         data = self.cursor().execute('SELECT labels FROM urgent_playlists WHERE expires > ? ORDER BY expires', (int(time.time()), )).fetchall()
         if data:
@@ -203,8 +216,14 @@ class database:
         return None
 
     def update_track(self, properties, cur=None):
-        """
-        Updates valid track attributes.
+        """Updates valid track attributes.
+
+        Loads the track specified in properties['id'], then updates its known
+        fields with the rest of the properties dictionary, then saves the
+        track.  If there's the "labels" key in properties (must be a list),
+        labels are added (old are preserved) to the `labels` table.
+
+        If there's not fields to update, a message is written to the debug log.
         """
         if type(properties) != dict:
             raise Exception('Track properties must be passed as a dictionary.')
@@ -220,7 +239,7 @@ class database:
                 params.append(properties[k])
 
         if not sql:
-            logging.debug('No fields to update.')
+            ardj.log.debug('No fields to update.')
         else:
             params.append(properties['id'])
             sql = 'UPDATE tracks SET ' + ', '.join(sql) + ' WHERE id = ?'
@@ -235,18 +254,25 @@ class database:
                 cur.execute(sql, params)
 
     def debug(self, sql, params):
+        """Logs the query in human readable form.
+
+        Replaces question marks with parameter values (roughly)."""
         for param in params:
             param = unicode(param)
             if param.isdigit():
                 sql = sql.replace(u'?', param, 1)
             else:
                 sql = sql.replace(u'?', u"'" + param + u"'", 1)
-        logging.debug(u'SQL: ' + sql)
+        ardj.log.debug(u'SQL: ' + sql)
 
     def purge(self, cur=None):
+        """Removes stale data.
+
+        Stale data is queue items, labels and votes linked to tracks that no
+        longer exist.  In addition to deleting such links, this function also
+        analyzed all tables (to optimize indexes) and vacuums the database.
         """
-        Removes stale data.
-        """
+        old_size = os.stat(self.filename).st_size
         cur = cur or self.cursor()
         cur.execute('DELETE FROM queue WHERE track_id NOT IN (SELECT id FROM tracks)')
         cur.execute('DELETE FROM labels WHERE track_id NOT IN (SELECT id FROM tracks)')
@@ -254,6 +280,23 @@ class database:
         for table in ('playlists', 'tracks', 'queue', 'urgent_playlists', 'labels', 'karma'):
             cur.execute('ANALYZE ' + table)
         cur.execute('VACUUM')
+        ardj.log.info('%u bytes saved after database purge.' % (os.stat(self.filename).st_size - old_size))
+
+    def mark_good_music(self):
+        """Marks good and bad music.
+
+        Music with weight 1.0+ is marked as good-music, the rest it marked with
+        bad-music."""
+        GOOD_LABEL, BAD_LABEL, COMMON_LABEL, THRESHOLD = 'good-music', 'bad-music', 'music', 1.0
+
+        cur = self.cursor()
+        ardj.log.debug('Marking good and bad music.')
+
+        cur.execute('DELETE FROM labels WHERE label = ?', (GOOD_LABEL, ))
+        cur.execute('INSERT INTO labels (track_id, label, email) SELECT id, ?, ? FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?) AND `weight` > ?', (GOOD_LABEL, 'robot', COMMON_LABEL, THRESHOLD, ))
+
+        cur.execute('DELETE FROM labels WHERE label = ?', (BAD_LABEL, ))
+        cur.execute('INSERT INTO labels (track_id, label, email) SELECT id, ?, ? FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?) AND `weight` <= ?', (BAD_LABEL, 'robot', COMMON_LABEL, THRESHOLD, ))
 
     def queue_track(self, track_id, robot_name=None, cursor=None, commit=True):
         cur = cur or self.cursor()
@@ -261,29 +304,29 @@ class database:
         if commit:
             self.commit()
 
-instance = None
 def Open(filename=None):
-    global instance
-    if instance is None:
-        if filename is None:
-            filename = ardj.settings.getpath('database', '~/.config/ardj/ardj.sqlite')
-        instance = database(filename)
-    return instance
+    return database.get_instance()
 
-USAGE = """Usage: ardj db command
+
+USAGE = """Usage: ardj db commands...
 
 Commands:
-  console       -- open SQLite console"""
+  console           -- open SQLite console
+  mark-good-bad     -- mark good and bad music
+  purge             -- remove dead data"""
 
 def run_cli(args):
     """Implements the "ardj db" command."""
+    db = Open()
+    ok = False
     if 'console' in args or not args:
-        filename = ardj.settings.getpath('database/local')
-        if not filename:
-            print 'This ardj instance does not have a local database.'
-            return False
-        elif not os.path.exists(filename):
-            ardj.log.error('Database file not found: %s' % filename)
-            return False
-        return ardj.util.run([ 'sqlite3', '-header', filename ])
-    print USAGE
+        ardj.util.run([ 'sqlite3', '-header', db.filename ])
+        ok = True
+    if 'purge' in args:
+        db.purge()
+        ok = True
+    if 'mark-good-bad' in args:
+        db.mark_good_music()
+        ok = True
+    if not ok:
+        print USAGE
