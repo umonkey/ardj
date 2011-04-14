@@ -17,6 +17,8 @@ import ardj.tags
 import ardj.util
 import ardj.website
 
+# Files to upload as music.
+upload_files = []
 
 def display_message(msg, atts):
     """Prints key message informations."""
@@ -90,7 +92,7 @@ def process_messages(msg):
             temp = transcode_file(temp)
             ardj.replaygain.update(str(temp))
 
-            labels = 'voicemail,hotline'
+            labels = ardj.settings.get('hotline/labels', 'voicemail,hotline')
             if phone:
                 labels += ',pbx'
 
@@ -115,6 +117,9 @@ def process_messages(msg):
                 'text': u'Сообщение получено по %s.' % (phone and u'телефону' or u'почте'),
             })
 
+            global upload_files
+            upload_files.append(temp)
+
             # show the tags to make sure they're ok
             #print ardj.tags.get(str(temp))
     return True
@@ -127,5 +132,6 @@ def run_cli(args):
     elif args and args[0] == 'process':
         if ardj.mail.process_mailbox('hotline', process_messages):
             ardj.website.update()
+            ardj.util.upload_music(upload_files)
         return True
     print 'Usage: ardj hotline list|process'
