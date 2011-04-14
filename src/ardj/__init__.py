@@ -91,7 +91,7 @@ class old_ardj:
 
     def _get_preroll_for_track(self, track, cur):
         preroll = self._get_random_track_sql('SELECT id FROM tracks WHERE artist = ? AND id IN (SELECT track_id FROM labels WHERE label = ?) ORDER BY RANDOM() LIMIT 1', (track['artist'], 'preroll', ), cur=cur)
-        if preroll is None and track.has_key('labels') and track['labels']:
+        if preroll is None and 'labels' in track and track['labels']:
             label = track['labels'][0] + '-preroll'
             preroll = self._get_random_track_sql('SELECT id FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?) ORDER BY RANDOM() LIMIT 1', (label, ), cur=cur)
             if preroll:
@@ -149,7 +149,7 @@ class old_ardj:
         Returns a track from and active playlist.
         """
         for playlist in self.get_active_playlists():
-            track = self.get_random_track(playlist, repeat=playlist.has_key('repeat') and playlist['repeat'] or None, skip_artists=skip, cur=cur)
+            track = self.get_random_track(playlist, repeat='repeat' in playlist and playlist['repeat'] or None, skip_artists=skip, cur=cur)
             if track is not None:
                 ardj.log.info(u'Picked track %u from playlist %s ("%s" by %s).' % (track['id'], playlist['name'], track['title'], track['artist']))
                 cur.execute('UPDATE playlists SET last_played = ? WHERE name = ?', (int(time.time()), playlist['name']))
@@ -214,8 +214,8 @@ class old_ardj:
         """
         playlist = None # self.get_playlist_by_name(track['playlist']) # FIXME
         if playlist:
-            if playlist.has_key('repeat') and playlist['repeat'] == track['count']:
-                if playlist.has_key('on_repeat_move_to'):
+            if 'repeat' in playlist and playlist['repeat'] == track['count']:
+                if 'on_repeat_move_to' in playlist:
                     track['playlist'] = playlist['on_repeat_move_to']
         return track
 
@@ -262,11 +262,11 @@ class old_ardj:
         """
         cur = cur or self.database.cursor()
         if playlist:
-            labels = playlist.has_key('labels') and playlist['labels'] or [playlist['name']]
+            labels = 'labels' in playlist and playlist['labels'] or [playlist['name']]
         else:
             labels = None
-        weight = playlist and playlist.has_key('weight') and playlist['weight'] or None
-        delay = playlist and playlist.has_key('track_delay') and playlist['track_delay'] or None
+        weight = playlist and 'weight' in playlist and playlist['weight'] or None
+        delay = playlist and 'track_delay' in playlist and playlist['track_delay'] or None
         id = self.get_random_track_id(labels, repeat, skip_artists, cur, weight, delay)
         if id is not None:
             return self.get_track_by_id(id, cur)
@@ -316,7 +316,7 @@ class old_ardj:
         artist_counts = {}
         for row in rows:
             name = row[NAME_COL].lower()
-            if not artist_counts.has_key(name):
+            if name not in artist_counts:
                 artist_counts[name] = 0
             artist_counts[name] += 1
 
@@ -353,11 +353,11 @@ class old_ardj:
             return result
         def add_ts(p):
             p['last_played'] = 0
-            if stats.has_key(p['name']):
+            if p['name'] in stats:
                 p['last_played'] = stats[p['name']]
-            if p.has_key('days'):
+            if 'days' in p:
                 p['days'] = expand(p['days'])
-            if p.has_key('hours'):
+            if 'hours' in p:
                 p['hours'] = expand(p['hours'])
             return p
         return [add_ts(p) for p in ardj.settings.get_playlists()]
@@ -371,15 +371,15 @@ class old_ardj:
         now_hour = int(time.strftime('%H', now))
 
         def is_active(p):
-            if p.has_key('delay') and p['delay'] * 60 + p['last_played'] >= now_ts:
+            if 'delay' in p and p['delay'] * 60 + p['last_played'] >= now_ts:
                 if explain:
                     print '%s: delayed' % p['name']
                 return False
-            if p.has_key('hours') and now_hour not in p['hours']:
+            if 'hours' in p and now_hour not in p['hours']:
                 if explain:
                     print '%s: wrong hour (%s not in %s)' % (p['name'], now_hour, p['hours'])
                 return False
-            if p.has_key('days') and now_day not in p['days']:
+            if 'days' in p and now_day not in p['days']:
                 if explain:
                     print '%s: wrong day (%s not in %s)' % (p['name'], now_day, p['days'])
                 return False
@@ -425,7 +425,7 @@ class old_ardj:
         self.database.update_track(properties, cur=cur)
         self.update_artist_weight(properties['artist'], cur)
         if queue:
-            owner = properties.has_key('owner') and properties['owner'] or 'nobody@nowhere.com'
+            owner = 'owner' in properties and properties['owner'] or 'nobody@nowhere.com'
             cur.execute('INSERT INTO queue (track_id, owner) SELECT id, ? FROM tracks WHERE id NOT IN (SELECT track_id FROM queue) AND id = ?', (owner, properties['id'], ))
         return properties['id']
 
@@ -559,7 +559,7 @@ class old_ardj:
 
         if os.path.exists(filename_ogg):
             tg = ardj.tags.raw(filename_ogg)
-            if tg.has_key('comment') and tg['comment'][0] == message:
+            if 'comment' in tg and tg['comment'][0] == message:
                 ardj.log.debug(u'File has that message already, not updating.')
                 return False
 

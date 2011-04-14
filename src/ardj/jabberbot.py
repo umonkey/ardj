@@ -190,21 +190,21 @@ class JabberBot(object):
         tune.setNamespace(NS_TUNE)
 
         title = None
-        if song.has_key('title'):
+        if 'title' in song:
             title = song['title']
-        elif song.has_key('file'):
+        elif 'file' in song:
             title = os.path.splitext(os.path.basename(song['file']))[0]
         if title is not None:
             tune.addChild('title').addData(title)
-        if song.has_key('artist'):
+        if 'artist' in song:
             tune.addChild('artist').addData(song['artist'])
-        if song.has_key('album'):
+        if 'album' in song:
             tune.addChild('source').addData(song['album'])
-        if song.has_key('pos') and song['pos'] > 0:
+        if 'pos' in song and song['pos'] > 0:
             tune.addChild('track').addData(str(song['pos']))
-        if song.has_key('time'):
+        if 'time' in song:
             tune.addChild('length').addData(str(song['time']))
-        if song.has_key('uri'):
+        if 'uri' in song:
             tune.addChild('uri').addData(song['uri'])
 
         if debug:
@@ -416,7 +416,7 @@ class JabberBot(object):
             command, args = text, ''
         command = command.lower()
         # Get the handler function.
-        handler = self.commands.has_key(command) and self.commands[command] or None
+        handler = command in self.commands and self.commands[command] or None
         # If the command has a regexp -- skip it, beacuse it didn't match.
         # Also, handlers of such commands expect args to be tuples, and we only
         # have a string.

@@ -24,7 +24,7 @@ class wrapper:
         data = self.data
         src_key = key
         for key in key.split('/'):
-            if type(data) != dict or not data.has_key(key):
+            if type(data) != dict or key not in data:
                 if fail:
                     raise Exception('ERROR: %s not set.' % src_key)
                 return default
@@ -50,7 +50,7 @@ class wrapper:
         for key in key.split('/'):
             if type(data) != dict:
                 return False
-            if not data.has_key(key):
+            if key not in data:
                 return False
             data = data[key]
         return True

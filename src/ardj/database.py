@@ -227,7 +227,7 @@ class database:
         """
         if type(properties) != dict:
             raise Exception('Track properties must be passed as a dictionary.')
-        if not properties.has_key('id'):
+        if 'id' not in properties:
             raise Exception('Track properties have no id.')
         cur = cur or self.cursor()
 
@@ -246,7 +246,7 @@ class database:
             self.debug(sql, params)
             cur.execute(sql, tuple(params))
 
-        if properties.has_key('labels') and type(properties['labels']) == list and properties.has_key('owner'):
+        if 'labels' in properties and type(properties['labels']) == list and 'owner' in properties:
             for label in properties['labels']:
                 sql = 'INSERT INTO labels (track_id, email, label) VALUES (?, ?, ?)'
                 params = (properties['id'], properties['owner'], label, )

@@ -30,9 +30,9 @@ def merge(filenames):
             artist = row[2].strip().decode('utf-8')
             title = row[3].strip().decode('utf-8')
             count = int(row[4])
-            if not data.has_key(artist):
+            if artist not in data:
                 data[artist] = {}
-            if not data[artist].has_key(title):
+            if title not in data[artist]:
                 data[artist][title] = 0
             data[artist][title] += count
     return data

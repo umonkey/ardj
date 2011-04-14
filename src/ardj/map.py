@@ -46,7 +46,7 @@ def locate_ips(ips):
         cache = json.loads(open(cache_fn, 'rb').read())
 
     for ip in ips.keys():
-        if cache.has_key(ip):
+        if ip in cache:
             ips[ip] = ','.join(cache[ip])
         else:
             data = locate_ip(ip)

@@ -4,7 +4,7 @@ import ardj.settings
 def get_used_labels():
     used_labels = []
     for playlist in ardj.Open().config.get_playlists():
-        if playlist.has_key('labels'):
+        if 'labels' in playlist:
             labels = playlist['labels']
         else:
             labels = [playlist['name']]

@@ -45,18 +45,18 @@ def fetch_artist_events(artist_name):
         if 'error' in data:
             raise LastFmError('Last.fm reports error: %s' % data['message'])
 
-        if not data.has_key('events'):
+        if 'events' not in data:
             ardj.log.debug('Oops: %s had no "events" block -- no such artist?' % artist_name.encode('utf-8'))
             print data
             return []
         data = data['events']
 
-        if data.has_key('artist'):
+        if 'artist' in data:
             artist_name = data['artist']
-        elif data.has_key('@attr') and data['@attr'].has_key('artist'):
+        elif '@attr' in data and 'artist' in data['@attr']:
             artist_name = data['@attr']['artist']
 
-        if data.has_key('event'):
+        if 'event' in data:
             for event in (type(data['event']) == list) and data['event'] or [data['event']]:
                 if event['cancelled'] != '0':
                     continue
@@ -129,9 +129,9 @@ def get_announce_text():
             date = event['startDate']
             if date < date_limit:
                 city = event['city'].split(',')[0]
-                if not data.has_key(date):
+                if date not in data:
                     data[date] = {}
-                if not data[date].has_key(city):
+                if city not in data[date]:
                     data[date][city] = []
                 if event['artist'] not in data[date][city]:
                     data[date][city].append(event['artist'])
@@ -206,13 +206,13 @@ def xlat_date(date):
 
 def xlat_city(city):
     table = ardj.settings.get('tout/city_map', {})
-    if table.has_key(city):
+    if city in table:
         return table[city]
     return city
 
 def xlat_artist(artist):
     table = ardj.settings.get('tout/artist_map', {})
-    if table.has_key(artist):
+    if artist in table:
         return table[artist]
     return artist
 

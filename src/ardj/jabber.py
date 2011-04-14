@@ -189,7 +189,7 @@ class ardjbot(MyFileReceivingBot):
         track = self.get_current_track()
         if track is not None:
             if ardj.settings.get('jabber/status', False):
-                if track.has_key('artist') and track.has_key('title'):
+                if 'artist' in track and 'title' in track:
                     status = u'«%s» by %s' % (track['title'], track['artist'])
                 else:
                     status = os.path.basename(track['filename'])

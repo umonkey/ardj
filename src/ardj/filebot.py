@@ -139,7 +139,7 @@ class FileBot(DiscoBot):
         logging.debug('Incoming streamhosts.')
         try:
             sid = unicode(mess.getTagAttr('query', 'sid'))
-            if not self.transfers.has_key(sid):
+            if sid not in self.transfers:
                 logging.debug('Ignoring streamhosts for unknown transfer: ' + sid)
             else:
                 transfer = self.transfers[sid]
@@ -202,7 +202,7 @@ class FileBot(DiscoBot):
         """
         super(FileBot, self).idle_proc()
         for sid in self.transfers.keys():
-            if self.transfers[sid].has_key('socket'):
+            if 'socket' in self.transfers[sid]:
                 transfer = self.transfers[sid]
                 got = 0
                 while True:

@@ -3171,7 +3171,7 @@ def speak_message(author, message, play=False, queue=True):
     update = True
     if os.path.exists(filename):
         tags = ardj.tags.raw(filename)
-        if tags is not None and tags.has_key('comment') and tags['comment'][0] == message:
+        if tags is not None and 'comment' in tags and tags['comment'][0] == message:
             update = False
 
     if update:

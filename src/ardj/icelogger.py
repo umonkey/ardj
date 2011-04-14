@@ -66,7 +66,7 @@ def show_agent_stats(dbname):
         if row[0]:
             agent = row[0].split(' ')[0]
             agent = agent.split('/')[0]
-            if not result.has_key(agent):
+            if agent not in result:
                 result[agent] = 0
             result[agent] += 1
 

@@ -84,7 +84,7 @@ class client:
         """
         if not self.skip_labels:
             return False
-        if not track.has_key('labels'):
+        if 'labels' not in track:
             return False
         for label in self.skip_labels:
             if label in track['labels']:

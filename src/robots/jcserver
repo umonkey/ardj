@@ -170,7 +170,7 @@ class server:
         return self.get_client(nickname).get_logs()
 
     def get_client(self, nickname):
-        if not self.clients.has_key(nickname):
+        if nickname not in self.clients:
             self.clients[nickname] = client(nickname, on_end=lambda: self.detach(nickname))
         return self.clients[nickname]
 
@@ -178,7 +178,7 @@ class server:
         pass
 
     def detach(self, nickname):
-        if self.clients.has_key(nickname):
+        if nickname in self.clients:
             print 'Detaching %s' % nickname
             del self.clients[nickname]
 
