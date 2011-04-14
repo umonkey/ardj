@@ -77,13 +77,14 @@ def process_messages(msg):
     atts = msg.get_attachments(extensions=('.mp3', '.wav', '.ogg', '.amr', '.flac', '.aiff'))
     if atts:
         sender = msg.get_addr('from')[0]
-        subject = msg.get_header('subject')
+        subject = msg.get_header('subject', 'no subject')
         date = msg.get_date()
 
         phone = msg.get_header('x-asterisk-callerid')
         if phone:
-            sender = phone
-            subject = time.strftime('GSM Hotline (%Y-%m-%d %H:%M)', date)
+            title = u'Сообщение от %s (%s)' % (mask_sender(phone), time.strftime('%Y-%m-%d %H:%M', date))
+        else:
+            title = u'%s: %s (%s)' % (sender, subject, time.strftime('%Y-%m-%d %H:%M', date))
 
         for filename, body in atts:
             temp = ardj.util.mktemp(suffix=os.path.splitext(filename)[1])
@@ -97,9 +98,8 @@ def process_messages(msg):
                 labels += ',pbx'
 
             ardj.tags.set(str(temp), {
-                'artist': sender,
-                'title': subject,
-                'album': 'hotline',
+                'artist': u'Горячая линия',
+                'title': title,
                 'ardj': 'ardj=1;labels=' + labels,
             })
 
