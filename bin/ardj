@@ -11,7 +11,6 @@ def usage():
     print "Usage: %s [options]" % os.path.basename(sys.argv[0])
     print "\nCommand options:"
     print " --add        adds tracks to the database"
-    print " --backup     save metadata to file tags"
     print " --next       show next track"
     print ""
     print "Control options:"
@@ -29,7 +28,7 @@ def oldstyle():
     ardj = Open()
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'i', ['add', 'backup', 'debug', 'delete', 'next', 'quiet', 'queue', 'scrobble', 'tags='])
+        opts, args = getopt.getopt(sys.argv[1:], 'i', ['add', 'debug', 'delete', 'next', 'quiet', 'queue', 'scrobble', 'tags='])
     except getopt.GetoptError:
         sys.exit(usage())
 
@@ -61,16 +60,6 @@ def oldstyle():
                         os.unlink(filename)
             ardj.database.commit()
             args = []
-        if '--backup' == option:
-            import db
-            idx, tracks = 1, db.track.get_all()
-            for track in tracks:
-                if os.path.exists(track.path):
-                    print '%u/%u\r' % (idx, len(tracks)),
-                    sys.stdout.flush()
-                    track.backup()
-                idx += 1
-            print
         if '--next' == option:
             scrobble = ('--scrobble', '') in opts
             track = ardj.get_next_track(scrobble=scrobble)
