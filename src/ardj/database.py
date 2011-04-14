@@ -305,7 +305,38 @@ class database:
             self.commit()
 
 def Open(filename=None):
+    """Returns the active database instance."""
     return database.get_instance()
+
+
+def pick_jingle(cur, label):
+    """Returns a jingle with the specified label."""
+    row = cur.execute('SELECT track_id FROM labels WHERE label = ? ORDER BY RANDOM() LIMIT 1', (label, )).fetchone()
+    if row:
+        return row[0]
+
+
+def queue_tracks(cur, track_ids):
+    """Queues all specified tracks."""
+    for track_id in track_ids:
+        cur.execute('INSERT INTO queue (track_id, owner) VALUES (?, ?)', (track_id, 'robot', ))
+
+
+def queue_hitlist(db):
+    """Schedules the hitlist for playing."""
+    cur = db.cursor()
+
+    jlabels = [ 'hitlist-begin', 'hitlist-mid', 'hitlist-mid', 'hitlist-end' ]
+    tracks = reversed([row[0] for row in cur.execute('SELECT id FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?) ORDER BY weight DESC LIMIT 10', ('music', )).fetchall()])
+
+    queue_ids = []
+    for track_id in tracks:
+        if len(queue_ids) % 4 == 0:
+            queue_ids.append(pick_jingle(cur, jlabels[0]))
+            del jlabels[0]
+        queue_ids.append(track_id)
+
+    queue_tracks(cur, queue_ids)
 
 
 USAGE = """Usage: ardj db commands...
@@ -313,7 +344,9 @@ USAGE = """Usage: ardj db commands...
 Commands:
   console           -- open SQLite console
   mark-good-bad     -- mark good and bad music
-  purge             -- remove dead data"""
+  purge             -- remove dead data
+  queue-hitlist     -- schedule the hit list for playing
+  """
 
 def run_cli(args):
     """Implements the "ardj db" command."""
@@ -327,6 +360,9 @@ def run_cli(args):
         ok = True
     if 'mark-good-bad' in args:
         db.mark_good_music()
+        ok = True
+    if 'queue-hitlist' in args:
+        queue_hitlist(db)
         ok = True
     if not ok:
         print USAGE

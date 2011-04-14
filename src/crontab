@@ -3,8 +3,8 @@ MAILTO=hex@umonkey.net
 
 13 *	* * *	radio	/usr/lib/ardj/robots/lcounter
 0 11	* * *	radio	/usr/lib/ardj/robots/shitlister
-0 18	* * *	radio	/usr/lib/ardj/robots/hitlister
-0 3		* * *	radio	/usr/lib/ardj/robots/podcaster
+0 18	* * *	radio	ardj db queue-hitlist
+0 3		* * *	radio	ardj podcaster >/dev/null
 
 # Загрузка новостей в дневное время.  При успешной загрузке они ставятся в очередь.
 15,45 7-23 * * * radio	ardj news >/dev/null
