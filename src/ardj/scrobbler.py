@@ -2,7 +2,6 @@
 
 import csv
 import datetime
-import logging
 import re
 import sys
 import time
@@ -14,32 +13,36 @@ try:
 except ImportError:
     have_cli = False
 
+import ardj.log
+import ardj.settings
+
 class client:
+    """Last.fm client class.
+
+    Uses lastfmsubmitd to send track info. Uses config file parameter
+    lastfm/skip as a regular expression to match files that must never be
+    reported (such as jingles).
     """
-    Last.fm client class. Uses lastfmsubmitd to send track info. Uses config
-    file parameter lastfm/skip as a regular expression to match files that
-    must never be reported (such as jingles).
-    """
-    def __init__(self, config):
+    def __init__(self):
         """
-        Imports and initializes lastfm.client, reads options from bot's config file.
+        Imports and initializes lastfm.client, reads options from
+        bot's config file.
         """
-        self.config = config
         self.skip_files = None
-        self.skip_labels = self.config.get('lastfm/skip_labels', [])
-        self.folder = self.config.get_music_dir()
+        self.skip_labels = ardj.settings.get('lastfm/skip_labels', [])
+        self.folder = ardj.settings.get_music_dir()
         if have_cli:
             self.cli = lastfm.client.Daemon('ardj')
             self.cli.open_log()
         else:
-            logging.warning('Scrobbler disabled: please install lastfmsubmitd.')
+            ardj.log.warning('Scrobbler disabled: please install lastfmsubmitd.')
             self.cli = None
-        skip = self.config.get('lastfm/skip_files', '')
+        skip = ardj.settings.get('lastfm/skip_files', '')
         if skip:
             self.skip_files = re.compile(skip)
 
         # RegExp for get_listener_count().
-        stats_re = self.config.get('icecast_stats/re', '<listeners>(\d+)</listeners>')
+        stats_re = ardj.settings.get('icecast_stats/re', '<listeners>(\d+)</listeners>')
         if not stats_re: self.stats_re = None
         else: self.stats_re = re.compile(stats_re)
 
@@ -58,11 +61,11 @@ class client:
                     data = { 'artist': track['artist'].strip(), 'title': track['title'].strip(), 'time': time.gmtime(), 'length': track['length'] }
                     self.cli.submit(data)
                     self.log_track(track)
-                    logging.info('scrobbler: sent "%s" by %s' % (data['title'].encode('utf-8'), data['artist'].encode('utf-8')))
+                    ardj.log.info('scrobbler: sent "%s" by %s' % (data['title'].encode('utf-8'), data['artist'].encode('utf-8')))
                 else:
-                    logging.warning('scrobbler: no tags in %s' % track['filename'].encode('utf-8'))
+                    ardj.log.warning('scrobbler: no tags in %s' % track['filename'].encode('utf-8'))
             except KeyError, e:
-                logging.error(u'scrobbler: no %s in %s' % (e.args[0], track))
+                ardj.log.error(u'scrobbler: no %s in %s' % (e.args[0], track))
 
     def __skip_filename(self, track):
         """
@@ -71,7 +74,7 @@ class client:
         if self.skip_files is None:
             return False
         if self.skip_files.match(track['filename']):
-            logging.info(u'scrobbler: skipped %s (forbidden file name)' % track['filename'])
+            ardj.log.info(u'scrobbler: skipped %s (forbidden file name)' % track['filename'])
             return True
         return False
 
@@ -85,12 +88,12 @@ class client:
             return False
         for label in self.skip_labels:
             if label in track['labels']:
-                logging.info('scrobbler: skipped %s (forbidden label: %s)' % (track['filename'], label))
+                ardj.log.info('scrobbler: skipped %s (forbidden label: %s)' % (track['filename'], label))
                 return True
         return False
 
     def log_track(self, track):
-        logname = self.config.get('listener_log', None)
+        logname = ardj.settings.get('listener_log', None)
         if logname is not None:
             lc = self.get_listener_count()
             if lc > 0:
@@ -109,12 +112,12 @@ class client:
         Connects to the icecast2 administrative UI using http basic auth.
         Returns an integer, -1 in case of errors.
         """
-        stats_url = self.config.get('icecast_stats/url', None)
-        stats_user = self.config.get('icecast_stats/login', None)
-        stats_pass = self.config.get('icecast_stats/password', None)
+        stats_url = ardj.settings.get('icecast_stats/url', None)
+        stats_user = ardj.settings.get('icecast_stats/login', None)
+        stats_pass = ardj.settings.get('icecast_stats/password', None)
 
         if stats_url is None:
-            logging.debug('Unable to count listeners: icecast_stats/url not defined.')
+            ardj.log.debug('Unable to count listeners: icecast_stats/url not defined.')
             return -1
 
         if stats_user and stats_pass:
@@ -127,21 +130,21 @@ class client:
 
         ph = urllib2.urlopen(stats_url)
         if ph is None:
-            logging.warning('Could not fetch icecast2 stats.xml for some reason.')
+            ardj.log.warning('Could not fetch icecast2 stats.xml for some reason.')
             return -1
 
         r = self.stats_re.search(ph.read())
         if r is None:
-            logging.warning('Could not find listener count in icecast2 stats.xml')
+            ardj.log.warning('Could not find listener count in icecast2 stats.xml')
             return -1
 
         return int(r.group(1))
 
 
-def Open(config):
-    if not config.get('lastfm/enable', False):
+def Open():
+    if not ardj.settings.get('lastfm/enable', False):
         return None
     if not have_cli:
-        logging.warning('Last.fm scrobbler is not available: please install lastfmsubmitd.')
+        ardj.log.warning('Last.fm scrobbler is not available: please install lastfmsubmitd.')
         return None
-    return client(config)
+    return client()

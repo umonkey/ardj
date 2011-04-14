@@ -21,6 +21,19 @@ from ardj import xmpp
 import ardj.twitter
 import tags
 
+import ardj.log
+import ardj.database
+import ardj.settings
+import ardj.util
+
+USAGE = """Usage: ardj jabber command
+
+Commands:
+  restart       -- restart the bot and ices
+  run           -- run the bot (safety wrapper)
+  run-child     -- run the jabber bot itself (unsafe)
+"""
+
 class MyFileReceivingBot(FileBot):
     def is_file_acceptable(self, sender, filename, filesize):
         if not self.check_access(sender):
@@ -85,20 +98,19 @@ class ardjbot(MyFileReceivingBot):
     PING_FREQUENCY = 60
     PING_TIMEOUT = 2
 
-    def __init__(self, ardj):
-        self.ardj = ardj
+    def __init__(self):
         self.lastping = None # время последнего пинга
         self.pidfile = '/tmp/ardj-jabber.pid'
-        self.publicCommands = self.ardj.config.get('jabber/public-commands', u'dump help rocks sucks кщслы ыгслы show last hitlist shitlist ping pong').split(' ')
+        self.publicCommands = ardj.settings.get('jabber/public-commands', u'dump help rocks sucks кщслы ыгслы show last hitlist shitlist ping pong').split(' ')
         self.database_mtime = None
         self.init_command_log()
 
-        login, password = self.split_login(self.ardj.config.get('jabber/login'))
+        login, password = self.split_login(ardj.settings.get('jabber/login'))
         resource = socket.gethostname() + '/' + str(os.getpid()) + '/'
         super(ardjbot, self).__init__(login, password, res=resource, debug=ardj.debug)
 
     def init_command_log(self):
-        fn = self.ardj.config.get('jabber/log', None)
+        fn = ardj.settings.get('jabber/log', None)
         if fn is None:
             self.command_log = None
         else:
@@ -108,7 +120,7 @@ class ardjbot(MyFileReceivingBot):
         """
         Returns the list of authorized jids.
         """
-        return self.ardj.config.get('jabber/access', [])
+        return ardj.settings.get('jabber/access', [])
 
     def split_login(self, uri):
         name, password = uri.split('@', 1)[0].split(':', 1)
@@ -127,7 +139,8 @@ class ardjbot(MyFileReceivingBot):
         """
         Changes status when the database changes.
         """
-        stat = os.stat(self.ardj.database.filename)
+        db = ardj.database.Open()
+        stat = os.stat(db.filename)
         if self.database_mtime is None or self.database_mtime < stat.st_mtime:
             self.database_mtime = stat.st_mtime
             self.update_status()
@@ -138,20 +151,20 @@ class ardjbot(MyFileReceivingBot):
         """
         if time.time() - self.lastping > self.PING_FREQUENCY:
             self.lastping = time.time()
-            #self.ardj.log.debug('Pinging the server.')
+            #ardj.log.debug('Pinging the server.')
             ping = xmpp.Protocol('iq',typ='get',payload=[xmpp.Node('ping',attrs={'xmlns':'urn:xmpp:ping'})])
             try:
                 res = self.conn.SendAndWaitForResponse(ping, self.PING_TIMEOUT)
-                #self.ardj.log.debug('Got response: ' + str(res))
+                #ardj.log.debug('Got response: ' + str(res))
                 if res is None:
-                    self.ardj.log.error('Terminating due to PING timeout.')
+                    ardj.log.error('Terminating due to PING timeout.')
                     self.quit(1)
             except IOError, e:
-                self.ardj.log.error('Error pinging the server: %s, shutting down.' % e)
+                ardj.log.error('Error pinging the server: %s, shutting down.' % e)
                 self.quit(1)
 
     def on_connected(self):
-        self.ardj.log.debug('on_connected called.')
+        ardj.log.debug('on_connected called.')
         self.lastping = time.time()
         if self.pidfile:
             try:
@@ -162,12 +175,12 @@ class ardjbot(MyFileReceivingBot):
 
     def shutdown(self):
         # self.on_disconnect() # called by JabberBot afterwards.
-        self.ardj.log.info('shutdown: shutting down JabberBot.')
+        ardj.log.info('shutdown: shutting down JabberBot.')
         JabberBot.shutdown(self)
         if self.pidfile and os.path.exists(self.pidfile):
-            self.ardj.log.debug('shutdown: removing the pid file.')
+            ardj.log.debug('shutdown: removing the pid file.')
             os.unlink(self.pidfile)
-        self.ardj.log.info('shutdown: over.')
+        ardj.log.info('shutdown: over.')
 
     def update_status(self, onstart=False):
         """
@@ -175,7 +188,7 @@ class ardjbot(MyFileReceivingBot):
         """
         track = self.get_current_track()
         if track is not None:
-            if self.ardj.config.get('jabber/status', False):
+            if ardj.settings.get('jabber/status', False):
                 if track.has_key('artist') and track.has_key('title'):
                     status = u'«%s» by %s' % (track['title'], track['artist'])
                 else:
@@ -184,7 +197,7 @@ class ardjbot(MyFileReceivingBot):
                 for label in track['labels']:
                     status += u' @' + label
                 self.status_message = status
-            if self.ardj.config.get('jabber/tunes', True):
+            if ardj.settings.get('jabber/tunes', True):
                 self.send_tune(track)
 
     def get_current(self):
@@ -405,11 +418,11 @@ class ardjbot(MyFileReceivingBot):
     @botcmd
     def speak(self, message, args):
         "speak some text"
-        filename = self.ardj.config.get('festival/speak_file')
+        filename = ardj.settings.get('festival/speak_file')
         if not filename:
             return 'festival/speak_file not set.'
 
-        track_id = self.ardj.config.get('festival/speak_track_id')
+        track_id = ardj.settings.get('festival/speak_track_id')
         if not track_id:
             return 'festival/speak_track_id not set.'
 
@@ -707,7 +720,7 @@ class ardjbot(MyFileReceivingBot):
         """
         Sends a signal to the specified program. Returns True on success.
         """
-        pidfile = self.ardj.config.get('jabber/ices_pid')
+        pidfile = ardj.settings.get('jabber/ices_pid')
         if not pidfile:
             raise Exception('jabber/ices_pidfile not set.')
         if not os.path.exists(pidfile):
@@ -732,10 +745,38 @@ class ardjbot(MyFileReceivingBot):
     def __vote(self, track_id, email, vote):
         return (1, self.ardj.database.add_vote(track_id, email, vote))
 
-def Open(ardj):
+def Open():
     """
     Returns a new bot instance.
     """
-    return ardjbot(ardj)
+    return ardjbot()
+
+
+def run_cli(args):
+    """Implements the "ardj jabber" command."""
+    if len(args) and args[0] == 'restart':
+        for param in ('jabber/pid', 'jabber/ices_pid'):
+            pidfile = ardj.settings.getpath(param, fail=True)
+            if pidfile and os.path.exists(pidfile):
+                pid = int(open(pidfile).read().strip())
+                try: os.kill(pid, signal.SIGTERM)
+                except OSError: pass
+        return True
+
+    if len(args) and args[0] == 'run-child':
+        return Open().run()
+
+    if len(args) and args[0] == 'run':
+        delay = 5
+        command = [ 'ardj', 'jabber', 'run-child' ]
+        if '--debug' in args:
+            command.append('--debug')
+        while True:
+            if ardj.util.run(command):
+                return True
+            ardj.log.error('Unclean jabber bot shutdown, restarting in %u seconds.' % delay)
+            time.sleep(delay)
+
+    print USAGE
 
 __all__ = ['Open']

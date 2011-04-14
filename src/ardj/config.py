@@ -11,6 +11,8 @@ except ImportError:
 	logging.critical(u'Please install PyYAML (python-yaml).')
 	sys.exit(13)
 
+import ardj.settings
+
 class config:
 	def __init__(self):
 		self.config_filename = None
@@ -68,23 +70,6 @@ class config:
 		Returns the name of the SQLite database.
 		"""
 		return self.get_path('database', os.path.splitext(self.config_filename)[0] + '.sqlite')
-
-	def get_music_dir(self):
-		"""
-		Returns full path to the music folder.
-		"""
-		return os.path.realpath(os.path.expandvars(self.get('musicdir', os.path.dirname(self.config_filename))))
-
-	def get_playlists(self):
-		filename = os.path.join(self.get_music_dir(), 'playlists.yaml')
-		if not os.path.exists(filename):
-			logging.warning(u'%s does not exist, assuming empty.' % filename)
-			return []
-		stat = os.stat(filename)
-		if self.playlists_mtime is None or self.playlists_mtime < stat.st_mtime:
-			self.playlists_mtime = stat.st_mtime
-			self.playlists_data = yaml.load(open(filename, 'r').read())
-		return self.playlists_data
 
 def Open():
 	return config()

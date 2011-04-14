@@ -1,3 +1,8 @@
+# vim: set fileencoding=utf-8:
+#
+# TODO:
+# - reload data if file changes (all get() methods should check that).
+
 import os
 import yaml
 
@@ -7,6 +12,9 @@ class wrapper:
         """Initializes the instance without any checking."""
         self.data = data
         self.filename = filename
+
+        self.playlists_mtime = None
+        self.playlists_data = []
 
     def get(self, key, default=None, fail=False):
         """Returns the value of the specified key.
@@ -46,6 +54,23 @@ class wrapper:
                 return False
             data = data[key]
         return True
+
+    def get_music_dir(self):
+        """
+        Returns full path to the music folder.
+        """
+        return os.path.realpath(os.path.expanduser(self.get('musicdir', os.path.dirname(self.filename))))
+
+    def get_playlists(self):
+        filename = os.path.join(self.get_music_dir(), 'playlists.yaml')
+        if not os.path.exists(filename):
+            ardj.log.warning(u'%s does not exist, assuming empty.' % filename)
+            return []
+        stat = os.stat(filename)
+        if self.playlists_mtime is None or self.playlists_mtime < stat.st_mtime:
+            self.playlists_mtime = stat.st_mtime
+            self.playlists_data = yaml.load(open(filename, 'r').read())
+        return self.playlists_data
 
     def __getitem__(self, key):
         """A convenience wrapper.

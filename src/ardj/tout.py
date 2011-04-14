@@ -190,7 +190,7 @@ def get_background_fn(length):
         tracks = sorted([row[0] for row in cur.execute('SELECT filename FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?) ORDER BY weight DESC LIMIT 10', (ardj.settings.get('tout/background_label', ardj.settings.get('tout/label', 'music')), )).fetchall()])
         if not len(tracks):
             return None
-        filename = os.path.join(a.config.get_music_dir(), tracks[random.randrange(0, len(tracks))])
+        filename = os.path.join(ardj.settings.get_music_dir(), tracks[random.randrange(0, len(tracks))])
     if not os.path.exists(filename):
         return None
     return sox([ filename, '-r', '44100', '-c', '2', 'OUTPUT', 'trim', '0', str(length) ])

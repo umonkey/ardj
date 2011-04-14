@@ -61,7 +61,10 @@ try:
 except ImportError:
   from md5 import md5
 
-import oauth2 as oauth
+try:
+    import oauth2 as oauth
+except ImportError:
+    raise ImportError, "Please install python-oauth2"
 
 import ardj.database
 import ardj.settings

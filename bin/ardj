@@ -11,11 +11,7 @@ def usage():
     print "\nCommand options:"
     print " --add        adds tracks to the database"
     print " --backup     save metadata to file tags"
-    print " --jabber     run a jabber bot"
     print " --next       show next track"
-    print " --sql        execute an SQL statement"
-    print " --reset      reset database"
-    print " --restart    restart a running jabber bot"
     print " --update     update database"
     print ""
     print "Control options:"
@@ -33,7 +29,7 @@ def oldstyle():
     ardj = Open()
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'i', ['add', 'backup', 'debug', 'delete', 'jabber', 'jabber-child', 'next', 'quiet', 'queue', 'reset', 'restart', 'scrobble', 'sql', 'tags=', 'update'])
+        opts, args = getopt.getopt(sys.argv[1:], 'i', ['add', 'backup', 'debug', 'delete', 'next', 'quiet', 'queue', 'scrobble', 'tags=', 'update'])
     except getopt.GetoptError:
         sys.exit(usage())
 
@@ -75,20 +71,6 @@ def oldstyle():
                     track.backup()
                 idx += 1
             print
-        if '--jabber' == option:
-            import subprocess, time
-            while True:
-                args = [sys.argv[0], '--jabber-child']
-                if ardj.debug:
-                    args.append('--debug')
-                if not subprocess.Popen(args).wait():
-                    sys.exit(0)
-                ardj.log.error('Unclean shutdown, restarting in 5 seconds.')
-                time.sleep(5)
-        if '--jabber-child' == option:
-            ret = ardj.get_bot().run()
-            ardj.close()
-            sys.exit(ret)
         if '--next' == option:
             scrobble = ('--scrobble', '') in opts
             track = ardj.get_next_track(scrobble=scrobble)
@@ -96,27 +78,6 @@ def oldstyle():
                 print >>sys.stderr, 'Could not find a track to play.'
                 sys.exit(1)
             print track['filepath']
-        if '--reset' == option:
-            filename = ardj.config.get_db_name()
-            if os.path.exists(filename):
-                os.unlink(filename)
-                print 'OK'
-        if '--restart' == option:
-            import signal
-            import subprocess
-            pidfile = '/tmp/ardj-jabber.pid'
-            if os.path.exists(pidfile):
-                pid = int(open(pidfile).read().strip())
-                try:
-                    os.kill(pid, signal.SIGTERM)
-                except OSError: pass
-                subprocess.Popen(['/usr/bin/killall', '-HUP', 'ices']).wait()
-        if '--sql' == option:
-            cur = ardj.database.cursor()
-            for arg in args:
-                cur.execute(arg)
-            ardj.database.commit()
-            ardj.purge()
         if '--update' == option:
             ardj.sync()
 
@@ -129,6 +90,7 @@ COMMAND_MAP = [ # (command, module, function, description)
     ('find-orphans', 'orphans', 'mark', 'marks tracks that don\'t belong to any playlist'),
     ('hotline', 'hotline', 'run_cli', 'work with the hotline'),
     ('icelog', 'icelogger', 'run_cli', 'work with Icecast logs'),
+    ('jabber', 'jabber', 'run_cli', 'run the jabber bot'),
     ('listeners', 'listeners', 'run_cli', 'summarizes listeners.csv'),
     ('mail', 'mail', 'run_cli', 'send or receive mail'),
     ('map-listeners', 'map', 'update_listeners', 'updates the listeners map'),

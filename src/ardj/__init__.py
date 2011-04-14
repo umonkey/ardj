@@ -1,47 +1,24 @@
 # vim: set ts=4 sts=4 sw=4 et fileencoding=utf-8:
 
 import hashlib
-import logging
-import logging.handlers
 import os
 import random
 import re
 import shutil
-import subprocess
-import tempfile
 import time
-import traceback
 
-import ardj.config as config
-import ardj.database as database
-import ardj.scrobbler as scrobbler
-import ardj.tags as tags
+import ardj.database
+import ardj.log
+import ardj.scrobbler
+import ardj.tags
+import ardj.util
 
-have_jabber = False
 ardj_instance = None
 
-class ardj:
+class old_ardj:
     def __init__(self):
-        self.config = config.Open()
-        self.database = database.Open(self.config.get_db_name())
-        self.scrobbler = scrobbler.Open(self.config)
-        self.debug = False
-
-        self.log = logging.getLogger(__name__)
-        self.log.setLevel(logging.DEBUG)
-
-        h = logging.handlers.RotatingFileHandler(self.config.get('log', 'ardj.log'), maxBytes=1000000, backupCount=5)
-        h.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
-        h.setLevel(logging.DEBUG)
-        self.log.addHandler(h)
-
-        """
-        h = logging.StreamHandler()
-        h.setLevel(logging.WARNING)
-        self.log.addHandler(h)
-        """
-
-        self.log.info('Logging initialized.')
+        self.database = ardj.database.Open()
+        self.scrobbler = scrobbler.Open()
 
     def __del__(self):
         self.close()
@@ -72,7 +49,7 @@ class ardj:
             if track is None:
                 track = self.get_random_track(cur=cur)
                 if track is not None:
-                    self.log.info(u'Picked track %u (last resort).' % track['id'])
+                    ardj.log.info(u'Picked track %u (last resort).' % track['id'])
             track = self._get_preroll(track, cur)
         if track is not None:
             track = self.__fix_track_file_name(track, cur)
@@ -83,7 +60,7 @@ class ardj:
                 self.scrobbler.submit(track)
             track['labels'] = [] # prevent updating of labels
             self.database.update_track(track, cur)
-            track['filepath'] = os.path.join(self.config.get_music_dir(), track['filename']).encode('utf-8')
+            track['filepath'] = os.path.join(ardj.settings.get_music_dir(), track['filename']).encode('utf-8')
             self.database.commit() # без этого параллельные обращения будут висеть
         return track
 
@@ -106,7 +83,7 @@ class ardj:
 
         preroll = self._get_preroll_for_track(track, cur)
         if preroll is not None:
-            self.log.debug('Playing preroll %s for track %s.' % (preroll['id'], track['id']))
+            ardj.log.debug('Playing preroll %s for track %s.' % (preroll['id'], track['id']))
             self._push_to_queue(track, cur)
             track = preroll
 
@@ -118,7 +95,7 @@ class ardj:
             label = track['labels'][0] + '-preroll'
             preroll = self._get_random_track_sql('SELECT id FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?) ORDER BY RANDOM() LIMIT 1', (label, ), cur=cur)
             if preroll:
-                self.log.debug('Found a preroll: %s.' % preroll['id'])
+                ardj.log.debug('Found a preroll: %s.' % preroll['id'])
         return preroll
 
     def _push_to_queue(self, track, cur):
@@ -150,9 +127,9 @@ class ardj:
         if row is not None:
             track = self.get_track_by_id(row[1])
             if track is not None:
-                self.log.info(u'Picked track %s from the top of the queue.' % track['id'])
+                ardj.log.info(u'Picked track %s from the top of the queue.' % track['id'])
             else:
-                self.log.info(u'Picked a non-existing track from the queue.')
+                ardj.log.info(u'Picked a non-existing track from the queue.')
             cur.execute('DELETE FROM queue WHERE id = ?', (row[0], ))
             return track
 
@@ -164,7 +141,7 @@ class ardj:
         if labels:
             track = self.get_random_track({'labels':labels}, skip_artists=skip, cur=cur)
             if track:
-                self.log.info(u'Picked track %u from the urgent playlist.' % track['id'])
+                ardj.log.info(u'Picked track %u from the urgent playlist.' % track['id'])
                 return track
 
     def __get_track_from_playlists(self, skip, cur):
@@ -174,7 +151,7 @@ class ardj:
         for playlist in self.get_active_playlists():
             track = self.get_random_track(playlist, repeat=playlist.has_key('repeat') and playlist['repeat'] or None, skip_artists=skip, cur=cur)
             if track is not None:
-                self.log.info(u'Picked track %u from playlist %s ("%s" by %s).' % (track['id'], playlist['name'], track['title'], track['artist']))
+                ardj.log.info(u'Picked track %u from playlist %s ("%s" by %s).' % (track['id'], playlist['name'], track['title'], track['artist']))
                 cur.execute('UPDATE playlists SET last_played = ? WHERE name = ?', (int(time.time()), playlist['name']))
                 return track
 
@@ -203,23 +180,23 @@ class ardj:
         Makes sure the file name is MD5 based.
         """
         if not re.match('[0-9a-f]/[0-9a-f]/[0-9a-f]{32}', os.path.splitext(track['filename'])[0]):
-            current_path = os.path.join(self.config.get_music_dir(), track['filename']).encode('utf-8')
+            current_path = os.path.join(ardj.settings.get_music_dir(), track['filename']).encode('utf-8')
             if not os.path.exists(current_path):
                 return track
             new_name = self.__get_local_file_name(current_path)
-            new_path = os.path.join(self.config.get_music_dir(), new_name)
+            new_path = os.path.join(ardj.settings.get_music_dir(), new_name)
             new_dir = os.path.dirname(new_path)
             if not os.path.exists(new_dir):
-                self.log.info(u'Creating folder ' + new_dir)
+                ardj.log.info(u'Creating folder ' + new_dir)
                 os.makedirs(new_dir)
             try:
                 shutil.move(current_path, new_path)
-                self.log.info(u'Moved %s to %s' % (track['filename'], new_name))
+                ardj.log.info(u'Moved %s to %s' % (track['filename'], new_name))
                 track['filename'] = new_name
                 # This can be done later, but can be not, so let's do it to avoid desync.
                 cur.execute('UPDATE tracks SET filename = ? WHERE id = ?', (new_name, track['id'], ))
             except:
-                self.log.info(u'Could move %s to %s' % (track['filename'], new_name))
+                ardj.log.info(u'Could move %s to %s' % (track['filename'], new_name))
         return track
 
     def queue_track(self, id, cur=None):
@@ -253,7 +230,7 @@ class ardj:
         Returns the names of last played artists.
         """
         cur = cur or self.database.cursor()
-        return list(set([row[0] for row in cur.execute('SELECT artist FROM tracks WHERE artist IS NOT NULL AND last_played IS NOT NULL ORDER BY last_played DESC LIMIT ' + str(self.config.get('dupes', 5))).fetchall()]))
+        return list(set([row[0] for row in cur.execute('SELECT artist FROM tracks WHERE artist IS NOT NULL AND last_played IS NOT NULL ORDER BY last_played DESC LIMIT ' + str(ardj.settings.get('dupes', 5))).fetchall()]))
 
     def get_last_track(self):
         """
@@ -328,7 +305,7 @@ class ardj:
             ts_limit = int(time.time()) - int(delay) * 60;
             sql += ' AND (last_played IS NULL OR last_played <= ?)'
             params.append(ts_limit)
-        self.log.debug('SQL: %s; PARAMS: %s' % (sql, params))
+        ardj.log.debug('SQL: %s; PARAMS: %s' % (sql, params))
         self.database.debug(sql, params)
         return self.get_random_row(cur.execute(sql, tuple(params)).fetchall())
 
@@ -357,7 +334,7 @@ class ardj:
             rnd -= weight
 
         if len(rows):
-            self.log.warning(u'Bad RND logic, returning first track.')
+            ardj.log.warning(u'Bad RND logic, returning first track.')
             return rows[0][ID_COL]
 
         return None
@@ -383,7 +360,7 @@ class ardj:
             if p.has_key('hours'):
                 p['hours'] = expand(p['hours'])
             return p
-        return [add_ts(p) for p in self.config.get_playlists()]
+        return [add_ts(p) for p in ardj.settings.get_playlists()]
 
     def get_active_playlists(self, timestamp=None, explain=False):
         "Returns playlists active at the specified time."
@@ -415,7 +392,6 @@ class ardj:
         Flushes any transactions, closes the database.
         """
         self.database.commit()
-        self.config.close()
 
     def sync(self):
         """
@@ -425,7 +401,7 @@ class ardj:
 
         # Файлы, существующие в файловой системе.
         infs = []
-        musicdir = self.config.get_music_dir()
+        musicdir = ardj.settings.get_music_dir()
         for triple in os.walk(musicdir, followlinks=True):
             for fn in triple[2]:
                 f = os.path.join(triple[0], fn)[len(musicdir)+1:]
@@ -440,7 +416,7 @@ class ardj:
 
         # Удаляем из базы данных несуществующие файлы.
         for filename in dead:
-            self.log.warning(u'Track no longer exists: %s.' % filename)
+            ardj.log.warning(u'Track no longer exists: %s.' % filename)
             cur.execute('DELETE FROM tracks WHERE filename = ?', (filename.decode('utf-8'), ))
 
         # Добавляем новые файлы.
@@ -452,7 +428,7 @@ class ardj:
             cur.execute('UPDATE tracks SET artist_weight = ? WHERE artist = ?', (1.0 / count, artist, ))
 
         msg = u'%u files added, %u removed.' % (len(news), len(dead))
-        self.log.info(u'sync: ' + msg)
+        ardj.log.info(u'sync: ' + msg)
         self.database.commit()
         return msg
 
@@ -466,16 +442,16 @@ class ardj:
         removed afterwards.
         """
         if not os.path.exists(source_filename):
-            self.log.warning('File %s not found, not adding.' % source_filename)
+            ardj.log.warning('File %s not found, not adding.' % source_filename)
             return None
         if not os.path.splitext(source_filename.lower())[1] in ('.mp3', '.ogg'):
-            self.log.warning('File %s has wrong extension, skipping.' % source_filename)
+            ardj.log.warning('File %s has wrong extension, skipping.' % source_filename)
             return None
         filename = self.__get_local_file_name(source_filename)
-        filepath = os.path.join(self.config.get_music_dir(), filename)
+        filepath = os.path.join(ardj.settings.get_music_dir(), filename)
 
         if not os.path.exists(filepath):
-            self.log.info('Copying a file from %s to %s' % (source_filename, filepath))
+            ardj.log.info('Copying a file from %s to %s' % (source_filename, filepath))
             dirname = os.path.dirname(filepath)
             if not os.path.exists(dirname):
                 os.makedirs(dirname)
@@ -518,13 +494,13 @@ class ardj:
         """
         Returns a new track id or the existing one.
         """
-        self.log.debug('Looking for an id for file %s' % filename)
+        ardj.log.debug('Looking for an id for file %s' % filename)
         row = cur.execute('SELECT id FROM tracks WHERE filename = ?', (filename, )).fetchone()
         if row:
-            self.log.debug(u'Reusing track id %u.' % row[0])
+            ardj.log.debug(u'Reusing track id %u.' % row[0])
             return row[0]
         track_id = cur.execute('INSERT INTO tracks (artist) VALUES (NULL)').lastrowid
-        self.log.debug(u'New track id is %u.' % track_id)
+        ardj.log.debug(u'New track id is %u.' % track_id)
         return track_id
 
     def __get_track_properties(self, filepath, properties):
@@ -535,7 +511,7 @@ class ardj:
             'weight': 1.0,
             'count': 0,
         }
-        tg = tags.get(filepath)
+        tg = ardj.tags.get(filepath)
         if tg is not None:
             for k in props.keys():
                 if k in tg:
@@ -549,19 +525,9 @@ class ardj:
         filename, artist, title, weight, count, last_played = cur.execute('SELECT filename, artist, title, weight, count, last_played FROM tracks WHERE id = ?', (args['id'], )).fetchone()
         comment = u'ardj=1;weight=%f;count=%u;last_played=%s' % (weight, count, last_played)
         try:
-            tags.set(os.path.join(self.config.get_music_dir(), filename.encode('utf-8')), { 'artist': artist, 'title': title, 'ardj': comment })
+            ardj.tags.set(os.path.join(ardj.settings.get_music_dir(), filename.encode('utf-8')), { 'artist': artist, 'title': title, 'ardj': comment })
         except Exception, e:
-            self.log.error(u'Could not write metadata to %s: %s' % (filename, e))
-
-    def get_bot(self):
-        """
-        Returns an instance of the jabber bot.
-        """
-        global have_jabber
-        if not have_jabber:
-            import ardj.jabber as jabber
-            have_jabber = True
-        return jabber.Open(self)
+            ardj.log.error(u'Could not write metadata to %s: %s' % (filename, e))
 
     def find(self, pattern):
         """
@@ -601,7 +567,7 @@ class ardj:
         Removes files that were deleted (zero weight) from the database.
         """
         cur = self.database.cursor()
-        musicdir = self.config.get_music_dir()
+        musicdir = ardj.settings.get_music_dir()
         for id, filename in [(row[0], os.path.join(musicdir, row[1].encode('utf-8'))) for row in cur.execute('SELECT id, filename FROM tracks WHERE weight = 0').fetchall()]:
             if os.path.exists(filename):
                 os.unlink(filename)
@@ -615,25 +581,25 @@ class ardj:
         """Renders some text to a track."""
         cur = self.database.cursor()
         track = self.get_track_by_id(int(track_id), cur=cur)
-        filename = os.path.join(self.config.get_music_dir(), track['filename'])
+        filename = os.path.join(ardj.settings.get_music_dir(), track['filename'])
         length = self.say(message, filename, track_artist, track_title)
         if length:
             self.database.update_track({'id': int(track_id), 'length': length }, cur=cur)
             if True:
                 self.queue_track(int(track_id), cur=cur)
-                self.log.info(u'Added track %s to queue.' % track_id)
+                ardj.log.info(u'Added track %s to queue.' % track_id)
 
     def say(self, message, filename_ogg, track_artist=None, track_title=None):
         """Renders some text to a wav file."""
-        filename_txt = tempfile.mkstemp()[1]
+        filename_txt = ardj.util.mktemp(suffix='.txt')
         filename_wav = filename_ogg + '.wav'
 
-        self.log.info(u'Rendering text "%s" to file %s' % (message, filename_ogg))
+        ardj.log.info(u'Rendering text "%s" to file %s' % (message, filename_ogg))
 
         if os.path.exists(filename_ogg):
-            tg = tags.raw(filename_ogg)
+            tg = ardj.tags.raw(filename_ogg)
             if tg.has_key('comment') and tg['comment'][0] == message:
-                self.log.debug(u'File has that message already, not updating.')
+                ardj.log.debug(u'File has that message already, not updating.')
                 return False
 
         if track_artist is None:
@@ -646,9 +612,9 @@ class ardj:
         f.close()
 
         try:
-            subprocess.Popen(['text2wave', '-eval', '(voice_msu_ru_nsh_clunits)', filename_txt, '-o', filename_wav]).wait()
-            subprocess.Popen(['oggenc', '-Q', '-q', '9', '--resample', '44100', '-o', filename_ogg, filename_wav]).wait()
-            tg = tags.raw(filename_ogg)
+            ardj.util.run(['text2wave', '-eval', '(voice_msu_ru_nsh_clunits)', filename_txt, '-o', filename_wav])
+            ardj.util.run(['oggenc', '-Q', '-q', '9', '--resample', '44100', '-o', filename_ogg, filename_wav])
+            tg = ardj.tags.raw(filename_ogg)
             tg['comment'] = message
             if track_artist is not None:
                 tg['artist'] = track_artist
@@ -659,11 +625,9 @@ class ardj:
         finally:
             if os.path.exists(filename_wav):
                 os.unlink(filename_wav)
-            if os.path.exists(filename_txt):
-                os.unlink(filename_txt)
 
 def Open():
     global ardj_instance
     if ardj_instance is None:
-        ardj_instance = ardj()
+        ardj_instance = old_ardj()
     return ardj_instance
