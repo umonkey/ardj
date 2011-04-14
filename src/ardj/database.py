@@ -298,6 +298,12 @@ class database:
         cur.execute('DELETE FROM labels WHERE label = ?', (BAD_LABEL, ))
         cur.execute('INSERT INTO labels (track_id, label, email) SELECT id, ?, ? FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?) AND `weight` <= ?', (BAD_LABEL, 'robot', COMMON_LABEL, THRESHOLD, ))
 
+    def mark_recent_music(self):
+        """Marks last 100 tracks with "recent"."""
+        cur = self.cursor()
+        cur.execute('DELETE FROM labels WHERE label = ?', ('recent', ))
+        cur.execute('INSERT INTO labels (track_id, label, email) SELECT id, ?, ? FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?) ORDER BY id DESC LIMIT 100', ('recent', 'robot', 'music', ))
+
     def queue_track(self, track_id, robot_name=None, cursor=None, commit=True):
         cur = cur or self.cursor()
         cur.execute('INSERT INTO queue (track_id, owner) VALUES (?, ?)', (int(track_id), robot_name or 'a robot', ))
@@ -359,6 +365,7 @@ Commands:
   console           -- open SQLite console
   flush-queue       -- remove everything from queue
   mark-good-bad     -- mark good and bad music
+  mark-recent       -- mark last 100 tracks with "recent"
   purge             -- remove dead data
   queue-hitlist     -- schedule the hit list for playing
   queue-shitlist    -- schedule the shit list for playing
@@ -379,6 +386,9 @@ def run_cli(args):
         ok = True
     if 'mark-good-bad' in args:
         db.mark_good_music()
+        ok = True
+    if 'mark-recent' in args:
+        db.mark_recent_music()
         ok = True
     if 'queue-hitlist' in args:
         queue_hitlist(db)
