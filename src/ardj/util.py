@@ -43,9 +43,11 @@ class mktemp:
     def __unicode__(self):
         return unicode(self.filename)
 
-def fetch(url, suffix=None):
+def fetch(url, suffix=None, ret=False):
     u = urllib2.urlopen(urllib2.Request(url))
     if u is not None:
+        if ret:
+            return u.read()
         ardj.log.info('Downloading %s' % url)
         if suffix is None:
             suffix = os.path.splitext(url)[1]

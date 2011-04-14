@@ -16,7 +16,7 @@ MAILTO=hex@umonkey.net
 */5 *	* * *	radio	ardj hotline process
 
 # Обновление афиши по утрам (в 6:00).
-0 6		* * *	radio	/usr/lib/ardj/robots/tout2
+0 6		* * *	radio	ardj events >/dev/null
 
 # Обновление всякой фигни в базе данных.
 0 6		* * *	radio	ardj db mark-good-bad mark-recent purge >/dev/null

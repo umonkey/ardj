@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # vim: set fileencoding=utf-8:
 
 import datetime
@@ -15,29 +14,25 @@ import urllib2
 import wave
 
 import ardj
+import ardj.database
 import ardj.settings
 import ardj.website
 import ardj.tags
+import ardj.util
+import ardj.log
 
-temp_files = []
-
-def mktemp(suffix=None):
-    fn = tempfile.mkstemp(prefix='ardj_tout_', suffix=suffix)[1]
-    os.chmod(fn, 0664)
-    temp_files.append(fn)
-    return fn
+class LastFmError(Exception): pass
 
 def sox(args, suffix='.wav'):
-    output_fn = mktemp(suffix=suffix)
+    output_fn = ardj.util.mktemp(suffix=suffix)
     args = [(arg == 'OUTPUT') and output_fn or arg for arg in args]
     args.insert(0, 'sox')
-    print '> ' + ' '.join(args)
-    subprocess.Popen(args).wait()
+    ardj.util.run(args)
     return output_fn
 
 
 def get_artist_names():
-    cur = ardj.Open().database.cursor()
+    cur = ardj.database.Open().cursor()
     return sorted([row[0] for row in cur.execute('SELECT DISTINCT artist FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?) AND weight >= ?', (ardj.settings.get('tout/label', 'music'), float(ardj.settings.get('tout/weight', '1.0')), )).fetchall()])
 
 def fetch_artist_events(artist_name):
@@ -45,10 +40,14 @@ def fetch_artist_events(artist_name):
 
     try:
         url = 'http://ws.audioscrobbler.com/2.0/?method=artist.getEvents&artist=%s&api_key=%s&format=json&autocorrect=1' % (urllib.quote(artist_name.encode('utf-8')), ardj.settings.get('last.fm/key'))
-        data = json.loads(urllib2.urlopen(urllib2.Request(url)).read())
+        data = json.loads(ardj.util.fetch(url, ret=True))
+
+        if 'error' in data:
+            raise LastFmError('Last.fm reports error: %s' % data['message'])
 
         if not data.has_key('events'):
-            print 'Oops: %s had no "events" block -- no such artist?' % artist_name.encode('utf-8')
+            ardj.log.debug('Oops: %s had no "events" block -- no such artist?' % artist_name.encode('utf-8'))
+            print data
             return []
         data = data['events']
 
@@ -72,8 +71,11 @@ def fetch_artist_events(artist_name):
                     'venue_url': event['venue']['url'],
                     'venue_location': event['venue']['location']['geo:point'],
                 })
+    except LastFmError, e:
+        ardj.log.error('Fatal: %s' % e)
+        return None
     except Exception, e:
-        print >>sys.stderr, 'ERROR fetching events for %s: %s' % (artist_name.encode('utf-8'), e)
+        ardj.log.error('ERROR fetching events for %s: %s' % (artist_name.encode('utf-8'), e))
     return events
 
 def fetch_events():
@@ -85,14 +87,20 @@ def fetch_events():
 
     events = []
     for artist_name in sorted(list(set([n.lower() for n in get_artist_names()]))):
-        events += fetch_artist_events(artist_name)
+        tmp = fetch_artist_events(artist_name)
+        if tmp is None:
+            return None
+        events += tmp
 
     open(cache_fn, 'wb').write(json.dumps(events))
     return events
 
 def update_website():
     data = { 'bounds': [], 'markers': [] }
-    for event in fetch_events():
+    events = fetch_events()
+    if events is None:
+        return
+    for event in events:
         if event['venue_location']['geo:long'] and event['venue_location']['geo:lat']:
             data['markers'].append({
                 'll': [float(event['venue_location']['geo:lat']), float(event['venue_location']['geo:long'])],
@@ -106,7 +114,7 @@ def update_website():
     filename = ardj.settings.getpath('tout/website_js', '~/.config/ardj/event-map.js')
     output = 'var map_data = %s;' % json.dumps(data, indent=True)
     open(filename, 'wb').write(output)
-    print 'Wrote %s' % filename
+    ardj.info('Wrote %s' % filename)
 
     ardj.website.update('update-map')
 
@@ -140,25 +148,25 @@ def get_announce_text():
     return output.strip()
 
 def update_announce():
-    text_fn = mktemp(suffix='.txt')
-    open(text_fn, 'wb').write(get_announce_text().encode('utf-8'))
-    print 'Wrote speech text to %s' % text_fn
+    text_fn = ardj.util.mktemp(suffix='.txt')
+    open(str(text_fn), 'wb').write(get_announce_text().encode('utf-8'))
+    ardj.log.debug('Wrote speech text to %s' % text_fn)
 
-    speech_fn = mktemp(suffix='.wav')
-    subprocess.Popen(['text2wave', '-eval', '(voice_msu_ru_nsh_clunits)', text_fn, '-o', speech_fn]).wait()
-    print 'Wrote speech wave to %s' % speech_fn
+    speech_fn = ardj.util.mktemp(suffix='.wav')
+    ardj.util.run(['text2wave', '-eval', '(voice_msu_ru_nsh_clunits)', str(text_fn), '-o', str(speech_fn)]).wait()
+    ardj.log.debug('Wrote speech wave to %s' % speech_fn)
 
     speech_fn = sox([ speech_fn, '-r', '44100', '-c', '2', 'OUTPUT', 'pad', '3', '5'] )
-    length = get_wav_length(speech_fn)
-    print 'Resampled speech length is %u seconds.' % length
+    length = get_wav_length(str(speech_fn))
+    ardj.log.debug('Resampled speech length is %u seconds.' % length)
 
     if ardj.settings.get('tout/background'):
         background_fn = get_background_fn(length)
         if background_fn:
-            speech_fn = sox([ '--combine', 'mix-power', '-v', '0.25', background_fn, speech_fn, 'OUTPUT' ])
+            speech_fn = sox([ '--combine', 'mix-power', '-v', '0.25', background_fn, str(speech_fn), 'OUTPUT' ])
 
     result_fn = sox([ speech_fn, 'OUTPUT' ], suffix='.ogg')
-    print 'Wrote result to %s' % result_fn
+    ardj.log.debug('Wrote result to %s' % result_fn)
 
     target_fn = ardj.settings.getpath('tout/announce_file')
     if os.path.exists(target_fn):
@@ -168,13 +176,8 @@ def update_announce():
 
     track_id = int(ardj.settings.get('tout/track_id', '0'))
     if track_id:
-        a = ardj.Open()
         length = ardj.tags.raw(result_fn).info.length
-        a.database.cursor().execute('UPDATE tracks SET length = ? WHERE id = ?', (length, track_id, ))
-        a.database.commit()
-
-    os.unlink(text_fn)
-    os.unlink(speech_fn)
+        ardj.database.Open().cursor().execute('UPDATE tracks SET length = ? WHERE id = ?', (length, track_id, ))
 
 def get_wav_length(filename):
     f = wave.open(filename, 'r')
@@ -183,8 +186,7 @@ def get_wav_length(filename):
 def get_background_fn(length):
     filename = ardj.settings.getpath('tout/announce_background', '~/this file should not exist')
     if not os.path.exists(filename):
-        a = ardj.Open()
-        cur = a.database.cursor()
+        cur = ardj.database.Open().cursor()
         tracks = sorted([row[0] for row in cur.execute('SELECT filename FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?) ORDER BY weight DESC LIMIT 10', (ardj.settings.get('tout/background_label', ardj.settings.get('tout/label', 'music')), )).fetchall()])
         if not len(tracks):
             return None
@@ -214,11 +216,14 @@ def xlat_artist(artist):
         return table[artist]
     return artist
 
-if __name__ == '__main__':
-    if ardj.settings.get('website_js'):
+
+def run_cli(args):
+    """Implements the "ardj events" command."""
+    if ardj.settings.get('tout/website_js'):
         update_website()
-    if ardj.settings.get('announce_file'):
+    else:
+        ardj.log.debug('Not updating website: tout/website_js not set.')
+    if ardj.settings.get('tout/announce_file'):
         update_announce()
-    for f in temp_files:
-        if os.path.exists(f):
-            os.unlink(f)
+    else:
+        ardj.log.debug('Not updating the speech: tout/announce_file not set.')
