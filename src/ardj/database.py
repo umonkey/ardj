@@ -388,3 +388,5 @@ def run_cli(args):
         ok = True
     if not ok:
         print USAGE
+    else:
+        db.commit()
