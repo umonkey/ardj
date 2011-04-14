@@ -67,3 +67,11 @@ def upload(source, target):
         run([ 'scp', '-q', str(source), str(target)[5:].lstrip('/') ])
     else:
         raise Excepion("Don't know how to upload to %s." % upath.scheme)
+
+def upload_music(filenames):
+    """Uploads music files."""
+    target = ardsj.settings.get('database/upload')
+    if not target:
+        ardj.log.warning('Could not upload %u music files: database/upload not set.' % len(filenames))
+        return False
+    return run([ 'scp', '-q', [str(x) for x in filenames], target])
