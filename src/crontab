@@ -25,7 +25,7 @@ MAILTO=hex@umonkey.net
 0 6		* * *	radio	ardj map-listeners >/dev/null
 
 # Обновление @preshow-music перед началом ТСН (18:50 по четвергам).
-50 18	* * *	radio	/usr/lib/ardj/robots/preshow
+50 18	* * *	radio	ardj db mark-preshow
 
 # Так себе новости.
 0 21	* * 4	radio	ardj tsn prepare >/dev/null

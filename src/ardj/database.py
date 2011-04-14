@@ -304,6 +304,24 @@ class database:
         cur.execute('DELETE FROM labels WHERE label = ?', ('recent', ))
         cur.execute('INSERT INTO labels (track_id, label, email) SELECT id, ?, ? FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?) ORDER BY id DESC LIMIT 100', ('recent', 'robot', 'music', ))
 
+    def mark_preshow_music(self):
+        """Marks music liked by all show hosts with "preshow-music"."""
+        common_label, set_label = 'music', 'preshow-music'
+        users = ardj.settings.get('live/hosts')
+        if users is None:
+            ardj.log.warning('Could not mark preshow-music: live/hosts not set.')
+            return
+
+        cur = self.cursor()
+        cur.execute('DELETE FROM labels WHERE label = ?', (set_label, ))
+
+        sql = 'INSERT INTO labels (track_id, label, email) SELECT id, ?, ? FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?)'
+        params = (set_label, 'robot', common_label, )
+        for user in users:
+            sql += ' AND id IN (SELECT track_id FROM votes WHERE vote > 0 AND email = ?)'
+            params += (user, )
+        cur.execute(sql, params)
+
     def queue_track(self, track_id, robot_name=None, cursor=None, commit=True):
         cur = cur or self.cursor()
         cur.execute('INSERT INTO queue (track_id, owner) VALUES (?, ?)', (int(track_id), robot_name or 'a robot', ))
@@ -365,6 +383,7 @@ Commands:
   console           -- open SQLite console
   flush-queue       -- remove everything from queue
   mark-good-bad     -- mark good and bad music
+  mark-preshow      -- marks preshow music
   mark-recent       -- mark last 100 tracks with "recent"
   purge             -- remove dead data
   queue-hitlist     -- schedule the hit list for playing
@@ -386,6 +405,9 @@ def run_cli(args):
         ok = True
     if 'mark-good-bad' in args:
         db.mark_good_music()
+        ok = True
+    if 'mark-preshow' in args:
+        db.mark_preshow_music()
         ok = True
     if 'mark-recent' in args:
         db.mark_recent_music()
