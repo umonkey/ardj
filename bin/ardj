@@ -11,13 +11,11 @@ def usage():
     print "\nCommand options:"
     print " --add        adds tracks to the database"
     print " --backup     save metadata to file tags"
-    print " --dbconsole  open SQLite console"
     print " --jabber     run a jabber bot"
     print " --next       show next track"
     print " --sql        execute an SQL statement"
     print " --reset      reset database"
     print " --restart    restart a running jabber bot"
-    print " --stats      show database statistics"
     print " --update     update database"
     print ""
     print "Control options:"
@@ -29,26 +27,13 @@ def usage():
     print " --tags       specify tags for --add"
     return 1
 
-def run(commands, args):
-    if type(commands) != list:
-        commands = [commands]
-    dirs = os.getenv('PATH').split(os.pathsep)
-    for command in [x for x in commands if x]:
-        for dir in dirs:
-            cmd = os.path.join(dir, command)
-            if command and os.path.exists(cmd):
-                args.insert(0, os.path.basename(cmd))
-                return os.execv(cmd, args)
-    ardj.log.error('%s not found in $PATH.' % '|'.join(commands))
-    sys.exit(1)
-
 def oldstyle():
     import getopt
     from ardj import Open
     ardj = Open()
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'i', ['add', 'backup', 'dbconsole', 'debug', 'delete', 'jabber', 'jabber-child', 'next', 'quiet', 'queue', 'reset', 'restart', 'scrobble', 'sql', 'stats', 'tags=', 'update'])
+        opts, args = getopt.getopt(sys.argv[1:], 'i', ['add', 'backup', 'debug', 'delete', 'jabber', 'jabber-child', 'next', 'quiet', 'queue', 'reset', 'restart', 'scrobble', 'sql', 'tags=', 'update'])
     except getopt.GetoptError:
         sys.exit(usage())
 
@@ -90,8 +75,6 @@ def oldstyle():
                     track.backup()
                 idx += 1
             print
-        if '--dbconsole' == option:
-            run('sqlite3', [ardj.config.get_db_name()])
         if '--jabber' == option:
             import subprocess, time
             while True:
@@ -134,9 +117,6 @@ def oldstyle():
                 cur.execute(arg)
             ardj.database.commit()
             ardj.purge()
-        if '--stats' == option:
-            stats = ardj.get_stats()
-            print '%u tracks, %.1f hours.' % (stats['tracks'], stats['seconds'] / 60 / 60)
         if '--update' == option:
             ardj.sync()
 

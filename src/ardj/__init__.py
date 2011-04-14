@@ -553,18 +553,6 @@ class ardj:
         except Exception, e:
             self.log.error(u'Could not write metadata to %s: %s' % (filename, e))
 
-    def get_stats(self):
-        """
-        Returns information about the database in the form of a dictionary
-        with the following keys: tracks, seconds.
-        """
-        count, length = 0, 0
-        for row in self.database.cursor().execute('SELECT length FROM tracks WHERE weight > 0').fetchall():
-            count = count + 1
-            if row[0] is not None:
-                length = length + row[0]
-        return { 'tracks': count, 'seconds': length }
-
     def get_bot(self):
         """
         Returns an instance of the jabber bot.

@@ -328,6 +328,18 @@ class database:
         if commit:
             self.commit()
 
+    def get_stats(self):
+        """Returns database statistics.
+        
+        Returns information about the database in the form of a
+        dictionary with the following keys: tracks, seconds."""
+        count, length = 0, 0
+        for row in self.cursor().execute('SELECT length FROM tracks WHERE weight > 0').fetchall():
+            count = count + 1
+            if row[0] is not None:
+                length = length + row[0]
+        return { 'tracks': count, 'seconds': length }
+
 def Open(filename=None):
     """Returns the active database instance."""
     return database.get_instance()
@@ -417,6 +429,10 @@ def run_cli(args):
         ok = True
     if 'queue-shitlist' in args:
         queue_shitlist(db)
+        ok = True
+    if 'stats' in args:
+        stats = db.get_stats()
+        print '%u tracks, %.1f hours.' % (stats['tracks'], stats['seconds'] / 60 / 60)
         ok = True
     if not ok:
         print USAGE
