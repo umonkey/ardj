@@ -2,7 +2,7 @@
 DIR="$1"
 
 # echo "Calculating ReplayGain ..."
-find "$DIR" -iname '*.mp3' -exec nice -n 20 /usr/lib/ardj/robots/normalizer \{\} \; >/dev/null
+find "$DIR" -iname '*.mp3' -exec nice -n 20 ardj rg \{\} \; >/dev/null
 which vorbisgain >/dev/null && find "$DIR" -iname '*.ogg' -exec nice -n 20 vorbisgain -f -q \{\} \;
 
 # echo "Importing files in $DIR ..."

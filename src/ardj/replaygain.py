@@ -41,9 +41,11 @@ from mutagen.mp3 import MP3
 from mutagen.id3 import RVA2, TXXX
 from mutagen.apev2 import APEv2 
 
+import ardj.database
 import ardj.util
 
 def update(filename):
+	"""Updates RG if necessary."""
 	if check(filename):
 		return True
 
@@ -54,9 +56,7 @@ def update(filename):
 	return False
 
 def check(filename):
-	"""
-	Returns True if the file has all ReplayGain data.
-	"""
+	"""Returns True if the file has all ReplayGain data."""
 	try:
 		tags = mutagen.File(filename)
 
@@ -72,9 +72,7 @@ def check(filename):
 		return False
 
 def read(filename, update=True):
-	"""
-	Returns (peak, gain) for a file.
-	"""
+	"""Returns (peak, gain) for a file."""
 	peak = gain = None
 
 	def parse_rg(tags):
@@ -114,6 +112,7 @@ def read(filename, update=True):
 	return (peak, gain)
 
 def write(filename, peak, gain):
+	"""Writes RG tags to file."""
 	if peak is None:
 		raise Exception('peak is None')
 	elif gain is None:
@@ -141,31 +140,30 @@ def write(filename, peak, gain):
 	return False
 
 def purge(filename):
+	"""Removes known tags from the specified file."""
 	try: mutagen.File(filename).delete()
 	except: pass
 	try: APEv2(filename).delete()
 	except: pass
 
-__all__ = ['update']
+USAGE = """Usage: ardj rg all|filenames..."""
 
-if __name__ == '__main__':
-	import getopt
-	import sys
+def run_cli(args):
+	"""Implements the "ardj rg" command."""
+	if not len(args):
+		print USAGE
+		return
 
-	(opts, args) = getopt.getopt(sys.argv[1:], 'cr')
+	if args == ['all']:
+		musicdir = ardj.settings.getpath('musicdir')
+		if not musicdir:
+			raise Exception('musicdir not set.')
+		elif not os.path.exists(musicdir):
+			raise Exception('Directory %s does not exist.' % musicdir)
+		cur = ardj.database.Open().cursor()
+		cur.execute('SELECT filename FROM tracks')
+		args = [os.path.join(musicdir, row[0]) for row in cur.fetchall()]
 
-	f = update
-	if ('-c', '') in opts:
-		f = purge
-	elif ('-r', '') in opts:
-		f = read
-
-	if not args:
-		print 'Usage: %s [-cr] files...' % sys.argv[0]
-		print 'Options:'
-		print ' -c    clear all tags (updates by default)'
-		print ' -r    read and show tags'
-		sys.exit(1)
-	for filename in args:
-		res = f(filename)
-		print '%s: %s' % (filename, res)
+	if args:
+		for filename in args:
+			update(filename)
