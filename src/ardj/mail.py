@@ -74,6 +74,9 @@ class Message:
         return self.decode_header(self.get_headers()[name]) or default
 
     def get_addr(self, name, default=None):
+        """Returns a parsed address.
+
+        The return value is a tuple (name, address)."""
         value = self.get_header(name, default)
         if value:
             return rfc822.parseaddr(value)

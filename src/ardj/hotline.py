@@ -64,6 +64,10 @@ def transcode_file(filename):
 def mask_sender(sender):
     if sender.startswith('+') and sender[1:].isdigit():
         sender = sender[:-7] + 'XXX' + sender[8:]
+    elif '@' in sender and ' ' not in sender:
+        parts = sender.split('@', 1)
+        parts[0] = parts[0][:-2] + '..'
+        sender = '@'.join(parts)
     return sender
 
 def process_messages(msg):
@@ -76,15 +80,18 @@ def process_messages(msg):
     Used as a callback with ardj.mail.process_mailbox()."""
     atts = msg.get_attachments(extensions=('.mp3', '.wav', '.ogg', '.amr', '.flac', '.aiff'))
     if atts:
-        sender = msg.get_addr('from')[0]
+        full_sender = msg.get_addr('from')
+        sender = full_sender[0] or full_sender[1]
+        sender_id = full_sender[1]
         subject = msg.get_header('subject', 'no subject')
         date = msg.get_date()
 
         phone = msg.get_header('x-asterisk-callerid')
         if phone:
+            sender_id = phone
             title = u'Сообщение от %s (%s)' % (mask_sender(phone), time.strftime('%Y-%m-%d %H:%M', date))
         else:
-            title = u'%s: %s (%s)' % (sender, subject, time.strftime('%Y-%m-%d %H:%M', date))
+            title = u'%s: %s (%s)' % (mask_sender(sender), subject, time.strftime('%Y-%m-%d %H:%M', date))
 
         for filename, body in atts:
             temp = ardj.util.mktemp(suffix=os.path.splitext(filename)[1])
@@ -96,6 +103,9 @@ def process_messages(msg):
             labels = ardj.settings.get('hotline/labels', 'voicemail,hotline')
             if phone:
                 labels += ',pbx'
+            userlabels = ardj.settings.get('hotline/user_labels', {})
+            if sender_id in userlabels:
+                labels += ',' + userlabels[sender_id]
 
             ardj.tags.set(str(temp), {
                 'artist': u'Горячая линия',
