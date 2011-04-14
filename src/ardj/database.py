@@ -357,6 +357,7 @@ USAGE = """Usage: ardj db commands...
 
 Commands:
   console           -- open SQLite console
+  flush-queue       -- remove everything from queue
   mark-good-bad     -- mark good and bad music
   purge             -- remove dead data
   queue-hitlist     -- schedule the hit list for playing
@@ -369,6 +370,9 @@ def run_cli(args):
     ok = False
     if 'console' in args or not args:
         ardj.util.run([ 'sqlite3', '-header', db.filename ])
+        ok = True
+    if 'flush-queue' in args:
+        db.cursor().execute('DELETE FROM queue')
         ok = True
     if 'purge' in args:
         db.purge()
