@@ -72,7 +72,7 @@ def upload(source, target):
 
 def upload_music(filenames):
     """Uploads music files."""
-    target = ardsj.settings.get('database/upload')
+    target = ardj.settings.get('database/upload')
     if not target:
         ardj.log.warning('Could not upload %u music files: database/upload not set.' % len(filenames))
         return False
