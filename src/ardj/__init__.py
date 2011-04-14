@@ -393,45 +393,6 @@ class old_ardj:
         """
         self.database.commit()
 
-    def sync(self):
-        """
-        Adds new tracks to the database, removes dead ones.
-        """
-        cur = self.database.cursor()
-
-        # Файлы, существующие в файловой системе.
-        infs = []
-        musicdir = ardj.settings.get_music_dir()
-        for triple in os.walk(musicdir, followlinks=True):
-            for fn in triple[2]:
-                f = os.path.join(triple[0], fn)[len(musicdir)+1:]
-                if os.path.sep in f:
-                    infs.append(f)
-
-        # Файлы, существующие в базе данных.
-        indb = [row[0].encode('utf-8') for row in cur.execute('SELECT filename FROM tracks').fetchall()]
-
-        news = [x for x in infs if x not in indb]
-        dead = [x for x in indb if x not in infs]
-
-        # Удаляем из базы данных несуществующие файлы.
-        for filename in dead:
-            ardj.log.warning(u'Track no longer exists: %s.' % filename)
-            cur.execute('DELETE FROM tracks WHERE filename = ?', (filename.decode('utf-8'), ))
-
-        # Добавляем новые файлы.
-        for filename in news:
-            self.add_file(filename)
-
-        # Обновление статистики исполнителей.
-        for artist, count in cur.execute('SELECT artist, COUNT(*) FROM tracks WHERE weight > 0 GROUP BY artist').fetchall():
-            cur.execute('UPDATE tracks SET artist_weight = ? WHERE artist = ?', (1.0 / count, artist, ))
-
-        msg = u'%u files added, %u removed.' % (len(news), len(dead))
-        ardj.log.info(u'sync: ' + msg)
-        self.database.commit()
-        return msg
-
     def add_file(self, source_filename, properties=None, queue=False):
         """
         Adds a file to the database or updates it.  Properties, if specified,

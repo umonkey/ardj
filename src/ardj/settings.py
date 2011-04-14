@@ -111,3 +111,6 @@ def getpath(key, default=None, fail=False):
 def edit_cli(args):
     editor = os.getenv('EDITOR', 'editor')
     os.system(editor + ' ' + load().filename)
+
+def get_music_dir():
+    return load().get_music_dir()

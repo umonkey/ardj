@@ -31,6 +31,10 @@ def info(text):
     print text.strip()
     Logger.get().log.info(text)
 
+def warning(text):
+    print >>sys.stderr, text.strip()
+    Logger.get().log.warning(text)
+
 def error(text):
     print >>sys.stderr, text.strip()
     Logger.get().log.error(text)

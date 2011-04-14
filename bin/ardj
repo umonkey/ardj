@@ -3,6 +3,7 @@
 
 import os
 import sys
+import traceback
 
 import ardj.log
 
@@ -12,7 +13,6 @@ def usage():
     print " --add        adds tracks to the database"
     print " --backup     save metadata to file tags"
     print " --next       show next track"
-    print " --update     update database"
     print ""
     print "Control options:"
     print " --debug      enable extra logging"
@@ -29,7 +29,7 @@ def oldstyle():
     ardj = Open()
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'i', ['add', 'backup', 'debug', 'delete', 'next', 'quiet', 'queue', 'scrobble', 'tags=', 'update'])
+        opts, args = getopt.getopt(sys.argv[1:], 'i', ['add', 'backup', 'debug', 'delete', 'next', 'quiet', 'queue', 'scrobble', 'tags='])
     except getopt.GetoptError:
         sys.exit(usage())
 
@@ -78,8 +78,6 @@ def oldstyle():
                 print >>sys.stderr, 'Could not find a track to play.'
                 sys.exit(1)
             print track['filepath']
-        if '--update' == option:
-            ardj.sync()
 
 COMMAND_MAP = [ # (command, module, function, description)
     ('client', 'client', 'run_cli', 'run the client'),
@@ -127,7 +125,7 @@ if __name__ == '__main__':
             try:
                 sys.exit(handler(sys.argv[2:]) and 0 or 1)
             except Exception, e:
-                ardj.log.error('ERROR handling command %s: %s' % (sys.argv[1], e))
+                ardj.log.error('ERROR handling command %s: %s' % (sys.argv[1], e) + traceback.format_exc(e))
                 sys.exit(1)
         ardj.log.error('Unknown command: %s' % sys.argv[1])
         sys.exit(1)
