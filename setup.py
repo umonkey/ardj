@@ -33,7 +33,7 @@ setup(
     name = 'ardj',
     package_dir = { '': 'src' },
     packages = [ 'ardj', 'ardj.xmpp' ],
-    requires = [ 'yaml', 'mutagen', 'dns', 'socksipy', 'simplejson' ],
+    requires = [ 'yaml', 'mutagen', 'dns', 'socksipy', 'simplejson', 'oauth2' ],
     scripts = [ 'bin/ardj', 'ices/ices.ardj' ],
     url = 'http://ardj.googlecode.com/',
     version = '0.13'

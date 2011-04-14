@@ -5,7 +5,8 @@ Priority: optional
 Maintainer: Justin Forest <justin.forest@gmail.com>
 Architecture: all
 Essential: no
-Depends: python, python-yaml, python-mutagen (>= 1.19), festival, festvox-ru, sox
+Depends: python, python-yaml, python-mutagen (>= 1.19), festival, festvox-ru,
+  sox, python-oauth
 Suggests: python-dnspython, python-socksipy, ices, icecast2, python-simplejson
 Recommends: lastfmsubmitd, sqlite3, podget, python-twitter
 Installed-Size: 660
