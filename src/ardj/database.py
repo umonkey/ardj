@@ -28,8 +28,9 @@ except ImportError:
     logging.critical(u'Please install pysqlite2.')
     sys.exit(13)
 
-import ardj.settings
 import ardj.log
+import ardj.settings
+import ardj.util
 
 class database:
     """
@@ -268,3 +269,21 @@ def Open(filename=None):
             filename = ardj.settings.getpath('database', '~/.config/ardj/ardj.sqlite')
         instance = database(filename)
     return instance
+
+USAGE = """Usage: ardj db command
+
+Commands:
+  console       -- open SQLite console"""
+
+def run_cli(args):
+    """Implements the "ardj db" command."""
+    if 'console' in args or not args:
+        filename = ardj.settings.getpath('database/local')
+        if not filename:
+            print 'This ardj instance does not have a local database.'
+            return False
+        elif not os.path.exists(filename):
+            ardj.log.error('Database file not found: %s' % filename)
+            return False
+        return ardj.util.run([ 'sqlite3', '-header', filename ])
+    print USAGE
