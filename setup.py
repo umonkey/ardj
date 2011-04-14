@@ -6,7 +6,7 @@ from distutils.core import setup
 
 # Files to install:
 data_files = [
-    ('etc/cron.d/ardj', ['src/crontab']),
+    ('etc/cron.d/ardj', ['share/crontab']),
     ('etc/logrotate.d/ardj-listeners', ['share/logrotate-csv']),
     ('etc/logrotate.d/icecast2', ['share/logrotate-icecast']),
     ('share/doc/examples', glob('share/doc/ardj/examples/*')),
