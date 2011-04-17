@@ -6,6 +6,7 @@ Uses festival to render text."""
 
 import sys
 
+import ardj.database
 import ardj.log
 import ardj.settings
 import ardj.tags
@@ -46,12 +47,41 @@ def render_text(text, artist=None, title=None, play=False):
     filename = ardj.util.mktemp(suffix='.txt')
     if type(text) == unicode:
         text = text.encode('utf-8')
-    open(str(filename), 'wb').write(text)
+    open(str(filename), 'wb').write(text.strip())
     ardj.log.info('Rendering text: %s' % text)
     filename, length = render_text_file(filename, artist, title)
     if play and length:
         ardj.util.run([ 'play', str(filename) ])
     return filename, length
+
+
+def render_and_queue(message):
+    """Renders the text and queues it for playing.
+    
+    Returns an error message or None.
+    """
+    track_id = int(ardj.settings.get('festival/speak_track_id', '0'))
+    if not track_id:
+        return "I'm not configured properly: festival/speak_track_id not set."
+
+    cur = ardj.database.Open().cursor()
+    rows = len(cur.execute('SELECT 1 FROM queue WHERE track_id = ?', (track_id, )).fetchall())
+    if rows:
+        return 'All the circuits are busy.'
+
+    rows = cur.execute('SELECT filename FROM tracks WHERE id = ?', (track_id, )).fetchall()
+    if not len(rows):
+        return 'Track %u not found.' % track_id
+
+    filename = rows[0][0]
+    if not filename.endswith('.ogg'):
+        return 'Track %u is not OGG/Vorbis.' % track_id
+
+    tmpname, duration = render_text(message)
+    ardj.util.move_file(tmpname, filename)
+    cur.execute('UPDATE tracks SET duration = ? WHERE id = ?', (duration, track_id, ))
+    cur.execute('INSERT INTO queue (track_id, owner) VALUES (?, ?)', (track_id, 'ardj', ))
+
 
 def render_text_cli(args):
     """Renders text to voice using festival and plays it."""

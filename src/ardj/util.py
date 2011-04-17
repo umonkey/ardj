@@ -1,4 +1,5 @@
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -77,3 +78,9 @@ def upload_music(filenames):
         ardj.log.warning('Could not upload %u music files: database/upload not set.' % len(filenames))
         return False
     return run([ 'scp', '-q', [str(x) for x in filenames], target])
+
+def move_file(src, dst):
+    """Moves file src to dst.
+
+    Supports cross-device links."""
+    return shutil.move(str(src), str(dst))

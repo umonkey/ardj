@@ -6,7 +6,6 @@ import math
 import os
 import re
 import signal
-import shutil # move()
 import socket # for gethostname()
 import subprocess
 import time
@@ -21,9 +20,10 @@ from ardj import xmpp
 import ardj.twitter
 import tags
 
-import ardj.log
 import ardj.database
+import ardj.log
 import ardj.settings
+import ardj.speech
 import ardj.util
 
 USAGE = """Usage: ardj jabber command
@@ -417,17 +417,12 @@ class ardjbot(MyFileReceivingBot):
 
     @botcmd
     def speak(self, message, args):
-        "speak some text"
-        filename = ardj.settings.get('festival/speak_file')
-        if not filename:
-            return 'festival/speak_file not set.'
-
-        track_id = ardj.settings.get('festival/speak_track_id')
-        if not track_id:
-            return 'festival/speak_track_id not set.'
-
-        self.ardj.say(args, filename)
-        return self.queue(message, str(track_id))
+        """Speak some text.
+        
+        Renders the message as Russian text, then queues it for playing.  If
+        there's a message in the queue already, an error message is shown.
+        """
+        return ardj.speech.render_and_queue(args) or 'OK, please wait until the current song finishes playing.'
 
     @botcmd(hidden=True)
     def echo(self, message, args):
