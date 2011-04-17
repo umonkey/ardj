@@ -19,7 +19,7 @@ def render_text_file(filename, artist=None, title=None):
     voice = ardj.settings.get('speech/voice', 'voice_msu_ru_nsh_clunits')
 
     output_wav = ardj.util.mktemp(suffix='.wav')
-    ardj.util.run([ 'text2wave', '-eval', '(' + voice + ')', filename, '-o', output_wav ])
+    ardj.util.run([ 'text2wave', '-f', '44100', '-eval', '(' + voice + ')', filename, '-o', output_wav ])
 
     resampled_wav = ardj.util.mktemp(suffix='.wav')
     ardj.util.run([ 'sox', output_wav, '-r', '44100', '-c', '2', resampled_wav, 'pad', '2', '5' ])
