@@ -76,4 +76,4 @@ def upload_music(filenames):
     if not target:
         ardj.log.warning('Could not upload %u music files: database/upload not set.' % len(filenames))
         return False
-    return run([ 'scp', '-q', [str(x) for x in filenames], target])
+    return run([ 'scp', '-q' ] + [str(x) for x in filenames] + [ target ])
