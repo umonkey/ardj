@@ -7,67 +7,6 @@ import traceback
 
 import ardj.log
 
-def usage():
-    print "Usage: %s [options]" % os.path.basename(sys.argv[0])
-    print "\nCommand options:"
-    print " --add        adds tracks to the database"
-    print " --next       show next track"
-    print ""
-    print "Control options:"
-    print " --debug      enable extra logging"
-    print " --delete     delete files after --adding"
-    print " --queue      queue tracks after --adding"
-    print " --quiet      suppress log messages (stderr)"
-    print " --scrobble   scrobble track (only makes sense with --next)"
-    print " --tags       specify tags for --add"
-    return 1
-
-def oldstyle():
-    import getopt
-    from ardj import Open
-    ardj = Open()
-
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], 'i', ['add', 'debug', 'delete', 'next', 'quiet', 'queue', 'scrobble', 'tags='])
-    except getopt.GetoptError:
-        sys.exit(usage())
-
-    if not len(opts):
-        sys.exit(usage())
-
-    tags = []
-    queue = delete = False
-
-    # prepare for work
-    for option, value in opts:
-        if '--quiet' == option:
-            sys.stderr = None
-        if '--debug' == option:
-            ardj.debug = True
-        if '--delete' == option:
-            delete = True
-        if '--tags' == option:
-            tags = value.split(',')
-        if '--queue' == option:
-            queue = True
-
-    for option, value in opts:
-        if '--add' == option:
-            for filename in args:
-                if os.path.exists(filename):
-                    ardj.add_file(filename, {'labels':tags, 'owner': 'console'}, queue=queue)
-                    if delete:
-                        os.unlink(filename)
-            ardj.database.commit()
-            args = []
-        if '--next' == option:
-            scrobble = ('--scrobble', '') in opts
-            track = ardj.get_next_track(scrobble=scrobble)
-            if track is None:
-                print >>sys.stderr, 'Could not find a track to play.'
-                sys.exit(1)
-            print track['filepath']
-
 COMMAND_MAP = [ # (command, module, function, description)
     ('client', 'client', 'run_cli', 'run the client'),
     ('config', 'settings', 'edit_cli', 'edit settings'),
@@ -117,4 +56,3 @@ if __name__ == '__main__':
                 sys.exit(1)
         ardj.log.error('Unknown command: %s' % sys.argv[1])
         sys.exit(1)
-    oldstyle()

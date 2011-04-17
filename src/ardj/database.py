@@ -28,7 +28,6 @@ except ImportError:
     sys.exit(13)
 
 import ardj.log
-import ardj.replaygain
 import ardj.settings
 import ardj.util
 
@@ -52,7 +51,7 @@ class database:
         self.db.create_function('randomize', 4, self.sqlite_randomize)
         cur = self.db.cursor()
         cur.execute('CREATE TABLE IF NOT EXISTS playlists (id INTEGER PRIMARY KEY, name TEXT, last_played INTEGER)')
-        cur.execute('CREATE TABLE IF NOT EXISTS tracks (id INTEGER PRIMARY KEY, owner TEXT, filename TEXT, artist TEXT, title TEXT, length INTEGER, artist_weight REAL, weight REAL, count INTEGER, last_played INTEGER)')
+        cur.execute('CREATE TABLE IF NOT EXISTS tracks (id INTEGER PRIMARY KEY, owner TEXT, filename TEXT, artist TEXT, title TEXT, length INTEGER, weight REAL, count INTEGER, last_played INTEGER)')
         cur.execute('CREATE INDEX IF NOT EXISTS idx_tracks_owner ON tracks (owner)')
         cur.execute('CREATE INDEX IF NOT EXISTS idx_tracks_last ON tracks (last_played)')
         cur.execute('CREATE INDEX IF NOT EXISTS idx_tracks_count ON tracks (count)')
@@ -89,11 +88,9 @@ class database:
             cls.instance = cls(filename)
         return cls.instance
 
-    def sqlite_randomize(self, id, artist_weight, weight, count):
+    def sqlite_randomize(self, id, weight, count):
         """The randomize() function for SQLite."""
         result = weight or 0
-        if artist_weight is not None:
-            result = result * artist_weight
         # result = result / ((count or 0) + 1)
         result = min(max(0.1, result), 2.0)
         return result
@@ -192,11 +189,6 @@ class database:
         self.commit()
         return current
 
-    def add_file(self, filename):
-        ardj.log.info('Adding from %s' % filename)
-        ardj.replaygain.update(filename)
-        return False
-
     def set_urgent(self, labels, expires=None):
         """Sets the music filter.
 
@@ -240,7 +232,7 @@ class database:
         sql = []
         params = []
         for k in properties:
-            if k in ('filename', 'artist', 'title', 'length', 'artist_weight', 'weight', 'count', 'last_played', 'owner'):
+            if k in ('filename', 'artist', 'title', 'length', 'weight', 'count', 'last_played', 'owner'):
                 sql.append(k + ' = ?')
                 params.append(properties[k])
 
@@ -346,43 +338,6 @@ class database:
                 length = length + row[0]
         return { 'tracks': count, 'seconds': length }
 
-    def sync(self):
-        """Adds new tracks to the database, removes dead ones. """
-        cur = self.cursor()
-
-        # Файлы, существующие в файловой системе.
-        infs = []
-        musicdir = ardj.settings.get_music_dir()
-        for triple in os.walk(musicdir, followlinks=True):
-            for fn in triple[2]:
-                f = os.path.join(triple[0], fn)[len(musicdir)+1:]
-                if os.path.sep in f:
-                    infs.append(f)
-
-        # Файлы, существующие в базе данных.
-        indb = [row[0].encode('utf-8') for row in cur.execute('SELECT filename FROM tracks').fetchall()]
-
-        news = [x for x in infs if x not in indb]
-        dead = [x for x in indb if x not in infs]
-
-        # Удаляем из базы данных несуществующие файлы.
-        for filename in dead:
-            ardj.log.warning('Track no longer exists: %s.' % filename)
-            cur.execute('DELETE FROM tracks WHERE filename = ?', (filename.decode('utf-8'), ))
-
-        # Добавляем новые файлы.
-        for filename in news:
-            self.add_file(filename)
-
-        # Обновление статистики исполнителей.
-        for artist, count in cur.execute('SELECT artist, COUNT(*) FROM tracks WHERE weight > 0 GROUP BY artist').fetchall():
-            cur.execute('UPDATE tracks SET artist_weight = ? WHERE artist = ?', (1.0 / count, artist, ))
-
-        msg = u'%u files added, %u removed.' % (len(news), len(dead))
-        ardj.log.info(u'sync: ' + msg)
-        self.commit()
-        return msg
-
     def mark_orphans(self, set_label='orphan'):
         """Labels orphan tracks with "orphan".
 
@@ -433,6 +388,10 @@ class database:
 def Open(filename=None):
     """Returns the active database instance."""
     return database.get_instance()
+
+
+def cursor():
+    return Open().cursor()
 
 
 def pick_jingle(cur, label):
@@ -493,7 +452,6 @@ Commands:
   queue-hitlist     -- schedule the hit list for playing
   queue-shitlist    -- schedule the shit list for playing
   stat              -- show database statistics
-  sync              -- add missing files to the database
   """
 
 def run_cli(args):
@@ -533,9 +491,6 @@ def run_cli(args):
     if 'stat' in args:
         stats = db.get_stats()
         print '%u tracks, %.1f hours.' % (stats['tracks'], stats['seconds'] / 60 / 60)
-        ok = True
-    if 'sync' in args:
-        db.sync()
         ok = True
     if not ok:
         print USAGE

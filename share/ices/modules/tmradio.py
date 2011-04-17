@@ -1,10 +1,10 @@
 import os
 import sys
 
-from ardj import Open
+import ardj.log
+import ardj.tracks
 
 songnumber = -1
-ardj = None
 last_track = None
 
 def ices_init():
@@ -13,8 +13,7 @@ def ices_init():
 	Should return 1 if ok, and 0 if something went wrong.
 	"""
 	global ardj
-	print >>sys.stderr, 'ices/ardj: initializing.'
-	ardj = Open()
+	ardj.log.info('ices/ardj: initializing.')
 	return 1
 
 def ices_shutdown():
@@ -24,8 +23,7 @@ def ices_shutdown():
 	"""
 	global ardj
 	if ardj:
-		print >>sys.stderr, 'ices/ardj: shutting down.'
-		ardj.close()
+		ardj.log.info('ices/ardj: shutting down.')
 	return 1
 
 def ices_get_next():
@@ -36,7 +34,9 @@ def ices_get_next():
 	global ardj, last_track
 	if not ardj: ices_init()
 	# print >>sys.stderr, 'ices/ardj: requesting next track.'
-	last_track = ardj.get_next_track()
+    track_id = ardj.track.get_next_track_id()
+    if track_id:
+        last_track = ardj.track.get_track_by_id(track_id)
 	return last_track['filepath']
 
 def ices_get_metadata():

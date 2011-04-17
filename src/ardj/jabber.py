@@ -22,8 +22,10 @@ import tags
 
 import ardj.database
 import ardj.log
+import ardj.scrobbler
 import ardj.settings
 import ardj.speech
+import ardj.tracks
 import ardj.util
 
 USAGE = """Usage: ardj jabber command
@@ -37,7 +39,7 @@ Commands:
 class MyFileReceivingBot(FileBot):
     def is_file_acceptable(self, sender, filename, filesize):
         if not self.check_access(sender):
-            self.ardj.log.warning('Refusing to accept files from %s.' % sender)
+            ardj.log.warning('Refusing to accept files from %s.' % sender)
             raise FileNotAcceptable('I\'m not allowed to receive files from you, sorry.')
         if os.path.splitext(filename.lower())[1] not in ['.mp3', '.ogg', '.zip']:
             raise FileNotAcceptable('I only accept MP3, OGG and ZIP files, which "%s" doesn\'t look like.' % os.path.basename(filename))
@@ -67,14 +69,11 @@ class MyFileReceivingBot(FileBot):
         finally:
             if tmpname is not None and os.path.exists(tmpname):
                 os.unlink(tmpname)
-            self.ardj.database.commit()
+            ardj.database.Open().commit()
 
     def process_incoming_file(self, sender, filename):
-        self.ardj.log.info('Received %s.' % filename)
-        track_id = self.ardj.add_file(filename, {
-            'owner': sender,
-            'labels': ['incoming'],
-        }, queue=True)
+        ardj.log.info('Received %s.' % filename)
+        track_id = ardj.tracks.add_file(filename, labels=['incoming', 'incoming-jabber'], queue=True)
         time.sleep(1) # let ices read some data
         return track_id
 
@@ -98,16 +97,17 @@ class ardjbot(MyFileReceivingBot):
     PING_FREQUENCY = 60
     PING_TIMEOUT = 2
 
-    def __init__(self):
+    def __init__(self, debug=False):
         self.lastping = None # время последнего пинга
         self.pidfile = '/tmp/ardj-jabber.pid'
         self.publicCommands = ardj.settings.get('jabber/public-commands', u'dump help rocks sucks кщслы ыгслы show last hitlist shitlist ping pong').split(' ')
         self.database_mtime = None
         self.init_command_log()
+        self.scrobbler = ardj.scrobbler.Open()
 
-        login, password = self.split_login(ardj.settings.get('jabber/login'))
+        login, password = self.split_login(ardj.settings.get('jabber/login', fail=True))
         resource = socket.gethostname() + '/' + str(os.getpid()) + '/'
-        super(ardjbot, self).__init__(login, password, res=resource, debug=ardj.debug)
+        super(ardjbot, self).__init__(login, password, res=resource, debug=debug)
 
     def init_command_log(self):
         fn = ardj.settings.get('jabber/log', None)
@@ -170,7 +170,7 @@ class ardjbot(MyFileReceivingBot):
             try:
                 open(self.pidfile, 'w').write(str(os.getpid()))
             except IOError, e:
-                self.ardj.log.error(u'Could not write to %s: %s' % (self.pidfile, e))
+                ardj.log.error(u'Could not write to %s: %s' % (self.pidfile, e))
         self.update_status()
 
     def shutdown(self):
@@ -193,7 +193,8 @@ class ardjbot(MyFileReceivingBot):
                     status = u'«%s» by %s' % (track['title'], track['artist'])
                 else:
                     status = os.path.basename(track['filename'])
-                status += u' — #%u ♺%u ⚖%.2f Σ%u' % (track['id'], track['count'], track['weight'], self.ardj.scrobbler.get_listener_count())
+                    lcount = self.scrobbler and self.scrobbler.get_listener_count() or 0
+                status += u' — #%u ♺%u ⚖%.2f Σ%u' % (track['id'], track['count'], track['weight'], lcount)
                 for label in track['labels']:
                     status += u' @' + label
                 self.status_message = status
@@ -208,7 +209,7 @@ class ardjbot(MyFileReceivingBot):
         """
         Возвращает информацию о последней проигранной дорожке.
         """
-        return self.ardj.get_last_track()
+        return ardj.tracks.get_last_track()
 
     def check_access(self, sender):
         return sender.split('/')[0] in self.get_users()
@@ -227,13 +228,13 @@ class ardjbot(MyFileReceivingBot):
                         cmd = body.strip().split(' ')[1]
                     is_public = cmd in self.publicCommands
                     if not is_public and not self.check_access(mess.getFrom().getStripped()):
-                        self.ardj.log.warning('Refusing access to %s.' % mess.getFrom())
+                        ardj.log.warning('Refusing access to %s.' % mess.getFrom())
                         return self.send_simple_reply(mess, 'Available commands: %s.' % ', '.join(self.publicCommands))
                 if mess.getBody():
                     self._log_command(mess.getFrom().getStripped(), mess.getBody().strip())
                 return JabberBot.callback_message(self, conn, mess)
         finally:
-            self.ardj.database.commit()
+            ardj.database.Open().commit()
 
     def _log_command(self, sender, command):
         if self.command_log is not None:
@@ -248,7 +249,7 @@ class ardjbot(MyFileReceivingBot):
         r = re.match('(\S+)\s+to\s+(.+)\s+for\s+(\d+)$', args)
         if r:
             a1, a2, a3 = r.groups()
-            track = self.ardj.get_track_by_id(int(a3))
+            track = ardj.tracks.get_track_by_id(int(a3))
         else:
             r = re.match('(\S+)\s+to\s+(.+)$', args)
             if r:
@@ -259,7 +260,7 @@ class ardjbot(MyFileReceivingBot):
 
         if a1 == 'labels' and a2:
             labels = re.split('[,\s]+', a2.strip())
-            result = self.ardj.database.add_labels(track['id'], message.getFrom().getStripped(), labels) or ['none']
+            result = ardj.tracks.add_labels(track['id'], message.getFrom().getStripped(), labels) or ['none']
             return u'Current labels for %s: %s.' % (self.get_linked_title(track), u', '.join(sorted(result)))
 
         types = { 'owner': unicode, 'artist': unicode, 'title': unicode }
@@ -276,13 +277,8 @@ class ardjbot(MyFileReceivingBot):
             return u'That\'s the current value, yes.'
 
         track[a1] = a2
-        self.ardj.database.update_track(track)
-
-        if a1 == 'artist':
-            self.ardj.update_artist_weight(old)
-            self.ardj.update_artist_weight(a2)
-
-        self.ardj.log.info(u'%s changed %s from "%s" to "%s" for track #%u' % (message.getFrom().getStripped(), a1, old, a2, track['id']))
+        ardj.tracks.update_track(track)
+        ardj.log.info(u'%s changed %s from "%s" to "%s" for track #%u' % (message.getFrom().getStripped(), a1, old, a2, track['id']))
 
     @botcmd(hidden=True)
     def delete(self, message, args):
@@ -290,9 +286,9 @@ class ardjbot(MyFileReceivingBot):
         if args.lower().startswith('from'):
             if not args.endswith(';'):
                 return u'SQL commands must end with a ; to prevent accidents.'
-            self.ardj.database.cursor().execute(u'delete ' + args)
+            ardj.database.cursor().execute(u'delete ' + args)
             return u'ok'
-        track = args and self.ardj.get_track_by_id(int(args)) or self.get_current_track()
+        track = args and ardj.tracks.get_track_by_id(int(args)) or self.get_current_track()
         if not track['weight']:
             return u'Zero weight already.'
         elif track['weight'] > 1:
@@ -300,9 +296,8 @@ class ardjbot(MyFileReceivingBot):
         old = track['weight']
         track['weight'] = 0
         track['labels'] = None
-        self.ardj.database.update_track(track)
-        self.ardj.update_artist_weight(track['artist'])
-        self.ardj.log.info(u'%s changed weight from %s to 0 for track #%u' % (message.getFrom().getStripped(), old, track['id']))
+        ardj.tracks.update_track(track)
+        ardj.log.info(u'%s changed weight from %s to 0 for track #%u' % (message.getFrom().getStripped(), old, track['id']))
         if not args:
             self.skip(message, args)
 
@@ -318,7 +313,7 @@ class ardjbot(MyFileReceivingBot):
     @botcmd
     def last(self, message, args):
         "Show last 10 played tracks"
-        rows = [{ 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3] } for row in self.ardj.database.cursor().execute('SELECT id, filename, artist, title FROM tracks ORDER BY last_played DESC LIMIT 10').fetchall()]
+        rows = [{ 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3] } for row in ardj.database.cursor().execute('SELECT id, filename, artist, title FROM tracks ORDER BY last_played DESC LIMIT 10').fetchall()]
         if not rows:
             return u'Nothing was played yet.'
         message = u'Last played tracks:'
@@ -337,14 +332,14 @@ class ardjbot(MyFileReceivingBot):
         if not track_id.isdigit():
             return u'Usage: dump track_id'
 
-        track = self.ardj.get_track_by_id(int(track_id))
+        track = ardj.tracks.get_track_by_id(int(track_id))
         if track is None:
             return u'Track %s not found.' % track_id
 
         email = message.getFrom().getStripped()
         track['editable'] = self.check_access(email)
 
-        votes = self.ardj.database.cursor().execute('SELECT vote FROM votes WHERE track_id = ? AND email = ?', (int(track_id), email)).fetchall()
+        votes = ardj.database.cursor().execute('SELECT vote FROM votes WHERE track_id = ? AND email = ?', (int(track_id), email)).fetchall()
         track['vote'] = votes and votes[0][0] or None
 
         return json.dumps(track, ensure_ascii=False)
@@ -353,12 +348,12 @@ class ardjbot(MyFileReceivingBot):
     def show(self, message, args):
         "Show detailed track info"
         if args == 'labels' or args == 'tags':
-            rows = self.ardj.database.cursor().execute('SELECT label, COUNT(*) FROM labels GROUP BY label ORDER BY label').fetchall()
+            rows = ardj.database.cursor().execute('SELECT label, COUNT(*) FROM labels GROUP BY label ORDER BY label').fetchall()
             if not rows:
                 return u'No labels.'
             return u'Label stats: %s.' % u', '.join(['%s (%u)' % (row[0], row[1]) for row in rows])
         if args == 'karma':
-            rows = self.ardj.database.cursor().execute('SELECT email, weight FROM karma ORDER BY weight DESC').fetchall()
+            rows = ardj.database.cursor().execute('SELECT email, weight FROM karma ORDER BY weight DESC').fetchall()
             if not rows:
                 return u'No data.'
             return u'Current karma: %s.' % u', '.join([u'%s (%.2f)' % (row[0], row[1]) for row in rows])
@@ -368,7 +363,7 @@ class ardjbot(MyFileReceivingBot):
             if track is None:
                 return 'Nothing is playing.'
         else:
-            track = self.ardj.get_track_by_id(int(args[0]))
+            track = ardj.tracks.get_track_by_id(int(args[0]))
         if track is None:
             return u'No such track.'
         result = self.get_linked_title(track)
@@ -393,7 +388,7 @@ class ardjbot(MyFileReceivingBot):
     def select(self, message, args):
         "Low level access to the database"
         result = u''
-        for row in self.ardj.database.cursor().execute(message.getBody()).fetchall():
+        for row in ardj.database.cursor().execute(message.getBody()).fetchall():
             result += u', '.join([unicode(cell) for cell in row]) + u'\n<br/>'
         if not result:
             result = u'Nothing.'
@@ -405,14 +400,14 @@ class ardjbot(MyFileReceivingBot):
         sql = 'update ' + args
         if not sql.endswith(';'):
             return u'SQL updates must end with a ; to prevent accidents.'
-        self.ardj.database.cursor().execute(sql)
-        self.ardj.log.info(u'SQL from %s: %s' % (message.getFrom(), sql))
+        ardj.database.cursor().execute(sql)
+        ardj.log.info(u'SQL from %s: %s' % (message.getFrom(), sql))
 
     @botcmd
     def twit(self, message, args):
         "Send a message to Twitter"
         url = ardj.twitter.twit(args)
-        self.ardj.log.info(u'%s sent <a href="%s">a message</a> to twitter: %s' % (self.get_linked_sender(message), url, args))
+        ardj.log.info(u'%s sent <a href="%s">a message</a> to twitter: %s' % (self.get_linked_sender(message), url, args))
         return url
 
     @botcmd
@@ -432,9 +427,9 @@ class ardjbot(MyFileReceivingBot):
     def _get_track_voters(self, track_id, me=None):
         "Returns formatted list of likers-haters."
         if me is None:
-            votes = self.ardj.database.cursor().execute('SELECT email, vote FROM votes WHERE track_id = ?', (track_id, )).fetchall()
+            votes = ardj.database.cursor().execute('SELECT email, vote FROM votes WHERE track_id = ?', (track_id, )).fetchall()
         else:
-            votes = self.ardj.database.cursor().execute('SELECT email, vote FROM votes WHERE track_id = ? AND email = ?', (track_id, me, )).fetchall()
+            votes = ardj.database.cursor().execute('SELECT email, vote FROM votes WHERE track_id = ? AND email = ?', (track_id, me, )).fetchall()
         pro = [row[0] for row in votes if row[1] > 0]
         if not pro:
             pro.append('nobody')
@@ -454,21 +449,8 @@ class ardjbot(MyFileReceivingBot):
     @botcmd(hidden=True)
     def purge(self, message, args):
         "Erase tracks with zero weight"
-        self.ardj.purge()
+        self.tracks.purge()
         return u'ok'
-
-    @botcmd
-    def sync(self, message, args):
-        "Update database (finds new and dead files)"
-        self.ardj.sync()
-
-        # reset all track weights
-        cur = self.ardj.database.cursor()
-        cur.execute('UPDATE tracks SET weight = 1 WHERE weight > 0')
-        for track_id, weight in cur.execute('SELECT track_id, weight FROM track_weights').fetchall():
-            cur.execute('UPDATE tracks SET weight = ? WHERE id = ? AND weight > 0', (weight, track_id, ))
-
-        return self.news(message, args)
 
     def get_linked_title(self, track):
         if not track['artist']:
@@ -521,9 +503,9 @@ class ardjbot(MyFileReceivingBot):
         artist_name = args
         if not artist_name:
             return u'Usage: ban artist name'
-        cur = self.ardj.database.cursor()
+        cur = ardj.database.cursor()
         cur.execute('UPDATE tracks SET weight = 0 WHERE artist = ?', (artist_name, ))
-        self.ardj.purge()
+        ardj.tracks.purge()
         return u"Who's %s?  Never heard of them." % artist_name
 
     @botcmd(hidden=True)
@@ -539,15 +521,15 @@ class ardjbot(MyFileReceivingBot):
         if type(args) != tuple:
             raise TypeError("Use the 'help' command to understand how this works.")
         if args[index] is None:
-            return self.ardj.get_last_track()
+            return ardj.tracks.get_last_track()
         elif str(args[index]).isdigit():
-            return self.ardj.get_track_by_id(int(args[index]))
+            return ardj.tracks.get_track_by_id(int(args[index]))
         raise TypeError("Track id must be an integer, or not specified at all.")
 
     @botcmd
     def shitlist(self, message, args):
         "List tracks with zero weight"
-        tracks = [{ 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3] } for row in self.ardj.database.cursor().execute('SELECT id, filename, artist, title FROM tracks WHERE weight = 0 ORDER BY title, artist').fetchall()]
+        tracks = [{ 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3] } for row in ardj.database.cursor().execute('SELECT id, filename, artist, title FROM tracks WHERE weight = 0 ORDER BY title, artist').fetchall()]
         if not tracks:
             return u'The shitlist is empty.'
         message = u'The shitlist has %u items:' % len(tracks)
@@ -560,7 +542,7 @@ class ardjbot(MyFileReceivingBot):
     def hitlist(self, message, args):
         "Shows X top rated tracks"
         limit = args and int(args) or 10
-        tracks = [{ 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'weight': row[4] } for row in self.ardj.database.cursor().execute('SELECT id, filename, artist, title, weight FROM tracks WHERE weight > 0 ORDER BY weight DESC LIMIT ' + str(limit)).fetchall()]
+        tracks = [{ 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'weight': row[4] } for row in ardj.database.cursor().execute('SELECT id, filename, artist, title, weight FROM tracks WHERE weight > 0 ORDER BY weight DESC LIMIT ' + str(limit)).fetchall()]
         if not tracks:
             return u'The hitlist is empty.'
         message = u'Top %u tracks:' % len(tracks)
@@ -576,15 +558,14 @@ class ardjbot(MyFileReceivingBot):
         filename.  If only one track matches, it's queued, otherwise an error
         is shown.  Use 'queue flush' to remove everything.
         """
-        cur = self.ardj.database.cursor()
+        cur = ardj.database.cursor()
 
         if args == 'flush':
             cur.execute('DELETE FROM queue')
             return u'ok'
 
         # Add new tracks.
-        cur = self.ardj.database.cursor()
-        for track in self.ardj.find(args):
+        for track in ardj.tracks.find(args):
             cur.execute('INSERT INTO queue (track_id, owner) VALUES (?, ?)', (track['id'], message.getFrom().getStripped(), ))
 
         # Show current queue.
@@ -605,7 +586,7 @@ class ardjbot(MyFileReceivingBot):
         u"Finds a track\n\nUsage: find substring\nLists all tracks that contain this substring in the artist, track or file name. The substring can contain spaces. If you want to see more than 10 matching tracks, use the select command, e.g.: SELECT id, filename FROM tracks WHERE ..."
         if not args:
             return self.find.__doc__.split('\n\n')[1]
-        tracks = self.ardj.find(args)
+        tracks = ardj.tracks.find(args)
         if not tracks:
             return u'No matching tracks.'
         if len(tracks) > 20:
@@ -620,7 +601,7 @@ class ardjbot(MyFileReceivingBot):
     @botcmd
     def news(self, mess, args):
         u"Shows last added tracks"
-        tracks = [{ 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3] } for row in self.ardj.database.cursor().execute('SELECT id, filename, artist, title FROM tracks ORDER BY id DESC LIMIT 10').fetchall()]
+        tracks = [{ 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3] } for row in ardj.database.cursor().execute('SELECT id, filename, artist, title FROM tracks ORDER BY id DESC LIMIT 10').fetchall()]
         if not tracks:
             return u'No news.'
         message = u'Last %u tracks:' % len(tracks)
@@ -642,7 +623,7 @@ class ardjbot(MyFileReceivingBot):
     @botcmd
     def voters(self, mess, args):
         u"Shows top voters."
-        rows = self.ardj.database.cursor().execute('SELECT `email`, COUNT(*) AS `count` FROM `votes` GROUP BY `email` ORDER BY `count` DESC').fetchall()
+        rows = ardj.database.cursor().execute('SELECT `email`, COUNT(*) AS `count` FROM `votes` GROUP BY `email` ORDER BY `count` DESC').fetchall()
         return u'Top voters: ' + u', '.join([u'%s (%u)' % (row[0], row[1]) for row in rows]) + u'.'
 
     @botcmd(hidden=True)
@@ -658,11 +639,11 @@ class ardjbot(MyFileReceivingBot):
         The playlist is reset to normal automatically or using the 'play all' command.  Arguments are labels: 'play female -rock'.
         """
         if not args:
-            current = self.ardj.database.get_urgent()
+            current = ardj.tracks.get_urgent()
             if not current:
                 return u'Playing everything.'
             return u'Current filter: %s.' % u', '.join(current)
-        self.ardj.database.set_urgent(args)
+        ardj.tracks.set_urgent(args)
         return u'ok'
 
     @botcmd(hidden=True)
@@ -675,12 +656,12 @@ class ardjbot(MyFileReceivingBot):
     def batch_tags(self, mess, args):
         labels = list(set(re.split('[\s,]+', args[0])))
         owner = mess.getFrom().getStripped()
-        self.ardj.log.info('Assigning labels %s to files last uploaded by %s' % (u', '.join(labels), owner))
-        cur = self.ardj.database.cursor()
+        ardj.log.info('Assigning labels %s to files last uploaded by %s' % (u', '.join(labels), owner))
+        cur = ardj.database.cursor()
         for label in labels:
             sql = 'INSERT INTO labels (track_id, email, label) SELECT track_id, email, ? FROM labels WHERE label = ?'
             params = (label, 'incoming', )
-            self.ardj.database.debug(sql, params)
+            ardj.database.debug(sql, params)
             cur.execute(sql, params)
         cur.execute('DELETE FROM labels WHERE label = ?', ('incoming', ))
         return u'ok'
@@ -722,7 +703,7 @@ class ardjbot(MyFileReceivingBot):
             raise Exception('%s does not exist.' % pidfile)
         pid = int(open(pidfile, 'rb').read().strip())
         os.kill(pid, sig)
-        self.ardj.log.debug('sent signal %s to process %s.' % (sig, pid))
+        ardj.log.debug('sent signal %s to process %s.' % (sig, pid))
         return True
 
     def connect(self):
@@ -735,16 +716,16 @@ class ardjbot(MyFileReceivingBot):
         return conn
 
     def on_disconnect(self):
-        self.ardj.log.debug('on_disconnect called.')
+        ardj.log.debug('on_disconnect called.')
 
     def __vote(self, track_id, email, vote):
-        return (1, self.ardj.database.add_vote(track_id, email, vote))
+        return (1, ardj.tracks.add_vote(track_id, email, vote))
 
-def Open():
+def Open(debug=False):
     """
     Returns a new bot instance.
     """
-    return ardjbot()
+    return ardjbot(debug=debug)
 
 
 def run_cli(args):
@@ -759,7 +740,7 @@ def run_cli(args):
         return True
 
     if len(args) and args[0] == 'run-child':
-        return Open().run()
+        return Open(debug='--debug' in args).run()
 
     if len(args) and args[0] == 'run':
         delay = 5

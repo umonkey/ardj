@@ -1,4 +1,5 @@
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -77,3 +78,16 @@ def upload_music(filenames):
         ardj.log.warning('Could not upload %u music files: database/upload not set.' % len(filenames))
         return False
     return run([ 'scp', '-q' ] + [str(x) for x in filenames] + [ target ])
+
+
+def copy_file(src, dst):
+    """Copies the file to a new location.
+
+    Supports cross-device copy.
+    
+    If the target directory does not exist, it's created.
+    """
+    dirname = os.path.dirname(dst)
+    if not os.path.exists(dirname):
+        os.makedirs(dirname)
+    return shutil.copyfile(src, dst)
