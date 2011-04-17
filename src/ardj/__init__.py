@@ -538,55 +538,6 @@ class old_ardj:
     def __get_track_labels(self, track_id, cur):
         return [row[0] for row in cur.execute('SELECT DISTINCT label FROM labels WHERE track_id = ? ORDER BY label', (track_id, )).fetchall()]
 
-    def say_to_track(self, message, track_id, track_artist, track_title=None, queue=False):
-        """Renders some text to a track."""
-        cur = self.database.cursor()
-        track = self.get_track_by_id(int(track_id), cur=cur)
-        filename = os.path.join(ardj.settings.get_music_dir(), track['filename'])
-        length = self.say(message, filename, track_artist, track_title)
-        if length:
-            self.database.update_track({'id': int(track_id), 'length': length }, cur=cur)
-            if True:
-                self.queue_track(int(track_id), cur=cur)
-                ardj.log.info(u'Added track %s to queue.' % track_id)
-
-    def say(self, message, filename_ogg, track_artist=None, track_title=None):
-        """Renders some text to a wav file."""
-        filename_txt = ardj.util.mktemp(suffix='.txt')
-        filename_wav = filename_ogg + '.wav'
-
-        ardj.log.info(u'Rendering text "%s" to file %s' % (message, filename_ogg))
-
-        if os.path.exists(filename_ogg):
-            tg = ardj.tags.raw(filename_ogg)
-            if 'comment' in tg and tg['comment'][0] == message:
-                ardj.log.debug(u'File has that message already, not updating.')
-                return False
-
-        if track_artist is None:
-            track_artist = u'Говорящий робот'
-        if track_title is None:
-            track_title = u'Голосовое сообщение'
-
-        f = open(filename_txt, 'wb')
-        f.write(message.encode('utf-8'))
-        f.close()
-
-        try:
-            ardj.util.run(['text2wave', '-eval', '(voice_msu_ru_nsh_clunits)', filename_txt, '-o', filename_wav])
-            ardj.util.run(['oggenc', '-Q', '-q', '9', '--resample', '44100', '-o', filename_ogg, filename_wav])
-            tg = ardj.tags.raw(filename_ogg)
-            tg['comment'] = message
-            if track_artist is not None:
-                tg['artist'] = track_artist
-            if track_title is not None:
-                tg['title'] = track_title
-            tg.save()
-            return tg.info.length
-        finally:
-            if os.path.exists(filename_wav):
-                os.unlink(filename_wav)
-
 def Open():
     global ardj_instance
     if ardj_instance is None:
