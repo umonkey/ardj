@@ -193,7 +193,7 @@ class ardjbot(MyFileReceivingBot):
                     status = u'«%s» by %s' % (track['title'], track['artist'])
                 else:
                     status = os.path.basename(track['filename'])
-                    lcount = self.scrobbler and self.scrobbler.get_listener_count() or 0
+                lcount = self.scrobbler and self.scrobbler.get_listener_count() or 0
                 status += u' — #%u ♺%u ⚖%.2f Σ%u' % (track['id'], track['count'], track['weight'], lcount)
                 for label in track['labels']:
                     status += u' @' + label
