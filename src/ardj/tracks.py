@@ -328,11 +328,11 @@ def add_labels_filter(sql, params, labels):
     every = [l[1:] for l in labels if l.startswith('+')]
 
     if either:
-        sql += ' AND id IN (SELECT track_id FROM labels WHERE label IN (%s))' % ', '.join(['?' * len(either)])
+        sql += ' AND id IN (SELECT track_id FROM labels WHERE label IN (%s))' % ', '.join(['?'] * len(either))
         params += either
 
     if neither:
-        sql += ' AND id NOT IN (SELECT track_id FROM labels WHERE label IN (%s))' % ', '.join(['?' * len(neither)])
+        sql += ' AND id NOT IN (SELECT track_id FROM labels WHERE label IN (%s))' % ', '.join(['?'] * len(neither))
         params += neither
 
     if every:
