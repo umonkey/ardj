@@ -348,6 +348,14 @@ class ardjbot(MyFileReceivingBot):
         return json.dumps(track, ensure_ascii=False)
 
     @botcmd
+    def download(self, message, args):
+        base_url = ardj.settings.get('database/base_files_url')
+        if not base_url:
+            return 'Downloading is disabled.'
+        track = ardj.tracks.get_last_track()
+        return base_url.rstrip('/') + '/' + track['filename']
+
+    @botcmd
     def show(self, message, args):
         "Show detailed track info"
         cur = ardj.database.cursor()
