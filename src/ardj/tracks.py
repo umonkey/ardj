@@ -78,8 +78,16 @@ def find_ids(pattern, cur=None):
     return [row[0] for row in cur.execute('SELECT id FROM tracks WHERE artist LIKE ? OR title LIKE ?', (like, like, )).fetchall()]
 
 
-def add_labels(track_id, labels):
-    pass
+def add_labels(track_id, labels, owner=None, cur=None):
+    cur = cur or ardj.database.cursor()
+    for label in labels:
+        if label.startswith('-'):
+            cur.execute('DELETE FROM labels WHERE track_id = ? AND label = ?', (track_id, label.lstrip('-'), ))
+        elif cur.execute('SELECT 1 FROM labels WHERE track_id = ? AND label = ?', (track_id, label.lstrip('+'), )).fetchall():
+            pass
+        else:
+            cur.execute('INSERT INTO labels (track_id, label, email) VALUES (?, ?, ?)', (track_id, label.lstrip('+'), owner or 'ardj', ))
+    return sorted(list(set([row[0] for row in cur.execute('SELECT label FROM labels WHERE track_id = ?', (track_id, )).fetchall()])))
 
 
 def update_track(props):

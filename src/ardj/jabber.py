@@ -260,7 +260,7 @@ class ardjbot(MyFileReceivingBot):
 
         if a1 == 'labels' and a2:
             labels = re.split('[,\s]+', a2.strip())
-            result = ardj.tracks.add_labels(track['id'], message.getFrom().getStripped(), labels) or ['none']
+            result = ardj.tracks.add_labels(track['id'], labels, owner=message.getFrom().getStripped()) or ['none']
             return u'Current labels for %s: %s.' % (self.get_linked_title(track), u', '.join(sorted(result)))
 
         types = { 'owner': unicode, 'artist': unicode, 'title': unicode }
@@ -587,14 +587,16 @@ class ardjbot(MyFileReceivingBot):
         u"Finds a track\n\nUsage: find substring\nLists all tracks that contain this substring in the artist, track or file name. The substring can contain spaces. If you want to see more than 10 matching tracks, use the select command, e.g.: SELECT id, filename FROM tracks WHERE ..."
         if not args:
             return self.find.__doc__.split('\n\n')[1]
-        tracks = ardj.tracks.find(args)
+        cur = ardj.database.cursor()
+        tracks = ardj.tracks.find_ids(args, cur=cur)
         if not tracks:
             return u'No matching tracks.'
         if len(tracks) > 20:
             message = u'Found %u tracks, showing oldest 20:' % len(tracks)
         else:
             message = u'Found %u tracks:' % len(tracks)
-        for track in tracks[:20]:
+        for track_id in tracks[:20]:
+            track = ardj.tracks.get_track_by_id(track_id, cur=cur)
             labels = ['@' + l for l in track['labels']]
             message += u'\n<br/>  %s — #%u ⚖%s %s' % (self.get_linked_title(track), track['id'], track['weight'], u' '.join(labels))
         return message + u'\n<br/>You might want to use "queue track_ids..." now.'
