@@ -368,7 +368,7 @@ class ardjbot(MyFileReceivingBot):
         if track is None:
             return u'No such track.'
         result = u'«%s» by %s' % (track['title'], track['artist'])
-        result += u'; id=%u weight=%.2f playcount=%u length=%s vote=%u last_played=%s ago. ' % (track['id'], track['weight'] or 0, track['count'] or 0, ardj.util.format_duration(track['length'] or 0), ardj.tracks.get_vote(track['id'], message.getFrom().getStripped()), ardj.util.format_duration(time.time() - track.get('last_played', 0)))
+        result += u'; id=%u weight=%.2f playcount=%u length=%s vote=%u last_played=%s. ' % (track['id'], track['weight'] or 0, track['count'] or 0, ardj.util.format_duration(track['length'] or 0), ardj.tracks.get_vote(track['id'], message.getFrom().getStripped()), ardj.util.format_duration(track.get('last_played'), age=True))
         if track['labels']:
             result += u'Labels: @' + u', @'.join(track['labels']) + u'. '
         return result.strip()

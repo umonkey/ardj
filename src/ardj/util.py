@@ -3,6 +3,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import urllib
 import urllib2
 import urlparse
@@ -120,8 +121,12 @@ def move_file(src, dst):
     return True
 
 
-def format_duration(duration):
+def format_duration(duration, age=False):
     duration = int(duration)
+    if age:
+        if not duration:
+            return 'never'
+        duration = int(time.time()) - duration
     parts = ['%02u' % (duration % 60)]
     duration /= 60
     if duration > 60:
@@ -129,4 +134,7 @@ def format_duration(duration):
         duration /= 60
     if duration:
         parts.insert(0, str(duration))
-    return ':'.join(parts)
+    result = ':'.join(parts)
+    if age:
+        result += ' ago'
+    return result
