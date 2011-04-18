@@ -169,8 +169,9 @@ def get_track_id_from_queue(cur=None):
     If the queue is empty or there's no valid track in it, returns None.
     """
     cur = cur or ardj.database.cursor()
-    row = cur.execute('SELECT t.id FROM tracks t INNER JOIN queue q ON q.track_id = t.id ORDER BY q.id LIMIT 1').fetchone()
+    row = cur.execute('SELECT t.id, q.id FROM tracks t INNER JOIN queue q ON q.track_id = t.id ORDER BY q.id LIMIT 1').fetchone()
     if row:
+        cur.execute('DELETE FROM queue WHERE id = ?', (row[1], ))
         return row[0]
 
 
