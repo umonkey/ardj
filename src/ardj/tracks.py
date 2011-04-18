@@ -309,7 +309,7 @@ def get_random_track_id_from_playlist(playlist, skip_artists, cur=None):
     weight = playlist.get('weight', '')
     if '-' in weight:
         parts = weight.split('-', 1)
-        sql += ' AND weigh >= ? AND weight <= ?'
+        sql += ' AND weight >= ? AND weight <= ?'
         params.append(float(parts[0]))
         params.append(float(parts[1]))
 
@@ -466,6 +466,7 @@ def get_next_track_id(cur=None, debug=False, update_stats=True):
     Arguments:
     update_stats -- set to False to not update last_played.
     """
+    want_preroll = True
     cur = cur or ardj.database.cursor()
 
     skip_artists = list(set([row[0] for row in cur.execute('SELECT artist FROM tracks WHERE artist IS NOT NULL AND last_played IS NOT NULL ORDER BY last_played DESC LIMIT ' + str(ardj.settings.get('dupes', 5))).fetchall()]))
@@ -473,8 +474,10 @@ def get_next_track_id(cur=None, debug=False, update_stats=True):
         ardj.log.debug(u'Artists to skip: %s' % u', '.join(skip_artists or ['none']) + u'.')
 
     track_id = get_track_id_from_queue(cur)
-    if debug and track_id:
-        ardj.log.debug('Picked track %u from the queue.' % track_id)
+    if track_id:
+        want_preroll = False
+        if debug:
+            ardj.log.debug('Picked track %u from the queue.' % track_id)
 
     if track_id is None:
         labels = get_urgent()
@@ -497,7 +500,8 @@ def get_next_track_id(cur=None, debug=False, update_stats=True):
                 break
 
     if track_id:
-        track_id = add_preroll(track_id, cur)
+        if want_preroll:
+            track_id = add_preroll(track_id, cur)
 
         if update_stats:
             count = cur.execute('SELECT count FROM tracks WHERE id = ?', (track_id, )).fetchone()[0]
