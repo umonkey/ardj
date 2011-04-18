@@ -214,6 +214,14 @@ def add_vote(track_id, email, vote, cur=None):
     return result
 
 
+def get_vote(track_id, email, cur=None):
+    cur = cur or ardj.database.cursor()
+    vote = cur.execute('SELECT vote FROM votes WHERE track_id = ? AND email = ?', (track_id, email, )).fetchone()
+    if vote:
+        return vote[0]
+    return 0
+
+
 def gen_filename(suffix):
     """Generates a local file name.
 

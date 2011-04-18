@@ -347,13 +347,14 @@ class ardjbot(MyFileReceivingBot):
     @botcmd
     def show(self, message, args):
         "Show detailed track info"
+        cur = ardj.database.cursor()
         if args == 'labels' or args == 'tags':
-            rows = ardj.database.cursor().execute('SELECT label, COUNT(*) FROM labels GROUP BY label ORDER BY label').fetchall()
+            rows = cur.execute('SELECT label, COUNT(*) FROM labels GROUP BY label ORDER BY label').fetchall()
             if not rows:
                 return u'No labels.'
             return u'Label stats: %s.' % u', '.join(['%s (%u)' % (row[0], row[1]) for row in rows])
         if args == 'karma':
-            rows = ardj.database.cursor().execute('SELECT email, weight FROM karma ORDER BY weight DESC').fetchall()
+            rows = cur.execute('SELECT email, weight FROM karma ORDER BY weight DESC').fetchall()
             if not rows:
                 return u'No data.'
             return u'Current karma: %s.' % u', '.join([u'%s (%.2f)' % (row[0], row[1]) for row in rows])
@@ -363,14 +364,13 @@ class ardjbot(MyFileReceivingBot):
             if track is None:
                 return 'Nothing is playing.'
         else:
-            track = ardj.tracks.get_track_by_id(int(args[0]))
+            track = ardj.tracks.get_track_by_id(int(args[0]), cur=cur)
         if track is None:
             return u'No such track.'
-        result = self.get_linked_title(track)
-        result += u'; #%u weight=%f playcount=%u length=%us filename="%s" editable=%s last_played=%s. ' % (track['id'], track['weight'] or 0, track['count'] or 0, track['length'] or 0, track['filename'], self.check_access(message.getFrom().getStripped()), track['last_played'])
+        result = u'«%s» by %s' % (track['title'], track['artist'])
+        result += u'; id=%u weight=%.2f playcount=%u length=%s vote=%u last_played=%s ago. ' % (track['id'], track['weight'] or 0, track['count'] or 0, ardj.util.format_duration(track['length'] or 0), ardj.tracks.get_vote(track['id'], message.getFrom().getStripped()), ardj.util.format_duration(time.time() - track.get('last_played', 0)))
         if track['labels']:
             result += u'Labels: @' + u', @'.join(track['labels']) + u'. '
-        result += self._get_track_voters(track['id'], message.getFrom().getStripped())
         return result.strip()
 
     @botcmd

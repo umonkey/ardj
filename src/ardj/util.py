@@ -104,3 +104,15 @@ def move_file(src, dst):
     if not os.path.exists(dirname):
         os.makedirs(dirname)
     return shutil.move(str(src), str(dst))
+
+
+def format_duration(duration):
+    duration = int(duration)
+    parts = ['%02u' % (duration % 60)]
+    duration /= 60
+    if duration > 60:
+        parts.insert(0, '%02u' % (duration % 60))
+        duration /= 60
+    if duration:
+        parts.insert(0, str(duration))
+    return ':'.join(parts)
