@@ -4,6 +4,7 @@
 
 Uses festival to render text."""
 
+import os
 import sys
 
 import ardj.database
@@ -67,7 +68,7 @@ def render_and_queue(message):
     cur = ardj.database.Open().cursor()
     rows = len(cur.execute('SELECT 1 FROM queue WHERE track_id = ?', (track_id, )).fetchall())
     if rows:
-        return 'All the circuits are busy.'
+        return 'All the circuits are busy.  Please retry in a few minutes.'
 
     rows = cur.execute('SELECT filename FROM tracks WHERE id = ?', (track_id, )).fetchall()
     if not len(rows):
@@ -78,8 +79,8 @@ def render_and_queue(message):
         return 'Track %u is not OGG/Vorbis.' % track_id
 
     tmpname, duration = render_text(message)
-    ardj.util.move_file(tmpname, filename)
-    cur.execute('UPDATE tracks SET duration = ? WHERE id = ?', (duration, track_id, ))
+    ardj.util.move_file(tmpname, os.path.join(ardj.settings.get_music_dir(), filename))
+    cur.execute('UPDATE tracks SET length = ? WHERE id = ?', (duration, track_id, ))
     cur.execute('INSERT INTO queue (track_id, owner) VALUES (?, ?)', (track_id, 'ardj', ))
 
 
