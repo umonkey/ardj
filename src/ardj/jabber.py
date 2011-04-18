@@ -565,20 +565,21 @@ class ardjbot(MyFileReceivingBot):
             return u'ok'
 
         # Add new tracks.
-        for track in ardj.tracks.find(args):
-            cur.execute('INSERT INTO queue (track_id, owner) VALUES (?, ?)', (track['id'], message.getFrom().getStripped(), ))
+        for track_id in ardj.tracks.find_ids(args, cur):
+            ardj.tracks.queue(track_id, message.getFrom().getStripped(), cur)
 
         # Show current queue.
-        tracks = [{ 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'qid': row[4] } for row in cur.execute('SELECT t.id, t.filename, t.artist, t.title, q.id FROM tracks t INNER JOIN queue q ON q.track_id = t.id ORDER BY q.id').fetchall()]
+        tracks = ardj.tracks.get_queue(cur)[:10]
         if not tracks:
             return u'Queue empty, use "queue track_id..." to fill.'
+
         message = u'Current queue:'
+        idx = 1
         for track in tracks:
-            message += u'\n<br/>%u. %s — #%u' % (track['qid'], self.get_linked_title(track), track['id'])
-            rows = cur.execute('SELECT DISTINCT label FROM labels WHERE track_id = ? ORDER BY label', (track['id'], )).fetchall()
-            if rows:
-                for row in rows:
-                    message += u' @' + row[0]
+            message += u'\n<br/>%u. %s — #%u' % (idx, self.get_linked_title(track), track['id'])
+            if track['labels']:
+                message += u' @' + u' @'.join(track['labels'])
+            idx += 1
         return message + u'\n<br/>Use "queue track_id..." to add more tracks and "find xyz" to find some ids.'
 
     @botcmd
@@ -748,9 +749,12 @@ def run_cli(args):
         if '--debug' in args:
             command.append('--debug')
         while True:
-            if ardj.util.run(command):
-                return True
-            ardj.log.error('Unclean jabber bot shutdown, restarting in %u seconds.' % delay)
+            try:
+                if ardj.util.run(command):
+                    return True
+                ardj.log.error('Unclean jabber bot shutdown, restarting in %u seconds.' % delay)
+            except KeyboardInterrupt:
+                ardj.log.info('Jabber bot killed by ^C.')
             time.sleep(delay)
 
     print USAGE

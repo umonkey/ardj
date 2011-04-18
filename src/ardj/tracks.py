@@ -63,8 +63,19 @@ def queue(track_id, owner=None, cur=None):
     return cur.execute('INSERT INTO queue (track_id, owner) VALUES (?, ?)', (track_id, owner or 'ardj', )).lastrowid
 
 
-def find(pattern):
-    pass
+def get_queue(cur=None):
+    cur = cur or ardj.database.cursor()
+    return [get_track_by_id(row[0], cur) for row in cur.execute('SELECT track_id FROM queue ORDER BY id').fetchall()]
+
+
+def find_ids(pattern, cur=None):
+    cur = cur or ardj.database.cursor()
+    if not pattern.strip():
+        return []
+    if pattern.strip().isdigit():
+        return [ int(pattern.strip()) ]
+    like = '%%%s%%' % pattern
+    return [row[0] for row in cur.execute('SELECT id FROM tracks WHERE artist LIKE ? OR title LIKE ?', (like, like, )).fetchall()]
 
 
 def add_labels(track_id, labels):
