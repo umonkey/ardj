@@ -1,3 +1,5 @@
+# encoding=utf-8
+
 import os
 import shutil
 import subprocess
@@ -104,6 +106,7 @@ def copy_file(src, dst):
     if not os.path.exists(dirname):
         os.makedirs(dirname)
     shutil.copyfile(str(src), str(dst))
+    ardj.log.debug('Copied %s to %s' % (src, dst))
     return True
 
 
@@ -118,6 +121,7 @@ def move_file(src, dst):
     if not os.path.exists(dirname):
         os.makedirs(dirname)
     shutil.move(str(src), str(dst))
+    ardj.log.debug('Moved %s to %s' % (src, dst))
     return True
 
 
