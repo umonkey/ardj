@@ -345,7 +345,7 @@ def run_cli(args):
         db.import_new_files()
         ok = True
     if 'pam' in args:
-        if db.run_pam_hook(args):
+        if run_pam_hook(args):
             db.import_new_files()
         ok = True
     if 'mark-good-bad' in args:
