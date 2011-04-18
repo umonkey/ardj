@@ -13,6 +13,7 @@ import time
 
 import ardj.mail
 import ardj.replaygain
+import ardj.sms
 import ardj.tags
 import ardj.util
 import ardj.website
@@ -118,7 +119,7 @@ def process_messages(msg):
 
             ardj.util.upload(temp, ardj.settings.get('hotline/upload', fail=True).rstrip('/') + '/' + public_filename)
 
-            ardj.website.add_page('hotline/*/index.md', {
+            url = ardj.website.add_page('hotline/*/index.md', {
                 'title': u'Сообщение от %s' % mask_sender(sender),
                 'file': public_url,
                 'filesize': str(os.stat(str(temp)).st_size),
@@ -128,9 +129,9 @@ def process_messages(msg):
             })
 
             if phone:
-                ardj.sms.send(phone, 'Your message: %s' % filename_to_url(filename))
+                ardj.sms.send(phone, 'Your message: %s' % url)
             elif full_sender[1]:
-                ardj.mail.send_mail(full_sender[1], 'Your message received.', 'Find it here:\n%s' % filename_to_url(filename))
+                ardj.mail.send_mail(full_sender[1], 'Your message received.', 'Find it here:\n%s' % url)
 
             global upload_files
             upload_files.append(temp)
