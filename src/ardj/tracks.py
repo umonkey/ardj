@@ -6,6 +6,7 @@ Contains functions that interact with the database in order to modify or query
 tracks.
 """
 
+import hashlib
 import os
 import random
 import time
@@ -244,17 +245,17 @@ def add_file(filename, add_labels=None, owner=None, cur=None):
 
     Returns track id.
     """
-    if not os.path.exitst(filename):
+    if not os.path.exists(filename):
         raise Exception('File not found: %s' % filename)
 
     ardj.log.info('Adding from %s' % filename)
     ardj.replaygain.update(filename)
 
-    tags = ardj.tags.get()
-    artist = tags['artist'] or 'Unknown Artist'
-    title = tags['title'] or 'Untitled'
-    duration = tags['duration']
-    labels = tags['labels'] or []
+    tags = ardj.tags.get(str(filename)) or {}
+    artist = tags.get('artist', 'Unknown Artist')
+    title = tags.get('title', 'Untitled')
+    duration = tags.get('duration', 0)
+    labels = tags.get('labels', [])
 
     if add_labels:
         labels += add_labels
@@ -264,7 +265,7 @@ def add_file(filename, add_labels=None, owner=None, cur=None):
         raise Exception('Could not copy %s to %s' % (filename, abs_filename))
 
     cur = cur or ardj.database.cursor()
-    track_id = cur.execute('INSERT INTO tracks (artist, title, filename, duration, last_played, owner) VALUES (?, ?, ?, ?, ?)', (artist, title, rel_filename, 0, owner or 'ardj', )).lastrowid
+    track_id = cur.execute('INSERT INTO tracks (artist, title, filename, length, last_played, owner, weight) VALUES (?, ?, ?, ?, ?, ?, ?)', (artist, title, rel_filename, duration, 0, owner or 'ardj', 1, )).lastrowid
 
     for label in labels:
         cur.execute('INSERT INTO labels (track_id, label, email) VALUES (?, ?, ?)', (track_id, label, owner or 'ardj', ))

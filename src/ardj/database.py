@@ -29,6 +29,7 @@ except ImportError:
 
 import ardj.log
 import ardj.settings
+import ardj.tracks
 import ardj.util
 
 class database:
@@ -243,7 +244,7 @@ class database:
             for filename in files:
                 filename = os.path.join(folder, filename)
                 if os.path.splitext(filename.lower())[1] in ('.mp3', '.ogg', '.flac', '.jpg'):
-                    if self.add_file(filename):
+                    if ardj.tracks.add_file(filename):
                         ardj.log.debug('Removing %s (added OK)' % filename)
                         os.unlink(filename)
 
