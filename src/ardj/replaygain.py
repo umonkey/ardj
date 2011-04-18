@@ -97,16 +97,16 @@ def read(filename, update=True):
 
 	if (peak is None or gain is None) and update:
 		scanner = None
-		ext = os.path.splitext(filename.lower())[1]
+		ext = os.path.splitext(str(filename).lower())[1]
 		if ext in ('.mp3'):
-			scanner = ['mp3gain', '-q', '-s', 'i', filename]
+			scanner = ['mp3gain', '-q', '-s', 'i', str(filename)]
 		elif ext in ('.ogg', '.oga'):
-			scanner = ['vorbisgain', '-q', '-f', filename]
+			scanner = ['vorbisgain', '-q', '-f', str(filename)]
 		elif ext in ('.flac'):
-			scanner = ['metaflac', '--add-replay-gain', filename]
+			scanner = ['metaflac', '--add-replay-gain', str(filename)]
 		# If the scan is successful, retry reading the tags but only once.
 		if scanner is not None and ardj.util.run(scanner, quiet=True):
-			peak, gain = read(filename, update=False)
+			peak, gain = read(str(filename), update=False)
 
 	return (peak, gain)
 
