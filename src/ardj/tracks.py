@@ -120,12 +120,29 @@ def purge(cur=None):
     ardj.database.Open().purge(cur)
 
 
-def get_urgent():
-    pass
+def get_urgent(cur=None):
+    """Returns current playlist preferences."""
+    cur = cur or ardj.database.cursor()
+    data = cur.execute('SELECT labels FROM urgent_playlists WHERE expires > ? ORDER BY expires', (int(time.time()), )).fetchall()
+    if data:
+        return re.split('[,\s]+', data[0][0])
+    return None
 
 
-def set_urgent(args):
-    pass
+def set_urgent(args, cur=None):
+    """Sets the music filter.
+
+    Sets music filter to be used for picking random tracks.  If set, only
+    matching tracks will be played, regardless of playlists.yaml.  Labels
+    must be specified as a string, using spaces or commas as separators.
+    Use "all" to reset.
+    """
+    cur = cur or ardj.database.cursor()
+    cur.execute('DELETE FROM urgent_playlists')
+    if labels != 'all':
+        if expires is None:
+            expires = time.time() + 3600
+        cur.execute('INSERT INTO urgent_playlists (labels, expires) VALUES (?, ?)', (labels, int(expires), ))
 
 
 def add_vote(track_id, email, vote, cur=None):

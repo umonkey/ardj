@@ -120,30 +120,6 @@ class database:
 
         cur.execute('UPDATE %s SET %s WHERE id = ?' % (table, ', '.join(sql)), tuple(params))
 
-    def set_urgent(self, labels, expires=None):
-        """Sets the music filter.
-
-        Sets music filter to be used for picking random tracks.  If set, only
-        matching tracks will be played, regardless of playlists.yaml.  Labels
-        must be specified as a string, using spaces or commas as separators.
-        Use "all" to reset.
-        """
-        cur = self.cursor()
-        cur.execute('DELETE FROM urgent_playlists')
-        if labels != 'all':
-            if expires is None:
-                expires = time.time() + 3600
-            cur.execute('INSERT INTO urgent_playlists (labels, expires) VALUES (?, ?)', (labels, int(expires), ))
-        self.commit()
-
-    def get_urgent(self):
-        """Returns current playlist preferences.
-        """
-        data = self.cursor().execute('SELECT labels FROM urgent_playlists WHERE expires > ? ORDER BY expires', (int(time.time()), )).fetchall()
-        if data:
-            return re.split('[,\s]+', data[0][0])
-        return None
-
     def update_track(self, properties, cur=None):
         """Updates valid track attributes.
 
