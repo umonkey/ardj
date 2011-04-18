@@ -79,7 +79,17 @@ def upload_music(filenames):
     if not target:
         ardj.log.warning('Could not upload %u music files: database/upload not set.' % len(filenames))
         return False
-    return run([ 'scp', '-q' ] + [str(x) for x in filenames] + [ target ])
+
+    if type(filenames) != list:
+        raise TypeError('filenames must be a list.')
+
+    batch = mktemp(suffix='.txt')
+    f = open(str(batch), 'wb')
+    for fn in filenames:
+        f.write('put %s\n' % str(fn).replace(' ', '\\ '))
+    f.close()
+
+    return run([ 'sftp', '-b', str(batch), str(target) ])
 
 
 def copy_file(src, dst):
