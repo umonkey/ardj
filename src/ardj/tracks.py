@@ -81,17 +81,18 @@ def find_ids(pattern, cur=None):
 
 def add_labels(track_id, labels, owner=None, cur=None):
     cur = cur or ardj.database.cursor()
-    for label in labels:
-        if label.startswith('-'):
-            cur.execute('DELETE FROM labels WHERE track_id = ? AND label = ?', (track_id, label.lstrip('-'), ))
-        elif cur.execute('SELECT 1 FROM labels WHERE track_id = ? AND label = ?', (track_id, label.lstrip('+'), )).fetchall():
-            pass
-        else:
-            cur.execute('INSERT INTO labels (track_id, label, email) VALUES (?, ?, ?)', (track_id, label.lstrip('+'), owner or 'ardj', ))
+    if labels:
+        for label in labels:
+            if label.startswith('-'):
+                cur.execute('DELETE FROM labels WHERE track_id = ? AND label = ?', (track_id, label.lstrip('-'), ))
+            elif cur.execute('SELECT 1 FROM labels WHERE track_id = ? AND label = ?', (track_id, label.lstrip('+'), )).fetchall():
+                pass
+            else:
+                cur.execute('INSERT INTO labels (track_id, label, email) VALUES (?, ?, ?)', (track_id, label.lstrip('+'), owner or 'ardj', ))
     return sorted(list(set([row[0] for row in cur.execute('SELECT label FROM labels WHERE track_id = ?', (track_id, )).fetchall()])))
 
 
-def update_track(props, cur=None):
+def update_track(properties, cur=None):
     """Updates valid track attributes.
 
     Loads the track specified in properties['id'], then updates its known
@@ -119,10 +120,10 @@ def update_track(props, cur=None):
     else:
         params.append(properties['id'])
         sql = 'UPDATE tracks SET ' + ', '.join(sql) + ' WHERE id = ?'
-        self.debug(sql, params)
+        ardj.database.Open().debug(sql, params)
         cur.execute(sql, tuple(params))
 
-    if 'labels' in properties:
+    if properties.get('labels'):
         add_labels(properties['id'], properties['labels'], owner=properties.get('owner'), cur=cur)
 
 
