@@ -341,6 +341,9 @@ class ardjbot(MyFileReceivingBot):
 
         votes = ardj.database.cursor().execute('SELECT vote FROM votes WHERE track_id = ? AND email = ?', (int(track_id), email)).fetchall()
         track['vote'] = votes and votes[0][0] or None
+        track['length'] = int(track['length'])
+        del track['filename']
+        del track['filepath']
 
         return json.dumps(track, ensure_ascii=False)
 
