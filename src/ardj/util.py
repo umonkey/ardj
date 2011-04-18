@@ -102,7 +102,8 @@ def copy_file(src, dst):
     dirname = os.path.dirname(dst)
     if not os.path.exists(dirname):
         os.makedirs(dirname)
-    return shutil.copyfile(str(src), str(dst))
+    shutil.copyfile(str(src), str(dst))
+    return True
 
 
 def move_file(src, dst):
@@ -115,7 +116,8 @@ def move_file(src, dst):
     dirname = os.path.dirname(dst)
     if not os.path.exists(dirname):
         os.makedirs(dirname)
-    return shutil.move(str(src), str(dst))
+    shutil.move(str(src), str(dst))
+    return True
 
 
 def format_duration(duration):
