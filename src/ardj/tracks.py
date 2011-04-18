@@ -297,7 +297,7 @@ def get_random_track_id_from_playlist(playlist, skip_artists, cur=None):
 
     repeat_count = playlist.get('repeat')
     if repeat_count:
-        sql += ' AND count <= ?'
+        sql += ' AND count < ?'
         params.append(int(repeat_count))
 
     if skip_artists:
