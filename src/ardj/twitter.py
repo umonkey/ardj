@@ -70,8 +70,8 @@ import ardj.database
 import ardj.settings
 import ardj.speech
 import ardj.tags
+import ardj.tracks
 import ardj.util
-import shutil
 
 CHARACTER_LIMIT = 140
 
@@ -3178,7 +3178,7 @@ def speak_message(author, message, play=False, queue=True):
         tmpname, duration = ardj.speech.render_text(message, artist='@' + author, title=message)
         if not duration:
             return 'Could not render this text (an empty file was produced).'
-        shutil.move(str(tmpname), filename)
+        ardj.util.move_file(str(tmpname), filename)
 
     if play:
         ardj.util.run([ 'play', str(filename) ])
@@ -3187,7 +3187,7 @@ def speak_message(author, message, play=False, queue=True):
         track_id = int(ardj.settings.get('twitter/reply_track_id', '0'))
         if not track_id:
             return 'twitter/reply_track_id not set.'
-        ardj.database.Open().queue_track(track_id)
+        ardj.tracks.queue(track_id)
 
     return 'OK'
 

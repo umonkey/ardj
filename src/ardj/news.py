@@ -1,12 +1,12 @@
 import os
-import shutil
 import sys
 import traceback
 
-import ardj
 import ardj.log
+import ardj.replaygain
 import ardj.settings
 import ardj.tags
+import ardj.tracks
 import ardj.util
 
 DEFAULT_URL = 'http://broadcast.echo.msk.ru:9000/content/current.mp3'
@@ -20,13 +20,13 @@ def fetch_news():
     try:
         ardj.util.run(cmd.split(' '))
         if os.stat(str(output_fn)).st_size:
-            ardj.util.run(['vorbisgain', '-f', '-q', output_fn])
+            ardj.replaygain.update(output_fn)
 
             target_fn = ardj.settings.getpath('news/out', DEFAULT_OUT)
             if os.path.exists(target_fn):
                 os.unlink(target_fn)
             os.chmod(str(output_fn), 0664)
-            shutil.move(str(output_fn), target_fn)
+            ardj.util.move_file(output_fn, target_fn)
 
             tags = ardj.tags.raw(target_fn)
             if tags:
@@ -37,12 +37,10 @@ def fetch_news():
 
     track_id = int(ardj.settings.get('news/track_id', '0'))
     if track_id:
-        a = ardj.Open()
-        a.database.cursor().execute('UPDATE tracks SET length = ? WHERE id = ?', (track_length, track_id, ))
-        a.queue_track(track_id)
+        ardj.database.cursor().execute('UPDATE tracks SET length = ? WHERE id = ?', (track_length, track_id, ))
         if ardj.settings.get('queue') == 'yes':
-            a.queue_track(track_id)
-        a.database.commit()
+            ardj.tracks.queue(track_id)
+        ardj.database.Open().commit()
 
     return track_length != 0
 
