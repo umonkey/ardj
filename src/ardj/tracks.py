@@ -128,8 +128,42 @@ def set_urgent(args):
     pass
 
 
-def add_vote(track_id, email, vote):
-    pass
+def add_vote(track_id, email, vote, cur=None):
+    """Adds a vote for/against a track.
+
+    The process is: 1) add a record to the votes table, 2) update email's
+    record in the karma table, 3) update weight for all tracks email voted
+    for/against.
+
+    Votes other than +1 and -1 are skipped.
+
+    Returns track's current weight.
+    """
+    cur = cur or ardj.database.cursor()
+
+    # Normalize the vote.
+    if vote > 0: vote = 1
+    elif vote < 0: vote = -1
+
+    # Skip wrong values.
+    cur.execute('DELETE FROM votes WHERE track_id = ? AND email = ?', (track_id, email, ))
+    if vote != 0:
+        cur.execute('INSERT INTO votes (track_id, email, vote) VALUES (?, ?, ?)', (track_id, email, vote, ))
+
+    # Update email's karma.
+    all = float(cur.execute('SELECT COUNT(*) FROM votes').fetchall()[0][0])
+    his = float(cur.execute('SELECT COUNT(*) FROM votes WHERE email = ?', (email, )).fetchall()[0][0])
+    value = 0.25 # his / all
+    cur.execute('DELETE FROM karma WHERE email = ?', (email, ))
+    cur.execute('INSERT INTO karma (email, weight) VALUES (?, ?)', (email, value, ))
+
+    result = 1
+    for row in cur.execute('SELECT track_id, weight FROM track_weights WHERE track_id IN (SELECT track_id FROM votes WHERE email = ?) OR track_id = ?', (email, track_id, )).fetchall():
+        cur.execute('UPDATE tracks SET weight = ? WHERE id = ?', (row[1], row[0], ))
+        if track_id == row[0]:
+            result = row[1]
+
+    return result
 
 
 def gen_filename(suffix):

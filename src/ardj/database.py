@@ -128,67 +128,6 @@ class database:
 
         cur.execute('UPDATE %s SET %s WHERE id = ?' % (table, ', '.join(sql)), tuple(params))
 
-    def add_vote(self, track_id, email, vote):
-        """Adds a vote for/against a track.
-
-        The process is: 1) add a record to the votes table, 2) update email's
-        record in the karma table, 3) update weight for all tracks email voted
-        for/against.
-
-        Votes other than +1 and -1 are skipped.
-
-        Returns track's current weight.
-        """
-        cur = self.cursor()
-
-        # Normalize the vote.
-        if vote > 0: vote = 1
-        elif vote < 0: vote = -1
-
-        # Skip wrong values.
-        cur.execute('DELETE FROM votes WHERE track_id = ? AND email = ?', (track_id, email, ))
-        if vote != 0:
-            cur.execute('INSERT INTO votes (track_id, email, vote) VALUES (?, ?, ?)', (track_id, email, vote, ))
-
-        # Update email's karma.
-        all = float(cur.execute('SELECT COUNT(*) FROM votes').fetchall()[0][0])
-        his = float(cur.execute('SELECT COUNT(*) FROM votes WHERE email = ?', (email, )).fetchall()[0][0])
-        value = 0.25 # his / all
-        cur.execute('DELETE FROM karma WHERE email = ?', (email, ))
-        cur.execute('INSERT INTO karma (email, weight) VALUES (?, ?)', (email, value, ))
-
-        # Update all track weights.  Later this can be replaced with joins and
-        # views (when out of beta).
-        ## wtf ?! ## cur.execute('UPDATE tracks SET weight = 1')
-        result = 1
-        for row in cur.execute('SELECT track_id, weight FROM track_weights WHERE track_id IN (SELECT track_id FROM votes WHERE email = ?) OR track_id = ?', (email, track_id, )).fetchall():
-            cur.execute('UPDATE tracks SET weight = ? WHERE id = ?', (row[1], row[0], ))
-            if track_id == row[0]:
-                result = row[1]
-
-        self.commit()
-        return result
-
-    def add_labels(self, track_id, email, labels):
-        """Adds labels to a track.
-        
-        Labels prefixed with a dash are removed.
-        """
-        cur = self.cursor()
-        for label in labels:
-            neg = label.startswith('-')
-            if neg:
-                label = label[1:]
-            if label.startswith('@'):
-                label = label[1:]
-            if neg:
-                cur.execute('DELETE FROM labels WHERE track_id = ? AND label = ?', (track_id, label, ))
-            elif not cur.execute('SELECT 1 FROM labels WHERE track_id = ? AND label = ?', (track_id, label, )).fetchall():
-                cur.execute('INSERT INTO labels (track_id, email, label) VALUES (?, ?, ?)', (track_id, email, label, ))
-        current = [row[0] for row in cur.execute('SELECT DISTINCT label FROM labels WHERE track_id = ? ORDER BY label', (track_id, )).fetchall()]
-        self.commit()
-        return current
-
     def set_urgent(self, labels, expires=None):
         """Sets the music filter.
 
