@@ -156,9 +156,10 @@ def send_mail(to, subject, message, files=None, profile=None):
             msg.attach(att)
 
     try:
-        if profile is None:
-            profile = ardj.settings.get('mail/boxes').keys()[0]
-        smtp = parse_url(ardj.settings.get('mail/boxes/%s/send' % profile))
+        profiles = [x[0] for x in ardj.settings.get('mail/boxes', {}).items() if 'send' in x[1]]
+        if not profiles:
+            raise Exception('No SMTP profiles (mail/boxes/*/send).')
+        smtp = parse_url(ardj.settings.get('mail/boxes/%s/send' % profiles[0]))
     except:
         raise Exception('Could not find an SMTP profile.')
 

@@ -41,7 +41,7 @@ def filename_to_url(filename):
 
 def add_page(pattern, data):
     max_id = 0
-    root_dir = ardj.settigs.getpath('website/root_dir')
+    root_dir = ardj.settings.getpath('website/root_dir')
 
     for filename in glob.glob(os.path.join(root_dir, 'input', pattern)):
         parts = filename.split(os.path.sep)
