@@ -127,6 +127,11 @@ def process_messages(msg):
                 'text': u'Сообщение получено по %s.' % (phone and u'телефону' or u'почте'),
             })
 
+            if phone:
+                ardj.sms.send(phone, 'Your message: %s' % filename_to_url(filename))
+            elif full_sender[1]:
+                ardj.mail.send_mail(full_sender[1], 'Your message received.', 'Find it here:\n%s' % filename_to_url(filename))
+
             global upload_files
             upload_files.append(temp)
 

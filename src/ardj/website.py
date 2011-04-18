@@ -25,15 +25,30 @@ def load_page(filename):
     page['text'] = text
     return page
 
+def filename_to_url(filename):
+    base_url = ardj.settings.get('website/base_url', 'http://example.com/')
+
+    prefix = os.path.join(ardj.settings.getpath('website/root_dir'), 'input')
+    if not filename.startswith(prefix):
+        return base_url
+
+    url = base_url.rstrip('/') + '/' + filename[len(prefix)+1:]
+    if url.endswith('.md'):
+        url = url[:-3] + '.html'
+    if url.endswith('/index.html'):
+        url = url[:-10]
+    return url
+
 def add_page(pattern, data):
     max_id = 0
+    root_dir = ardj.settigs.getpath('website/root_dir')
 
-    for filename in glob.glob(os.path.join(ardj.settings.getpath('website/root_dir'), 'input', pattern)):
+    for filename in glob.glob(os.path.join(root_dir, 'input', pattern)):
         parts = filename.split(os.path.sep)
         if parts[-2].isdigit():
             max_id = max(max_id, int(parts[-2]))
 
-    filename = os.path.join(ardj.settings.getpath('website/root_dir'), 'input', pattern).replace('*', str(max_id + 1))
+    filename = os.path.join(root_dir, 'input', pattern).replace('*', str(max_id + 1))
 
     dirname = os.path.dirname(filename)
     if not os.path.exists(dirname):
@@ -46,3 +61,5 @@ def add_page(pattern, data):
             f.write(line.encode('utf-8'))
     f.write('---\n' + data['text'].encode('utf-8'))
     f.close()
+
+    return filename_to_url(filename)
