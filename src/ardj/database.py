@@ -120,44 +120,6 @@ class database:
 
         cur.execute('UPDATE %s SET %s WHERE id = ?' % (table, ', '.join(sql)), tuple(params))
 
-    def update_track(self, properties, cur=None):
-        """Updates valid track attributes.
-
-        Loads the track specified in properties['id'], then updates its known
-        fields with the rest of the properties dictionary, then saves the
-        track.  If there's the "labels" key in properties (must be a list),
-        labels are added (old are preserved) to the `labels` table.
-
-        If there's not fields to update, a message is written to the debug log.
-        """
-        if type(properties) != dict:
-            raise Exception('Track properties must be passed as a dictionary.')
-        if 'id' not in properties:
-            raise Exception('Track properties have no id.')
-        cur = cur or self.cursor()
-
-        sql = []
-        params = []
-        for k in properties:
-            if k in ('filename', 'artist', 'title', 'length', 'weight', 'count', 'last_played', 'owner'):
-                sql.append(k + ' = ?')
-                params.append(properties[k])
-
-        if not sql:
-            ardj.log.debug('No fields to update.')
-        else:
-            params.append(properties['id'])
-            sql = 'UPDATE tracks SET ' + ', '.join(sql) + ' WHERE id = ?'
-            self.debug(sql, params)
-            cur.execute(sql, tuple(params))
-
-        if 'labels' in properties and type(properties['labels']) == list and 'owner' in properties:
-            for label in properties['labels']:
-                sql = 'INSERT INTO labels (track_id, email, label) VALUES (?, ?, ?)'
-                params = (properties['id'], properties['owner'], label, )
-                self.debug(sql, params)
-                cur.execute(sql, params)
-
     def debug(self, sql, params):
         """Logs the query in human readable form.
 
@@ -226,12 +188,6 @@ class database:
             sql += ' AND id IN (SELECT track_id FROM votes WHERE vote > 0 AND email = ?)'
             params += (user, )
         cur.execute(sql, params)
-
-    def queue_track(self, track_id, robot_name=None, cursor=None, commit=True):
-        cur = cur or self.cursor()
-        cur.execute('INSERT INTO queue (track_id, owner) VALUES (?, ?)', (int(track_id), robot_name or 'a robot', ))
-        if commit:
-            self.commit()
 
     def get_stats(self):
         """Returns database statistics.

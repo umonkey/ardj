@@ -90,8 +90,39 @@ def add_labels(track_id, labels, owner=None, cur=None):
     return sorted(list(set([row[0] for row in cur.execute('SELECT label FROM labels WHERE track_id = ?', (track_id, )).fetchall()])))
 
 
-def update_track(props):
-    pass
+def update_track(props, cur=None):
+    """Updates valid track attributes.
+
+    Loads the track specified in properties['id'], then updates its known
+    fields with the rest of the properties dictionary, then saves the
+    track.  If there's the "labels" key in properties (must be a list),
+    labels are added (old are preserved) to the `labels` table.
+
+    If there's not fields to update, a message is written to the debug log.
+    """
+    if type(properties) != dict:
+        raise Exception('Track properties must be passed as a dictionary.')
+    if 'id' not in properties:
+        raise Exception('Track properties have no id.')
+    cur = cur or ardj.database.cursor()
+
+    sql = []
+    params = []
+    for k in properties:
+        if k in ('filename', 'artist', 'title', 'length', 'weight', 'count', 'last_played', 'owner'):
+            sql.append(k + ' = ?')
+            params.append(properties[k])
+
+    if not sql:
+        ardj.log.debug('No fields to update.')
+    else:
+        params.append(properties['id'])
+        sql = 'UPDATE tracks SET ' + ', '.join(sql) + ' WHERE id = ?'
+        self.debug(sql, params)
+        cur.execute(sql, tuple(params))
+
+    if 'labels' in properties:
+        add_labels(properties['id'], properties['labels'], owner=properties.get('owner'), cur=cur)
 
 
 def purge(cur=None):
