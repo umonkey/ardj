@@ -417,7 +417,7 @@ class ardjbot(MyFileReceivingBot):
     @botcmd
     def twit(self, message, args):
         "Send a message to Twitter"
-        url = ardj.twitter.twit(args)
+        url = ardj.twitter.send_message(args)
         ardj.log.info(u'%s sent <a href="%s">a message</a> to twitter: %s' % (self.get_linked_sender(message), url, args))
         return url
 
