@@ -48,7 +48,6 @@ class database:
         except Exception, e:
             ardj.log.error('Could not open database %s: %s' % (filename, e))
             raise
-        self.db.create_function('randomize', 4, self.sqlite_randomize)
         cur = self.db.cursor()
         cur.execute('CREATE TABLE IF NOT EXISTS playlists (id INTEGER PRIMARY KEY, name TEXT, last_played INTEGER)')
         cur.execute('CREATE TABLE IF NOT EXISTS tracks (id INTEGER PRIMARY KEY, owner TEXT, filename TEXT, artist TEXT, title TEXT, length INTEGER, weight REAL, count INTEGER, last_played INTEGER)')
@@ -87,13 +86,6 @@ class database:
                 raise Exception('This ardj instance does not have a local database (see database/local config option).')
             cls.instance = cls(filename)
         return cls.instance
-
-    def sqlite_randomize(self, id, weight, count):
-        """The randomize() function for SQLite."""
-        result = weight or 0
-        # result = result / ((count or 0) + 1)
-        result = min(max(0.1, result), 2.0)
-        return result
 
     def cursor(self):
         """Returns a new SQLite cursor, for internal use."""
