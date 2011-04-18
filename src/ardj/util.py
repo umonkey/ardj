@@ -44,7 +44,9 @@ class mktemp:
     def __unicode__(self):
         return unicode(self.filename)
 
-def fetch(url, suffix=None, ret=False):
+def fetch(url, suffix=None, args=None, ret=False):
+    if args:
+        url += '?' + urllib.urlencode(args)
     u = urllib2.urlopen(urllib2.Request(url))
     if u is not None:
         if ret:

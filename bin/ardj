@@ -23,6 +23,7 @@ COMMAND_MAP = [ # (command, module, function, description)
     ('podcaster', 'podcast', 'run_cli', 'fetch new podcasts'),
     ('rg', 'replaygain', 'run_cli', 'scan ReplayGain in files'),
     ('say', 'speech', 'render_text_cli', 'renders text to voice using festival, then plays it'),
+    ('sms', 'sms', 'run_cli', 'send text messages (GSM)'),
     ('stream', 'stream', 'run_cli', 'handles stream events'),
     ('tsn', 'tsn', 'run', 'prepare and process a new So-So-News episode'),
     ('twit', 'twitter', 'twit', 'interacts with the twitter account'),
