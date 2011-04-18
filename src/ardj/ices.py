@@ -34,7 +34,8 @@ def ices_get_next():
         last_track = ardj.tracks.get_track_by_id(track_id)
     else:
         ardj.log.error('Could NOT pick a track.')
-    return str(last_track['filepath'])
+    if last_track:
+        return str(last_track['filepath'])
 
 def ices_get_metadata():
     """
