@@ -100,7 +100,6 @@ class ardjbot(MyFileReceivingBot):
     def __init__(self, debug=False):
         self.lastping = None # время последнего пинга
         self.pidfile = '/tmp/ardj-jabber.pid'
-        self.publicCommands = ardj.settings.get('jabber/public-commands', u'dump help rocks sucks кщслы ыгслы show last hitlist shitlist ping pong').split(' ')
         self.database_mtime = None
         self.init_command_log()
         self.scrobbler = ardj.scrobbler.Open()
@@ -226,10 +225,11 @@ class ardjbot(MyFileReceivingBot):
                     cmd = body.strip().split(' ')[0]
                     if cmd.isdigit():
                         cmd = body.strip().split(' ')[1]
-                    is_public = cmd in self.publicCommands
+                    public_commands = ardj.settings.get('jabber/public_commands', [u'dump', u'help', u'rocks', u'sucks', u'кщслы', u'ыгслы', u'show', u'last', u'hitlist', u'shitlist', u'ping', u'pong'])
+                    is_public = cmd in public_commands
                     if not is_public and not self.check_access(mess.getFrom().getStripped()):
                         ardj.log.warning('Refusing access to %s.' % mess.getFrom())
-                        return self.send_simple_reply(mess, 'Available commands: %s.' % ', '.join(self.publicCommands))
+                        return self.send_simple_reply(mess, 'Available commands: %s.' % ', '.join(public_commands))
                 if mess.getBody():
                     self._log_command(mess.getFrom().getStripped(), mess.getBody().strip())
                 return JabberBot.callback_message(self, conn, mess)
