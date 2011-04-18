@@ -449,7 +449,7 @@ class ardjbot(MyFileReceivingBot):
     @botcmd(hidden=True)
     def purge(self, message, args):
         "Erase tracks with zero weight"
-        self.tracks.purge()
+        ardj.tracks.purge()
         return u'ok'
 
     def get_linked_title(self, track):
