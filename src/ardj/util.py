@@ -90,4 +90,17 @@ def copy_file(src, dst):
     dirname = os.path.dirname(dst)
     if not os.path.exists(dirname):
         os.makedirs(dirname)
-    return shutil.copyfile(src, dst)
+    return shutil.copyfile(str(src), str(dst))
+
+
+def move_file(src, dst):
+    """Moves the file to a new location.
+
+    Supports cross-device copy.
+    
+    If the target directory does not exist, it's created.
+    """
+    dirname = os.path.dirname(dst)
+    if not os.path.exists(dirname):
+        os.makedirs(dirname)
+    return shutil.move(str(src), str(dst))
