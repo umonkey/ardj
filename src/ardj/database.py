@@ -301,6 +301,19 @@ def queue_shitlist(db):
     queue_tracks(cur, queue_ids)
 
 
+def run_pam_hook(args):
+    if not 'PAM_USER' in os.environ:
+        return False
+    if not 'PAM_TYPE' in os.environ:
+        return False
+    if os.environ['PAM_TYPE'] != 'close_session':
+        return False
+    user = ardj.settings.get('database/pam_user')
+    if not user or user != os.environ['PAM_USER']:
+        return False
+    return True
+
+
 USAGE = """Usage: ardj db commands...
 
 Commands:
@@ -329,6 +342,10 @@ def run_cli(args):
         ok = True
     if 'import' in args:
         db.import_new_files()
+        ok = True
+    if 'pam' in args:
+        if db.run_pam_hook(args):
+            db.import_new_files()
         ok = True
     if 'mark-good-bad' in args:
         db.mark_good_music()
