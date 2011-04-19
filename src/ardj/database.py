@@ -71,6 +71,10 @@ class database:
         # карма
         cur.execute('CREATE TABLE IF NOT EXISTS karma (email TEXT, weight REAL)')
         cur.execute('CREATE INDEX IF NOT EXISTS idx_karma_email ON karma (email)')
+        # лог проигрываний
+        cur.execute('CREATE TABLE IF NOT EXISTS playlog (ts INTEGER NOT NULL, track_id INTEGER NOT NULL, listeners INTEGER NOT NULL)')
+        cur.execute('CREATE INDEX IF NOT EXISTS idx_playlog_ts ON playlog (ts)')
+        cur.execute('CREATE INDEX IF NOT EXISTS idx_playlog_track_id ON playlog (track_id)')
         # View для подсчёта веса дорожек на основании кармы.
         # weight = max(0.1, 1 + sum(vote * weight))
         cur.execute('CREATE VIEW IF NOT EXISTS track_weights AS SELECT v.track_id AS track_id, COUNT(*) AS count, MAX(0.1, 1 + SUM(v.vote * k.weight)) AS weight FROM votes v INNER JOIN karma k ON k.email = v.email GROUP BY v.track_id')

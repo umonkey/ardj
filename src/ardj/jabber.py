@@ -21,6 +21,7 @@ import ardj.twitter
 import tags
 
 import ardj.database
+import ardj.listeners
 import ardj.log
 import ardj.scrobbler
 import ardj.settings
@@ -192,7 +193,7 @@ class ardjbot(MyFileReceivingBot):
                     status = u'«%s» by %s' % (track['title'], track['artist'])
                 else:
                     status = os.path.basename(track['filename'])
-                lcount = self.scrobbler and self.scrobbler.get_listener_count() or 0
+                lcount = self.listeners.get_count()
                 status += u' — #%u ♺%u ⚖%.2f Σ%u' % (track['id'], track['count'], track['weight'], lcount)
                 for label in track['labels']:
                     status += u' @' + label

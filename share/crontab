@@ -1,7 +1,7 @@
 # /etc/cron.d/ardj: crontab entries for the ardj package
 MAILTO=hex@umonkey.net
 
-13 *	* * *	radio	ardj listeners update
+#13 *	* * *	radio	ardj listeners show total > /radio/data/totals.csv
 0 11	* * *	radio	ardj db queue-shitlist
 0 18	* * *	radio	ardj db queue-hitlist
 0 3		* * *	radio	ardj podcaster >/dev/null

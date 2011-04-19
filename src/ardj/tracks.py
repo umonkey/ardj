@@ -12,6 +12,7 @@ import random
 import time
 
 import ardj.database
+import ardj.listeners
 import ardj.log
 import ardj.replaygain
 import ardj.tags
@@ -507,6 +508,19 @@ def get_next_track_id(cur=None, debug=False, update_stats=True):
             count = cur.execute('SELECT count FROM tracks WHERE id = ?', (track_id, )).fetchone()[0]
             cur.execute('UPDATE tracks SET count = ?, last_played = ? WHERE id = ?', (count + 1, int(time.time()), track_id, ))
 
+            log(track_id, cur=cur)
+
         ardj.database.Open().commit()
 
     return track_id
+
+
+def log(track_id, listener_count=None, ts=None, cur=None):
+    """Logs that the track was played.
+
+    Only logs tracks with more than zero listeners."""
+    if listener_count is None:
+        listener_count = ardj.listener.get_count()
+    if listener_count > 0:
+        cur = cur or ardj.database.cursor()
+        cur.execute('INSERT INTO playlog (ts, track_id, listeners) VALUES (?, ?, ?)', (int(ts or time.time()), int(track_id), listener_count, ))

@@ -50,15 +50,42 @@ class mktemp:
     def __unicode__(self):
         return unicode(self.filename)
 
+def get_opener(url, user, password):
+    """Returns an opener for the url.
 
-def fetch(url, suffix=None, args=None, ret=False):
+    Builds a basic HTTP auth opener if necessary."""
+    opener = urllib2.urlopen
+
+    if user or password:
+        pm = urllib2.HTTPPasswordMgrWithDefaultRealm()
+        pm.add_password(None, url, user, password)
+
+        ah = urllib2.HTTPBasicAuthHandler(pm)
+        opener = urllib2.build_opener(ah).open
+
+    return opener
+
+
+def fetch(url, suffix=None, args=None, user=None, password=None, quiet=False, ret=False):
+    """Retrieves a file over HTTP.
+
+    Arguments:
+    url -- the file to retrieve.
+    suffix -- wanted, temporary file suffix (guessed if None)
+    args -- a dictionary of query parameters
+    user, password -- enable HTTP basic auth
+    ret -- True to return file contents instead of a temporary file
+    """
     if args:
         url += '?' + urllib.urlencode(args)
-    u = urllib2.urlopen(urllib2.Request(url))
+
+    opener = get_opener(url, user, password)
+    u = opener(urllib2.Request(url))
+
     if u is not None:
+        ardj.log.info('Downloading %s' % url, quiet=quiet)
         if ret:
             return u.read()
-        ardj.log.info('Downloading %s' % url)
         if suffix is None:
             suffix = os.path.splitext(url)[1]
         filename = mktemp(suffix=suffix)
