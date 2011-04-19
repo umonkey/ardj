@@ -6,6 +6,11 @@ TAR=ardj-${VERSION}.tar.gz
 help:
 	@echo "Targets: deb install release back copy clean."
 
+test:
+	cp -f unittests/data/src/* unittests/data/
+	PYTHONPATH=src python unittests/all.py && cat tests.log
+	rm -f unittests/data/*.*
+
 install:
 	sudo python setup.py install --record install.log
 
