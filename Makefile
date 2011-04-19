@@ -4,7 +4,13 @@ ZIP=ardj-${VERSION}.zip
 TAR=ardj-${VERSION}.tar.gz
 
 help:
-	@echo "Targets: deb install release back copy clean."
+	@echo "bdist      -- prepares a tar.gz"
+	@echo "clean      -- removes temporary files"
+	@echo "deb        -- prepare a Debian package"
+	@echo "install    -- install using setup.py"
+	@echo "release    -- upload a new version to Google Code"
+	@echo "test       -- runs unit tests"
+	@echo "uninstall  -- uninstall (installs first to find installed files)"
 
 test:
 	cp -f unittests/data/src/* unittests/data/
