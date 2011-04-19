@@ -16,6 +16,7 @@ import ardj.replaygain
 import ardj.settings
 import ardj.util
 
+
 def run(command, quiet=False, stdin_data=None):
     command = [str(x) for x in command]
 
@@ -32,6 +33,7 @@ def run(command, quiet=False, stdin_data=None):
 
     return subprocess.Popen(command, stdout=stdout, stderr=stderr).wait() == 0
 
+
 class mktemp:
     def __init__(self, suffix=''):
         self.filename = tempfile.mkstemp(prefix='ardj_', suffix=suffix)[1]
@@ -47,6 +49,7 @@ class mktemp:
 
     def __unicode__(self):
         return unicode(self.filename)
+
 
 def fetch(url, suffix=None, args=None, ret=False):
     if args:
@@ -66,6 +69,7 @@ def fetch(url, suffix=None, args=None, ret=False):
             ardj.replaygain.update(str(filename))
         return filename
 
+
 def upload(source, target):
     """Uploads a file using SFTP."""
     if not os.path.exists(str(source)):
@@ -76,6 +80,7 @@ def upload(source, target):
         run([ 'scp', '-q', str(source), str(target)[5:].lstrip('/') ])
     else:
         raise Excepion("Don't know how to upload to %s." % upath.scheme)
+
 
 def upload_music(filenames):
     """Uploads music files."""
@@ -104,7 +109,7 @@ def copy_file(src, dst):
     If the target directory does not exist, it's created.
     """
     dirname = os.path.dirname(dst)
-    if not os.path.exists(dirname):
+    if dirname and not os.path.exists(dirname):
         os.makedirs(dirname)
     shutil.copyfile(str(src), str(dst))
     ardj.log.debug('Copied %s to %s' % (src, dst))
@@ -119,27 +124,32 @@ def move_file(src, dst):
     If the target directory does not exist, it's created.
     """
     dirname = os.path.dirname(dst)
-    if not os.path.exists(dirname):
+    if dirname and not os.path.exists(dirname):
         os.makedirs(dirname)
     shutil.move(str(src), str(dst))
     ardj.log.debug('Moved %s to %s' % (src, dst))
     return True
 
 
-def format_duration(duration, age=False):
+def format_duration(duration, age=False, now=None):
+    if not str(duration).isdigit():
+        raise TypeError('duration must be a number')
+
     duration = int(duration)
     if age:
         if not duration:
             return 'never'
-        duration = int(time.time()) - duration
+        duration = int(now or time.time()) - duration
     parts = ['%02u' % (duration % 60)]
     duration /= 60
-    if duration > 60:
+    if duration:
         parts.insert(0, '%02u' % (duration % 60))
         duration /= 60
-    if duration:
-        parts.insert(0, str(duration))
+        if duration:
+            parts.insert(0, str(duration))
     result = ':'.join(parts)
+    if len(parts) > 1:
+        result = result.lstrip('0')
     if age:
         result += ' ago'
     return result
@@ -147,6 +157,7 @@ def format_duration(duration, age=False):
 
 def filemd5(filename):
     """Returns the file contents' MD5 sum (in hex)."""
+    ardj.log.debug('Calculating MD5 of %s' % filename)
     m = hashlib.md5()
     f = open(filename, 'rb')
     while True:
