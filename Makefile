@@ -15,7 +15,7 @@ help:
 test:
 	cp -f unittests/data/src/* unittests/data/
 	rm -f tests.log tests-ardj.log
-	PYTHONPATH=src ARDJ_SETTINGS=unittests/data/settings.yaml python unittests/all.py && cat tests.log
+	PYTHONPATH=src ARDJ_SETTINGS=unittests/data/settings.yaml python unittests/all.py || cat tests.log
 	rm -f unittests/data/*.*
 
 install:
