@@ -143,6 +143,12 @@ def process_messages(msg):
 
 def run_cli(args):
     """Implements the "ardj hotline" command."""
+    config = ardj.settings.get('mail/boxes/hotline/fetch')
+    if config is None:
+        if '-q' not in args:
+            print 'Hotline is not configured (see mail/boxes/hotline/fetch).';
+        return
+
     if args and args[0] == 'list':
         return ardj.mail.process_mailbox('hotline', list_messages)
     elif args and args[0] == 'process':
