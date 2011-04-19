@@ -51,4 +51,4 @@ def run_cli(args):
     if not filenames:
         print 'No files to merge.'
         return
-    format_data(merge(filenames), out)
+    format_data(merge(filenames), output)
