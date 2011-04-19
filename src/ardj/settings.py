@@ -28,7 +28,7 @@ class wrapper:
         for key in key.split('/'):
             if type(data) != dict or key not in data:
                 if fail:
-                    raise Exception('ERROR: %s not set.' % src_key)
+                    raise KeyError('The "%s" setting is not set.' % src_key)
                 return default
             data = data[key]
         return data
@@ -86,6 +86,20 @@ class wrapper:
 
 wrapper_instance = None
 
+def load_data():
+    """Returns the raw contents of the config file.
+
+    Options: ARDJ_SETTINGS envar, ~/.config/ardj/default.yaml, /etc/ardj.yaml.
+    If none exist, an empty dicrionary returned.
+    """
+    for filename in (os.environ.get('ARDJ_SETTINGS'), '~/.config/ardj/default.yaml', '/etc/ardj.yaml'):
+        if filename:
+            filename = os.path.expanduser(filename)
+            if os.path.exists(filename):
+                return yaml.load(open(filename, 'rb')), filename
+    return {}, None
+
+
 def load(refresh=False):
     """Loads an object for accessing the config file.
 
@@ -93,14 +107,10 @@ def load(refresh=False):
     reloaded."""
     global wrapper_instance
     if wrapper_instance is None or refresh:
-        data = None
-        for filename in ('~/.config/ardj/default.yaml', '/etc/ardj.yaml'):
-            filename = os.path.expanduser(filename)
-            if os.path.exists(filename):
-                data = yaml.load(open(filename, 'rb'))
-                break
+        data, filename = load_data()
         wrapper_instance = wrapper(data, filename)
     return wrapper_instance
+
 
 def get(key, default=None, fail=False):
     """get(k, v) <==> load().get(k, v)"""

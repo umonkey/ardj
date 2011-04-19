@@ -1,0 +1,2 @@
+database:
+  local: unittests/data/database.sqlite

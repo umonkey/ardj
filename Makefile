@@ -8,7 +8,7 @@ help:
 
 test:
 	cp -f unittests/data/src/* unittests/data/
-	PYTHONPATH=src python unittests/all.py && cat tests.log
+	PYTHONPATH=src ARDJ_SETTINGS=unittests/data/settings.yaml python unittests/all.py && cat tests.log
 	rm -f unittests/data/*.*
 
 install:
