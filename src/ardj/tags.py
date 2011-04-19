@@ -23,34 +23,19 @@ def raw(filename):
     try:
         if filename.lower().endswith('.mp3'):
             t = easyid3.Open(filename)
-            return t
-        return mutagen.File(filename)
+        else:
+            t = mutagen.File(filename)
+        return t
     except Exception, e:
         ardj.log.error('No tags in %s: %s' % (filename, e))
         return None
 
 def get(filename):
-    result = {
-        'artist': None,
-        'title': None,
-        'album': None,
-        'length': 0,
-        'ardj': None,
-        'labels': [],
-    }
     t = raw(filename)
-    if t is None:
-        return None
-    for k in ('artist', 'title', 'album', 'ardj'):
-        if k in t:
-            result[k] = t[k][0]
-    if hasattr(t, 'info'):
-        result['length'] = t.info.length
-    else:
-        t = mutagen.File(filename)
-        result['length'] = t.info.length
+    result = dict([(k, type(v) == list and v[0] or v) for k, v in t.items()])
+    result['length'] = int(t.info.length)
 
-    if result['ardj']:
+    if 'ardj' in result:
         for part in result['ardj'].split(';'):
             if part.startswith('ardj=') and part != 'ardj=1':
                 ardj.log.warning('%s in %s' % (part, filename))
@@ -65,13 +50,12 @@ def get(filename):
 def set(filename, tags):
     try:
         t = raw(filename)
-        for k in tags:
-            try:
-                if tags[k]: t[k] = tags[k]
-            except Exception, e:
-                ardj.log.error(u'Could not write tags to %s: %s' % (filename, e))
+        for k, v in tags.items():
+            if k not in ('length'):
+                if v is not None:
+                    t[k] = v
         t.save()
     except Exception, e:
-        ardj.log.error(u'Could not save tags to %s: %s' % (filename, e), trace=True)
+        ardj.log.error(u'Could not save tags to %s: %s' % (filename, e))
 
 __all__ = ['get', 'set']

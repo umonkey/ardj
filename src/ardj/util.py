@@ -1,5 +1,6 @@
 # encoding=utf-8
 
+import hashlib
 import os
 import shutil
 import subprocess
@@ -142,3 +143,15 @@ def format_duration(duration, age=False):
     if age:
         result += ' ago'
     return result
+
+
+def filemd5(filename):
+    """Returns the file contents' MD5 sum (in hex)."""
+    m = hashlib.md5()
+    f = open(filename, 'rb')
+    while True:
+        block = f.read(1024 * 1024)
+        if not len(block):
+            break
+        m.update(block)
+    return m.hexdigest()
