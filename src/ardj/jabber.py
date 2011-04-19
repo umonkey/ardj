@@ -478,6 +478,7 @@ class ardjbot(MyFileReceivingBot):
         "Reload ices config and playlist scripts"
         try:
             self.send_ices_signal(signal.SIGHUP)
+            ardj.settings.load(refresh=True)
             return u'Ices will be reinitialized when the track changes.'
         except Exception, e:
             return unicode(e)

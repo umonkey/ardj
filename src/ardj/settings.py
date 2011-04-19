@@ -86,13 +86,13 @@ class wrapper:
 
 wrapper_instance = None
 
-def load():
+def load(refresh=False):
     """Loads an object for accessing the config file.
 
     Instances are cached, subsequent calls will not cause the object to be
     reloaded."""
     global wrapper_instance
-    if wrapper_instance is None:
+    if wrapper_instance is None or refresh:
         data = None
         for filename in ('~/.config/ardj/default.yaml', '/etc/ardj.yaml'):
             filename = os.path.expanduser(filename)
