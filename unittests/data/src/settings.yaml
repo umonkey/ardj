@@ -1,2 +1,4 @@
 database:
   local: unittests/data/database.sqlite
+
+log: tests-ardj.log

@@ -6,6 +6,7 @@ import unittest
 
 if __name__ == '__main__':
     names = sys.argv[1:] or [
+        'unittests/log.py',
         'unittests/settings.py',
         'unittests/tags.py',
     ]
