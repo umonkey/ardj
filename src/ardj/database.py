@@ -65,9 +65,10 @@ class database:
         cur.execute('CREATE INDEX IF NOT EXISTS idx_labels_email ON labels (email)')
         cur.execute('CREATE INDEX IF NOT EXISTS idx_labels_label ON labels (label)')
         # голоса пользователей
-        cur.execute('CREATE TABLE IF NOT EXISTS votes (track_id INTEGER NOT NULL, email TEXT NOT NULL, vote INTEGER, weight REAL)')
+        cur.execute('CREATE TABLE IF NOT EXISTS votes (track_id INTEGER NOT NULL, email TEXT NOT NULL, vote INTEGER, weight REAL, ts INTEGER)')
         cur.execute('CREATE INDEX IF NOT EXISTS idx_votes_track_id ON votes (track_id)')
         cur.execute('CREATE INDEX IF NOT EXISTS idx_votes_email ON votes (email)')
+        cur.execute('CREATE INDEX IF NOT EXISTS idx_votes_ts ON votes (ts)')
         # карма
         cur.execute('CREATE TABLE IF NOT EXISTS karma (email TEXT, weight REAL)')
         cur.execute('CREATE INDEX IF NOT EXISTS idx_karma_email ON karma (email)')
