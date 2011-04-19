@@ -301,21 +301,6 @@ def queue_hitlist(db):
     queue_tracks(cur, queue_ids)
 
 
-def queue_shitlist(db):
-    cur = db.cursor()
-
-    jlabels = [ 'shitlist-begin', 'shitlist-mid', 'shitlist-mid', 'shitlist-end' ]
-    tracks = [row[0] for row in cur.execute('SELECT id FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?) ORDER BY weight, id LIMIT 10', ('music', )).fetchall()]
-
-    queue_ids = []
-    for track_id in tracks:
-        if len(queue_ids) % 4 == 0:
-            queue_ids.append(pick_jingle(cur, jlabels[0]))
-            del jlabels[0]
-        queue_ids.append(track_id)
-    queue_tracks(cur, queue_ids)
-
-
 def run_pam_hook(args):
     if not 'PAM_USER' in os.environ:
         return False
@@ -341,7 +326,6 @@ Commands:
   mark-recent       -- mark last 100 tracks with "recent"
   purge             -- remove dead data
   queue-hitlist     -- schedule the hit list for playing
-  queue-shitlist    -- schedule the shit list for playing
   stat              -- show database statistics
   """
 
@@ -379,9 +363,6 @@ def run_cli(args):
         ok = True
     if 'queue-hitlist' in args:
         queue_hitlist(db)
-        ok = True
-    if 'queue-shitlist' in args:
-        queue_shitlist(db)
         ok = True
     if 'stat' in args:
         stats = db.get_stats()
