@@ -193,7 +193,7 @@ class ardjbot(MyFileReceivingBot):
                     status = u'«%s» by %s' % (track['title'], track['artist'])
                 else:
                     status = os.path.basename(track['filename'])
-                lcount = self.listeners.get_count()
+                lcount = ardj.listeners.get_count()
                 status += u' — #%u ♺%u ⚖%.2f Σ%u' % (track['id'], track['count'], track['weight'], lcount)
                 for label in track['labels']:
                     status += u' @' + label
@@ -394,7 +394,12 @@ class ardjbot(MyFileReceivingBot):
     @botcmd(hidden=True)
     def restart(self, message, args):
         "Shut down the bot (will be restarted)"
-        self.quit(1)
+        if args.strip() == 'ices':
+            self.send_ices_signal(signal.SIGTERM)
+            ardj.util.run([ 'ices.ardj', '-B' ])
+            return 'OK'
+        else:
+            self.quit(1)
 
     @botcmd(hidden=True)
     def select(self, message, args):
@@ -718,9 +723,13 @@ class ardjbot(MyFileReceivingBot):
         if not os.path.exists(pidfile):
             raise Exception('%s does not exist.' % pidfile)
         pid = int(open(pidfile, 'rb').read().strip())
-        os.kill(pid, sig)
-        ardj.log.debug('sent signal %s to process %s.' % (sig, pid))
-        return True
+        try:
+            os.kill(pid, sig)
+            ardj.log.debug('sent signal %s to process %s.' % (sig, pid))
+            return True
+        except Exception, e:
+            ardj.log.warning('could not kill(%u) ices: %s' % (sig, e))
+            return False
 
     def connect(self):
         """

@@ -520,7 +520,7 @@ def log(track_id, listener_count=None, ts=None, cur=None):
 
     Only logs tracks with more than zero listeners."""
     if listener_count is None:
-        listener_count = ardj.listener.get_count()
+        listener_count = ardj.listeners.get_count()
     if listener_count > 0:
         cur = cur or ardj.database.cursor()
         cur.execute('INSERT INTO playlog (ts, track_id, listeners) VALUES (?, ?, ?)', (int(ts or time.time()), int(track_id), listener_count, ))
