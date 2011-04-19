@@ -8,6 +8,15 @@ import unittest
 if __name__ == '__main__':
     names = sys.argv[1:] or glob.glob('unittests/*.py')
 
+    total = [os.path.basename(f) for f in glob.glob(os.path.join('src', 'ardj', '*.py'))]
+    tested = [os.path.basename(f) for f in names]
+    not_tested = [f for f in total if f not in tested]
+
+    if len(not_tested):
+        print 'These files are not tested:'
+        for f in sorted(not_tested):
+            print '\t' + os.path.join('src', 'ardj', f)
+
     suite = unittest.TestSuite()
 
     for name in names:
