@@ -226,7 +226,6 @@ class database:
         cur.execute('DELETE FROM labels WHERE label = ?', (set_label, ))
 
         sql = 'SELECT id, artist, title FROM tracks WHERE id NOT IN (SELECT track_id FROM labels WHERE label IN (%s)) ORDER BY artist, title' % ', '.join(['?'] * len(used_labels))
-        self.debug(sql, used_labels)
         cur.execute(sql, used_labels)
         rows = cur.fetchall()
 
