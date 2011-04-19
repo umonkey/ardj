@@ -121,7 +121,7 @@ class database:
 
         cur.execute('UPDATE %s SET %s WHERE id = ?' % (table, ', '.join(sql)), tuple(params))
 
-    def debug(self, sql, params):
+    def debug(self, sql, params, quiet=False):
         """Logs the query in human readable form.
 
         Replaces question marks with parameter values (roughly)."""
@@ -131,7 +131,8 @@ class database:
                 sql = sql.replace(u'?', param, 1)
             else:
                 sql = sql.replace(u'?', u"'" + param + u"'", 1)
-        ardj.log.debug(u'SQL: ' + sql)
+        ardj.log.debug(u'SQL: ' + sql, quiet=quiet)
+        return sql
 
     def purge(self, cur=None):
         """Removes stale data.
@@ -150,14 +151,14 @@ class database:
         cur.execute('VACUUM')
         ardj.log.info('%u bytes saved after database purge.' % (os.stat(self.filename).st_size - old_size))
 
-    def mark_good_music(self):
+    def mark_good_music(self, cur=None):
         """Marks good and bad music.
 
         Music with weight 1.0+ is marked as good-music, the rest it marked with
         bad-music."""
         GOOD_LABEL, BAD_LABEL, COMMON_LABEL, THRESHOLD = 'good-music', 'bad-music', 'music', 1.0
 
-        cur = self.cursor()
+        cur = cur or self.cursor()
         ardj.log.debug('Marking good and bad music.')
 
         cur.execute('DELETE FROM labels WHERE label = ?', (GOOD_LABEL, ))
@@ -166,13 +167,13 @@ class database:
         cur.execute('DELETE FROM labels WHERE label = ?', (BAD_LABEL, ))
         cur.execute('INSERT INTO labels (track_id, label, email) SELECT id, ?, ? FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?) AND `weight` <= ?', (BAD_LABEL, 'robot', COMMON_LABEL, THRESHOLD, ))
 
-    def mark_recent_music(self):
+    def mark_recent_music(self, cur=None):
         """Marks last 100 tracks with "recent"."""
-        cur = self.cursor()
+        cur = cur or self.cursor()
         cur.execute('DELETE FROM labels WHERE label = ?', ('recent', ))
         cur.execute('INSERT INTO labels (track_id, label, email) SELECT id, ?, ? FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?) ORDER BY id DESC LIMIT 100', ('recent', 'robot', 'music', ))
 
-    def mark_preshow_music(self):
+    def mark_preshow_music(self, cur=None):
         """Marks music liked by all show hosts with "preshow-music"."""
         common_label, set_label = 'music', 'preshow-music'
         users = ardj.settings.get('live/hosts')
@@ -180,7 +181,7 @@ class database:
             ardj.log.warning('Could not mark preshow-music: live/hosts not set.')
             return
 
-        cur = self.cursor()
+        cur = cur or self.cursor()
         cur.execute('DELETE FROM labels WHERE label = ?', (set_label, ))
 
         sql = 'INSERT INTO labels (track_id, label, email) SELECT id, ?, ? FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?)'
@@ -190,19 +191,20 @@ class database:
             params += (user, )
         cur.execute(sql, params)
 
-    def get_stats(self):
+    def get_stats(self, cur=None):
         """Returns database statistics.
         
         Returns information about the database in the form of a
         dictionary with the following keys: tracks, seconds."""
         count, length = 0, 0
-        for row in self.cursor().execute('SELECT length FROM tracks WHERE weight > 0').fetchall():
+        cur = cur or self.cursor()
+        for row in cur.execute('SELECT length FROM tracks WHERE weight > 0').fetchall():
             count = count + 1
             if row[0] is not None:
                 length = length + row[0]
         return { 'tracks': count, 'seconds': length }
 
-    def mark_orphans(self, set_label='orphan'):
+    def mark_orphans(self, set_label='orphan', cur=None, quiet=False):
         """Labels orphan tracks with "orphan".
 
         Orphans are tracks that don't belong to a playlist."""
@@ -214,18 +216,26 @@ class database:
                 labels = [playlist['name']]
             used_labels += [l for l in labels if not l.startswith('-')]
         used_labels = list(set(used_labels))
+        print used_labels
 
-        cur = ardj.database.Open().cursor()
+        if not(used_labels):
+            ardj.log.warning('Could not mark orphan tracks: no labels are used in playlists.yaml')
+            return False
+
+        cur = cur or self.cursor()
         cur.execute('DELETE FROM labels WHERE label = ?', (set_label, ))
 
         sql = 'SELECT id, artist, title FROM tracks WHERE id NOT IN (SELECT track_id FROM labels WHERE label IN (%s)) ORDER BY artist, title' % ', '.join(['?'] * len(used_labels))
+        self.debug(sql, used_labels)
         cur.execute(sql, used_labels)
         rows = cur.fetchall()
 
         if rows:
-            print '%u orphan tracks found:' % len(rows)
+            if not quiet:
+                print '%u orphan tracks found:' % len(rows)
             for row in rows:
-                print '%8u; %s -- %s' % (row[0], row[1].encode('utf-8'), row[2].encode('utf-8'))
+                if not quiet:
+                    print '%8u; %s -- %s' % (row[0], row[1].encode('utf-8'), row[2].encode('utf-8'))
                 cur.execute('INSERT INTO labels (track_id, email, label) VALUES (?, ?, ?)', (int(row[0]), 'ardj', set_label))
 
     def import_new_files(self):

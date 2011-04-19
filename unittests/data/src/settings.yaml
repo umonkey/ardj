@@ -2,3 +2,8 @@ database:
   local: unittests/data/database.sqlite
 
 log: tests-ardj.log
+
+live:
+  hosts:
+  - alice@example.com
+  - bob@example.com

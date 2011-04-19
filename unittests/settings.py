@@ -35,4 +35,4 @@ class Playlists(unittest.TestCase):
     def runTest(self):
         a = ardj.settings.load().get_playlists()
         self.assertEquals(type(a), list)
-        self.assertEquals(0, len(a))
+        self.assertEquals(1, len(a))
