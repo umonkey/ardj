@@ -195,8 +195,8 @@ class ardjbot(MyFileReceivingBot):
                     status = os.path.basename(track['filename'])
                 lcount = ardj.listeners.get_count()
                 status += u' — #%u ♺%u ⚖%.2f Σ%u' % (track['id'], track['count'], track['weight'], lcount)
-                for label in track['labels']:
-                    status += u' @' + label
+                if track['labels']:
+                    status += u' @' + u','.join(track['labels'])
                 self.status_message = status
             if ardj.settings.get('jabber/tunes', True):
                 self.send_tune(track)
@@ -594,9 +594,9 @@ class ardjbot(MyFileReceivingBot):
         message = u'Current queue:'
         idx = 1
         for track in tracks:
-            message += u'\n<br/>%u. %s — #%u' % (idx, self.get_linked_title(track), track['id'])
+            message += u'\n<br/>%u. %s — #%u ⚖%.2f' % (idx, self.get_linked_title(track), track['id'], track['weight'])
             if track['labels']:
-                message += u' @' + u' @'.join(track['labels'])
+                message += u' @' + u','.join(track['labels'])
             idx += 1
         return message + u'\n<br/>Use "queue track_id..." to add more tracks and "find xyz" to find some ids.'
 
