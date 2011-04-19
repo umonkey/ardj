@@ -37,13 +37,15 @@ def merge(filenames):
             data[artist][title] += count
     return data
 
-def format_data(data):
-    f = csv.writer(sys.stdout)
+
+def format_data(data, out=None):
+    f = csv.writer(out or sys.stdout)
     for artist in sorted(data.keys()):
         tracks = data[artist]
         for title in sorted(tracks.keys()):
             f.writerow([artist.encode('utf-8'), title.encode('utf-8'), tracks[title]])
 
-def aggregate(args):
+
+def aggregate(args, out=None):
     """Aggregates play counts."""
-    format_data(merge(args))
+    format_data(merge(args, out=out))
