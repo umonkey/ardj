@@ -18,11 +18,11 @@ def fetch_news():
         raise Exception('Track %u is not OGG/Vorbis.' % track_id)
     track_length = 0
 
+    source_fn = ardj.util.fetch(ardj.settings.get('news/url', DEFAULT_URL))
     output_fn = ardj.util.mktemp(suffix='.ogg')
-    cmd = u"gst-launch-0.10 -q souphttpsrc location=\"%s\" ! decodebin ! audioconvert ! vorbisenc quality=0.5 ! oggmux ! filesink location=\"%s\"" % (ardj.settings.get('news/url', DEFAULT_URL), output_fn)
 
     try:
-        ardj.util.run(cmd.split(' '))
+        ardj.util.run([ 'ffmpeg', '-y', '-i', str(source_fn), '-ar', '44100', '-ac', '2', '-acodec', 'vorbis', str(output_fn) ], quiet=True)
         if os.stat(str(output_fn)).st_size:
             ardj.replaygain.update(output_fn)
 
@@ -35,10 +35,10 @@ def fetch_news():
             if tags:
                 track_length = int(tags.info.length)
     except Exception, e:
-        ardj.log.error('Could not fetch news: %s' % e)
+        ardj.log.error('Could not update news: %s' % e)
         ardj.log.error(traceback.format_exc(e))
 
-    ardj.database.cursor().execute('UPDATE tracks SET length = ? WHERE id = ?', (track_length, track_id, ))
+    ardj.database.cursor().execute('UPDATE tracks SET length = ?, count = 0 WHERE id = ?', (track_length, track_id, ))
     if ardj.settings.get('news/queue') == 'yes':
         ardj.tracks.queue(track_id)
     ardj.database.Open().commit()
