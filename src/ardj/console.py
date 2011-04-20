@@ -444,7 +444,7 @@ def run_cli(args):
     while True:
         try:
             text = raw_input('command: ')
-            print process_command(text, sender, quiet=True)
+            print process_command(text.decode('utf-8'), sender, quiet=True)
         except EOFError:
             print '\nBye.'
             return
