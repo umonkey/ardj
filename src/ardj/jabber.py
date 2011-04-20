@@ -186,7 +186,7 @@ class ardjbot(MyFileReceivingBot):
                     try: msg = unicode(e).encode('utf-8')
                     except: msg = 'unknown error'
                     rep = 'Could not process your message:\n%s\n%s' % (msg, traceback.format_exc(e))
-                self.send_simple_reply(mess, rep)
+                self.send_simple_reply(mess, rep.strip())
         finally:
             ardj.database.Open().commit()
 

@@ -19,6 +19,10 @@ import ardj.speech
 import ardj.tracks
 
 
+def is_user_admin(sender):
+    return sender in ardj.settings.get('jabber/access', [])
+
+
 def format_track_list(tracks, header=None):
     message = u''
     if header is not None:
@@ -162,8 +166,14 @@ def on_queue(args, sender, cur=None):
         cur.execute('DELETE FROM queue')
         return 'Done.'
 
+    is_admin = is_user_admin(sender)
+    if is_admin and cur.execute('SELECT COUNT(*) FROM queue WHERE owner = ?', (sender, )).fetchone()[0]:
+        return 'You have already queued a track, please wait.'
+
     for track_id in ardj.tracks.find_ids(args, cur):
         ardj.tracks.queue(track_id, sender, cur)
+        if not is_admin:
+            break
 
     tracks = ardj.tracks.get_queue(cur)[:10]
     if not tracks:
@@ -173,7 +183,7 @@ def on_queue(args, sender, cur=None):
 
 def on_find(args, sender, cur=None):
     cur = cur or ardj.database.cursor()
-    tracks = [ardj.tracks.get_track_by_id(x, cur=cur) for x in ardj.tracks.find_ids(args, cur=cur)]
+    tracks = [ardj.tracks.get_track_by_id(x, cur=cur) for x in ardj.tracks.find_ids(args, cur=cur)][:10]
     if not tracks:
         return 'Nothing was found.'
     return format_track_list(tracks, u'Found these tracks:')
@@ -279,7 +289,7 @@ def on_dump(args, sender, cur=None):
     if not track:
         return 'Track %s not found.' % args
 
-    track['editable'] = sender in ardj.settings.get('jabber/access', [])
+    track['editable'] = is_user_admin(sender)
 
     votes = cur.execute('SELECT vote FROM votes WHERE track_id = ? AND email = ?', (track['id'], sender, )).fetchone()
     track['vote'] = votes and votes[0] or None
@@ -341,7 +351,7 @@ command_map = (
     ('news', False, on_news, 'shows 10 recently added tracks'),
     ('play', True, on_play, 'set a custom playlist for 60 minutes'),
     ('purge', True, on_purge, 'cleans up the database'),
-    ('queue', True, on_queue, 'queues tracks for playing'),
+    ('queue', False, on_queue, 'queues tracks for playing'),
     ('reload', True, on_reload, 'asks ices to reconfigure'),
     ('restart', True, on_restart, 'restarts the bot or ices'),
     ('rocks', False, on_rocks, 'increases track weight'),
@@ -377,11 +387,16 @@ def get_usage(sender):
     """Describes available commands.
 
     Only describes commands that are available to that user."""
-    is_admin = sender in ardj.settings.get('jabber/access', ['console'])
+    is_admin = is_user_admin(sender)
     message = u"Available commands:\n"
     for name, is_privileged, handler, description in sorted(command_map, key=lambda c: c[0]):
-        if not is_privileged or is_admin:
+        if not is_privileged:
             message += u'%s\t— %s\n' % (name, description)
+    if is_admin:
+        message += u'\nPrivileged commands:\n'
+        for name, is_privileged, handler, description in sorted(command_map, key=lambda c: c[0]):
+            if is_privileged:
+                message += u'%s\t— %s\n' % (name, description)
     return message
 
 
@@ -403,7 +418,7 @@ def process_command(text, sender=None, cur=None):
     cur = cur or ardj.database.cursor()
 
     sender = sender or 'console'
-    is_admin = sender in ardj.settings.get('jabber/access', ['console'])
+    is_admin = is_user_admin(sender)
 
     is_public_command = command in get_public_commands()
     if not is_public_command and not is_admin:
