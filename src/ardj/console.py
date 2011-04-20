@@ -29,7 +29,10 @@ def format_track_list(tracks, header=None):
     if header is not None:
         message += header.strip() + u'\n'
     for track in tracks:
-        message += u'«%s» by %s — #%u ⚖%.2f\n' % (track.get('title', 'untitled'), track.get('artist', 'unknown artist'), track.get('id', 0), track.get('weight', 0))
+        message += u'«%s» by %s — #%u ⚖%.2f ♺%s' % (track.get('title', 'untitled'), track.get('artist', 'unknown artist'), track.get('id', 0), track.get('weight', 0), track.get('count', '?'))
+        if 'labels' in track:
+            message += u' @' + u' @'.join(track['labels'])
+        message += u'\n'
     return message
 
 
