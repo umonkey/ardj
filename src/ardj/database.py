@@ -49,6 +49,9 @@ class database:
         except Exception, e:
             ardj.log.error('Could not open database %s: %s' % (filename, e))
             raise
+
+        self.db.create_function('ULIKE', 2, self.sqlite_ulike)
+
         cur = self.db.cursor()
         cur.execute('CREATE TABLE IF NOT EXISTS playlists (id INTEGER PRIMARY KEY, name TEXT, last_played INTEGER)')
         cur.execute('CREATE TABLE IF NOT EXISTS tracks (id INTEGER PRIMARY KEY, owner TEXT, filename TEXT, artist TEXT, title TEXT, length INTEGER, weight REAL, count INTEGER, last_played INTEGER)')
@@ -92,6 +95,13 @@ class database:
                 raise Exception('This ardj instance does not have a local database (see database/local config option).')
             cls.instance = cls(filename)
         return cls.instance
+
+    def sqlite_ulike(self, a, b):
+        if a is None or b is None:
+            return None
+        if b.lower() in a.lower():
+            return 1
+        return 0
 
     def cursor(self):
         """Returns a new SQLite cursor, for internal use."""

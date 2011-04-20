@@ -85,8 +85,8 @@ def find_ids(pattern, cur=None):
     if pattern.startswith('@'):
         rows = cur.execute('SELECT id FROM tracks WHERE weight > 0 AND id IN (SELECT track_id FROM labels WHERE label = ?) ORDER BY ' + order, (pattern[1:], )).fetchall()
         return [row[0] for row in rows]
-    like = '%%%s%%' % pattern
-    rows = cur.execute('SELECT id FROM tracks WHERE artist LIKE ? OR title LIKE ? ORDER BY ' + order, (like, like, )).fetchall()
+    like = '%s' % pattern
+    rows = cur.execute('SELECT id FROM tracks WHERE ULIKE(artist, ?) OR ULIKE(title, ?) ORDER BY ' + order, (like, like, )).fetchall()
     return [row[0] for row in rows]
 
 
