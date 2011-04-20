@@ -167,7 +167,7 @@ def on_queue(args, sender, cur=None):
         return 'Done.'
 
     is_admin = is_user_admin(sender)
-    if is_admin and cur.execute('SELECT COUNT(*) FROM queue WHERE owner = ?', (sender, )).fetchone()[0]:
+    if not is_admin and cur.execute('SELECT COUNT(*) FROM queue WHERE owner = ?', (sender, )).fetchone()[0]:
         return 'You have already queued a track, please wait.'
 
     for track_id in ardj.tracks.find_ids(args, cur):
