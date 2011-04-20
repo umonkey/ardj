@@ -319,7 +319,10 @@ def on_status(args, sender, cur=None):
         return 'Playing an unknown track.'
 
     lcount = ardj.listeners.get_count()
-    return u'«%s» by %s — #%u ♺%u ⚖%.2f Σ%u' % (track.get('artist', 'unknown artist'), track.get('title', 'untitled'), track['id'], track.get('count', 0), track.get('weight', 0), lcount)
+    message = u'«%s» by %s — #%u ♺%u ⚖%.2f Σ%u' % (track.get('artist', 'unknown artist'), track.get('title', 'untitled'), track['id'], track.get('count', 0), track.get('weight', 0), lcount)
+    if 'labels' in track:
+        message += u' @' + u' @'.join(track['labels'])
+    return message
 
 
 def on_help(args, sender, cur=None):
