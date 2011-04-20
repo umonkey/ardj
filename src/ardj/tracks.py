@@ -531,3 +531,15 @@ def log(track_id, listener_count=None, ts=None, cur=None):
     if listener_count > 0:
         cur = cur or ardj.database.cursor()
         cur.execute('INSERT INTO playlog (ts, track_id, listeners) VALUES (?, ?, ?)', (int(ts or time.time()), int(track_id), listener_count, ))
+
+
+def get_average_length(cur=None):
+    """Returns the weighed average track length in seconds."""
+    s_prc = s_qty = 0.0
+    cur = cur or ardj.database.cursor()
+
+    for prc, qty in cur.execute('SELECT ROUND(length / 60) AS r, COUNT(*) FROM tracks GROUP BY r').fetchall():
+        s_prc += prc * qty
+        s_qty += qty
+
+    return int(s_prc / s_qty * 60 * 1.5)

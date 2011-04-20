@@ -255,6 +255,15 @@ class database:
                     print '%8u; %s -- %s' % (row[0], row[1].encode('utf-8'), row[2].encode('utf-8'))
                 cur.execute('INSERT INTO labels (track_id, email, label) VALUES (?, ?, ?)', (int(row[0]), 'ardj', set_label))
 
+    def mark_long(self):
+        """Marks unusuall long tracks."""
+        cur = self.cursor()
+        length = ardj.tracks.get_average_length(cur)
+        cur.execute('DELETE FROM labels WHERE label = \'long\'')
+        cur.execute('INSERT INTO labels (track_id, email, label) SELECT id, \'ardj\', \'long\' FROM tracks WHERE length > ?', (length, ))
+        count = cur.execute('SELECT COUNT(*) FROM labels WHERE label = \'long\'').fetchone()[0]
+        print 'Average length is %u seconds, %u tracks match.' % (length, count)
+
     def import_new_files(self):
         """Adds files from a predefined location.
 
@@ -370,6 +379,9 @@ def run_cli(args):
         ok = True
     if 'mark-orphans' in args:
         db.mark_orphans()
+        ok = True
+    if 'mark-long' in args:
+        db.mark_long()
         ok = True
     if 'purge' in args:
         db.purge()
