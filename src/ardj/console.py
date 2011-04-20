@@ -298,9 +298,6 @@ def on_dump(args, sender, cur=None):
     votes = cur.execute('SELECT vote FROM votes WHERE track_id = ? AND email = ?', (track['id'], sender, )).fetchone()
     track['vote'] = votes and votes[0] or None
 
-    del track['filename']
-    del track['filepath']
-
     return json.dumps(track, ensure_ascii=False)
 
 
