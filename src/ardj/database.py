@@ -139,6 +139,18 @@ class database:
         ardj.log.debug(u'SQL: ' + sql, quiet=quiet)
         return sql
 
+    def merge_aliases(self, cur=None):
+        """Moves votes from similar accounts to one."""
+        cur = cur or self.cursor()
+
+        for k, v in ardj.settings.get('jabber/aliases', {}).items():
+            for alias in v:
+                cur.execute('UPDATE votes SET email = ? WHERE email = ?', (k, alias, ))
+
+        for track_id, email, count, vote in cur.execute('SELECT track_id, email, COUNT(*) AS count, MAX(vote) FROM votes GROUP BY track_id, email HAVING count > 1').fetchall():
+            ardj.tracks.add_vote(track_id, email, vote, cur=cur, update_karma=False)
+
+
     def purge(self, cur=None):
         """Removes stale data.
 
@@ -148,6 +160,7 @@ class database:
         """
         old_size = os.stat(self.filename).st_size
         cur = cur or self.cursor()
+        self.merge_aliases(cur)
         cur.execute('DELETE FROM queue WHERE track_id NOT IN (SELECT id FROM tracks)')
         cur.execute('DELETE FROM labels WHERE track_id NOT IN (SELECT id FROM tracks)')
         cur.execute('DELETE FROM votes WHERE track_id NOT IN (SELECT id FROM tracks)')

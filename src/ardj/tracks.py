@@ -179,7 +179,7 @@ def set_urgent(args, cur=None):
         cur.execute('INSERT INTO urgent_playlists (labels, expires) VALUES (?, ?)', (labels, int(expires), ))
 
 
-def add_vote(track_id, email, vote, cur=None):
+def add_vote(track_id, email, vote, cur=None, update_karma=False):
     """Adds a vote for/against a track.
 
     The process is: 1) add a record to the votes table, 2) update email's
@@ -196,25 +196,32 @@ def add_vote(track_id, email, vote, cur=None):
     if vote > 0: vote = 1
     elif vote < 0: vote = -1
 
+    # Resolve aliases.
+    for k, v in ardj.settings.get('jabber/aliases', {}).items():
+        if email in v:
+            email = k
+            break
+
     # Skip wrong values.
     cur.execute('DELETE FROM votes WHERE track_id = ? AND email = ?', (track_id, email, ))
     if vote != 0:
         cur.execute('INSERT INTO votes (track_id, email, vote, ts) VALUES (?, ?, ?, ?)', (track_id, email, vote, int(time.time()), ))
 
-    # Update email's karma.
-    all = float(cur.execute('SELECT COUNT(*) FROM votes').fetchall()[0][0])
-    his = float(cur.execute('SELECT COUNT(*) FROM votes WHERE email = ?', (email, )).fetchall()[0][0])
-    value = 0.25 # his / all
-    cur.execute('DELETE FROM karma WHERE email = ?', (email, ))
-    cur.execute('INSERT INTO karma (email, weight) VALUES (?, ?)', (email, value, ))
+    if update_karma:
+        # Update email's karma.
+        all = float(cur.execute('SELECT COUNT(*) FROM votes').fetchall()[0][0])
+        his = float(cur.execute('SELECT COUNT(*) FROM votes WHERE email = ?', (email, )).fetchall()[0][0])
+        value = 0.25 # his / all
+        cur.execute('DELETE FROM karma WHERE email = ?', (email, ))
+        cur.execute('INSERT INTO karma (email, weight) VALUES (?, ?)', (email, value, ))
 
-    result = 1
-    for row in cur.execute('SELECT track_id, weight FROM track_weights WHERE track_id IN (SELECT track_id FROM votes WHERE email = ?) OR track_id = ?', (email, track_id, )).fetchall():
-        cur.execute('UPDATE tracks SET weight = ? WHERE id = ?', (row[1], row[0], ))
-        if track_id == row[0]:
-            result = row[1]
+        result = 1
+        for row in cur.execute('SELECT track_id, weight FROM track_weights WHERE track_id IN (SELECT track_id FROM votes WHERE email = ?) OR track_id = ?', (email, track_id, )).fetchall():
+            cur.execute('UPDATE tracks SET weight = ? WHERE id = ?', (row[1], row[0], ))
+            if track_id == row[0]:
+                result = row[1]
 
-    return result
+        return result
 
 
 def get_vote(track_id, email, cur=None):
