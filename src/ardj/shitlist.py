@@ -1,4 +1,7 @@
+import time
+
 import ardj.database
+import ardj.log
 import ardj.tracks
 
 
@@ -10,6 +13,22 @@ Commands:
 
 JINGLES = [ 'shitlist-begin', 'shitlist-mid', 'shitlist-mid', 'shitlist-end' ]
 
+
+def purge_old_tracks(cur=None, weight=0.1, delay=1209600, quiet=False):
+    """Removes dead tracks.
+
+    Arguments:
+    weight -- weight below which tracks are deleted.
+    delay -- number of seconds for which there must be no votes for a track to be deleted.
+    """
+    cur = cur or ardj.database.cursor()
+
+    tslimit = int(time.time()) - delay
+    tracks = cur.execute('SELECT id, weight, artist, title FROM tracks WHERE weight > 0 AND weight <= ? AND id NOT IN (SELECT track_id FROM votes WHERE ts >= ?)', (weight, tslimit, )).fetchall()
+    ardj.log.debug('Found %u tracks older than %u.' % (len(tracks), tslimit))
+    for track_id, weight, artist, title in tracks:
+        ardj.log.info('Deleting track %u ("%s" by %s): sucked for a long time.' % (track_id, title, artist))
+        cur.execute('UPDATE tracks SET weight = 0 WHERE id = ?', (track_id, ))
 
 def get_highest_weight(cur):
     """Returns the lowest weight in the worst 10 tracks."""
@@ -39,6 +58,8 @@ def pick_tracks(cur=None):
 
 def queue_tracks(cur=None):
     cur = cur or ardj.database.cursor()
+
+    purge_old_tracks(cur)
 
     tracks = pick_tracks(cur=cur)
     if not tracks:

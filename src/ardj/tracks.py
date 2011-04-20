@@ -202,10 +202,11 @@ def add_vote(track_id, email, vote, cur=None, update_karma=False):
             email = k
             break
 
-    # Skip wrong values.
-    cur.execute('DELETE FROM votes WHERE track_id = ? AND email = ?', (track_id, email, ))
-    if vote != 0:
-        cur.execute('INSERT INTO votes (track_id, email, vote, ts) VALUES (?, ?, ?, ?)', (track_id, email, vote, int(time.time()), ))
+    tmp = cur.execute('SELECT vote FROM votes WHERE track_id = ? AND email = ?', (track_id, email, )).fetchone()
+    if tmp is None or tmp[0] != vote:
+        cur.execute('DELETE FROM votes WHERE track_id = ? AND email = ?', (track_id, email, ))
+        if vote != 0:
+            cur.execute('INSERT INTO votes (track_id, email, vote, ts) VALUES (?, ?, ?, ?)', (track_id, email, vote, int(time.time()), ))
 
     if update_karma:
         # Update email's karma.

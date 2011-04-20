@@ -160,7 +160,7 @@ def move_file(src, dst):
 
 def format_duration(duration, age=False, now=None):
     if not str(duration).isdigit():
-        raise TypeError('duration must be a number')
+        raise TypeError('duration must be a number, not "%s"' % duration)
 
     duration = int(duration)
     if age:

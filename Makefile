@@ -18,6 +18,9 @@ test:
 	PYTHONPATH=src ARDJ_SETTINGS=unittests/data/settings.yaml python unittests/all.py || cat tests.log
 	rm -f unittests/data/*.*
 
+testv: test
+	less -S tests-ardj.log
+
 install:
 	sudo python setup.py install --record install.log
 
