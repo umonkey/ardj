@@ -77,7 +77,7 @@ def find_ids(pattern, cur=None):
     if pattern.strip().isdigit():
         return [ int(pattern.strip()) ]
     like = '%%%s%%' % pattern
-    return [row[0] for row in cur.execute('SELECT id FROM tracks WHERE artist LIKE ? OR title LIKE ?', (like, like, )).fetchall()]
+    return [row[0] for row in cur.execute('SELECT id FROM tracks WHERE artist LIKE ? OR title LIKE ? ORDER BY weight DESC', (like, like, )).fetchall()]
 
 
 def add_labels(track_id, labels, owner=None, cur=None):
@@ -173,10 +173,10 @@ def set_urgent(args, cur=None):
     """
     cur = cur or ardj.database.cursor()
     cur.execute('DELETE FROM urgent_playlists')
-    if labels != 'all':
+    if args != 'all':
         if expires is None:
             expires = time.time() + 3600
-        cur.execute('INSERT INTO urgent_playlists (labels, expires) VALUES (?, ?)', (labels, int(expires), ))
+        cur.execute('INSERT INTO urgent_playlists (labels, expires) VALUES (?, ?)', (labels.split(' '), int(expires), ))
 
 
 def add_vote(track_id, email, vote, cur=None, update_karma=False):
