@@ -74,10 +74,20 @@ def find_ids(pattern, cur=None):
     cur = cur or ardj.database.cursor()
     if not pattern.strip():
         return []
+
+    order = 'weight DESC'
+    if pattern.startswith('-r '):
+        pattern = pattern[3:]
+        order = 'RANDOM()'
+
     if pattern.strip().isdigit():
         return [ int(pattern.strip()) ]
+    if pattern.startswith('@'):
+        rows = cur.execute('SELECT id FROM tracks WHERE weight > 0 AND id IN (SELECT track_id FROM labels WHERE label = ?) ORDER BY ' + order, (pattern[1:], )).fetchall()
+        return [row[0] for row in rows]
     like = '%%%s%%' % pattern
-    return [row[0] for row in cur.execute('SELECT id FROM tracks WHERE artist LIKE ? OR title LIKE ? ORDER BY weight DESC', (like, like, )).fetchall()]
+    rows = cur.execute('SELECT id FROM tracks WHERE artist LIKE ? OR title LIKE ? ORDER BY ' + order, (like, like, )).fetchall()
+    return [row[0] for row in rows]
 
 
 def add_labels(track_id, labels, owner=None, cur=None):
