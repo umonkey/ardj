@@ -10,6 +10,7 @@ import ardj.log
 COMMAND_MAP = [ # (command, module, function, description)
     ('client', 'client', 'run_cli', 'run the client'),
     ('config', 'settings', 'edit_cli', 'edit settings'),
+    ('console', 'console', 'run_cli', 'jabber-like CLI'),
     ('db', 'database', 'run_cli', 'database functions'),
     ('events', 'tout', 'run_cli', 'works with the upcoming events'),
     ('hotline', 'hotline', 'run_cli', 'work with the hotline'),

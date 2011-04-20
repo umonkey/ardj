@@ -6,6 +6,7 @@ Lets users communicate with the system using almost human language.  Used by
 the jabber bot, a CLI is available."""
 
 import os
+import readline
 import signal
 import sys
 
@@ -400,7 +401,7 @@ def get_usage(sender):
     return message
 
 
-def process_command(text, sender=None, cur=None):
+def process_command(text, sender=None, cur=None, quiet=False):
     """Processes one message, returns a text reply.
 
     Arguments:
@@ -422,12 +423,28 @@ def process_command(text, sender=None, cur=None):
 
     is_public_command = command in get_public_commands()
     if not is_public_command and not is_admin:
-        ardj.log.info('CMD: %s: %s -- DENIED' % (sender, text))
+        ardj.log.info('CMD: %s: %s -- DENIED' % (sender, text), quiet=quiet)
         return 'You don\' have access to that command, sorry.  ' + get_usage(sender)
 
     for cmd_name, is_privileged, handler, description in command_map:
         if cmd_name == command.lower():
-            ardj.log.info('CMD: %s: %s' % (sender, text))
+            ardj.log.info('CMD: %s: %s' % (sender, text), quiet=quiet)
             return handler(args.strip(), sender=sender, cur=cur)
 
     return 'Unknown command: %s.  %s' % (command, get_usage(sender))
+
+
+def run_cli(args):
+    sender = 'console'
+    if args:
+        sender = args[0]
+
+    print 'Starting the interactive jabber-like CLI, press ^D to quit.'
+
+    while True:
+        try:
+            text = raw_input('command: ')
+            print process_command(text, sender, quiet=True)
+        except EOFError:
+            print '\nBye.'
+            return
