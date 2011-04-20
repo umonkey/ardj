@@ -17,7 +17,7 @@ ARDJ=/usr/local/bin/ardj
 */5 *		* * *	$USER	$ARDJ hotline -q process
 
 # Обновление афиши по утрам (в 6:00).
-0 6		* * *	$USER	$ARDJ events >/dev/null
+0 6		* * *	$USER	$ARDJ events announce update-website >/dev/null
 
 # Обновление всякой фигни в базе данных.
 0 6		* * *	$USER	$ARDJ db mark-good-bad mark-recent mark-orphans mark-long purge >/dev/null

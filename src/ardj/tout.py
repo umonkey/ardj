@@ -4,22 +4,17 @@ import datetime
 import json
 import os
 import random
-import shutil
 import sys
-import subprocess
-import tempfile
 import time
 import urllib
-import urllib2
 import wave
 
-import ardj
 import ardj.database
+import ardj.log
 import ardj.settings
-import ardj.website
 import ardj.tags
 import ardj.util
-import ardj.log
+import ardj.website
 
 class LastFmError(Exception): pass
 
@@ -89,7 +84,7 @@ def fetch_events():
     for artist_name in sorted(list(set([n.lower() for n in get_artist_names()]))):
         tmp = fetch_artist_events(artist_name)
         if tmp is None:
-            return None
+            continue # wtf ?!
         events += tmp
 
     open(cache_fn, 'wb').write(json.dumps(events))
@@ -114,7 +109,7 @@ def update_website():
     filename = ardj.settings.getpath('tout/website_js', '~/.config/ardj/event-map.js')
     output = 'var map_data = %s;' % json.dumps(data, indent=True)
     open(filename, 'wb').write(output)
-    ardj.info('Wrote %s' % filename)
+    ardj.log.info('Wrote %s' % filename)
 
     ardj.website.update('update-map')
 
@@ -124,7 +119,11 @@ def get_announce_text():
     date_limit = time.strftime('%Y-%m-%d', time.localtime(time.time() + int(ardj.settings.get('tout/announce_time_limit', 86400*14))))
 
     countries = ardj.settings.get('tout/announce_countries')
-    for event in fetch_events():
+
+    events = fetch_events()
+    assert(type(events) == list)
+
+    for event in events:
         if not countries or event['country'] in countries:
             date = event['startDate']
             if date < date_limit:
@@ -136,24 +135,28 @@ def get_announce_text():
                 if event['artist'] not in data[date][city]:
                     data[date][city].append(event['artist'])
 
-    output = ardj.settings.get('tout/announce_prefix', u'').strip() + u'\n\n'
+    output = ardj.settings.get('tout/announce_prefix', u'').strip() + u'\n'
     for date in sorted(data.keys()):
         output += xlat_date(date) + u'.\n'
         for city in sorted(data[date].keys()):
-            output += xlat_city(city)
-            for artist in sorted(data[date][city]):
-                output += u', ' + xlat_artist(artist)
-            output += u'.\n\n'
+            if city:
+                output += xlat_city(city)
+                for artist in sorted(data[date][city]):
+                    output += u', ' + xlat_artist(artist)
+                output += u'.\n'
     output += ardj.settings.get('tout/announce_suffix', u'')
     return output.strip()
 
+
 def update_announce():
+    track = ardj.tracks.get_track_by_id(int(ardj.settings.get('tout/track_id')))
+
     text_fn = ardj.util.mktemp(suffix='.txt')
     open(str(text_fn), 'wb').write(get_announce_text().encode('utf-8'))
     ardj.log.debug('Wrote speech text to %s' % text_fn)
 
     speech_fn = ardj.util.mktemp(suffix='.wav')
-    ardj.util.run(['text2wave', '-eval', '(voice_msu_ru_nsh_clunits)', str(text_fn), '-o', str(speech_fn)]).wait()
+    ardj.util.run(['text2wave', '-f', '44100', '-eval', '(voice_msu_ru_nsh_clunits)', str(text_fn), '-o', str(speech_fn)])
     ardj.log.debug('Wrote speech wave to %s' % speech_fn)
 
     speech_fn = sox([ speech_fn, '-r', '44100', '-c', '2', 'OUTPUT', 'pad', '3', '5'] )
@@ -168,16 +171,14 @@ def update_announce():
     result_fn = sox([ speech_fn, 'OUTPUT' ], suffix='.ogg')
     ardj.log.debug('Wrote result to %s' % result_fn)
 
-    target_fn = ardj.settings.getpath('tout/announce_file')
+    target_fn = track['filepath']
     if os.path.exists(target_fn):
         os.unlink(target_fn)
-        shutil.move(result_fn, target_fn)
-        result_fn = target_fn
+    ardj.util.move_file(str(result_fn), str(target_fn))
+    result_fn = target_fn
 
-    track_id = int(ardj.settings.get('tout/track_id', '0'))
-    if track_id:
-        length = ardj.tags.raw(result_fn).info.length
-        ardj.database.Open().cursor().execute('UPDATE tracks SET length = ? WHERE id = ?', (length, track_id, ))
+    length = ardj.tags.get(str(result_fn))['length']
+    ardj.database.cursor().execute('UPDATE tracks SET length = ? WHERE id = ?', (length, track['id'], ))
 
 def get_wav_length(filename):
     f = wave.open(filename, 'r')
@@ -219,11 +220,17 @@ def xlat_artist(artist):
 
 def run_cli(args):
     """Implements the "ardj events" command."""
-    if ardj.settings.get('tout/website_js'):
-        update_website()
-    else:
-        ardj.log.debug('Not updating website: tout/website_js not set.')
-    if ardj.settings.get('tout/announce_file'):
-        update_announce()
-    else:
-        ardj.log.debug('Not updating the speech: tout/announce_file not set.')
+    if 'announce' in args:
+        if ardj.settings.get('tout/track_id'):
+            update_announce()
+        else:
+            ardj.log.debug('Not updating the speech: tout/track_id not set.')
+
+    if 'update-website' in args:
+        if ardj.settings.get('tout/website_js'):
+            update_website()
+        else:
+            ardj.log.debug('Not updating website: tout/website_js not set.')
+
+    if not args:
+        print 'Usage: ardj events announce|update-website'
