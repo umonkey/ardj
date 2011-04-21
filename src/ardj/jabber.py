@@ -181,7 +181,10 @@ class ardjbot(MyFileReceivingBot):
         try:
             if mess.getType() == 'chat':
                 try:
-                    rep = ardj.console.process_command(mess.getBody(), mess.getFrom().getStripped())
+                    msg = mess.getBody()
+                    if not msg:
+                        return
+                    rep = ardj.console.process_command(msg, mess.getFrom().getStripped())
                 except Exception, e:
                     try: msg = unicode(e).encode('utf-8')
                     except: msg = 'unknown error'

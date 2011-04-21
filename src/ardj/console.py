@@ -146,20 +146,20 @@ def on_ban(args, sender, cur=None):
 
 def on_shitlist(args, sender, cur=None):
     cur = cur or ardj.database.cursor()
-    rows = cur.execute('SELECT id, artist, title, weight FROM tracks WHERE weight > 0 ORDER BY weight, title, artist LIMIT 10').fetchall()
+    rows = cur.execute('SELECT id, artist, title, weight, count FROM tracks WHERE weight > 0 ORDER BY weight, title, artist LIMIT 10').fetchall()
     if not rows:
         return 'No tracks (database must be empty).'
-    tracks = [{ 'id': row[0], 'artist': row[1], 'title': row[2], 'weight': row[3] } for row in rows]
+    tracks = [{ 'id': row[0], 'artist': row[1], 'title': row[2], 'weight': row[3], 'count': row[4] } for row in rows]
     return format_track_list(tracks, u'Lowest rated tracks:')
 
 
 def on_hitlist(args, sender, cur=None):
     cur = cur or ardj.database.cursor()
 
-    rows = cur.execute('SELECT id, artist, title, weight FROM tracks WHERE weight > 0 ORDER BY weight DESC, title, artist LIMIT 10').fetchall()
+    rows = cur.execute('SELECT id, artist, title, weight, count FROM tracks WHERE weight > 0 ORDER BY weight DESC, title, artist LIMIT 10').fetchall()
     if not rows:
         return 'No tracks (database must be empty).'
-    tracks = [{ 'id': row[0], 'artist': row[1], 'title': row[2], 'weight': row[3] } for row in rows]
+    tracks = [{ 'id': row[0], 'artist': row[1], 'title': row[2], 'weight': row[3], 'count': row[4] } for row in rows]
     return format_track_list(tracks, u'Highest rated tracks:')
 
 
@@ -207,16 +207,20 @@ def on_find(args, sender, cur=None):
 def on_news(args, sender, cur=None):
     cur = cur or ardj.database.cursor()
 
-    rows = cur.execute('SELECT id, artist, title, weight FROM tracks WHERE weight > 0 ORDER BY id DESC LIMIT 10').fetchall()
+    rows = cur.execute('SELECT id, artist, title, weight, count FROM tracks WHERE weight > 0 ORDER BY id DESC LIMIT 10').fetchall()
     if not rows:
         return 'No tracks at all.'
-    tracks = [{ 'id': row[0], 'artist': row[1], 'title': row[2], 'weight': row[3] } for row in rows]
+    tracks = [{ 'id': row[0], 'artist': row[1], 'title': row[2], 'weight': row[3], 'count': row[4] } for row in rows]
     return format_track_list(tracks, 'Recently added tracks:')
 
 
 def on_votes(args, sender, cur=None):
     cur = cur or ardj.database.cursor()
-    track_id = args and int(args) or ardj.tracks.get_last_track_id(cur)
+
+    if args.startswith('for '):
+        track_id = int(args[4:].strip())
+    else:
+        track_id = ardj.tracks.get_last_track_id(cur)
 
     votes = cur.execute('SELECT email, vote FROM votes WHERE track_id = ?', (track_id, )).fetchall()
     if not votes:
@@ -420,7 +424,7 @@ def process_command(text, sender=None, cur=None, quiet=False):
     sender -- sender's email address
     cur -- pass if you want a transaction
     """
-    text = text.strip()
+    text = (text or '').strip()
     if ' ' in text:
         command, args = text.split(' ', 1)
     else:
@@ -455,7 +459,8 @@ def run_cli(args):
     while True:
         try:
             text = raw_input('command: ')
-            print process_command(text.decode('utf-8'), sender, quiet=True)
+            if text:
+                print process_command(text.decode('utf-8'), sender, quiet=True)
         except EOFError:
             print '\nBye.'
             return
