@@ -216,7 +216,11 @@ def on_news(args, sender, cur=None):
 
 def on_votes(args, sender, cur=None):
     cur = cur or ardj.database.cursor()
-    track_id = args and int(args) or ardj.tracks.get_last_track_id(cur)
+
+    if args.startswith('for '):
+        track_id = int(args[4:].strip())
+    else:
+        track_id = ardj.tracks.get_last_track_id(cur)
 
     votes = cur.execute('SELECT email, vote FROM votes WHERE track_id = ?', (track_id, )).fetchall()
     if not votes:
@@ -455,7 +459,8 @@ def run_cli(args):
     while True:
         try:
             text = raw_input('command: ')
-            print process_command(text.decode('utf-8'), sender, quiet=True)
+            if text:
+                print process_command(text.decode('utf-8'), sender, quiet=True)
         except EOFError:
             print '\nBye.'
             return
