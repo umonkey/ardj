@@ -8,6 +8,7 @@ import sys
 import time
 
 import ardj.log
+import ardj.mail
 import ardj.settings
 import ardj.util
 import ardj.website
@@ -88,7 +89,7 @@ def run_prepare():
     os.mkdir(os.path.dirname(filename))
     open(filename, 'wb').write(text.encode('utf-8'))
     
-    ardj.info('Wrote %s' % filename)
+    ardj.log.info('Wrote %s' % filename)
     ardj.website.update()
 
 def find_tsn_url():
@@ -181,7 +182,7 @@ def run_email():
     text = EMAIL_TEMPLATE % args
     subject = EMAIL_SUBJECT % args
 
-    ardj.util.send_mail(to, subject, text)
+    ardj.mail.send_mail(to, subject, text)
 
 def run(args):
     args = args or ['default']
