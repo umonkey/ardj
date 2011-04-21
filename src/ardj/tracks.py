@@ -523,7 +523,7 @@ def get_next_track_id(cur=None, debug=False, update_stats=True):
             track_id = add_preroll(track_id, cur)
 
         if update_stats:
-            count = cur.execute('SELECT count FROM tracks WHERE id = ?', (track_id, )).fetchone()[0]
+            count = cur.execute('SELECT count FROM tracks WHERE id = ?', (track_id, )).fetchone()[0] or 0
             cur.execute('UPDATE tracks SET count = ?, last_played = ? WHERE id = ?', (count + 1, int(time.time()), track_id, ))
 
             log(track_id, cur=cur)

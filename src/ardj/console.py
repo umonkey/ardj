@@ -420,7 +420,7 @@ def process_command(text, sender=None, cur=None, quiet=False):
     sender -- sender's email address
     cur -- pass if you want a transaction
     """
-    text = text.strip()
+    text = (text or '').strip()
     if ' ' in text:
         command, args = text.split(' ', 1)
     else:
