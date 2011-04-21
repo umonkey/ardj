@@ -165,19 +165,30 @@ def on_hitlist(args, sender, cur=None):
 
 def on_queue(args, sender, cur=None):
     cur = cur or ardj.database.cursor()
+    is_admin = is_user_admin(sender)
 
     if args == 'flush':
+        if not is_admin:
+            return 'Only admins can do that.'
         cur.execute('DELETE FROM queue')
         return 'Done.'
 
-    is_admin = is_user_admin(sender)
-    if not is_admin and cur.execute('SELECT COUNT(*) FROM queue WHERE owner = ?', (sender, )).fetchone()[0]:
-        return 'You have already queued a track, please wait.'
+    elif args:
+        if is_admin:
+            tracks = ardj.tracks.find_ids(args, cur)
+        else:
+            if cur.execute('SELECT COUNT(*) FROM queue WHERE owner = ?', (sender, )).fetchone()[0]:
+                return 'You have already queued a track, please wait.'
+            jingles = ardj.tracks.find_ids('-r @queue-jingle')[:1]
+            tracks = ardj.tracks.find_ids(args, cur)[:1]
+            if tracks and jingles:
+                tracks.insert(0, jingles[0])
 
-    for track_id in ardj.tracks.find_ids(args, cur):
-        ardj.tracks.queue(track_id, sender, cur)
-        if not is_admin:
-            break
+        if not tracks:
+            return 'Could not find anything.'
+
+        for track_id in tracks:
+            ardj.tracks.queue(track_id, sender, cur)
 
     tracks = ardj.tracks.get_queue(cur)[:10]
     if not tracks:
