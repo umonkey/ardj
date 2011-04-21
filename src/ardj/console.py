@@ -146,20 +146,20 @@ def on_ban(args, sender, cur=None):
 
 def on_shitlist(args, sender, cur=None):
     cur = cur or ardj.database.cursor()
-    rows = cur.execute('SELECT id, artist, title, weight FROM tracks WHERE weight > 0 ORDER BY weight, title, artist LIMIT 10').fetchall()
+    rows = cur.execute('SELECT id, artist, title, weight, count FROM tracks WHERE weight > 0 ORDER BY weight, title, artist LIMIT 10').fetchall()
     if not rows:
         return 'No tracks (database must be empty).'
-    tracks = [{ 'id': row[0], 'artist': row[1], 'title': row[2], 'weight': row[3] } for row in rows]
+    tracks = [{ 'id': row[0], 'artist': row[1], 'title': row[2], 'weight': row[3], 'count': row[4] } for row in rows]
     return format_track_list(tracks, u'Lowest rated tracks:')
 
 
 def on_hitlist(args, sender, cur=None):
     cur = cur or ardj.database.cursor()
 
-    rows = cur.execute('SELECT id, artist, title, weight FROM tracks WHERE weight > 0 ORDER BY weight DESC, title, artist LIMIT 10').fetchall()
+    rows = cur.execute('SELECT id, artist, title, weight, count FROM tracks WHERE weight > 0 ORDER BY weight DESC, title, artist LIMIT 10').fetchall()
     if not rows:
         return 'No tracks (database must be empty).'
-    tracks = [{ 'id': row[0], 'artist': row[1], 'title': row[2], 'weight': row[3] } for row in rows]
+    tracks = [{ 'id': row[0], 'artist': row[1], 'title': row[2], 'weight': row[3], 'count': row[4] } for row in rows]
     return format_track_list(tracks, u'Highest rated tracks:')
 
 
@@ -207,10 +207,10 @@ def on_find(args, sender, cur=None):
 def on_news(args, sender, cur=None):
     cur = cur or ardj.database.cursor()
 
-    rows = cur.execute('SELECT id, artist, title, weight FROM tracks WHERE weight > 0 ORDER BY id DESC LIMIT 10').fetchall()
+    rows = cur.execute('SELECT id, artist, title, weight, count FROM tracks WHERE weight > 0 ORDER BY id DESC LIMIT 10').fetchall()
     if not rows:
         return 'No tracks at all.'
-    tracks = [{ 'id': row[0], 'artist': row[1], 'title': row[2], 'weight': row[3] } for row in rows]
+    tracks = [{ 'id': row[0], 'artist': row[1], 'title': row[2], 'weight': row[3], 'count': row[4] } for row in rows]
     return format_track_list(tracks, 'Recently added tracks:')
 
 
