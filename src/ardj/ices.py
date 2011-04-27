@@ -1,11 +1,14 @@
 import os
 import sys
+import traceback
 
 import ardj.log
 import ardj.tracks
 
 songnumber = -1
 last_track = None
+
+FAILURE = '/usr/local/share/ardj/failure.ogg'
 
 def ices_init():
     """
@@ -29,13 +32,17 @@ def ices_get_next():
     Should return a string.
     """
     global last_track
-    track_id = ardj.tracks.get_next_track_id()
-    if track_id:
-        last_track = ardj.tracks.get_track_by_id(track_id)
-    else:
-        ardj.log.error('Could NOT pick a track.')
-    if last_track:
-        return str(last_track['filepath'])
+    try:
+        track_id = ardj.tracks.get_next_track_id()
+        if track_id:
+            last_track = ardj.tracks.get_track_by_id(track_id)
+        else:
+            ardj.log.error('Could NOT pick a track.')
+        if last_track:
+            return str(last_track['filepath'])
+    except Exception, e:
+        ardj.log.error('ices.ardj failed: %s\n%s' % (e, traceback.format_exc(e)))
+        return FAILURE
 
 def ices_get_metadata():
     """
