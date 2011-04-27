@@ -121,7 +121,7 @@ def on_rocks(args, sender, cur=None):
 
     track_id = args and int(args) or ardj.tracks.get_last_track_id(cur=cur)
     weight = ardj.tracks.add_vote(track_id, sender, 1, cur=cur)
-    return 'OK, current track weight is %s.' % weight
+    return 'OK, current weight of track #%u is %s.' % (track_id, weight)
 
 
 def on_sucks(args, sender, cur=None):
@@ -130,7 +130,7 @@ def on_sucks(args, sender, cur=None):
 
     track_id = args and int(args) or ardj.tracks.get_last_track_id(cur=cur)
     weight = ardj.tracks.add_vote(track_id, sender, -1, cur=cur)
-    return 'OK, current track weight is %s.' % weight
+    return 'OK, current weight of track #%u is %s.' % (track_id, weight)
 
 
 def on_ban(args, sender, cur=None):
@@ -164,28 +164,42 @@ def on_hitlist(args, sender, cur=None):
 
 
 def on_queue(args, sender, cur=None):
+    """Queue management.
+
+    The 'queue flush' command removes tracks from queue (only those queued by
+    the sender unless he's an admin).  Other arguments are search patterns for
+    track artist/title, or label names if prefixed with @.
+
+    If the user had not queued anything yet, a random jingle is added.  Jingles
+    are marked with the "queue-jingle" label.  If the user is not an admin,
+    he's not allowed to queue more than one track.
+    """
     cur = cur or ardj.database.cursor()
     is_admin = is_user_admin(sender)
 
     if args == 'flush':
         if not is_admin:
-            return 'Only admins can do that.'
-        cur.execute('DELETE FROM queue')
-        return 'Done.'
+            cur.execute('DELETE FROM queue WHERE owner = ?', (sender, ))
+            return 'Removed your tracks from queue.'
+        else:
+            cur.execute('DELETE FROM queue')
+            return 'Done.'
 
     elif args:
-        if is_admin:
-            tracks = ardj.tracks.find_ids(args, cur)
-        else:
-            if cur.execute('SELECT COUNT(*) FROM queue WHERE owner = ?', (sender, )).fetchone()[0]:
+        tracks = ardj.tracks.find_ids(args, cur)
+        have_tracks = cur.execute('SELECT COUNT(*) FROM queue WHERE owner = ?', (sender, )).fetchone()[0]
+
+        if not is_admin:
+            if have_tracks:
                 return 'You have already queued a track, please wait.'
-            jingles = ardj.tracks.find_ids('-r @queue-jingle')[:1]
-            tracks = ardj.tracks.find_ids(args, cur)[:1]
-            if tracks and jingles:
-                tracks.insert(0, jingles[0])
+            tracks = tracks[:1]
 
         if not tracks:
             return 'Could not find anything.'
+
+        jingles = ardj.tracks.find_ids('-r @queue-jingle')[:1]
+        if tracks and jingles and not have_tracks:
+            tracks.insert(0, jingles[0])
 
         for track_id in tracks:
             ardj.tracks.queue(track_id, sender, cur)
