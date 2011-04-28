@@ -13,11 +13,13 @@ import sys
 import json
 
 import ardj.database
+import ardj.jabber
 import ardj.listeners
 import ardj.log
 import ardj.settings
 import ardj.speech
 import ardj.tracks
+import ardj.util
 
 
 def is_user_admin(sender):
@@ -200,6 +202,8 @@ def on_queue(args, sender, cur=None):
 
         if not tracks:
             return 'Could not find anything.'
+
+        ardj.jabber.chat_say(u'%s requested track %s' % (sender.split('@')[0], u', '.join([ardj.tracks.identify(x) for x in tracks])))
 
         jingles = ardj.tracks.find_ids('-r @queue-jingle')[:1]
         if tracks and jingles and not have_tracks:

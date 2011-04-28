@@ -27,6 +27,8 @@ Commands:
   run-child     -- run the jabber bot itself (unsafe)
 """
 
+chat_room_queue = []
+
 class MyFileReceivingBot(FileBot):
     def is_file_acceptable(self, sender, filename, filesize):
         if not self.check_access(sender):
@@ -147,6 +149,26 @@ class ardjbot(MyFileReceivingBot):
             except IOError, e:
                 ardj.log.error(u'Could not write to %s: %s' % (self.pidfile, e))
         self.update_status()
+        self.join_chat_room()
+
+    def join_chat_room(self):
+        """Joins the chat room if configured."""
+        jid = ardj.settings.get('jabber/chat_room')
+        parts = jid.split('/', 1)
+        if len(parts) == 1:
+            parts.append(None)
+        self.join_room(parts[0], parts[1])
+
+    def say_to_chat(self, message):
+        """Sends a message to the chat room, if it's configured."""
+        jid = ardj.settings.get('jabber/chat_room')
+        if jid:
+            ardj.log.debug(u'Trying to send to "%s" to %s' % (message, jid))
+            msg = self.build_message(message)
+            ardj.log.debug(msg)
+            msg.setTo(jid.split('/')[0])
+            msg.setType('groupchat')
+            self.send_message(msg)
 
     def shutdown(self):
         # self.on_disconnect() # called by JabberBot afterwards.
@@ -190,6 +212,11 @@ class ardjbot(MyFileReceivingBot):
                     except: msg = 'unknown error'
                     rep = 'Could not process your message:\n%s\n%s' % (msg, traceback.format_exc(e))
                 self.send_simple_reply(mess, rep.strip())
+
+                global chat_room_queue
+                for message in chat_room_queue:
+                    self.say_to_chat(message)
+                chat_room_queue = []
         finally:
             ardj.database.Open().commit()
 
@@ -245,4 +272,13 @@ def run_cli(args):
 
     print USAGE
 
-__all__ = ['Open']
+
+def chat_say(message):
+    """Adds a message to the chat room queue.  This is the way for command
+    handlers to notify chat users."""
+    ardj.log.debug(u'Will send to chat: %s' % message)
+    global chat_room_queue
+    chat_room_queue.append(message)
+
+
+__all__ = [ 'Open', 'chat_say' ]

@@ -62,15 +62,6 @@ def transcode_file(filename):
 
     return temp2
 
-def mask_sender(sender):
-    if sender.startswith('+') and sender[1:].isdigit():
-        sender = sender[:-7] + 'XXX' + sender[8:]
-    elif '@' in sender and ' ' not in sender:
-        parts = sender.split('@', 1)
-        parts[0] = parts[0][:-2] + '..'
-        sender = '@'.join(parts)
-    return sender
-
 def process_messages(msg):
     """Processes a message.
 
@@ -90,9 +81,9 @@ def process_messages(msg):
         phone = msg.get_header('x-asterisk-callerid')
         if phone:
             sender_id = phone
-            title = u'Сообщение от %s (%s)' % (mask_sender(phone), time.strftime('%Y-%m-%d %H:%M', date))
+            title = u'Сообщение от %s (%s)' % (ardj.util.mask_sender(phone), time.strftime('%Y-%m-%d %H:%M', date))
         else:
-            title = u'%s: %s (%s)' % (mask_sender(sender), subject, time.strftime('%Y-%m-%d %H:%M', date))
+            title = u'%s: %s (%s)' % (ardj.util.mask_sender(sender), subject, time.strftime('%Y-%m-%d %H:%M', date))
 
         for filename, body in atts:
             temp = ardj.util.mktemp(suffix=os.path.splitext(filename)[1])
@@ -120,7 +111,7 @@ def process_messages(msg):
             ardj.util.upload(temp, ardj.settings.get('hotline/upload', fail=True).rstrip('/') + '/' + public_filename)
 
             url = ardj.website.add_page('hotline/*/index.md', {
-                'title': u'Сообщение от %s' % mask_sender(sender),
+                'title': u'Сообщение от %s' % ardj.util.mask_sender(sender),
                 'file': public_url,
                 'filesize': str(os.stat(str(temp)).st_size),
                 'labels': 'hotline',

@@ -59,6 +59,12 @@ def get_last_track(cur=None):
     return get_track_by_id(get_last_track_id(cur), cur)
 
 
+def identify(track_id, cur=None):
+    track = get_track_by_id(track_id, cur=cur)
+    if not track:
+        return 'an unknown track'
+    return u'«%s» by %s' % (track.get('title', 'untitled'), track.get('artist', 'unknown artist'))
+
 def queue(track_id, owner=None, cur=None):
     """Adds the track to queue."""
     cur = cur or ardj.database.cursor()

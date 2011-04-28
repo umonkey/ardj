@@ -193,3 +193,16 @@ def filemd5(filename):
             break
         m.update(block)
     return m.hexdigest()
+
+
+def mask_sender(sender):
+    if sender.startswith('+') and sender[1:].isdigit():
+        sender = sender[:-7] + 'XXX' + sender[8:]
+    elif '@' in sender and ' ' not in sender:
+        parts = sender.split('@', 1)
+        if len(parts[0]) >= 6:
+            parts[0] = parts[0][:-2] + '..'
+        elif len(parts[1]) > 6:
+            parts[1] = '..' + parts[1][2:]
+        sender = '@'.join(parts)
+    return sender
