@@ -277,20 +277,21 @@ class database:
     def import_new_files(self):
         """Adds files from a predefined location.
 
-        The location is defined in database/incoming."""
-        folder = ardj.settings.getpath('database/incoming')
+        The location is defined in database/incoming/path."""
+        folder = ardj.settings.getpath('database/incoming/path')
         if not folder:
-            ardj.log.warning('Import failed: database/incoming not set.')
+            ardj.log.warning('Import failed: database/incoming/path not set.')
             return False
         if not os.path.exists(folder):
             ardj.log.warning('Import failed: %s does not exist.' % folder)
             return False
 
+        add_labels = ardj.settings.get('database/incoming/labels', [ 'tagme', 'music' ])
         for folder, folders, files in os.walk(folder):
             for filename in files:
                 filename = os.path.join(folder, filename)
                 if os.path.splitext(filename.lower())[1] in ('.mp3', '.ogg', '.flac', '.jpg'):
-                    if ardj.tracks.add_file(filename):
+                    if ardj.tracks.add_file(filename, add_labels):
                         ardj.log.debug('Removing %s (added OK)' % filename)
                         os.unlink(filename)
 
