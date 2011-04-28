@@ -60,6 +60,7 @@ def transcode_file(filename):
     temp2 = ardj.util.mktemp(suffix='.mp3')
     ardj.util.run([ 'ffmpeg', '-i', str(filename), '-ar', '44100', '-ac', '2', '-y', str(temp2) ])
 
+    os.chmod(str(temp2), 0664)
     return temp2
 
 def process_messages(msg):
@@ -111,7 +112,7 @@ def process_messages(msg):
             ardj.util.upload(temp, ardj.settings.get('hotline/upload', fail=True).rstrip('/') + '/' + public_filename)
 
             url = ardj.website.add_page('hotline/*/index.md', {
-                'title': u'Сообщение от %s' % ardj.util.mask_sender(sender),
+                'title': u'Сообщение от %s' % ardj.util.mask_sender(sender_id),
                 'file': public_url,
                 'filesize': str(os.stat(str(temp)).st_size),
                 'labels': 'hotline',
@@ -126,9 +127,6 @@ def process_messages(msg):
 
             global upload_files
             upload_files.append(temp)
-
-            # show the tags to make sure they're ok
-            #print ardj.tags.get(str(temp))
     return True
 
 
