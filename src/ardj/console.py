@@ -474,11 +474,18 @@ def run_cli(args):
 
     print 'Starting the interactive jabber-like CLI, press ^D to quit.'
 
+    histfile = os.path.expanduser('~/.ardj_history')
+    if os.path.exists(histfile):
+        readline.read_history_file(histfile)
+
     while True:
         try:
             text = raw_input('command: ')
             if text:
                 print process_command(text.decode('utf-8'), sender, quiet=True)
         except EOFError:
+            readline.write_history_file(histfile)
             print '\nBye.'
             return
+        except Exception, e:
+            print >>sys.stderr, e
