@@ -253,7 +253,7 @@ class database:
         cur = cur or self.cursor()
         cur.execute('DELETE FROM labels WHERE label = ?', (set_label, ))
 
-        sql = 'SELECT id, artist, title FROM tracks WHERE id NOT IN (SELECT track_id FROM labels WHERE label IN (%s)) ORDER BY artist, title' % ', '.join(['?'] * len(used_labels))
+        sql = 'SELECT id, artist, title FROM tracks WHERE weight > 0 AND id NOT IN (SELECT track_id FROM labels WHERE label IN (%s)) ORDER BY artist, title' % ', '.join(['?'] * len(used_labels))
         cur.execute(sql, used_labels)
         rows = cur.fetchall()
 
@@ -262,7 +262,7 @@ class database:
                 print '%u orphan tracks found:' % len(rows)
             for row in rows:
                 if not quiet:
-                    print '%8u; %s -- %s' % (row[0], row[1].encode('utf-8'), row[2].encode('utf-8'))
+                    print '%8u; %s -- %s' % (row[0], (row[1] or 'unknown').encode('utf-8'), (row[2] or 'unknown').encode('utf-8'))
                 cur.execute('INSERT INTO labels (track_id, email, label) VALUES (?, ?, ?)', (int(row[0]), 'ardj', set_label))
 
     def mark_long(self):
