@@ -89,7 +89,11 @@ def on_sql(args, sender, cur=None):
 
     cur = cur or ardj.database.cursor()
     rows = cur.execute(args).fetchall()
-    return str(rows)
+    if not rows:
+        return 'Empty result.'
+
+    output = u'\n'.join([u'; '.join([unicode(cell) for cell in row]) for row in rows])
+    return output
 
 
 def on_twit(args, sender, cur=None):
