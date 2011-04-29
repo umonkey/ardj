@@ -189,7 +189,7 @@ class database:
         cur = cur or self.cursor()
         cur.execute('DELETE FROM labels WHERE label = ?', (set_label, ))
 
-        weight = cur.execute('SELECT weight FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?) ORDER BY weight DESC LIMIT 9, 1', (check_label, )).fetchone()
+        weight = cur.execute('SELECT weight FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?) ORDER BY weight DESC LIMIT 19, 1', (check_label, )).fetchone()
         if weight:
             cur.execute('INSERT INTO labels (track_id, label, email) SELECT id, ?, ? FROM tracks WHERE weight >= ? AND id IN (SELECT track_id FROM labels WHERE label = ?)', (set_label, 'ardj', weight[0], check_label, ))
 
