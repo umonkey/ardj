@@ -179,22 +179,6 @@ class database:
         cur.execute('VACUUM')
         ardj.log.info('%u bytes saved after database purge.' % (os.stat(self.filename).st_size - old_size))
 
-    def mark_good_music(self, cur=None):
-        """Marks good and bad music.
-
-        Music with weight 1.0+ is marked as good-music, the rest it marked with
-        bad-music."""
-        GOOD_LABEL, BAD_LABEL, COMMON_LABEL, THRESHOLD = 'good-music', 'bad-music', 'music', 1.0
-
-        cur = cur or self.cursor()
-        ardj.log.debug('Marking good and bad music.')
-
-        cur.execute('DELETE FROM labels WHERE label = ?', (GOOD_LABEL, ))
-        cur.execute('INSERT INTO labels (track_id, label, email) SELECT id, ?, ? FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?) AND `weight` > ?', (GOOD_LABEL, 'robot', COMMON_LABEL, THRESHOLD, ))
-
-        cur.execute('DELETE FROM labels WHERE label = ?', (BAD_LABEL, ))
-        cur.execute('INSERT INTO labels (track_id, label, email) SELECT id, ?, ? FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?) AND `weight` <= ?', (BAD_LABEL, 'robot', COMMON_LABEL, THRESHOLD, ))
-
     def mark_recent_music(self, cur=None):
         """Marks last 100 tracks with "recent"."""
         cur = cur or self.cursor()
@@ -353,7 +337,6 @@ Commands:
   console           -- open SQLite console
   flush-queue       -- remove everything from queue
   import            -- add tracks from a public "drop box"
-  mark-good-bad     -- mark good and bad music
   mark-orphans      -- mark tracks that don't belong to a playlist
   mark-preshow      -- marks preshow music
   mark-recent       -- mark last 100 tracks with "recent"
@@ -378,9 +361,6 @@ def run_cli(args):
     if 'pam' in args:
         if run_pam_hook(args):
             db.import_new_files()
-        ok = True
-    if 'mark-good-bad' in args:
-        db.mark_good_music()
         ok = True
     if 'mark-preshow' in args:
         db.mark_preshow_music()
