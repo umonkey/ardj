@@ -4,7 +4,7 @@ ARDJ=/usr/local/bin/ardj
 
 #13 *		* * *	$USER	$ARDJ listeners show total > /$USER/data/totals.csv
 0 11		* * *	$USER	$ARDJ shitlist queue
-0 18		* * *	$USER	$ARDJ db queue-hitlist
+0 18		* * *	$USER	$ARDJ db mark-hitlist
 0 3		* * *	$USER	$ARDJ podcaster >/dev/null
 
 # Загрузка новостей в дневное время.  При успешной загрузке они ставятся в очередь.

@@ -179,6 +179,20 @@ class database:
         cur.execute('VACUUM')
         ardj.log.info('%u bytes saved after database purge.' % (os.stat(self.filename).st_size - old_size))
 
+    def mark_hitlist(self, cur=None):
+        """Marks best tracks with the "hitlist" label.
+
+        Only processes tracks labelled with "music".  Before applying the
+        label, removes it from the tracks that have it already."""
+        set_label, check_label = 'hitlist', 'music'
+
+        cur = cur or self.cursor()
+        cur.execute('DELETE FROM labels WHERE label = ?', (set_label, ))
+
+        weight = cur.execute('SELECT weight FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?) ORDER BY weight DESC LIMIT 9, 1', (check_label, )).fetchone()
+        if weight:
+            cur.execute('INSERT INTO labels (track_id, label, email) SELECT id, ?, ? FROM tracks WHERE weight >= ? AND id IN (SELECT track_id FROM labels WHERE label = ?)', (set_label, 'ardj', weight[0], check_label, ))
+
     def mark_recent_music(self, cur=None):
         """Marks last 100 tracks with "recent"."""
         cur = cur or self.cursor()
@@ -302,22 +316,6 @@ def queue_tracks(cur, track_ids):
         cur.execute('INSERT INTO queue (track_id, owner) VALUES (?, ?)', (track_id, 'robot', ))
 
 
-def queue_hitlist(db):
-    """Schedules the hitlist for playing."""
-    cur = db.cursor()
-
-    jlabels = [ 'hitlist-begin', 'hitlist-mid', 'hitlist-mid', 'hitlist-end' ]
-    tracks = reversed([row[0] for row in cur.execute('SELECT id FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?) ORDER BY weight DESC LIMIT 10', ('music', )).fetchall()])
-
-    queue_ids = []
-    for track_id in tracks:
-        if len(queue_ids) % 4 == 0:
-            queue_ids.append(pick_jingle(cur, jlabels[0]))
-            del jlabels[0]
-        queue_ids.append(track_id)
-    queue_tracks(cur, queue_ids)
-
-
 def run_pam_hook(args):
     if not 'PAM_USER' in os.environ:
         return False
@@ -337,11 +335,11 @@ Commands:
   console           -- open SQLite console
   flush-queue       -- remove everything from queue
   import            -- add tracks from a public "drop box"
+  mark-hitlist      -- mark best tracks with "hitlist"
   mark-orphans      -- mark tracks that don't belong to a playlist
   mark-preshow      -- marks preshow music
   mark-recent       -- mark last 100 tracks with "recent"
   purge             -- remove dead data
-  queue-hitlist     -- schedule the hit list for playing
   stat              -- show database statistics
   """
 
@@ -362,6 +360,9 @@ def run_cli(args):
         if run_pam_hook(args):
             db.import_new_files()
         ok = True
+    if 'mark-hitlist' in args:
+        db.mark_hitlist()
+        ok = True
     if 'mark-preshow' in args:
         db.mark_preshow_music()
         ok = True
@@ -376,9 +377,6 @@ def run_cli(args):
         ok = True
     if 'purge' in args:
         db.purge()
-        ok = True
-    if 'queue-hitlist' in args:
-        queue_hitlist(db)
         ok = True
     if 'stat' in args:
         stats = db.get_stats()
