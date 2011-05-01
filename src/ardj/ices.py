@@ -7,6 +7,7 @@ import ardj.tracks
 
 songnumber = -1
 last_track = None
+last_good_file = None
 
 FAILURE = '/usr/local/share/ardj/failure.ogg'
 
@@ -31,7 +32,7 @@ def ices_get_next():
     Function called to get the next filename to stream. 
     Should return a string.
     """
-    global last_track
+    global last_track, last_good_file
     try:
         track_id = ardj.tracks.get_next_track_id()
         if track_id:
@@ -39,10 +40,15 @@ def ices_get_next():
         else:
             ardj.log.error('Could NOT pick a track.')
         if last_track:
+            if os.path.exists(last_track['filepath']):
+                last_good_file = last_track['filepath']
             return str(last_track['filepath'])
     except Exception, e:
         ardj.log.error('ices.ardj failed: %s\n%s' % (e, traceback.format_exc(e)))
-        return FAILURE
+        if os.path.exists(FAILURE):
+            return FAILURE
+        ardj.log.error('Failure file %s not found.  Please, please have one.' % FAILURE)
+        return last_good_file
 
 def ices_get_metadata():
     """
