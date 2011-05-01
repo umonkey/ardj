@@ -9,6 +9,7 @@ tracks.
 import hashlib
 import os
 import random
+import re
 import time
 
 import ardj.database
@@ -190,9 +191,8 @@ def set_urgent(args, cur=None):
     cur = cur or ardj.database.cursor()
     cur.execute('DELETE FROM urgent_playlists')
     if args != 'all':
-        if expires is None:
-            expires = time.time() + 3600
-        cur.execute('INSERT INTO urgent_playlists (labels, expires) VALUES (?, ?)', (labels.split(' '), int(expires), ))
+        expires = time.time() + 3600
+        cur.execute('INSERT INTO urgent_playlists (labels, expires) VALUES (?, ?)', (args, int(expires), ))
 
 
 def add_vote(track_id, email, vote, cur=None, update_karma=False):
@@ -283,8 +283,8 @@ def add_file(filename, add_labels=None, owner=None, cur=None):
     duration = tags.get('duration', 0)
     labels = tags.get('labels', [])
 
-    if add_labels:
-        labels += add_labels
+    if add_labels and not labels:
+        labels = add_labels
 
     abs_filename, rel_filename = gen_filename(os.path.splitext(filename)[1])
     if not ardj.util.copy_file(filename, abs_filename):
