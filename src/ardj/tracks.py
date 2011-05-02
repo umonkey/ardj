@@ -461,9 +461,14 @@ def add_preroll(track_id, cur=None):
     """Adds a preroll for the specified track.
 
     Finds prerolls by labels and artist title, picks one and returns its id,
-    queueing the input track_id.
+    queueing the input track_id.  Tracks that have a preroll-* never have a
+    preroll.
     """
     cur = cur or ardj.database.cursor()
+
+    # Skip if the track is a preroll.
+    if cur.execute("SELECT COUNT(*) FROM labels WHERE track_id = ? AND label LIKE 'preroll-%'", (track_id, )).fetchone()[0]:
+        return track_id
 
     by_artist = cur.execute("SELECT t1.id FROM tracks t1 INNER JOIN tracks t2 ON t2.artist = t1.artist INNER JOIN labels l ON l.track_id = t1.id WHERE l.label = 'preroll' AND t2.id = ? AND t1.weight > 0", (track_id, )).fetchall()
     by_label = cur.execute("SELECT t.id, t.title FROM tracks t WHERE t.id IN (SELECT track_id FROM labels WHERE label IN (SELECT l.label || '-preroll' FROM tracks t1 INNER JOIN labels l ON l.track_id = t1.id WHERE t1.id = ?))", (track_id, )).fetchall()
