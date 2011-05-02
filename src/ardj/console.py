@@ -200,10 +200,15 @@ def on_queue(args, sender, cur=None):
             return 'Done.'
 
     elif args:
+        silent = args.startswith('-s ')
+        if silent:
+            args = args[3:]
+
         tracks = ardj.tracks.find_ids(args, cur)[:1]
         have_tracks = cur.execute('SELECT COUNT(*) FROM queue WHERE owner = ?', (sender, )).fetchone()[0]
 
         if not is_admin:
+            silent = False
             if have_tracks:
                 return 'You have already queued a track, please wait.'
 
@@ -213,7 +218,7 @@ def on_queue(args, sender, cur=None):
         ardj.jabber.chat_say(u'%s requested track %s' % (sender.split('@')[0], u', '.join([ardj.tracks.identify(x) for x in tracks])))
 
         jingles = ardj.tracks.find_ids('-r @queue-jingle')[:1]
-        if tracks and jingles and not have_tracks:
+        if tracks and jingles and not have_tracks and not silent:
             tracks.insert(0, jingles[0])
 
         for track_id in tracks:
