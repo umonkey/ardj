@@ -71,11 +71,12 @@ def twit_file(filename, silent=False):
     twit = twit.replace('LENGTH', str(dur))
 
     if not silent:
-        ardj.twitter.twit(twit)
+        ardj.twitter.send_message(twit)
 
 def update_rss(dirname):
     xml = u''
     for filename in sorted(os.listdir(dirname)):
+        filename = os.path.join(dirname, filename)
         date = get_air_time(filename)
         dur = get_air_duration(filename)
         xml += RSS_ITEM % {
@@ -99,7 +100,7 @@ def start_stream():
         return False
 
     os.rename(src, dst)
-    ardj.twitter.twit(ardj.settings.get('stream/twit_begin', 'Somebody is on air!'))
+    ardj.twitter.send_message(ardj.settings.get('stream/twit_begin', 'Somebody is on air!'))
     return True
 
 

@@ -28,7 +28,7 @@ COMMAND_MAP = [ # (command, module, function, description)
     ('stream', 'stream', 'run_cli', 'handles stream events'),
     ('track', 'tracks', 'run_cli', 'works with individual tracks'),
     ('tsn', 'tsn', 'run', 'prepare and process a new So-So-News episode'),
-    ('twit', 'twitter', 'twit', 'interacts with the twitter account'),
+    ('twit', 'twitter', 'run_cli', 'interacts with the twitter account'),
 ]
 
 def find_command(command_name):

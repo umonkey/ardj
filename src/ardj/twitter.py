@@ -3196,7 +3196,7 @@ def send_message(message):
     posting = get_client().PostUpdate(message)
     return 'http://twitter.com/' + posting.GetUser().GetScreenName() + '/status/' + str(posting.GetId())
 
-def twit(args):
+def run_cli(args):
     """Interacts with the twitter account."""
     if args == ['-replies']:
         for (name, text) in reversed(get_replies()):

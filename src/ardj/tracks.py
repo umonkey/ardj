@@ -351,7 +351,7 @@ def get_random_track_id_from_playlist(playlist, skip_artists, cur=None):
     track_id = get_random_row(cur.execute(sql, tuple(params)).fetchall())
 
     if playlist.get('preroll'):
-        add_preroll(track_id, playlist.get('preroll'), cur=cur)
+        track_id = add_preroll(track_id, playlist.get('preroll'), cur=cur)
 
     return track_id
 
