@@ -328,8 +328,10 @@ def get_random_track_id_from_playlist(playlist, skip_artists, cur=None):
         params.append(int(repeat_count))
 
     if skip_artists:
-        sql += ' AND artist NOT IN (%s)' % ', '.join(['?'] * len(skip_artists))
-        params += skip_artists
+        skip_artists = skip_artists[:int(playlist.get('history', '10'))]
+        if skip_artists:
+            sql += ' AND artist NOT IN (%s)' % ', '.join(['?'] * len(skip_artists))
+            params += skip_artists
 
     weight = playlist.get('weight', '')
     if '-' in weight:
