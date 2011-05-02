@@ -224,9 +224,11 @@ def add_vote(track_id, email, vote, cur=None, update_karma=False):
     last = cur.execute("SELECT ts, vote FROM votes WHERE track_id = ? AND email = ? ORDER BY id DESC", (track_id, email, )).fetchone()
     if last is None or last[1] != vote or last[0] < ts - 600:
         cur.execute('INSERT INTO votes (track_id, email, vote, ts) VALUES (?, ?, ?, ?)', (track_id, email, vote, ts, ))
+        cur.execute('UPDATE tracks SET weight = weight + ? WHERE id = ?', (vote * 0.25, track_id, ))
 
     real_weight = update_real_track_weight(track_id, cur=cur)
-    cur.execute('UPDATE tracks SET weight = ? WHERE id = ?', (real_weight, track_id, ))
+    # cur.execute('UPDATE tracks SET weight = ? WHERE id = ?', (real_weight, track_id, ))
+    real_weight = cur.execute('SELECT weight FROM tracks WHERE id = ?', (track_id, )).fetchone()[0]
 
     return real_weight
 
@@ -563,7 +565,17 @@ def get_next_track_id(cur=None, debug=False, update_stats=True):
 
         ardj.database.Open().commit()
 
+    shift_track_weight(track_id, cur)
     return track_id
+
+
+def shift_track_weight(track_id, cur):
+    weight, real_weight = cur.execute("SELECT weight, real_weight FROM tracks WHERE id = ?", (track_id, )).fetchone()
+    if weight < real_weight:
+        weight = min(weight + 0.1, real_weight)
+    elif weight > real_weight:
+        weight = max(weight - 0.1, real_weight)
+    cur.execute("UPDATE tracks SET weight = ? WHERE id = ?", (weight, track_id, ))
 
 
 def log(track_id, listener_count=None, ts=None, cur=None):
