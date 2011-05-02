@@ -53,7 +53,7 @@ def signal_ices(sig):
     ices_pid = get_ices_pid()
     try:
         if ices_pid:
-            os.kill(pid, sig)
+            os.kill(ices_pid, sig)
             ardj.log.debug('sent signal %s to process %s.' % (sig, ices_pid))
         else:
             ardj.util.run([ 'pkill', '-' + str(sig), 'ices.ardj' ])
