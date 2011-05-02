@@ -34,15 +34,10 @@ def ices_get_next():
     """
     global last_track, last_good_file
     try:
-        track_id = ardj.tracks.get_next_track_id()
-        if track_id:
-            last_track = ardj.tracks.get_track_by_id(track_id)
-        else:
-            ardj.log.error('Could NOT pick a track.')
-        if last_track:
-            if os.path.exists(last_track['filepath']):
-                last_good_file = last_track['filepath']
-            return str(last_track['filepath'])
+        last_track = ardj.tracks_get_track_to_play()
+        if os.path.exists(last_track['filepath']):
+            last_good_file = last_track['filepath']
+        return str(last_track['filepath'])
     except Exception, e:
         ardj.log.error('ices.ardj failed: %s\n%s' % (e, traceback.format_exc(e)))
         if os.path.exists(FAILURE):

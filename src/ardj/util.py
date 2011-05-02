@@ -17,7 +17,7 @@ import ardj.settings
 import ardj.util
 
 
-def run(command, quiet=False, stdin_data=None):
+def run(command, quiet=False, stdin_data=None, grab_output=False):
     command = [str(x) for x in command]
 
     if stdin_data is not None:
@@ -31,7 +31,14 @@ def run(command, quiet=False, stdin_data=None):
     if quiet:
         stdout = stderr = subprocess.PIPE
 
-    return subprocess.Popen(command, stdout=stdout, stderr=stderr).wait() == 0
+    if grab_output:
+        tmp_output = mktemp(suffix='.txt')
+        stdout = open(str(tmp_output), 'wb')
+
+    response = subprocess.Popen(command, stdout=stdout, stderr=stderr).wait() == 0
+    if grab_output:
+        response = file(str(tmp_output)).read()
+    return response
 
 
 class mktemp:

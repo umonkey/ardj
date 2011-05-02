@@ -7,9 +7,11 @@ tracks.
 """
 
 import hashlib
+import json
 import os
 import random
 import re
+import sys
 import time
 
 import ardj.database
@@ -593,3 +595,30 @@ def get_average_length(cur=None):
         s_qty += qty
 
     return int(s_prc / s_qty * 60 * 1.5)
+
+
+def get_track_to_play():
+    """Returns information about the track to play.
+    
+    The information is requested from an external ardj process, because
+    otherwise you would have to restart ices every time the track selection
+    algorythm is changed."""
+    data = ardj.util.run([ 'ardj', 'track', 'next-json' ], quiet=True, grab_output=True)
+    return json.loads(data)
+
+
+__CLI_USAGE__ = """Usage: ardj track command
+
+Commands:
+  next-json     -- print what to play next (-n to debug).
+"""
+
+def run_cli(args):
+    if args[:1] == [ 'next-json' ]:
+        cur = ardj.database.cursor()
+        track_id = get_next_track_id(cur=cur, update_stats='-n' not in args)
+        if track_id:
+            track = get_track_by_id(track_id, cur=cur)
+            print json.dumps(track)
+    else:
+        print __CLI_USAGE__
