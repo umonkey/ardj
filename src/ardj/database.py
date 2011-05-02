@@ -196,8 +196,13 @@ class database:
     def mark_recent_music(self, cur=None):
         """Marks last 100 tracks with "recent"."""
         cur = cur or self.cursor()
+
         cur.execute('DELETE FROM labels WHERE label = ?', ('recent', ))
-        cur.execute('INSERT INTO labels (track_id, label, email) SELECT id, ?, ? FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?) ORDER BY id DESC LIMIT 100', ('recent', 'robot', 'music', ))
+        cur.execute('INSERT INTO labels (track_id, label, email) SELECT id, ?, ? FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?) ORDER BY id DESC LIMIT 100', ('recent', 'ardj', 'music', ))
+
+        cur.execute('DELETE FROM labels WHERE label = ?', ('fresh', ))
+        cur.execute('INSERT INTO labels (track_id, label, email) SELECT id, ?, ? FROM tracks WHERE count < 10', ('fresh', 'ardj', ))
+        print 'Found %u fresh songs.' % cur.rowcount
 
     def mark_preshow_music(self, cur=None):
         """Marks music liked by all show hosts with "preshow-music"."""
