@@ -497,7 +497,7 @@ def add_preroll(track_id, labels=None, cur=None):
         prerolls.remove(track_id)
 
     if prerolls:
-        queue(track_id, cur)
+        queue(track_id, cur=cur)
         track_id = prerolls[random.randrange(len(prerolls))]
 
     return track_id
