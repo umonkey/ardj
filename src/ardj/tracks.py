@@ -32,9 +32,9 @@ def get_track_by_id(track_id, cur=None):
     cur -- database cursor, None to open a new one.
     """
     cur = cur or ardj.database.cursor()
-    row = cur.execute('SELECT id, filename, artist, title, length, NULL, weight, count, last_played FROM tracks WHERE id = ?', (track_id, )).fetchone()
+    row = cur.execute('SELECT id, filename, artist, title, length, NULL, weight, count, last_played, real_weight FROM tracks WHERE id = ?', (track_id, )).fetchone()
     if row is not None:
-        result = { 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'length': row[4], 'weight': row[6], 'count': row[7], 'last_played': row[8] }
+        result = { 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'length': row[4], 'weight': row[6], 'count': row[7], 'last_played': row[8], 'real_weight': row[9] }
         result['labels'] = [row[0] for row in cur.execute('SELECT DISTINCT label FROM labels WHERE track_id = ? ORDER BY label', (track_id, )).fetchall()]
         if result.get('filename'):
             result['filepath'] = os.path.join(ardj.settings.get_music_dir(), result['filename'])
@@ -220,35 +220,24 @@ def add_vote(track_id, email, vote, cur=None, update_karma=False):
             email = k
             break
 
-    tmp = cur.execute('SELECT vote FROM votes WHERE track_id = ? AND email = ?', (track_id, email, )).fetchone()
-    if tmp is None or tmp[0] != vote:
-        cur.execute('DELETE FROM votes WHERE track_id = ? AND email = ?', (track_id, email, ))
-        if vote != 0:
-            cur.execute('INSERT INTO votes (track_id, email, vote, ts) VALUES (?, ?, ?, ?)', (track_id, email, vote, int(time.time()), ))
+    cur.execute('INSERT INTO votes (track_id, email, vote, ts) VALUES (?, ?, ?, ?)', (track_id, email, vote, int(time.time()), ))
 
-    if update_karma:
-        # Update email's karma.
-        all = float(cur.execute('SELECT COUNT(*) FROM votes').fetchall()[0][0])
-        his = float(cur.execute('SELECT COUNT(*) FROM votes WHERE email = ?', (email, )).fetchall()[0][0])
-        value = 0.25 # his / all
-        cur.execute('DELETE FROM karma WHERE email = ?', (email, ))
-        cur.execute('INSERT INTO karma (email, weight) VALUES (?, ?)', (email, value, ))
+    real_weight = update_real_track_weight(track_id, cur=cur)
+    cur.execute('UPDATE tracks SET weight = ? WHERE id = ?', (real_weight, track_id, ))
 
-    result = 1
-    for row in cur.execute('SELECT track_id, weight FROM track_weights WHERE track_id IN (SELECT track_id FROM votes WHERE email = ?) OR track_id = ?', (email, track_id, )).fetchall():
-        cur.execute('UPDATE tracks SET weight = ? WHERE id = ?', (row[1], row[0], ))
-        if track_id == row[0]:
-            result = row[1]
-
-    return result
+    return real_weight
 
 
 def get_vote(track_id, email, cur=None):
+    return get_track_votes(track_id, cur=cur).get(email, 0)
+
+
+def get_track_votes(track_id, cur=None):
+    results = {}
     cur = cur or ardj.database.cursor()
-    vote = cur.execute('SELECT vote FROM votes WHERE track_id = ? AND email = ?', (track_id, email, )).fetchone()
-    if vote:
-        return vote[0]
-    return 0
+    for email, vote in cur.execute("SELECT email, vote FROM votes WHERE track_id = ? ORDER BY id", (track_id, )).fetchall():
+        results[email] = vote
+    return results
 
 
 def gen_filename(suffix):
@@ -607,18 +596,43 @@ def get_track_to_play():
     return json.loads(data)
 
 
+def update_real_track_weight(track_id, cur=None):
+    """Returns the real track weight, using the last vote for each user."""
+    cur = cur or ardj.database.cursor()
+
+    results = {}
+    for email, vote in cur.execute('SELECT email, vote FROM votes WHERE track_id = ? ORDER BY id', (track_id, )).fetchall():
+        results[email] = vote
+    real_weight = sum(results.values()) * 0.25 + 1
+    cur.execute('UPDATE tracks SET real_weight = ? WHERE id = ?', (real_weight, track_id, ))
+    return real_weight
+
+def update_real_track_weights(cur=None):
+    """Updates the real_weight column for all tracks.  To be used when the
+    votes table was heavily modified or when corruption is possible."""
+    cur = cur or ardj.database.cursor()
+    for row in cur.execute('SELECT id FROM tracks').fetchall():
+        update_real_track_weight(row[0], cur=cur)
+
+
 __CLI_USAGE__ = """Usage: ardj track command
 
 Commands:
-  next-json     -- print what to play next (-n to debug).
+  next-json       -- print what to play next (-n to debug).
+  update-weights  -- update the real_weight property of all tracks.
 """
 
 def run_cli(args):
-    if args[:1] == [ 'next-json' ]:
+    command = ''.join(args[:1])
+
+    if command == 'next-json':
         cur = ardj.database.cursor()
         track_id = get_next_track_id(cur=cur, update_stats='-n' not in args)
         if track_id:
             track = get_track_by_id(track_id, cur=cur)
             print json.dumps(track)
+    elif command == 'update-weights':
+        update_real_track_weights()
+        ardj.database.Open().commit()
     else:
         print __CLI_USAGE__

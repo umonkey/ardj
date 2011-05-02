@@ -54,10 +54,12 @@ class database:
 
         cur = self.db.cursor()
         cur.execute('CREATE TABLE IF NOT EXISTS playlists (id INTEGER PRIMARY KEY, name TEXT, last_played INTEGER)')
-        cur.execute('CREATE TABLE IF NOT EXISTS tracks (id INTEGER PRIMARY KEY, owner TEXT, filename TEXT, artist TEXT, title TEXT, length INTEGER, weight REAL, count INTEGER, last_played INTEGER)')
+        cur.execute('CREATE TABLE IF NOT EXISTS tracks (id INTEGER PRIMARY KEY, owner TEXT, filename TEXT, artist TEXT, title TEXT, length INTEGER, weight REAL, real_weight REAL, count INTEGER, last_played INTEGER)')
         cur.execute('CREATE INDEX IF NOT EXISTS idx_tracks_owner ON tracks (owner)')
         cur.execute('CREATE INDEX IF NOT EXISTS idx_tracks_last ON tracks (last_played)')
         cur.execute('CREATE INDEX IF NOT EXISTS idx_tracks_count ON tracks (count)')
+        cur.execute('CREATE INDEX IF NOT EXISTS idx_tracks_weight ON tracks (weight)')
+        cur.execute('CREATE INDEX IF NOT EXISTS idx_tracks_real_weight ON tracks (real_weight)')
         cur.execute('CREATE TABLE IF NOT EXISTS queue (id INTEGER PRIMARY KEY, track_id INTEGER, owner TEXT)')
         # экстренный плейлист
         cur.execute('CREATE TABLE IF NOT EXISTS urgent_playlists (labels TEXT, expires INTEGER)')

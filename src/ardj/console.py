@@ -250,18 +250,17 @@ def on_news(args, sender, cur=None):
 
 def on_votes(args, sender, cur=None):
     cur = cur or ardj.database.cursor()
-
     if args.startswith('for '):
         track_id = int(args[4:].strip())
     else:
         track_id = ardj.tracks.get_last_track_id(cur)
 
-    votes = cur.execute('SELECT email, vote FROM votes WHERE track_id = ?', (track_id, )).fetchall()
+    votes = ardj.tracks.get_track_votes(track_id, cur=cur)
     if not votes:
         return 'No votes for that track.'
 
-    pro = [row[0] for row in votes if row[1] > 0]
-    contra = [row[0] for row in votes if row[1] < 0]
+    pro = [e for e, v in votes.items() if v > 0]
+    contra = [e for e, v in votes.items() if v < 0]
     return u'Pro: %s, contra: %s. ' % (', '.join(pro or ['nobody']), ', '.join(contra or ['nobody']))
 
 
@@ -499,6 +498,7 @@ def run_cli(args):
             text = raw_input('command: ')
             if text:
                 print process_command(text.decode('utf-8'), sender, quiet=True)
+                ardj.database.Open().commit()
         except EOFError:
             readline.write_history_file(histfile)
             print '\nBye.'
