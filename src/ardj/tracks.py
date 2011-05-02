@@ -338,7 +338,7 @@ def get_random_track_id_from_playlist(playlist, skip_artists, cur=None):
         params.append(float(parts[0]))
         params.append(float(parts[1]))
 
-    delay = playlist.get('delay')
+    delay = playlist.get('track_delay')
     if delay:
         sql += ' AND (last_played IS NULL OR last_played <= ?)'
         params.append(int(time.time()) - int(delay) * 60)
@@ -404,7 +404,9 @@ def get_random_row(rows):
 
 
 def get_all_playlists(cur=None):
-    "Returns information about all known playlists."
+    """Returns information about all known playlists.  Information from
+    playlists.yaml is complemented by the last_played column of the `playlists'
+    table."""
     cur = cur or ardj.database.cursor()
     stats = dict(cur.execute('SELECT name, last_played FROM playlists WHERE name IS NOT NULL AND last_played IS NOT NULL').fetchall())
     def expand(lst):
@@ -522,6 +524,8 @@ def get_next_track_id(cur=None, debug=False, update_stats=True):
                     ardj.log.debug('Picked track %u from playlist %s' % (track_id, playlist.get('name', 'unnamed')))
                 if update_stats:
                     cur.execute('UPDATE playlists SET last_played = ? WHERE name = ?', (int(time.time()), playlist.get('name', 'unnamed'), ))
+                    if cur.rowcount == 0:
+                        cur.execute('INSERT INTO playlists (name, last_played) VALUES (?, ?)', (playlist.get('name', 'unnamed'), int(time.time()), ))
                 break
 
     if track_id:
