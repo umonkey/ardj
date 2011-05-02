@@ -25,13 +25,13 @@ class Logger:
 
 def debug(text, quiet=False):
     if not quiet:
-        try: print text.strip().encode('utf-8')
+        try: print >>sys.stderr, text.strip().encode('utf-8')
         except: pass
     Logger.get().log.debug(text)
 
 def info(text, quiet=False):
     if not quiet:
-        try: print text.strip().encode('utf-8')
+        try: print >>sys.stderr, text.strip().encode('utf-8')
         except: pass
     Logger.get().log.info(text)
 
