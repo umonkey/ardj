@@ -346,7 +346,12 @@ def get_random_track_id_from_playlist(playlist, skip_artists, cur=None):
         params.append(int(time.time()) - int(delay) * 60)
 
     ardj.database.Open().debug(sql, params)
-    return get_random_row(cur.execute(sql, tuple(params)).fetchall())
+    track_id = get_random_row(cur.execute(sql, tuple(params)).fetchall())
+
+    if playlist.get('preroll'):
+        add_preroll(track_id, playlist.get('preroll'), cur=cur)
+
+    return track_id
 
 
 def add_labels_filter(sql, params, labels):
@@ -457,12 +462,25 @@ def get_active_playlists(timestamp=None, debug=False, cur=None):
     return [p for p in get_all_playlists(cur) if is_active(p)]
 
 
-def add_preroll(track_id, cur=None):
+def get_prerolls_for_labels(labels, cur):
+    """Returns ids of valid prerolls that have one of the specified labels."""
+    sql = "SELECT tracks.id FROM tracks INNER JOIN labels ON labels.track_id = tracks.id WHERE tracks.weight > 0 AND tracks.filename IS NOT NULL AND labels.label IN (%s)" % ', '.join(['?'] * len(labels))
+    return [row[0] for row in cur.execute(sql, labels).fetchall()]
+
+def get_prerolls_for_track(track_id, cur):
+    """Returns prerolls applicable to the specified track."""
+    by_artist = cur.execute("SELECT t1.id FROM tracks t1 INNER JOIN tracks t2 ON t2.artist = t1.artist INNER JOIN labels l ON l.track_id = t1.id WHERE l.label = 'preroll' AND t2.id = ? AND t1.weight > 0", (track_id, )).fetchall()
+    by_label = cur.execute("SELECT t.id, t.title FROM tracks t WHERE t.id IN (SELECT track_id FROM labels WHERE label IN (SELECT l.label || '-preroll' FROM tracks t1 INNER JOIN labels l ON l.track_id = t1.id WHERE t1.id = ?))", (track_id, )).fetchall()
+    return list(set([row[0] for row in by_artist + by_label]))
+
+def add_preroll(track_id, labels=None, cur=None):
     """Adds a preroll for the specified track.
 
     Finds prerolls by labels and artist title, picks one and returns its id,
-    queueing the input track_id.  Tracks that have a preroll-* never have a
-    preroll.
+    queueing the input track_id.  If `labels' is explicitly specified, only
+    tracks with those labels will be used as prerolls.
+    
+    Tracks that have a preroll-* never have a preroll.
     """
     cur = cur or ardj.database.cursor()
 
@@ -470,15 +488,19 @@ def add_preroll(track_id, cur=None):
     if cur.execute("SELECT COUNT(*) FROM labels WHERE track_id = ? AND label LIKE 'preroll-%'", (track_id, )).fetchone()[0]:
         return track_id
 
-    by_artist = cur.execute("SELECT t1.id FROM tracks t1 INNER JOIN tracks t2 ON t2.artist = t1.artist INNER JOIN labels l ON l.track_id = t1.id WHERE l.label = 'preroll' AND t2.id = ? AND t1.weight > 0", (track_id, )).fetchall()
-    by_label = cur.execute("SELECT t.id, t.title FROM tracks t WHERE t.id IN (SELECT track_id FROM labels WHERE label IN (SELECT l.label || '-preroll' FROM tracks t1 INNER JOIN labels l ON l.track_id = t1.id WHERE t1.id = ?))", (track_id, )).fetchall()
+    if labels:
+        prerolls = get_prerolls_for_labels(labels, cur)
+    else:
+        prerolls = get_prerolls_for_track(track_id, cur)
 
-    track_ids = list(set([row[0] for row in by_artist + by_label if row[0] != track_id]))
-    if not track_ids:
-        return track_id
+    if track_id in prerolls:
+        prerolls.remove(track_id)
 
-    queue(track_id, cur=cur)
-    return track_ids[random.randrange(len(track_ids))]
+    if prerolls:
+        queue(track_id, cur)
+        track_id = prerolls[random.randrange(len(prerolls))]
+
+    return track_id
 
 
 def get_next_track_id(cur=None, debug=False, update_stats=True):
@@ -537,7 +559,7 @@ def get_next_track_id(cur=None, debug=False, update_stats=True):
 
     if track_id:
         if want_preroll:
-            track_id = add_preroll(track_id, cur)
+            track_id = add_preroll(track_id, cur=cur)
 
         if update_stats:
             count = cur.execute('SELECT count FROM tracks WHERE id = ?', (track_id, )).fetchone()[0] or 0
