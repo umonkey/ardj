@@ -220,7 +220,10 @@ def add_vote(track_id, email, vote, cur=None, update_karma=False):
             email = k
             break
 
-    cur.execute('INSERT INTO votes (track_id, email, vote, ts) VALUES (?, ?, ?, ?)', (track_id, email, vote, int(time.time()), ))
+    ts = int(time.time())
+    last = cur.execute("SELECT ts, vote FROM votes WHERE track_id = ? AND email = ? ORDER BY id DESC", (track_id, email, )).fetchone()
+    if last is None or last[1] != vote or last[0] < ts - 600:
+        cur.execute('INSERT INTO votes (track_id, email, vote, ts) VALUES (?, ?, ?, ?)', (track_id, email, vote, ts, ))
 
     real_weight = update_real_track_weight(track_id, cur=cur)
     cur.execute('UPDATE tracks SET weight = ? WHERE id = ?', (real_weight, track_id, ))
