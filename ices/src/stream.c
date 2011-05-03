@@ -299,7 +299,7 @@ stream_send (ices_config_t* config, input_stream_t* source)
         }
       }
     }
-    ices_cue_update (source);
+    /* ices_cue_update (source); */
   }
 
 #ifdef HAVE_LIBLAME
