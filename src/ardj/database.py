@@ -249,7 +249,6 @@ class database:
                 labels = [playlist['name']]
             used_labels += [l for l in labels if not l.startswith('-')]
         used_labels = list(set(used_labels))
-        print used_labels
 
         if not(used_labels):
             ardj.log.warning('Could not mark orphan tracks: no labels are used in playlists.yaml')
@@ -269,6 +268,7 @@ class database:
                 if not quiet:
                     print '%8u; %s -- %s' % (row[0], (row[1] or 'unknown').encode('utf-8'), (row[2] or 'unknown').encode('utf-8'))
                 cur.execute('INSERT INTO labels (track_id, email, label) VALUES (?, ?, ?)', (int(row[0]), 'ardj', set_label))
+            return True
 
     def mark_long(self):
         """Marks unusuall long tracks."""

@@ -63,22 +63,6 @@ class Debug(TestCase):
         self.assertEquals('SELECT 1, 2', sql)
 
 
-class GoodMusicMarker(TestCase):
-    tables = ['tracks', 'labels']
-    def runTest(self):
-        t1 = self.cur.execute('INSERT INTO tracks (weight) VALUES (0)').lastrowid
-        t2 = self.cur.execute('INSERT INTO tracks (weight) VALUES (2)').lastrowid
-
-        for t in (t1, t2):
-            self.cur.execute('INSERT INTO labels (track_id, label, email) VALUES (?, ?, ?)', (t, 'music', 'test', ))
-
-        self.db.mark_good_music(self.cur)
-
-        labels = dict(self.cur.execute('SELECT track_id, label FROM labels WHERE label <> ?', ('music', )).fetchall())
-        self.assertEquals('bad-music', labels[t1])
-        self.assertEquals('good-music', labels[t2])
-
-
 class RecentMarker(TestCase):
     tables = ['tracks', 'labels']
 
@@ -135,13 +119,14 @@ class OrphansMarker(TestCase):
     tables = ['tracks', 'labels']
 
     def runTest(self):
-        t1 = self.cur.execute('INSERT INTO tracks (title) VALUES (NULL)').lastrowid
+        t1 = self.cur.execute('INSERT INTO tracks (title, weight) VALUES (NULL, 1)').lastrowid
         self.cur.execute('INSERT INTO labels (track_id, label, email) VALUES (?, \'music\', \'nobody\')', (t1, ))
-        t2 = self.cur.execute('INSERT INTO tracks (title) VALUES (NULL)').lastrowid
+        t2 = self.cur.execute('INSERT INTO tracks (title, weight) VALUES (NULL, 1)').lastrowid
         self.cur.execute('INSERT INTO labels (track_id, label, email) VALUES (?, \'foobar\', \'nobody\')', (t2, ))
 
-        self.db.mark_orphans(cur=self.cur, quiet=True)
+        if not self.db.mark_orphans(cur=self.cur, quiet=True):
+            self.fail('database.mark_orphans() failed to find tracks.')
 
         rows = self.cur.execute('SELECT track_id FROM labels WHERE label = \'orphan\'').fetchall()
-        self.assertEquals(1, len(rows), 'one track must have been labelled orphan')
+        self.assertEquals(1, len(rows), 'one track must have been labelled orphan, not %u' % len(rows))
         self.assertEquals(t2, rows[0][0], 'wrong track labelled orphan')
