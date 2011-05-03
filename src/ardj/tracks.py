@@ -71,7 +71,7 @@ def identify(track_id, cur=None):
 def queue(track_id, owner=None, cur=None):
     """Adds the track to queue."""
     cur = cur or ardj.database.cursor()
-    return cur.execute('INSERT INTO queue (track_id, owner) VALUES (?, ?)', (track_id, owner or 'ardj', )).lastrowid
+    return cur.execute('INSERT INTO queue (track_id, owner) VALUES (?, ?)', (track_id, (owner or 'ardj').lower(), )).lastrowid
 
 
 def get_queue(cur=None):
@@ -210,6 +210,8 @@ def add_vote(track_id, email, vote, cur=None, update_karma=False):
     """
     cur = cur or ardj.database.cursor()
 
+    email = email.lower()
+
     # Normalize the vote.
     if vote > 0: vote = 1
     elif vote < 0: vote = -1
@@ -234,14 +236,14 @@ def add_vote(track_id, email, vote, cur=None, update_karma=False):
 
 
 def get_vote(track_id, email, cur=None):
-    return get_track_votes(track_id, cur=cur).get(email, 0)
+    return get_track_votes(track_id, cur=cur).get(email.lower(), 0)
 
 
 def get_track_votes(track_id, cur=None):
     results = {}
     cur = cur or ardj.database.cursor()
     for email, vote in cur.execute("SELECT email, vote FROM votes WHERE track_id = ? ORDER BY id", (track_id, )).fetchall():
-        results[email] = vote
+        results[email.lower()] = vote
     return results
 
 
@@ -290,7 +292,7 @@ def add_file(filename, add_labels=None, owner=None, cur=None):
     track_id = cur.execute('INSERT INTO tracks (artist, title, filename, length, last_played, owner, weight) VALUES (?, ?, ?, ?, ?, ?, ?)', (artist, title, rel_filename, duration, 0, owner or 'ardj', 1, )).lastrowid
 
     for label in labels:
-        cur.execute('INSERT INTO labels (track_id, label, email) VALUES (?, ?, ?)', (track_id, label, owner or 'ardj', ))
+        cur.execute('INSERT INTO labels (track_id, label, email) VALUES (?, ?, ?)', (track_id, label, (owner or 'ardj').lower(), ))
 
     return track_id
 
