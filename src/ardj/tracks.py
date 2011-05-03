@@ -563,9 +563,9 @@ def get_next_track_id(cur=None, debug=False, update_stats=True):
 
             log(track_id, cur=cur)
 
+        shift_track_weight(track_id, cur)
         ardj.database.Open().commit()
 
-    shift_track_weight(track_id, cur)
     return track_id
 
 
