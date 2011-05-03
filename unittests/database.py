@@ -63,22 +63,6 @@ class Debug(TestCase):
         self.assertEquals('SELECT 1, 2', sql)
 
 
-class GoodMusicMarker(TestCase):
-    tables = ['tracks', 'labels']
-    def runTest(self):
-        t1 = self.cur.execute('INSERT INTO tracks (weight) VALUES (0)').lastrowid
-        t2 = self.cur.execute('INSERT INTO tracks (weight) VALUES (2)').lastrowid
-
-        for t in (t1, t2):
-            self.cur.execute('INSERT INTO labels (track_id, label, email) VALUES (?, ?, ?)', (t, 'music', 'test', ))
-
-        self.db.mark_good_music(self.cur)
-
-        labels = dict(self.cur.execute('SELECT track_id, label FROM labels WHERE label <> ?', ('music', )).fetchall())
-        self.assertEquals('bad-music', labels[t1])
-        self.assertEquals('good-music', labels[t2])
-
-
 class RecentMarker(TestCase):
     tables = ['tracks', 'labels']
 
