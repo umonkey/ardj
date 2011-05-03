@@ -119,13 +119,14 @@ class OrphansMarker(TestCase):
     tables = ['tracks', 'labels']
 
     def runTest(self):
-        t1 = self.cur.execute('INSERT INTO tracks (title) VALUES (NULL)').lastrowid
+        t1 = self.cur.execute('INSERT INTO tracks (title, weight) VALUES (NULL, 1)').lastrowid
         self.cur.execute('INSERT INTO labels (track_id, label, email) VALUES (?, \'music\', \'nobody\')', (t1, ))
-        t2 = self.cur.execute('INSERT INTO tracks (title) VALUES (NULL)').lastrowid
+        t2 = self.cur.execute('INSERT INTO tracks (title, weight) VALUES (NULL, 1)').lastrowid
         self.cur.execute('INSERT INTO labels (track_id, label, email) VALUES (?, \'foobar\', \'nobody\')', (t2, ))
 
-        self.db.mark_orphans(cur=self.cur, quiet=True)
+        if not self.db.mark_orphans(cur=self.cur, quiet=True):
+            self.fail('database.mark_orphans() failed to find tracks.')
 
         rows = self.cur.execute('SELECT track_id FROM labels WHERE label = \'orphan\'').fetchall()
-        self.assertEquals(1, len(rows), 'one track must have been labelled orphan')
+        self.assertEquals(1, len(rows), 'one track must have been labelled orphan, not %u' % len(rows))
         self.assertEquals(t2, rows[0][0], 'wrong track labelled orphan')
