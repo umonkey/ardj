@@ -19,6 +19,7 @@ import ardj.listeners
 import ardj.log
 import ardj.replaygain
 import ardj.tags
+import ardj.scrobbler
 
 
 def get_track_by_id(track_id, cur=None):
@@ -653,9 +654,11 @@ def run_cli(args):
 
     if command == 'next-json':
         cur = ardj.database.cursor()
-        track_id = get_next_track_id(cur=cur, update_stats='-n' not in args)
+        debug = '-n' in args
+        track_id = get_next_track_id(cur=cur, update_stats=not debug)
         if track_id:
             track = get_track_by_id(track_id, cur=cur)
+            ardj.scrobbler.Open().submit(track)
             print json.dumps(track)
     elif command == 'update-weights':
         update_real_track_weights()

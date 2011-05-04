@@ -86,11 +86,15 @@ class client:
                 return True
         return False
 
+instance = None
 
 def Open():
-    if not ardj.settings.get('lastfm/enable', False):
-        return None
-    if not have_cli:
-        ardj.log.warning('Last.fm scrobbler is not available: please install lastfmsubmitd.')
-        return None
-    return client()
+    global instance
+    if instance is None:
+        if not ardj.settings.get('lastfm/enable', False):
+            return None
+        if not have_cli:
+            ardj.log.warning('Last.fm scrobbler is not available: please install lastfmsubmitd.')
+            return None
+        instance = client()
+    return instance
