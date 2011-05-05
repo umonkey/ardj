@@ -36,7 +36,7 @@ Commands:
 """
 
 
-PAGE_TEMPLATE = u"""title: Эфир ТСН от %(dd)s.%(mm)s.%(yyyy)s
+PAGE_TEMPLATE = u"""title: ТСН №%(episode)02u от %(dd)s.%(mm)s.%(yyyy)s
 date: %(yyyy)s-%(mm)s-%(dd)s 21:00
 file: http://files.tmradio.net/audio/sosonews/sosonews-%(episode)02u.mp3
 filesize: 100000000
