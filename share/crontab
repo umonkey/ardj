@@ -10,9 +10,6 @@ ARDJ=/usr/local/bin/ardj
 # Загрузка новостей в дневное время.  При успешной загрузке они ставятся в очередь.
 15,45 7-23 	* * *	$USER	$ARDJ news
 
-# Загрузка сообщений из твиттера.
-#*/5 *   	* * *   $USER   /usr/lib/ardj/robots/twitter -replies >/dev/null
-
 # Обработка голосовой почты (включается в /etc/ardj.yaml).
 */5 *		* * *	$USER	$ARDJ hotline -q process
 
