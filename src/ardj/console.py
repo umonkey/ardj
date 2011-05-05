@@ -180,11 +180,13 @@ def on_hitlist(args, sender, cur=None):
 
 
 def on_queue(args, sender, cur=None):
-    """Queue management.
+    """Queue management.  Adds the first matching track to the playback queue.  Usage:
 
-    The 'queue flush' command removes tracks from queue (only those queued by
-    the sender unless he's an admin).  Other arguments are search patterns for
-    track artist/title, or label names if prefixed with @.
+    queue something -- queues the first track shown by "find something";
+    queue flush -- removes your tracks from the queue;
+    queue flush -a -- removes all tracks (admin only);
+    queue -s -- disables the preroll (admin only);
+    queue -d -- deletes the track from queue (must be yours);
 
     If the user had not queued anything yet, a random jingle is added.  Jingles
     are marked with the "queue-jingle" label.  If the user is not an admin,
@@ -194,19 +196,30 @@ def on_queue(args, sender, cur=None):
     is_admin = is_user_admin(sender)
 
     if args == 'flush':
-        if not is_admin:
-            cur.execute('DELETE FROM queue WHERE owner = ?', (sender, ))
-            return 'Removed your tracks from queue.'
-        else:
-            cur.execute('DELETE FROM queue')
-            return 'Done.'
+        cur.execute('DELETE FROM queue WHERE owner = ?', (sender, ))
+        return 'Removed your tracks from queue.'
+
+    if args == 'flush -a' and is_admin:
+        cur.execute('DELETE FROM queue')
+        return 'Done.'
 
     elif args:
         silent = args.startswith('-s ')
         if silent:
             args = args[3:]
 
-        tracks = ardj.tracks.find_ids(args, cur)[:1]
+        delete = args.startswith('-d ')
+        if delete:
+            args = args[3:]
+
+        tracks = ardj.tracks.find_ids(args, cur)
+
+        if delete:
+            for track_id in tracks:
+                cur.execute('DELETE FROM queue WHERE owner = ? AND track_id = ?', (sender, track_id, ))
+            return 'Done.'
+
+        tracks = tracks[:1]
         have_tracks = cur.execute('SELECT COUNT(*) FROM queue WHERE owner = ?', (sender, )).fetchone()[0]
 
         if not is_admin:
@@ -233,6 +246,18 @@ def on_queue(args, sender, cur=None):
 
 
 def on_find(args, sender, cur=None):
+    """Finds tracks that match a query.  Has two modes of search:
+
+    find something -- finds tracks with "something" in artist name or title;
+    find @something -- finds tracks with the "something" label.
+
+    By default results are sorted by rating, highest rated go first.  You can
+    change this behaviour using the following modifiers:
+
+    find -r something -- show in random order;
+    find -l something -- show newest first;
+    find -s something -- show olders first.
+    """
     cur = cur or ardj.database.cursor()
     tracks = [ardj.tracks.get_track_by_id(x, cur=cur) for x in ardj.tracks.find_ids(args, cur=cur)][:10]
     if not tracks:
@@ -394,9 +419,7 @@ def on_help(args, sender, cur=None):
             doc = handler.__doc__
             if not doc:
                 return 'No help on that command.'
-            lines = doc.replace('    ', '').split('\n\n')
-            doc = u'\n\n'.join([l.replace('\n', ' ') for l in lines])
-            return doc
+            return doc.replace('    ', '')
     return 'What? No such command: %s, try "help".' %args
 
 
