@@ -387,7 +387,17 @@ def on_status(args, sender, cur=None):
 
 
 def on_help(args, sender, cur=None):
-    return get_usage(sender)
+    if not args:
+        return get_usage(sender)
+    for cmd_name, is_privileged, handler, description in command_map:
+        if cmd_name == args.lower():
+            doc = handler.__doc__
+            if not doc:
+                return 'No help on that command.'
+            lines = doc.replace('    ', '').split('\n\n')
+            doc = u'\n\n'.join([l.replace('\n', ' ') for l in lines])
+            return doc
+    return 'What? No such command: %s, try "help".' %args
 
 
 command_map = (
@@ -481,7 +491,7 @@ def process_command(text, sender=None, cur=None, quiet=False):
             ardj.log.info('CMD: %s: %s' % (sender, text), quiet=quiet)
             return handler(args.strip(), sender=sender, cur=cur)
 
-    return 'Unknown command: %s.  %s' % (command, get_usage(sender))
+    return 'What?  No such command: %s, see "help".' % command
 
 
 def run_cli(args):
