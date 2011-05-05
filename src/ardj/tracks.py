@@ -8,6 +8,7 @@ tracks.
 
 import hashlib
 import json
+import logging
 import os
 import random
 import re
@@ -672,7 +673,7 @@ def track_matches_playlist(track, playlist):
         if plabel.startswith('-'):
             if plabel[1:] in tlabels:
                 return False
-        if plabels.startswith('+'):
+        if plabel.startswith('+'):
             if plabel[1:] not in tlabels:
                 return False
         elif plabel in tlabels:
