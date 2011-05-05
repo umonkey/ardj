@@ -27,8 +27,6 @@ Commands:
   run-child     -- run the jabber bot itself (unsafe)
 """
 
-chat_room_queue = []
-
 class MyFileReceivingBot(FileBot):
     def is_file_acceptable(self, sender, filename, filesize):
         if not self.check_access(sender):
@@ -110,6 +108,7 @@ class ardjbot(MyFileReceivingBot):
         """
         self.__idle_status()
         self.__idle_ping()
+        self.send_pending_messages()
         super(ardjbot, self).idle_proc()
 
     def __idle_status(self):
@@ -212,13 +211,20 @@ class ardjbot(MyFileReceivingBot):
                     except: msg = 'unknown error'
                     rep = 'Could not process your message:\n%s\n%s' % (msg, traceback.format_exc(e))
                 self.send_simple_reply(mess, rep.strip())
-
-                global chat_room_queue
-                for message in chat_room_queue:
-                    self.say_to_chat(message)
-                chat_room_queue = []
+                self.send_pending_messages()
         finally:
-            ardj.database.Open().commit()
+            ardj.database.commit()
+
+    def send_pending_messages(self):
+        """Sends outgoing messages added using the chat_say() function."""
+        cur = ardj.database.cursor()
+        messages = cur.execute('SELECT id, re, message FROM jabber_messages')
+        for msgid, recipient, message in messages:
+            if recipient is None:
+                self.say_to_chat(message)
+            else:
+                pass
+            cur.execute('DELETE FROM jabber_messages WHERE id = ?', (msgid, ))
 
     def run(self):
         return self.serve_forever(connect_callback=self.on_connected, disconnect_callback=self.on_disconnect)
@@ -273,12 +279,12 @@ def run_cli(args):
     print USAGE
 
 
-def chat_say(message):
+def chat_say(message, recipient=None):
     """Adds a message to the chat room queue.  This is the way for command
-    handlers to notify chat users."""
+    handlers to notify chat users.  If the recipient is not specified, the
+    message is sent to the chat room."""
     ardj.log.debug(u'Will send to chat: %s' % message)
-    global chat_room_queue
-    chat_room_queue.append(message)
+    ardj.database.cursor().execute('INSERT INTO jabber_messages (re, message) VALUES (?, ?)', (recipient, message, ))
 
 
 __all__ = [ 'Open', 'chat_say' ]
