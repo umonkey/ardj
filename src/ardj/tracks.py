@@ -90,6 +90,12 @@ def find_ids(pattern, cur=None):
     if pattern.startswith('-r '):
         pattern = pattern[3:]
         order = 'RANDOM()'
+    elif pattern.startswith('-l '):
+        pattern = pattern[3:]
+        order = 'id DESC'
+    elif pattern.startswith('-f '):
+        pattern = pattern[3:]
+        order = 'id'
 
     if pattern.strip().isdigit():
         return [ int(pattern.strip()) ]
