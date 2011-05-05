@@ -51,9 +51,8 @@ def locate_ips(ips):
         else:
             data = locate_ip(ip)
             if data:
-                loc = (data['latitude'], data['longitude'])
-                cache[ip] = loc
-                ips[ip] = ','.join(loc)
+                cache[ip] = data
+                ips[ip] = ','.join(data)
                 print ip, ips[ip]
             else:
                 ardj.log.debug('%s not found.' % ip)

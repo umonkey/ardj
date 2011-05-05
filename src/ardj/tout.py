@@ -34,8 +34,9 @@ def fetch_artist_events(artist_name):
     events = []
 
     try:
+        print 'Updating %s' % artist_name.encode('utf-8')
         url = 'http://ws.audioscrobbler.com/2.0/?method=artist.getEvents&artist=%s&api_key=%s&format=json&autocorrect=1' % (urllib.quote(artist_name.encode('utf-8')), ardj.settings.get('last.fm/key'))
-        data = json.loads(ardj.util.fetch(url, ret=True))
+        data = json.loads(ardj.util.fetch(url, quiet=True, ret=True))
 
         if 'error' in data:
             raise LastFmError('Last.fm reports error: %s' % data['message'])
@@ -77,7 +78,7 @@ def fetch_events():
     cache_fn = ardj.settings.getpath('tout/cache', '~/.config/ardj/events.json')
 
     if os.path.exists(cache_fn):
-        if time.time() - os.stat(cache_fn).st_mtime < int(ardj.settings.get('tout/cache_ttl', '3600')):
+        if time.time() - os.stat(cache_fn).st_mtime < int(ardj.settings.get('tout/cache_ttl', '86400')):
             return json.loads(open(cache_fn, 'rb').read())
 
     events = []
@@ -121,6 +122,7 @@ def get_announce_text():
     countries = ardj.settings.get('tout/announce_countries')
 
     events = fetch_events()
+    artists = []
     assert(type(events) == list)
 
     for event in events:
@@ -134,6 +136,10 @@ def get_announce_text():
                     data[date][city] = []
                 if event['artist'] not in data[date][city]:
                     data[date][city].append(event['artist'])
+                if event['artist'] not in artists:
+                    artists.append(event['artist'])
+
+    update_labels(artists)
 
     output = ardj.settings.get('tout/announce_prefix', u'').strip() + u'\n'
     for date in sorted(data.keys()):
@@ -146,6 +152,17 @@ def get_announce_text():
                 output += u'.\n'
     output += ardj.settings.get('tout/announce_suffix', u'')
     return output.strip()
+
+
+def update_labels(artist_names):
+    db = ardj.database.Open()
+    cur = db.cursor()
+    cur.execute("DELETE FROM labels WHERE label = 'concert-soon'")
+    for name in artist_names:
+        cur.execute('INSERT INTO labels (track_id, label, email) '
+            'SELECT id, ?, ? FROM tracks WHERE artist = ?', (
+            'concert-soon', 'ardj', name, ))
+    db.commit()
 
 
 def update_announce():
