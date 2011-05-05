@@ -559,10 +559,6 @@ def get_next_track_id(cur=None, debug=False, update_stats=True):
             if track_id is not None:
                 if debug:
                     ardj.log.debug('Picked track %u from playlist %s' % (track_id, playlist.get('name', 'unnamed')))
-                if update_stats:
-                    cur.execute('UPDATE playlists SET last_played = ? WHERE name = ?', (int(time.time()), playlist.get('name', 'unnamed'), ))
-                    if cur.rowcount == 0:
-                        cur.execute('INSERT INTO playlists (name, last_played) VALUES (?, ?)', (playlist.get('name', 'unnamed'), int(time.time()), ))
                 break
 
     if track_id:
@@ -572,6 +568,8 @@ def get_next_track_id(cur=None, debug=False, update_stats=True):
         if update_stats:
             count = cur.execute('SELECT count FROM tracks WHERE id = ?', (track_id, )).fetchone()[0] or 0
             cur.execute('UPDATE tracks SET count = ?, last_played = ? WHERE id = ?', (count + 1, int(time.time()), track_id, ))
+
+            block_playlists(track_id, cur=cur)
 
             log(track_id, cur=cur)
 
@@ -640,6 +638,47 @@ def update_real_track_weights(cur=None):
     cur = cur or ardj.database.cursor()
     for row in cur.execute('SELECT id FROM tracks').fetchall():
         update_real_track_weight(row[0], cur=cur)
+
+
+def block_playlists(track_id, cur=None):
+    """Finds playlists that contain this track and updates their last_played
+    property, so that they could be delayed properly."""
+    cur = cur or ardj.database.cursor()
+
+    track = get_track_by_id(track_id, cur=cur)
+    ts = int(time.time())
+
+    for playlist in get_all_playlists(cur=cur):
+        name = playlist.get('name')
+        if name and track_matches_playlist(track, playlist):
+            logging.debug('Track %u touches playlist %s' % (track_id, name))
+            cur.execute('UPDATE playlists SET last_played = ? '
+                'WHERE name = ?', (ts, name, ))
+            if cur.rowcount == 0:
+                cur.execute('INSERT INTO playlists (name, last_played) '
+                    'VALUES (?, ?)', (name, ts, ))
+
+
+def track_matches_playlist(track, playlist):
+    """Checks if the track matches the playlist labels."""
+    tlabels = track.get('labels')
+    if not tlabels:
+        return False
+
+    plabels = playlist.get('labels', [ playlist.get('name') ])
+    success = False
+
+    for plabel in plabels:
+        if plabel.startswith('-'):
+            if plabel[1:] in tlabels:
+                return False
+        if plabels.startswith('+'):
+            if plabel[1:] not in tlabels:
+                return False
+        elif plabel in tlabels:
+            success = True
+
+    return success
 
 
 __CLI_USAGE__ = """Usage: ardj track command
