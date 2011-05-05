@@ -80,6 +80,8 @@ def on_delete(args, sender, cur=None):
 
 def on_skip(args, sender, cur=None):
     if signal_ices(signal.SIGUSR1):
+        s = sender.split('@')[0]
+        ardj.jabber.chat_say(u'%s sent a skip request.' % s,)
         return 'Request sent.'
     return 'Could not send the request for some reason.'
 
