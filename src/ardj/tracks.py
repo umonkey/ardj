@@ -24,6 +24,9 @@ import ardj.scrobbler
 
 KARMA_TTL = 30.0
 
+def get_real_track_path(filename):
+    return os.path.join(ardj.settings.get_music_dir(), filename)
+
 def get_track_by_id(track_id, cur=None):
     """Returns track description as a dictionary.
 
@@ -40,7 +43,7 @@ def get_track_by_id(track_id, cur=None):
         result = { 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'length': row[4], 'weight': row[6], 'count': row[7], 'last_played': row[8], 'real_weight': row[9] }
         result['labels'] = [row[0] for row in cur.execute('SELECT DISTINCT label FROM labels WHERE track_id = ? ORDER BY label', (track_id, )).fetchall()]
         if result.get('filename'):
-            result['filepath'] = os.path.join(ardj.settings.get_music_dir(), result['filename'])
+            result['filepath'] = get_real_track_path(result['filename'])
         return result
 
 
@@ -737,6 +740,23 @@ def merge(id1, id2, cur):
     update_real_track_weight(id1, cur=cur)
 
 
+def update_track_lengths():
+    cur = ardj.database.cursor()
+    rows = cur.execute('SELECT id, filename, length '
+        'FROM tracks WHERE weight > 0 AND filename').fetchall()
+
+    updates = []
+    for id, filename, length in rows:
+        tags = ardj.tags.get(get_real_track_path(filename))
+        if tags['length'] != length:
+            print '%u, %s: %s => %s' % (id, filename, length, tags['length'])
+            updates.append((tags['length'], id))
+
+    for length, id in updates:
+        cur.execute('UPDATE tracks SET length = ? WHERE id = ?', (length, id, ))
+    ardj.database.commit()
+
+
 __CLI_USAGE__ = """Usage: ardj track command
 
 Commands:
@@ -758,5 +778,7 @@ def run_cli(args):
     elif command == 'update-weights':
         update_real_track_weights()
         ardj.database.Open().commit()
+    elif command == 'update-lengths':
+        update_track_lengths()
     else:
         print __CLI_USAGE__
