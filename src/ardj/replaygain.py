@@ -160,7 +160,7 @@ def run_cli(args):
 		elif not os.path.exists(musicdir):
 			raise Exception('Directory %s does not exist.' % musicdir)
 		cur = ardj.database.Open().cursor()
-		cur.execute('SELECT filename FROM tracks')
+		cur.execute('SELECT filename FROM tracks WHERE filename AND weight > 0')
 		args = [os.path.join(musicdir, row[0]) for row in cur.fetchall()]
 
 	if args:
