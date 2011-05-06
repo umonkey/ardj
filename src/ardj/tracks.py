@@ -554,14 +554,14 @@ def get_next_track_id(cur=None, debug=False, update_stats=True):
         if debug:
             ardj.log.debug('Picked track %u from the queue.' % track_id)
 
-    if track_id is None:
+    if not track_id:
         labels = get_urgent()
         if labels:
             track_id = get_random_track_id_from_playlist({'labels': labels}, skip_artists, cur)
             if debug and track_id:
                 ardj.log.debug('Picked track %u from the urgent playlist.' % track_id)
 
-    if track_id is None:
+    if not track_id:
         for playlist in get_active_playlists():
             if debug:
                 ardj.log.debug('Looking for tracks in playlist "%s"' % playlist.get('name', 'unnamed'))
