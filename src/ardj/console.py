@@ -315,8 +315,18 @@ def on_play(args, sender, cur=None):
 
 
 def on_tags(args, sender, cur=None):
+    """Shows or modifies tags.
+
+    tags add -remove [for track_id] -- manipulate tags
+    tags -- show the tag cloud.
+    """
     if not args:
-        return 'Usage: tags x, y, z for track_id'
+        cur = cur or ardj.database.cursor()
+        data = cur.execute('SELECT l.label, COUNT(*) AS count FROM labels l '
+            'INNER JOIN tracks t ON t.id = l.track_id '
+            'WHERE t.weight > 0 GROUP BY label ORDER BY count DESC').fetchall()
+        output = u', '.join([u'%s (%u)' % (l, c) for l, c in data]) + u'.'
+        return output
 
     parts = args.split(' ')
     if len(parts) > 2 and parts[-2] == 'for':
@@ -425,7 +435,7 @@ def on_help(args, sender, cur=None):
             doc = handler.__doc__
             if not doc:
                 return 'No help on that command.'
-            return doc.replace('    ', '')
+            return doc.replace('    ', '').strip()
     return 'What? No such command: %s, try "help".' %args
 
 
