@@ -1,30 +1,31 @@
 # /etc/cron.d/ardj: crontab entries for the $ARDJ package
-USER=radio
 ARDJ=/usr/local/bin/ardj
 
-#13 *		* * *	$USER	$ARDJ listeners show total > /$USER/data/totals.csv
-0 11		* * *	$USER	$ARDJ shitlist queue
-0 18		* * *	$USER	$ARDJ db mark-hitlist
-0 3		* * *	$USER	$ARDJ podcaster
+@hourly			radio	$ARDJ track update-weights -q
+
+#13 *		* * *	radio	$ARDJ listeners show total > /radio/data/totals.csv
+0 11		* * *	radio	$ARDJ shitlist queue
+0 18		* * *	radio	$ARDJ db mark-hitlist
+0 3		* * *	radio	$ARDJ podcaster
 
 # Загрузка новостей в дневное время.  При успешной загрузке они ставятся в очередь.
-15,45 7-23 	* * *	$USER	$ARDJ news
+15,45 7-23 	* * *	radio	$ARDJ news
 
 # Обработка голосовой почты (включается в /etc/ardj.yaml).
-*/5 *		* * *	$USER	$ARDJ hotline -q process
+*/5 *		* * *	radio	$ARDJ hotline -q process
 
 # Обновление афиши по утрам (в 6:00).
-0 6		* * *	$USER	$ARDJ events announce update-website
+0 6		* * *	radio	$ARDJ events announce update-website
 
 # Обновление всякой фигни в базе данных.
-0 6		* * *	$USER	$ARDJ db mark-recent mark-orphans mark-long purge
+0 6		* * *	radio	$ARDJ db mark-recent mark-orphans mark-long purge
 
 # Обновление карты слушателей.
-0 6		* * *	$USER	$ARDJ map-listeners
+0 6		* * *	radio	$ARDJ map-listeners
 
 # Обновление @preshow-music перед началом ТСН (18:50 по четвергам).
-50 18		* * *	$USER	$ARDJ db mark-preshow
+50 18		* * *	radio	$ARDJ db mark-preshow
 
 # Так себе новости.
-0 21		* * 4	$USER	$ARDJ tsn prepare
-0 3		* * 5	$USER	$ARDJ tsn email
+0 21		* * 4	radio	$ARDJ tsn prepare
+0 3		* * 5	radio	$ARDJ tsn email

@@ -22,6 +22,7 @@ import ardj.replaygain
 import ardj.tags
 import ardj.scrobbler
 
+KARMA_TTL = 30.0
 
 def get_track_by_id(track_id, cur=None):
     """Returns track description as a dictionary.
@@ -631,10 +632,14 @@ def get_track_to_play():
 def update_real_track_weight(track_id, cur=None):
     """Returns the real track weight, using the last vote for each user."""
     cur = cur or ardj.database.cursor()
+    rows = cur.execute('SELECT v.email, v.vote * k.weight FROM votes v '
+        'INNER JOIN karma k ON k.email = v.email '
+        'WHERE v.track_id = ? ORDER BY v.ts', (track_id, )).fetchall()
 
     results = {}
-    for email, vote in cur.execute('SELECT email, vote FROM votes WHERE track_id = ? ORDER BY id', (track_id, )).fetchall():
+    for email, vote in rows:
         results[email] = vote
+
     real_weight = sum(results.values()) * 0.25 + 1
     cur.execute('UPDATE tracks SET real_weight = ? WHERE id = ?', (real_weight, track_id, ))
     return real_weight
@@ -643,6 +648,7 @@ def update_real_track_weights(cur=None):
     """Updates the real_weight column for all tracks.  To be used when the
     votes table was heavily modified or when corruption is possible."""
     cur = cur or ardj.database.cursor()
+    update_karma(cur=cur)
     for row in cur.execute('SELECT id FROM tracks').fetchall():
         update_real_track_weight(row[0], cur=cur)
 
@@ -686,6 +692,27 @@ def track_matches_playlist(track, playlist):
             success = True
 
     return success
+
+
+def update_karma(cur=None):
+    """Updates users karma based on their last voting time."""
+    cur = cur or ardj.database.cursor()
+
+    cur.execute('DELETE FROM karma')
+
+    now = int(time.time()) / 86400
+    for email, ts in cur.execute('SELECT email, MAX(ts) FROM votes GROUP BY email').fetchall():
+        diff = now - ts / 86400
+        if diff == 0:
+            karma = 1
+        elif diff > KARMA_TTL:
+            karma = 0
+        else:
+            karma = (KARMA_TTL - float(diff)) / KARMA_TTL
+        if karma:
+            cur.execute('INSERT INTO karma (email, weight) VALUES (?, ?)', (email, karma, ))
+            if '-q' not in sys.argv:
+                print '%.04f\t%s (%u)' % (karma, email, diff)
 
 
 __CLI_USAGE__ = """Usage: ardj track command
