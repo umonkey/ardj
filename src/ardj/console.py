@@ -295,7 +295,7 @@ def on_voters(args, sender, cur=None):
     cur = cur or ardj.database.cursor()
     rows = cur.execute('SELECT v.email, COUNT(*) AS c, k.weight '
         'FROM votes v INNER JOIN karma k ON k.email = v.email '
-        'GROUP BY v.email ORDER BY c DESC').fetchall()
+        'GROUP BY v.email ORDER BY c DESC, k.weight DESC, v.email').fetchall()
 
     output = u'Top voters:'
     for email, count, weight in rows:
@@ -327,6 +327,9 @@ def on_tags(args, sender, cur=None):
             'WHERE t.weight > 0 GROUP BY label ORDER BY count DESC').fetchall()
         output = u', '.join([u'%s (%u)' % (l, c) for l, c in data]) + u'.'
         return output
+
+    if not is_user_admin(sender):
+        return 'Only admins can edit tags.'
 
     parts = args.split(' ')
     if len(parts) > 2 and parts[-2] == 'for':
@@ -476,7 +479,7 @@ command_map = (
     ('sql', True, on_sql, 'runs a low-level database query'),
     ('status', False, on_status, 'shows what\'s being played now'),
     ('sucks', False, on_sucks, 'decreases track weight'),
-    ('tags', True, on_tags, 'adds tags to a track'),
+    ('tags', False, on_tags, 'see tag cloud, edit track tags (admins only)'),
     ('twit', True, on_twit, 'sends a message to Twitter'),
     ('voters', True, on_voters, 'shows all voters'),
     ('votes', True, on_votes, 'shows who voted for a track'),
