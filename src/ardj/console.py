@@ -427,6 +427,18 @@ def on_status(args, sender, cur=None):
     return message
 
 
+def on_merge(args, sender, cur=None):
+    """Merges two tracks.  Usage: merge id1 id2.
+
+    Track 2 is deleted, labels, votes and playcounts are moved to track 1.
+    """
+    ids = args.split(' ')
+    if len(ids) != 2 or not ids[0].isdigit() or not ids[1].isdigit():
+        return 'Usage: merge id1 id2'
+    ardj.tracks.merge(int(ids[0]), int(ids[1]), cur or ardj.database.cursor())
+    return 'OK.'
+
+
 def on_help(args, sender, cur=None):
     if not args:
         return get_usage(sender)
@@ -448,6 +460,7 @@ command_map = (
     ('help', False, on_help, 'shows this message'),
     ('hitlist', False, on_hitlist, 'shows 10 highest rated tracks'),
     ('last', False, on_last, 'shows last played tracks'),
+    ('merge', True, on_merge, 'merges two tracks'),
     ('news', False, on_news, 'shows 10 recently added tracks'),
     ('play', True, on_play, 'set a custom playlist for 60 minutes'),
     ('purge', True, on_purge, 'cleans up the database'),

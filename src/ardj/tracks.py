@@ -140,7 +140,7 @@ def update_track(properties, cur=None):
     sql = []
     params = []
     for k in properties:
-        if k in ('filename', 'artist', 'title', 'length', 'weight', 'count', 'last_played', 'owner'):
+        if k in ('filename', 'artist', 'title', 'length', 'weight', 'count', 'last_played', 'owner', 'real_weight'):
             sql.append(k + ' = ?')
             params.append(properties[k])
 
@@ -713,6 +713,28 @@ def update_karma(cur=None):
             cur.execute('INSERT INTO karma (email, weight) VALUES (?, ?)', (email, karma, ))
             if '-q' not in sys.argv:
                 print '%.04f\t%s (%u)' % (karma, email, diff)
+
+
+def merge(id1, id2, cur):
+    """Merges two tracks."""
+    t1 = get_track_by_id(id1, cur=cur)
+    t2 = get_track_by_id(id2, cur=cur)
+
+    for k in ('real_weight', 'last_played', 'weight'):
+        t1[k] = max(t1[k], t2[k])
+    t1['count'] = t1['count'] + t2['count']
+
+    t1['labels'] = list(set(t1['labels'] + t2['labels']))
+
+    cur.execute('UPDATE labels SET track_id = ? WHERE track_id = ?', (id1, id2, ))
+    cur.execute('UPDATE votes SET track_id = ? WHERE track_id = ?', (id1, id2, ))
+
+    update_track(t1, cur=cur)
+
+    t2['weight'] = 0
+    update_track(t2, cur=cur)
+
+    update_real_track_weight(id1, cur=cur)
 
 
 __CLI_USAGE__ = """Usage: ardj track command
