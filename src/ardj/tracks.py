@@ -68,10 +68,10 @@ def get_last_track(cur=None):
     return get_track_by_id(get_last_track_id(cur), cur)
 
 
-def identify(track_id, cur=None):
+def identify(track_id, cur=None, unknown='an unknown track'):
     track = get_track_by_id(track_id, cur=cur)
     if not track:
-        return 'an unknown track'
+        return unknown
     return u'«%s» by %s' % (track.get('title', 'untitled'), track.get('artist', 'unknown artist'))
 
 def queue(track_id, owner=None, cur=None):
@@ -324,10 +324,10 @@ def get_track_id_from_queue(cur=None):
     If the queue is empty or there's no valid track in it, returns None.
     """
     cur = cur or ardj.database.cursor()
-    row = cur.execute('SELECT t.id, q.id FROM tracks t INNER JOIN queue q ON q.track_id = t.id ORDER BY q.id LIMIT 1').fetchone()
+    row = cur.execute('SELECT id, track_id FROM queue ORDER BY id LIMIT 1').fetchone()
     if row:
-        cur.execute('DELETE FROM queue WHERE id = ?', (row[1], ))
-        return row[0]
+        cur.execute('DELETE FROM queue WHERE id = ?', (row[0], ))
+        return row[1]
 
 
 def get_random_track_id_from_playlist(playlist, skip_artists, cur=None):

@@ -9,6 +9,7 @@ import os
 import readline
 import signal
 import sys
+import traceback
 
 import json
 
@@ -31,10 +32,13 @@ def format_track_list(tracks, header=None):
     if header is not None:
         message += header.strip() + u'\n'
     for track in tracks:
-        message += u'«%s» by %s — #%u ⚖%.2f ♺%s' % (track.get('title', 'untitled'), track.get('artist', 'unknown artist'), track.get('id', 0), track.get('weight', 0), track.get('count', '?'))
-        if 'labels' in track:
-            message += u' @' + u' @'.join(track['labels'])
-        message += u'\n'
+        if track is None:
+            message += u'-- pause --\n'
+        else:
+            message += u'«%s» by %s — #%u ⚖%.2f ♺%s' % (track.get('title', 'untitled'), track.get('artist', 'unknown artist'), track.get('id', 0), track.get('weight', 0), track.get('count', '?'))
+            if 'labels' in track:
+                message += u' @' + u' @'.join(track['labels'])
+            message += u'\n'
     return message
 
 
@@ -230,7 +234,7 @@ def on_queue(args, sender, cur=None):
         if not tracks:
             return 'Could not find anything.'
 
-        ardj.jabber.chat_say(u'%s requested track %s' % (sender.split('@')[0], u', '.join([ardj.tracks.identify(x) for x in tracks])))
+        ardj.jabber.chat_say(u'%s requested track %s' % (sender.split('@')[0], u', '.join([ardj.tracks.identify(x, cur=cur, uknown='(a pause)') for x in tracks])))
 
         jingles = ardj.tracks.find_ids('-r @queue-jingle')[:1]
         if tracks and jingles and not have_tracks and not silent:
@@ -242,6 +246,7 @@ def on_queue(args, sender, cur=None):
     tracks = ardj.tracks.get_queue(cur)[:10]
     if not tracks:
         return 'Nothing is in the queue.'
+    print tracks
     return format_track_list(tracks, u'Current queue:')
 
 
@@ -571,4 +576,4 @@ def run_cli(args):
             print '\nBye.'
             return
         except Exception, e:
-            print >>sys.stderr, e
+            print >>sys.stderr, e, traceback.format_exc(e)
