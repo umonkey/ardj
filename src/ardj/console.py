@@ -293,8 +293,14 @@ def on_votes(args, sender, cur=None):
 
 def on_voters(args, sender, cur=None):
     cur = cur or ardj.database.cursor()
-    rows = cur.execute('SELECT `email`, COUNT(*) AS `count` FROM `votes` GROUP BY `email` ORDER BY `count` DESC').fetchall()
-    return u'Top voters: ' + u', '.join([u'%s (%u)' % (row[0], row[1]) for row in rows]) + u'.'
+    rows = cur.execute('SELECT v.email, COUNT(*) AS c, k.weight '
+        'FROM votes v INNER JOIN karma k ON k.email = v.email '
+        'GROUP BY v.email ORDER BY c DESC').fetchall()
+
+    output = u'Top voters:'
+    for email, count, weight in rows:
+        output += u'\n%s (%u, %.02f)' % (email, count, weight)
+    return output
 
 
 def on_play(args, sender, cur=None):
