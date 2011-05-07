@@ -3,7 +3,7 @@ ARDJ=/usr/local/bin/ardj
 
 @hourly			radio	$ARDJ track update-weights -q
 
-#13 *		* * *	radio	$ARDJ listeners show total > /radio/data/totals.csv
+1 0         * * *   radio   $ARDJ listeners dump >/dev/null
 0 11		* * *	radio	$ARDJ shitlist queue
 0 18		* * *	radio	$ARDJ db mark-hitlist
 0 3		* * *	radio	$ARDJ podcaster
