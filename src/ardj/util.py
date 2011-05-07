@@ -73,7 +73,7 @@ def get_opener(url, user, password):
     return opener
 
 
-def fetch(url, suffix=None, args=None, user=None, password=None, quiet=False, ret=False):
+def fetch(url, suffix=None, args=None, user=None, password=None, quiet=False, post=False, ret=False):
     """Retrieves a file over HTTP.
 
     Arguments:
@@ -83,11 +83,11 @@ def fetch(url, suffix=None, args=None, user=None, password=None, quiet=False, re
     user, password -- enable HTTP basic auth
     ret -- True to return file contents instead of a temporary file
     """
-    if args:
+    if args and not post:
         url += '?' + urllib.urlencode(args)
 
     opener = get_opener(url, user, password)
-    u = opener(urllib2.Request(url))
+    u = opener(urllib2.Request(url), post and urllib.urlencode(args) or None)
 
     if u is not None:
         ardj.log.info('Downloading %s' % url, quiet=quiet)

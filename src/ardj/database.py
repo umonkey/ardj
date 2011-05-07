@@ -29,6 +29,7 @@ except ImportError:
 
 import ardj.log
 import ardj.settings
+import ardj.scrobbler
 import ardj.tracks
 import ardj.util
 
@@ -78,7 +79,7 @@ class database:
         cur.execute('CREATE TABLE IF NOT EXISTS karma (email TEXT, weight REAL)')
         cur.execute('CREATE INDEX IF NOT EXISTS idx_karma_email ON karma (email)')
         # лог проигрываний
-        cur.execute('CREATE TABLE IF NOT EXISTS playlog (ts INTEGER NOT NULL, track_id INTEGER NOT NULL, listeners INTEGER NOT NULL)')
+        cur.execute('CREATE TABLE IF NOT EXISTS playlog (ts INTEGER NOT NULL, track_id INTEGER NOT NULL, listeners INTEGER NOT NULL, lastfm INTEGER NOT NULL DEFAULT 0)')
         cur.execute('CREATE INDEX IF NOT EXISTS idx_playlog_ts ON playlog (ts)')
         cur.execute('CREATE INDEX IF NOT EXISTS idx_playlog_track_id ON playlog (track_id)')
         # исходящие сообщения
@@ -196,6 +197,12 @@ class database:
         weight = cur.execute('SELECT weight FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?) ORDER BY weight DESC LIMIT 19, 1', (check_label, )).fetchone()
         if weight:
             cur.execute('INSERT INTO labels (track_id, label, email) SELECT id, ?, ? FROM tracks WHERE weight >= ? AND id IN (SELECT track_id FROM labels WHERE label = ?)', (set_label, 'ardj', weight[0], check_label, ))
+
+            lastfm = ardj.scrobbler.LastFM()
+            lastfm.authorize()
+
+            for artist, title in cur.execute('SELECT t.artist, t.title FROM tracks t INNER JOIN labels l ON l.track_id = t.id WHERE l.label = ?', (set_label, )).fetchall():
+                lastfm.love(artist, title)
 
     def mark_recent_music(self, cur=None):
         """Marks last 100 tracks with "recent"."""

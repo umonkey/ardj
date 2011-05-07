@@ -15,6 +15,7 @@ from ardj import xmpp
 import ardj.console
 import ardj.database
 import ardj.log
+import ardj.scrobbler
 import ardj.settings
 import ardj.tracks
 import ardj.util
@@ -93,6 +94,8 @@ class ardjbot(MyFileReceivingBot):
         self.pidfile = '/tmp/ardj-jabber.pid'
         self.database_mtime = None
 
+        self.lastfm = ardj.scrobbler.LastFM()
+
         login, password = self.split_login(ardj.settings.get('jabber/login', fail=True))
         resource = socket.gethostname() + '/' + str(os.getpid()) + '/'
         super(ardjbot, self).__init__(login, password, res=resource, debug=debug)
@@ -108,8 +111,18 @@ class ardjbot(MyFileReceivingBot):
         """
         self.__idle_status()
         self.__idle_ping()
+        self.__idle_lastfm()
         self.send_pending_messages()
         super(ardjbot, self).idle_proc()
+
+    def __idle_lastfm(self):
+        if self.lastfm:
+            try:
+                cur = ardj.database.cursor()
+                if self.lastfm.process(cur=cur):
+                    ardj.database.commit()
+            except Exception, e:
+                ardj.log.error('Could not process LastFM queue: %s' % e)
 
     def __idle_status(self):
         """
@@ -149,6 +162,7 @@ class ardjbot(MyFileReceivingBot):
                 ardj.log.error(u'Could not write to %s: %s' % (self.pidfile, e))
         self.update_status()
         self.join_chat_room()
+        self.lastfm.authorize()
 
     def join_chat_room(self):
         """Joins the chat room if configured."""

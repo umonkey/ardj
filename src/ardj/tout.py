@@ -12,6 +12,7 @@ import wave
 import ardj.database
 import ardj.log
 import ardj.settings
+import ardj.scrobbler
 import ardj.tags
 import ardj.util
 import ardj.website
@@ -30,13 +31,12 @@ def get_artist_names():
     cur = ardj.database.Open().cursor()
     return sorted([row[0] for row in cur.execute('SELECT DISTINCT artist FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?) AND weight >= ?', (ardj.settings.get('tout/label', 'music'), float(ardj.settings.get('tout/weight', '1.0')), )).fetchall()])
 
-def fetch_artist_events(artist_name):
+def fetch_artist_events(lastfm, artist_name):
     events = []
 
     try:
         print 'Updating %s' % artist_name.encode('utf-8')
-        url = 'http://ws.audioscrobbler.com/2.0/?method=artist.getEvents&artist=%s&api_key=%s&format=json&autocorrect=1' % (urllib.quote(artist_name.encode('utf-8')), ardj.settings.get('last.fm/key'))
-        data = json.loads(ardj.util.fetch(url, quiet=True, ret=True))
+        data = lastfm.get_events_for_artist(artist_name)
 
         if 'error' in data:
             raise LastFmError('Last.fm reports error: %s' % data['message'])
@@ -81,9 +81,11 @@ def fetch_events():
         if time.time() - os.stat(cache_fn).st_mtime < int(ardj.settings.get('tout/cache_ttl', '86400')):
             return json.loads(open(cache_fn, 'rb').read())
 
+    lastfm = ardj.scrobbler.LastFM().authorize()
+
     events = []
     for artist_name in sorted(list(set([n.lower() for n in get_artist_names()]))):
-        tmp = fetch_artist_events(artist_name)
+        tmp = fetch_artist_events(lastf, artist_name)
         if tmp is None:
             continue # wtf ?!
         events += tmp

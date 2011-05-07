@@ -1,100 +1,109 @@
-# vim: set ts=4 sts=4 sw=4 et fileencoding=utf-8:
-
-import csv
-import datetime
-import re
-import sys
-import time
-import urllib2
-
-try:
-    import lastfm.client
-    have_cli = True
-except ImportError:
-    have_cli = False
+import hashlib
+import json
 
 import ardj.log
 import ardj.settings
+import ardj.util
 
-class client:
-    """Last.fm client class.
 
-    Uses lastfmsubmitd to send track info. Uses config file parameter
-    lastfm/skip as a regular expression to match files that must never be
-    reported (such as jingles).
-    """
+class LastFM(object):
+    """The LastFM client."""
+    ROOT = 'http://ws.audioscrobbler.com/2.0/'
+
     def __init__(self):
-        """
-        Imports and initializes lastfm.client, reads options from
-        bot's config file.
-        """
-        self.skip_files = None
-        self.skip_labels = ardj.settings.get('lastfm/skip_labels', [])
-        self.folder = ardj.settings.get_music_dir()
-        if have_cli:
-            self.cli = lastfm.client.Daemon('ardj')
-            self.cli.open_log()
-        else:
-            ardj.log.warning('Scrobbler disabled: please install lastfmsubmitd.')
-            self.cli = None
-        skip = ardj.settings.get('lastfm/skip_files', '')
-        if skip:
-            self.skip_files = re.compile(skip)
+        self.key = ardj.settings.get('last.fm/key')
+        self.secret = ardj.settings.get('last.fm/secret')
+        self.login = ardj.settings.get('last.fm/login')
+        self.password = ardj.settings.get('last.fm/password')
+        self.sk = None
 
-    def submit(self, track):
-        """
-        Reports a track, which must be a dictionary containing keys: file,
-        artist, title. If a key is not there, the track is not reported.
-        """
-        if self.cli is not None:
-            try:
-                if self.__skip_filename(track):
-                    pass
-                elif self.__skip_labels(track):
-                    pass
-                elif track['artist'] and track['title']:
-                    data = { 'artist': track['artist'].strip(), 'title': track['title'].strip(), 'time': time.gmtime(), 'length': track['length'] }
-                    self.cli.submit(data)
-                    ardj.log.info('scrobbler: sent "%s" by %s' % (data['title'].encode('utf-8'), data['artist'].encode('utf-8')))
-                else:
-                    ardj.log.warning('scrobbler: no tags in %s' % track['filename'].encode('utf-8'))
-            except KeyError, e:
-                ardj.log.error(u'scrobbler: no %s in %s' % (e.args[0], track))
+    def authorize(self):
+        """Authorizes for a session key as a mobile device.
+        Details: http://www.last.fm/api/mobileauth"""
+        data = self.call(method='auth.getMobileSession',
+            username=self.login,
+            authToken=self.get_auth_token(),
+            api_sig=True
+        )
+        self.sk = str(data['session']['key'])
+        if self.sk:
+            ardj.log.info('Successfully authenticated with Last.FM')
+        return self
 
-    def __skip_filename(self, track):
-        """
-        Returns True if the track has a forbidden filename.
-        """
-        if self.skip_files is None:
-            return False
-        if self.skip_files.match(track['filename']):
-            ardj.log.info(u'scrobbler: skipped %s (forbidden file name)' % track['filename'])
+    def scrobble(self, artist, title, ts):
+        """Scrobbles a track.  If there's no session key (not authenticated),
+        does nothing."""
+        if self.sk:
+            data = self.call(method='track.scrobble',
+                artist=artist.encode('utf-8'),
+                track=title.encode('utf-8'),
+                timestamp=str(ts), api_sig=True, sk=self.sk,
+                post=True)
+            ardj.log.info(u'Sent to last.fm: %s -- %s' % (artist, title))
             return True
-        return False
 
-    def __skip_labels(self, track):
-        """
-        Returns True if the track has a label which forbids scrobbling.
-        """
-        if not self.skip_labels:
-            return False
-        if 'labels' not in track:
-            return False
-        for label in self.skip_labels:
-            if label in track['labels']:
-                ardj.log.info('scrobbler: skipped %s (forbidden label: %s)' % (track['filename'], label))
+    def now_playing(self, artist, title):
+        """Tells LastFM what you're listening to."""
+        if self.sk:
+            self.call(method='track.UpdateNowPlaying',
+                artist=artist, title=title,
+                api_sig=True, sk=self.sk,
+                post=True)
+
+    def love(self, artist, title):
+        if self.sk:
+            data = self.call(method='track.love',
+                artist=artist.encode('utf-8'),
+                track=title.encode('utf-8'),
+                api_sig=True,
+                sk=self.sk,
+                post=True)
+            if 'error' in data:
+                ardj.log.info(u'Could not love a track with last.fm: %s' % data['message'])
+                return False
+            else:
+                ardj.log.info(u'Sent to last.fm love for: %s -- %s' % (artist, title))
                 return True
-        return False
 
-instance = None
+    def get_events_for_artist(self, artist_name):
+        """Lists upcoming events for an artist."""
+        return self.call(method='artist.getEvents',
+            artist=artist_name.encode('utf-8'),
+            autocorrect='1')
 
-def Open():
-    global instance
-    if instance is None:
-        if not ardj.settings.get('lastfm/enable', False):
-            return None
-        if not have_cli:
-            ardj.log.warning('Last.fm scrobbler is not available: please install lastfmsubmitd.')
-            return None
-        instance = client()
-    return instance
+    def process(self, cur):
+        """Looks for stuff to scrobble in the playlog table."""
+        skip_labels = ardj.settings.get('last.fm/skip_labels')
+        if skip_labels:
+            in_sql = ', '.join(['?'] * len(skip_labels))
+            sql = 'SELECT t.artist, t.title, p.ts FROM tracks t INNER JOIN playlog p ON p.track_id = t.id WHERE p.lastfm = 0 AND t.weight > 0 AND t.id NOT IN (SELECT track_id FROM labels WHERE label IN (%s)) ORDER BY p.ts' % in_sql
+            params = skip_labels
+        else:
+            sql = 'SELECT t.artist, t.title, p.ts FROM tracks t INNER JOIN playlog p ON p.track_id = t.id WHERE p.lastfm = 0 AND t.weight > 0 ORDER BY p.ts'
+            params = []
+        rows = cur.execute(sql, params).fetchall()
+        if rows:
+            print sql, params
+        for artist, title, ts in rows:
+            if not self.scrobble(artist, title, ts):
+                return False
+            cur.execute('UPDATE playlog SET lastfm = 1 WHERE ts = ?', (ts, ))
+        return True
+
+    def call(self, post=False, api_sig=False, **kwargs):
+        kwargs['api_key'] = self.key
+        if api_sig:
+            kwargs['api_sig'] = self.get_call_signature(kwargs)
+        kwargs['format'] = 'json'
+        raw_response = ardj.util.fetch(self.ROOT, args=kwargs, post=post, quiet=True, ret=True)
+        if raw_response:
+            return json.loads(raw_response)
+
+    def get_call_signature(self, args):
+        parts = sorted([''.join(x) for x in args.items()])
+        return hashlib.md5(''.join(parts) + self.secret).hexdigest()
+
+    def get_auth_token(self):
+        """Returns a hex digest of the MD5 sum of the user credentials."""
+        pwd = hashlib.md5(self.password).hexdigest()
+        return hashlib.md5(self.login.lower() + pwd).hexdigest()
