@@ -35,12 +35,14 @@ def get_count():
     return int(m.group(1))
 
 
-def format_data(sql, params, converters, setting):
+def format_data(sql, params, converters, setting, header=None):
     filename = ardj.settings.getpath(setting)
     if filename:
         print 'Writing to %s' % filename
         data = ardj.database.cursor().execute(sql, params).fetchall()
         f = csv.writer(open(filename, 'w'))
+        if header:
+            f.writerow(header)
         for row in data:
             row = [converters[x](row[x]) for x in range(len(row))]
             f.writerow(row)
@@ -61,16 +63,18 @@ def get_yesterday_ts():
 def dump_statistics():
     """Saves both kinds of statistics to configured files (total.csv and
     yesterday.csv by default)."""
-    sql = 'SELECT max(l.ts), t.artist, t.title, SUM(l.listeners) AS count FROM tracks t INNER JOIN playlog l ON l.track_id = t.id GROUP BY t.artist, t.title ORDER BY artist, title'
+    sql = 'SELECT max(l.ts), t.artist, t.title, SUM(l.listeners) AS count, t.id, t.weight FROM tracks t INNER JOIN playlog l ON l.track_id = t.id WHERE weight > 0 GROUP BY t.artist, t.title ORDER BY artist COLLATE UNICODE, title COLLATE UNICODE'
     params = []
     format_data(sql, params, [
         lambda d: time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(d)),
         lambda x: unicode(x).encode('utf-8'),
         lambda x: unicode(x).encode('utf-8'),
         str,
-    ], 'statistics/listeners/total_csv')
+        str,
+        lambda w: '%.02f' % w,
+    ], 'statistics/listeners/total_csv', [ 'last_played', 'artist', 'title', 'listeners', 'id', 'weight' ])
 
-    sql = 'SELECT l.ts, t.id, t.artist, t.title, l.listeners FROM tracks t INNER JOIN playlog l ON l.track_id = t.id WHERE l.ts BETWEEN ? AND ? ORDER BY l.ts'
+    sql = 'SELECT l.ts, t.id, t.artist, t.title, l.listeners FROM tracks t INNER JOIN playlog l ON l.track_id = t.id WHERE l.ts BETWEEN ? AND ? AND weight > 0 ORDER BY l.ts'
     params = get_yesterday_ts()
     format_data(sql, params, [
         lambda d: time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(d)),

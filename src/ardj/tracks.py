@@ -730,6 +730,7 @@ def merge(id1, id2, cur):
 
     cur.execute('UPDATE labels SET track_id = ? WHERE track_id = ?', (id1, id2, ))
     cur.execute('UPDATE votes SET track_id = ? WHERE track_id = ?', (id1, id2, ))
+    cur.execute('UPDATE playlog SET track_id = ? WHERE track_id = ?', (id1, id2, ))
 
     update_track(t1, cur=cur)
 
