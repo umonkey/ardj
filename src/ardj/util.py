@@ -21,7 +21,7 @@ def run(command, quiet=False, stdin_data=None, grab_output=False):
     command = [str(x) for x in command]
 
     if stdin_data is not None:
-        filename = ardj.util.mktemp(suffix='.txt')
+        filename = mktemp(suffix='.txt')
         open(str(filename), 'wb').write(stdin_data)
         command.append('<')
         command.append(str(filename))
@@ -43,8 +43,9 @@ def run(command, quiet=False, stdin_data=None, grab_output=False):
 
 class mktemp:
     def __init__(self, suffix=''):
-        self.filename = tempfile.mkstemp(prefix='ardj_', suffix=suffix)[1]
+        fd, self.filename = tempfile.mkstemp(prefix='ardj_', suffix=suffix)
         os.chmod(self.filename, 0664)
+        os.close(fd)
 
     def __del__(self):
         if os.path.exists(self.filename):
