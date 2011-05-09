@@ -1,4 +1,6 @@
+import glob
 import os
+import random
 import sys
 import traceback
 
@@ -9,7 +11,7 @@ songnumber = -1
 last_track = None
 last_good_file = None
 
-FAILURE = '/usr/local/share/ardj/failure.ogg'
+FAILURE_GLOB = '/usr/local/share/ardj/failure/*.ogg'
 
 def ices_init():
     """
@@ -40,9 +42,10 @@ def ices_get_next():
         return str(last_track['filepath'])
     except Exception, e:
         ardj.log.error('ices.ardj failed: %s\n%s' % (e, traceback.format_exc(e)))
-        if os.path.exists(FAILURE):
-            return FAILURE
-        ardj.log.error('Failure file %s not found.  Please, please have one.' % FAILURE)
+        fallback = glob.glob(FAILURE_GLOB)
+        if fallback:
+            return fallback[random.randrange(len(fallback))]
+        ardj.log.error('Failure files not found (%s).  Please, please have one.' % FAILURE_GLOB)
         return last_good_file
 
 def ices_get_metadata():
