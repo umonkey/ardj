@@ -18,6 +18,9 @@ test:
 	PYTHONPATH=src ARDJ_SETTINGS=unittests/data/settings.yaml python unittests/all.py || cat tests.log
 	rm -f unittests/data/*.*
 
+console:
+	PYTHONPATH=src ./bin/ardj console $MAIL
+
 testv: test
 	less -S tests-ardj.log
 
