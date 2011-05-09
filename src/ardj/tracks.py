@@ -773,7 +773,9 @@ def run_cli(args):
         track_id = get_next_track_id(cur=cur, update_stats=not debug)
         if track_id:
             track = get_track_by_id(track_id, cur=cur)
-            print json.dumps(track)
+            output = json.dumps(track)
+            ardj.log.debug('next-json returns: %s' % output)
+            print output
     elif command == 'update-weights':
         update_real_track_weights()
         ardj.database.Open().commit()
