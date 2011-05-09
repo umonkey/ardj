@@ -86,27 +86,53 @@ def get_queue(cur=None):
 
 def find_ids(pattern, cur=None):
     cur = cur or ardj.database.cursor()
-    if not pattern.strip():
+
+    search_order = 'weight DESC'
+    search_args = []
+    search_labels = []
+    search_ids = []
+
+    args = [a for a in pattern.split(' ') if a.strip()]
+    for arg in args:
+        if arg == '-r':
+            search_order = 'RANDOM()'
+        elif arg == '-l':
+            search_order = 'id DESC'
+        elif arg == '-f':
+            search_order = 'id'
+        elif arg.isdigit():
+            if search_ids is not None:
+                search_ids.append(arg)
+        elif arg.startswith('@'):
+            search_labels.append(arg[1:])
+            search_ids = None
+        else:
+            search_args.append(arg)
+            search_ids = None
+
+    if search_ids:
+        return [ int(x) for x in search_ids ]
+
+    pattern = u' '.join(search_args)
+
+    params = []
+    where = []
+
+    for label in search_labels:
+        where.append('id IN (SELECT track_id FROM labels WHERE label = ?)')
+        params.append(label)
+
+    if search_args:
+        like = u' '.join(search_args)
+        where.append('(ULIKE(artist, ?) OR ULIKE(title, ?))')
+        params.append(like)
+        params.append(like)
+
+    if not params:
         return []
 
-    order = 'weight DESC'
-    if pattern.startswith('-r '):
-        pattern = pattern[3:]
-        order = 'RANDOM()'
-    elif pattern.startswith('-l '):
-        pattern = pattern[3:]
-        order = 'id DESC'
-    elif pattern.startswith('-f '):
-        pattern = pattern[3:]
-        order = 'id'
-
-    if pattern.strip().isdigit():
-        return [ int(pattern.strip()) ]
-    if pattern.startswith('@'):
-        rows = cur.execute('SELECT id FROM tracks WHERE weight > 0 AND id IN (SELECT track_id FROM labels WHERE label = ?) ORDER BY ' + order, (pattern[1:], )).fetchall()
-        return [row[0] for row in rows]
-    like = '%s' % pattern
-    rows = cur.execute('SELECT id FROM tracks WHERE weight > 0 AND (ULIKE(artist, ?) OR ULIKE(title, ?)) ORDER BY ' + order, (like, like, )).fetchall()
+    sql = 'SELECT id FROM tracks WHERE weight > 0 AND %s ORDER BY %s LIMIT 10' % (' AND '.join(where), search_order)
+    rows = cur.execute(sql, params).fetchall()
     return [row[0] for row in rows]
 
 
