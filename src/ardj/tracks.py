@@ -782,6 +782,24 @@ def update_track_lengths():
     ardj.database.commit()
 
 
+def find_incoming_files():
+    """Returns a list of incoming file names.  Only files modified more than 60
+    seconds ago are reported.  If the database/incoming/path parameter is not
+    set, an empty list is returned."""
+    result = []
+    incoming = ardj.settings.getpath('database/incoming/path')
+    ts_limit = int(time.time()) - 120
+    if incoming:
+        for dir, dirs, files in os.walk(incoming):
+            for filename in files:
+                realname = os.path.join(dir, filename)
+                if os.stat(realname).st_mtime > ts_limit:
+                    return [] # still uploading
+                if os.path.splitext(filename.lower())[1] in ('.mp3', '.ogg'):
+                    result.append(realname)
+    return result
+
+
 __CLI_USAGE__ = """Usage: ardj track command
 
 Commands:

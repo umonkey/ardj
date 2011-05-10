@@ -113,8 +113,32 @@ class ardjbot(MyFileReceivingBot):
         self.__idle_status()
         self.__idle_ping()
         self.__idle_lastfm()
+        self.__idle_incoming()
         self.send_pending_messages()
         super(ardjbot, self).idle_proc()
+
+    def __idle_incoming(self):
+        """Sees if there's new music and processes it."""
+        try:
+            files = ardj.tracks.find_incoming_files()
+            if files:
+                self.status_type = self.DND
+                success = []
+                add_labels = ardj.settings.get('database/incoming/labels', [ 'tagme', 'music' ])
+                for filename in files:
+                    folder = os.path.dirname(filename)
+                    if not os.access(folder, os.W_OK):
+                        ardj.log.warning('File %s can not be deleted -- not adding.' % filename)
+                    else:
+                        ardj.tracks.add_file(filename, add_labels)
+                        os.unlink(filename)
+                        time.sleep(1)
+                        success.append(os.path.basename(filename))
+                self.status_type = self.AVAILABLE
+                if success:
+                    chat_say('%u new files added, see the "news" command.' % len(success))
+        except Exception, e:
+            ardj.log.error('Error adding new files: %s' % e)
 
     def __idle_lastfm(self):
         cur = ardj.database.cursor()

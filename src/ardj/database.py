@@ -294,27 +294,6 @@ class database:
         count = cur.execute('SELECT COUNT(*) FROM labels WHERE label = \'long\'').fetchone()[0]
         print 'Average length is %u seconds, %u tracks match.' % (length, count)
 
-    def import_new_files(self):
-        """Adds files from a predefined location.
-
-        The location is defined in database/incoming/path."""
-        folder = ardj.settings.getpath('database/incoming/path')
-        if not folder:
-            ardj.log.warning('Import failed: database/incoming/path not set.')
-            return False
-        if not os.path.exists(folder):
-            ardj.log.warning('Import failed: %s does not exist.' % folder)
-            return False
-
-        add_labels = ardj.settings.get('database/incoming/labels', [ 'tagme', 'music' ])
-        for folder, folders, files in os.walk(folder):
-            for filename in files:
-                filename = os.path.join(folder, filename)
-                if os.path.splitext(filename.lower())[1] in ('.mp3', '.ogg', '.flac', '.jpg'):
-                    if ardj.tracks.add_file(filename, add_labels):
-                        ardj.log.debug('Removing %s (added OK)' % filename)
-                        os.unlink(filename)
-
 
 def Open(filename=None):
     """Returns the active database instance."""
@@ -342,19 +321,6 @@ def queue_tracks(cur, track_ids):
         cur.execute('INSERT INTO queue (track_id, owner) VALUES (?, ?)', (track_id, 'robot', ))
 
 
-def run_pam_hook(args):
-    if not 'PAM_USER' in os.environ:
-        return False
-    if not 'PAM_TYPE' in os.environ:
-        return False
-    if os.environ['PAM_TYPE'] != 'close_session':
-        return False
-    user = ardj.settings.get('database/pam_user')
-    if not user or user != os.environ['PAM_USER']:
-        return False
-    return True
-
-
 USAGE = """Usage: ardj db commands...
 
 Commands:
@@ -378,13 +344,6 @@ def run_cli(args):
         ok = True
     if 'flush-queue' in args:
         db.cursor().execute('DELETE FROM queue')
-        ok = True
-    if 'import' in args:
-        db.import_new_files()
-        ok = True
-    if 'pam' in args:
-        if run_pam_hook(args):
-            db.import_new_files()
         ok = True
     if 'mark-hitlist' in args:
         db.mark_hitlist()
