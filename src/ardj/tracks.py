@@ -465,7 +465,7 @@ def get_all_playlists(cur=None):
         for item in lst:
             if '-' in str(item):
                 bounds = item.split('-')
-                result += range(int(bounds[0]), int(bounds[1]) + 1)
+                result += range(int(bounds[0]), int(bounds[1]))
             else:
                 result.append(item)
         return result
