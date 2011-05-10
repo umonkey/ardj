@@ -140,7 +140,7 @@ class LibreFM(object):
                 ardj.log.debug('Logged in to libre.fm, will submit to %s' % (self.submit_url, ))
                 return True
 
-    def scrobble(self, artist, title, ts=None):
+    def scrobble(self, artist, title, ts=None, retry=True):
         """Scrobbles a track, returns True on success."""
         if not ardj.settings.get('libre.fm/scrobble', True):
             return True
@@ -157,6 +157,10 @@ class LibreFM(object):
         if data == 'OK':
             ardj.log.debug(u'Sent to libre.fm: %s -- %s' % (artist, title))
             return True
+        elif data == 'BADSESSION' and retry:
+            ardj.log.debug('Bad libre.fm session, renewing.')
+            self.authorize()
+            return self.scrobble(artist, title, ts, False)
         else:
             ardj.log.error('Could not submit to libre.fm: %s' % data)
             return False
