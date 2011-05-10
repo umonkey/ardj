@@ -324,7 +324,7 @@ def add_file(filename, add_labels=None, owner=None):
     tags = ardj.tags.get(str(filename)) or {}
     artist = tags.get('artist', 'Unknown Artist')
     title = tags.get('title', 'Untitled')
-    duration = tags.get('duration', 0)
+    duration = tags.get('length', 0)
     labels = tags.get('labels', [])
 
     if add_labels and not labels:
@@ -335,7 +335,7 @@ def add_file(filename, add_labels=None, owner=None):
         raise Exception('Could not copy %s to %s' % (filename, abs_filename))
 
     cur = ardj.database.cursor()
-    track_id = cur.execute('INSERT INTO tracks (artist, title, filename, length, last_played, owner, weight) VALUES (?, ?, ?, ?, ?, ?, ?)', (artist, title, rel_filename, duration, 0, owner or 'ardj', 1, )).lastrowid
+    track_id = cur.execute('INSERT INTO tracks (artist, title, filename, length, last_played, owner, weight, real_weight, count) VALUES (?, ?, ?, ?, ?, ?, 1, 1, 0)', (artist, title, rel_filename, duration, 0, owner or 'ardj', )).lastrowid
     for label in labels:
         cur.execute('INSERT INTO labels (track_id, label, email) VALUES (?, ?, ?)', (track_id, label, (owner or 'ardj').lower(), ))
     ardj.database.commit()
