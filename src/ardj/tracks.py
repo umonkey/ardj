@@ -310,7 +310,7 @@ def gen_filename(suffix):
             return abs_filename, rel_filename
 
 
-def add_file(filename, add_labels=None, owner=None, cur=None):
+def add_file(filename, add_labels=None, owner=None):
     """Adds the file to the database.
 
     Returns track id.
@@ -334,12 +334,11 @@ def add_file(filename, add_labels=None, owner=None, cur=None):
     if not ardj.util.copy_file(filename, abs_filename):
         raise Exception('Could not copy %s to %s' % (filename, abs_filename))
 
-    cur = cur or ardj.database.cursor()
+    cur = ardj.database.cursor()
     track_id = cur.execute('INSERT INTO tracks (artist, title, filename, length, last_played, owner, weight) VALUES (?, ?, ?, ?, ?, ?, ?)', (artist, title, rel_filename, duration, 0, owner or 'ardj', 1, )).lastrowid
-
     for label in labels:
         cur.execute('INSERT INTO labels (track_id, label, email) VALUES (?, ?, ?)', (track_id, label, (owner or 'ardj').lower(), ))
-
+    ardj.database.commit()
     return track_id
 
 
