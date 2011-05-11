@@ -273,7 +273,7 @@ def add_vote(track_id, email, vote, cur=None, update_karma=False):
         'VALUES (?, ?, ?, ?)', (track_id, email, vote, int(time.time()), ))
 
     # Update current track weight.
-    current_weight = max(current_weight + vote * 0.25, 0.1)
+    current_weight = max(current_weight + vote * 0.25, 0.01)
     cur.execute('UPDATE tracks SET weight = ? WHERE id = ?', (current_weight, track_id, ))
 
     real_weight = update_real_track_weight(track_id, cur=cur)
@@ -669,7 +669,7 @@ def update_real_track_weight(track_id, cur=None):
     for email, vote in rows:
         results[email] = vote
 
-    real_weight = sum(results.values()) * 0.25 + 1
+    real_weight = max(sum(results.values()) * 0.25 + 1, 0.01)
     cur.execute('UPDATE tracks SET real_weight = ? WHERE id = ?', (real_weight, track_id, ))
     return real_weight
 
