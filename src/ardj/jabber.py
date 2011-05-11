@@ -261,9 +261,8 @@ class ardjbot(MyFileReceivingBot):
                         return
                     rep = ardj.console.process_command(msg, mess.getFrom().getStripped())
                 except Exception, e:
-                    try: msg = unicode(e).encode('utf-8')
-                    except: msg = 'unknown error'
-                    rep = 'Could not process your message:\n%s\n%s' % (msg, traceback.format_exc(e))
+                    ardj.log.warning(u'ERROR: %s, MESSAGE: %s\n%s' % (e, mess, traceback.format_exc(e)))
+                    rep = unicode(e)
                 self.send_simple_reply(mess, rep.strip())
                 self.send_pending_messages()
         finally:
