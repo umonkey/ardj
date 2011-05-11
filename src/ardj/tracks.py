@@ -259,20 +259,22 @@ def add_vote(track_id, email, vote, cur=None, update_karma=False):
             email = k
             break
 
-    last_played = cur.execute("SELECT last_played FROM tracks WHERE id = ?",
-        (track_id, )).fetchone()
+    last_played, current_weight = cur.execute("SELECT last_played, weight FROM tracks WHERE id = ?", (track_id, )).fetchone()
     if not last_played:
         raise Exception('This track was never played.')
+    elif current_weight <= 0:
+        raise Exception("Can't vote for deleted tracks.")
 
     vote_count = cur.execute("SELECT COUNT(*) FROM votes WHERE track_id = ? "
         "AND email = ? AND vote = ? AND ts >= ?", (track_id, email, vote,
-        last_played[0], )).fetchone()[0]
+        last_played, )).fetchone()[0]
 
     cur.execute('INSERT INTO votes (track_id, email, vote, ts) '
         'VALUES (?, ?, ?, ?)', (track_id, email, vote, int(time.time()), ))
-    if vote_count == 0:
-        cur.execute('UPDATE tracks SET weight = weight + ? WHERE id = ? '
-            'AND weight > 0.25', (vote * 0.25, track_id, ))
+
+    # Update current track weight.
+    current_weight = max(current_weight + vote * 0.25, 0.1)
+    cur.execute('UPDATE tracks SET weight = ? WHERE id = ?', (current_weight, track_id, ))
 
     real_weight = update_real_track_weight(track_id, cur=cur)
     real_weight = cur.execute('SELECT weight FROM tracks WHERE id = ?',
