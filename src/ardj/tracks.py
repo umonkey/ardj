@@ -350,7 +350,7 @@ def get_track_id_from_queue(cur=None):
     If the queue is empty or there's no valid track in it, returns None.
     """
     cur = cur or ardj.database.cursor()
-    row = cur.execute('SELECT id, track_id FROM queue ORDER BY id LIMIT 1').fetchone()
+    row = cur.execute('SELECT id, track_id FROM queue WHERE track_id = 0 OR track_id NOT IN (SELECT id FROM tracks WHERE weight <= 0 OR filename IS NULL) ORDER BY id LIMIT 1').fetchone()
     if row:
         cur.execute('DELETE FROM queue WHERE id = ?', (row[0], ))
         return row[1]
@@ -362,7 +362,7 @@ def get_random_track_id_from_playlist(playlist, skip_artists, cur=None):
 
     cur = cur or ardj.database.cursor()
 
-    sql = 'SELECT id, weight, artist FROM tracks WHERE weight > 0 AND artist IS NOT NULL'
+    sql = 'SELECT id, weight, artist FROM tracks WHERE weight > 0 AND artist IS NOT NULL AND filename IS NOT NULL'
     params = []
 
     sql, params = add_labels_filter(sql, params, playlist.get('labels', [ playlist.get('name', 'music') ]))
@@ -514,8 +514,8 @@ def get_prerolls_for_labels(labels, cur):
 
 def get_prerolls_for_track(track_id, cur):
     """Returns prerolls applicable to the specified track."""
-    by_artist = cur.execute("SELECT t1.id FROM tracks t1 INNER JOIN tracks t2 ON t2.artist = t1.artist INNER JOIN labels l ON l.track_id = t1.id WHERE l.label = 'preroll' AND t2.id = ? AND t1.weight > 0", (track_id, )).fetchall()
-    by_label = cur.execute("SELECT t.id, t.title FROM tracks t WHERE t.id IN (SELECT track_id FROM labels WHERE label IN (SELECT l.label || '-preroll' FROM tracks t1 INNER JOIN labels l ON l.track_id = t1.id WHERE t1.id = ?))", (track_id, )).fetchall()
+    by_artist = cur.execute("SELECT t1.id FROM tracks t1 INNER JOIN tracks t2 ON t2.artist = t1.artist INNER JOIN labels l ON l.track_id = t1.id WHERE l.label = 'preroll' AND t2.id = ? AND t1.weight > 0 AND t1.filename IS NOT NULL", (track_id, )).fetchall()
+    by_label = cur.execute("SELECT t.id, t.title FROM tracks t WHERE t.weight > 0 AND t.filename IS NOT NULL AND t.id IN (SELECT track_id FROM labels WHERE label IN (SELECT l.label || '-preroll' FROM tracks t1 INNER JOIN labels l ON l.track_id = t1.id WHERE t1.id = ?))", (track_id, )).fetchall()
     return list(set([row[0] for row in by_artist + by_label]))
 
 def add_preroll(track_id, labels=None, cur=None):
