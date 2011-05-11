@@ -27,6 +27,10 @@ def is_user_admin(sender):
     return sender in ardj.settings.get('jabber/access', [])
 
 
+def filter_labels(labels):
+    return [l for l in labels if ':' not in l]
+
+
 def format_track_list(tracks, header=None):
     message = u''
     if header is not None:
@@ -37,7 +41,7 @@ def format_track_list(tracks, header=None):
         else:
             message += u'«%s» by %s — #%u ⚖%.2f ♺%s' % (track.get('title', 'untitled'), track.get('artist', 'unknown artist'), track.get('id', 0), track.get('weight', 0), track.get('count', '?'))
             if 'labels' in track:
-                message += u' @' + u' @'.join(track['labels'])
+                message += u' @' + u' @'.join(filter_labels(track['labels']))
             message += u'\n'
     return message
 
@@ -106,7 +110,9 @@ def on_sql(args, sender, cur=None):
     cur = cur or ardj.database.cursor()
     rows = cur.execute(args).fetchall()
     if not rows:
-        return 'Empty result.'
+        if cur.rowcount:
+            return '%u rows affected.' % cur.rowcount
+        return 'Nothing.'
 
     output = u'\n'.join([u'; '.join([unicode(cell) for cell in row]) for row in rows])
     return output
@@ -216,7 +222,7 @@ def on_queue(args, sender, cur=None):
         if delete:
             args = args[3:]
 
-        tracks = ardj.tracks.find_ids(args, cur)
+        tracks = ardj.tracks.find_ids(args, sender, cur)
 
         if delete:
             for track_id in tracks:
@@ -259,12 +265,13 @@ def on_find(args, sender, cur=None):
     By default results are sorted by rating, highest rated go first.  You can
     change this behaviour using the following modifiers:
 
+    find -b           -- shows your bookmarked tracks, see "bm";
     find -r something -- show in random order;
     find -l something -- show newest first;
     find -s something -- show olders first.
     """
     cur = cur or ardj.database.cursor()
-    tracks = [ardj.tracks.get_track_by_id(x, cur=cur) for x in ardj.tracks.find_ids(args, cur=cur)][:10]
+    tracks = [ardj.tracks.get_track_by_id(x, cur=cur) for x in ardj.tracks.find_ids(args, sender, cur=cur)][:10]
     if not tracks:
         return 'Nothing was found.'
     return format_track_list(tracks, u'Found these tracks:')
@@ -325,11 +332,13 @@ def on_tags(args, sender, cur=None):
     tags add -remove [for track_id] -- manipulate tags
     tags -- show the tag cloud.
     """
-    if not args:
+    if not args or args == '-a':
         cur = cur or ardj.database.cursor()
         data = cur.execute('SELECT l.label, COUNT(*) AS count FROM labels l '
             'INNER JOIN tracks t ON t.id = l.track_id '
-            'WHERE t.weight > 0 GROUP BY label ORDER BY count DESC').fetchall()
+            'WHERE t.weight > 0 GROUP BY label ORDER BY l.label').fetchall()
+        if args != '-a':
+            data = [x for x in data if ':' not in x[0]]
         output = u', '.join([u'%s (%u)' % (l, c) for l, c in data]) + u'.'
         return output
 
@@ -431,7 +440,7 @@ def on_status(args, sender, cur=None):
     lcount = ardj.listeners.get_count()
     message = u'«%s» by %s — #%u ♺%u ⚖%.2f Σ%u' % (track.get('title', 'untitled'), track.get('artist', 'unknown artist'), track['id'], track.get('count', 0), track.get('weight', 0), lcount)
     if 'labels' in track:
-        message += u' @' + u' @'.join(track['labels'])
+        message += u' @' + u' @'.join(filter_labels(track['labels']))
     return message
 
 
@@ -445,6 +454,28 @@ def on_merge(args, sender, cur=None):
         return 'Usage: merge id1 id2'
     ardj.tracks.merge(int(ids[0]), int(ids[1]), cur or ardj.database.cursor())
     return 'OK.'
+
+
+def on_bookmark(args, sender, cur=None):
+    """Adds a track to bookmarks.  If track id is not specified, the currently
+    played track is bookmarked.  Latest bookmarks are shown afterwards."""
+    track_ids = []
+    remove = False
+    for arg in [a.strip() for a in args.split(' ') if a.strip()]:
+        if arg.isdigit():
+            track_ids.append(int(arg))
+        elif arg == '-d':
+            remove = True
+        else:
+            raise Exception('Usage: bm [-d] track_ids...')
+    if not track_ids:
+        track_ids.append(ardj.tracks.get_last_track_id(cur=cur))
+
+    ardj.tracks.bookmark(track_ids, sender, remove=remove, cur=cur)
+    tracks = [ardj.tracks.get_track_by_id(x, cur=cur) for x in ardj.tracks.find_ids('-b', sender, cur=cur)][:10]
+    if not tracks:
+        return u'You have no bookmarks.'
+    return format_track_list(tracks, u'Your bookmarks:')
 
 
 def on_help(args, sender, cur=None):
@@ -461,6 +492,7 @@ def on_help(args, sender, cur=None):
 
 command_map = (
     ('ban', True, on_ban, 'deletes all tracks by the specified artist'),
+    ('bm', False, on_bookmark, 'bookmark tracks (accepts optional id)'),
     ('delete', True, on_delete, 'deletes the specified track'),
     ('dump', False, on_dump, 'shows track info in JSON'),
     ('echo', False, on_echo, 'sends back the message'),

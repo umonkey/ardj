@@ -84,7 +84,7 @@ def get_queue(cur=None):
     return [get_track_by_id(row[0], cur) for row in cur.execute('SELECT track_id FROM queue ORDER BY id').fetchall()]
 
 
-def find_ids(pattern, cur=None):
+def find_ids(pattern, sender=None, cur=None):
     cur = cur or ardj.database.cursor()
 
     search_order = 'weight DESC'
@@ -100,6 +100,9 @@ def find_ids(pattern, cur=None):
             search_order = 'id DESC'
         elif arg == '-f':
             search_order = 'id'
+        elif arg == '-b' and sender is not None:
+            search_labels.append('bm:' + sender.lower())
+            search_ids = None
         elif arg.isdigit():
             if search_ids is not None:
                 search_ids.append(arg)
@@ -801,6 +804,16 @@ def find_incoming_files():
                 if os.path.splitext(filename.lower())[1] in ('.mp3', '.ogg'):
                     result.append(realname)
     return result
+
+
+def bookmark(track_ids, owner, remove=False, cur=None):
+    """Adds a bookmark label to the specified tracks."""
+    cur = cur or ardj.database.cursor()
+    label = 'bm:' + owner.lower()
+    for track_id in track_ids:
+        cur.execute('DELETE FROM labels WHERE track_id = ? AND label = ?', (track_id, label, ))
+        if not remove:
+            cur.execute('INSERT INTO labels (track_id, label, email) VALUES (?, ?, ?)', (track_id, label, owner, ))
 
 
 __CLI_USAGE__ = """Usage: ardj track command
