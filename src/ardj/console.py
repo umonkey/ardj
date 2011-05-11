@@ -472,10 +472,7 @@ def on_bookmark(args, sender, cur=None):
         track_ids.append(ardj.tracks.get_last_track_id(cur=cur))
 
     ardj.tracks.bookmark(track_ids, sender, remove=remove, cur=cur)
-    tracks = [ardj.tracks.get_track_by_id(x, cur=cur) for x in ardj.tracks.find_ids('-b', sender, cur=cur)][:10]
-    if not tracks:
-        return u'You have no bookmarks.'
-    return format_track_list(tracks, u'Your bookmarks:')
+    return 'Bookmark %s. Use "find -b" or "queue -b" to access yout bookmarks.' % (remove and 'removed' or 'added')
 
 
 def on_help(args, sender, cur=None):
