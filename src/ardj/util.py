@@ -91,7 +91,10 @@ def fetch(url, suffix=None, args=None, user=None, password=None, quiet=False, po
     u = opener(urllib2.Request(url), post and urllib.urlencode(args) or None)
 
     if u is not None:
-        ardj.log.info('Downloading %s' % url, quiet=quiet)
+        if post:
+            ardj.log.info('Posting to %s' % url, quiet=quiet)
+        else:
+            ardj.log.info('Downloading %s' % url, quiet=quiet)
         if ret:
             return u.read()
         if suffix is None:

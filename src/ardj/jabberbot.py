@@ -85,7 +85,8 @@ class JabberBot(object):
         for name, value in inspect.getmembers(self):
             if inspect.ismethod(value) and getattr(value, '_jabberbot_command', False):
                 name = getattr(value, '_jabberbot_command_name')
-                self.log.debug('Registered command: %s' % name)
+                if self.__debug:
+                    self.log.debug('Registered command: %s' % name)
                 self.commands[name] = value
 
         self.roster = None
@@ -270,11 +271,13 @@ class JabberBot(object):
 
     def status_type_changed(self, jid, new_status_type):
         """Callback for tracking status types (available, away, offline, ...)"""
-        self.log.debug('user %s changed status to %s' % (jid, new_status_type))
+        if self.__debug:
+            self.log.debug('user %s changed status to %s' % (jid, new_status_type))
 
     def status_message_changed(self, jid, new_status_message):
         """Callback for tracking status messages (the free-form status text)"""
-        self.log.debug('user %s updated text to %s' % (jid, new_status_message))
+        if self.__debug:
+            self.log.debug('user %s updated text to %s' % (jid, new_status_message))
 
     def broadcast(self, message, only_available=False):
         """Broadcast a message to all users 'seen' by this bot.
@@ -319,9 +322,10 @@ class JabberBot(object):
             return
 
         if type_ == 'error':
-            self.log.error(presence.getError())
+            self.log.error('Presence error: %s' % presence.getError())
 
-        self.log.debug('Got presence: %s (type: %s, show: %s, status: %s, subscription: %s)' % (jid, type_, show, status, subscription))
+        if self.__debug:
+            self.log.debug('Got presence: %s (type: %s, show: %s, status: %s, subscription: %s)' % (jid, type_, show, status, subscription))
 
         if type_ == 'subscribe':
             # Incoming presence subscription request
