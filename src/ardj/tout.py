@@ -85,7 +85,7 @@ def fetch_events():
 
     events = []
     for artist_name in sorted(list(set([n.lower() for n in get_artist_names()]))):
-        tmp = fetch_artist_events(lastf, artist_name)
+        tmp = fetch_artist_events(lastfm, artist_name)
         if tmp is None:
             continue # wtf ?!
         events += tmp
