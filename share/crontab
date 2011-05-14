@@ -2,6 +2,7 @@
 ARDJ=/usr/local/bin/ardj
 
 @hourly			radio	$ARDJ track update-weights -q
+@hourly			radio	$ARDJ db mark-recent mark-orphans mark-long purge
 
 1 0         * * *   radio   $ARDJ listeners stats >/dev/null
 0 11		* * *	radio	$ARDJ shitlist queue
@@ -18,7 +19,6 @@ ARDJ=/usr/local/bin/ardj
 0 6		* * *	radio	$ARDJ events announce update-website
 
 # Обновление всякой фигни в базе данных.
-0 6		* * *	radio	$ARDJ db mark-recent mark-orphans mark-long purge
 
 # Обновление карты слушателей.
 0 6		* * *	radio	$ARDJ map-listeners
