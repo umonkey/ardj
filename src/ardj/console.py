@@ -147,6 +147,8 @@ def on_rocks(args, sender, cur=None):
 
     track_id = args and int(args) or ardj.tracks.get_last_track_id(cur=cur)
     weight = ardj.tracks.add_vote(track_id, sender, 1, cur=cur)
+    if weight is None:
+        return 'No such track.'
     return 'OK, current weight of track #%u is %.04f.' % (track_id, weight)
 
 
@@ -156,6 +158,8 @@ def on_sucks(args, sender, cur=None):
 
     track_id = args and int(args) or ardj.tracks.get_last_track_id(cur=cur)
     weight = ardj.tracks.add_vote(track_id, sender, -1, cur=cur)
+    if weight is None:
+        return 'No such track.'
     return 'OK, current weight of track #%u is %.04f.' % (track_id, weight)
 
 

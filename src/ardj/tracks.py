@@ -262,7 +262,11 @@ def add_vote(track_id, email, vote, cur=None, update_karma=False):
             email = k
             break
 
-    last_played, current_weight = cur.execute("SELECT last_played, weight FROM tracks WHERE id = ?", (track_id, )).fetchone()
+    row = cur.execute("SELECT last_played, weight FROM tracks WHERE id = ?", (track_id, )).fetchone()
+    if row is None:
+        return None
+
+    last_played, current_weight = row
     if not last_played:
         raise Exception('This track was never played.')
     elif current_weight <= 0:
@@ -833,6 +837,11 @@ def run_cli(args):
         if track_id:
             track = get_track_by_id(track_id, cur=cur)
             output = json.dumps(track)
+
+            f = open('/var/www/sites/stream.tmradio.net/last-track.json', 'wb')
+            f.write(output)
+            f.close()
+
             ardj.log.debug('next-json returns: %s' % output)
             print output
     elif command == 'update-weights':
