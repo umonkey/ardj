@@ -88,9 +88,8 @@ def fetch(url, suffix=None, args=None, user=None, password=None, quiet=False, po
         url += '?' + urllib.urlencode(args)
 
     opener = get_opener(url, user, password)
-    u = opener(urllib2.Request(url), post and urllib.urlencode(args) or None)
-
-    if u is not None:
+    try:
+        u = opener(urllib2.Request(url), post and urllib.urlencode(args) or None)
         if post:
             ardj.log.info('Posting to %s' % url, quiet=quiet)
         else:
@@ -106,6 +105,9 @@ def fetch(url, suffix=None, args=None, user=None, password=None, quiet=False, po
         if os.path.splitext(str(filename).lower()) in ('.mp3', '.ogg', '.flac'):
             ardj.replaygain.update(str(filename))
         return filename
+    except urllib2.URLError, e:
+        ardj.log.error('Could not fetch %s: %s' % (url, e))
+        return None
 
 
 def upload(source, target):
