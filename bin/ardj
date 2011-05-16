@@ -19,7 +19,7 @@ COMMAND_MAP = [ # (command, module, function, description)
     ('listeners', 'listeners', 'run_cli', 'summarizes listeners.csv'),
     ('mail', 'mail', 'run_cli', 'send or receive mail'),
     ('map-listeners', 'map', 'update_listeners', 'updates the listeners map'),
-    ('news', 'news', 'update', 'updates news from echo.msk.ru'),
+    ('news', 'news', 'run_cli', 'updates news from echo.msk.ru'),
     ('podcaster', 'podcast', 'run_cli', 'fetch new podcasts'),
     ('rg', 'replaygain', 'run_cli', 'scan ReplayGain in files'),
     ('say', 'speech', 'render_text_cli', 'renders text to voice using festival, then plays it'),
