@@ -24,7 +24,7 @@ def purge_old_tracks(cur=None, weight=0.1, delay=1209600, quiet=False):
     cur = cur or ardj.database.cursor()
 
     tslimit = int(time.time()) - delay
-    tracks = cur.execute('SELECT id, weight, artist, title FROM tracks WHERE weight > 0 AND weight <= ? AND id NOT IN (SELECT track_id FROM votes WHERE ts >= ?)', (weight, tslimit, )).fetchall()
+    tracks = cur.execute('SELECT id, weight, artist, title FROM tracks WHERE real_weight > 0 AND real_weight <= ? AND id NOT IN (SELECT track_id FROM votes WHERE ts >= ?)', (weight, tslimit, )).fetchall()
     ardj.log.debug('Found %u tracks older than %u.' % (len(tracks), tslimit))
     for track_id, weight, artist, title in tracks:
         ardj.log.info('Deleting track %u ("%s" by %s): sucked for a long time.' % (track_id, title, artist))
@@ -32,7 +32,7 @@ def purge_old_tracks(cur=None, weight=0.1, delay=1209600, quiet=False):
 
 def get_highest_weight(cur):
     """Returns the lowest weight in the worst 10 tracks."""
-    row = cur.execute('SELECT weight FROM tracks WHERE weight > 0 AND id IN (SELECT track_id FROM labels WHERE label = ?) ORDER BY weight limit 9, 1', ('music', )).fetchone()
+    row = cur.execute('SELECT weight FROM tracks WHERE real_weight > 0 AND id IN (SELECT track_id FROM labels WHERE label = ?) ORDER BY real_weight limit 9, 1', ('music', )).fetchone()
     if row is None:
         return 0
     return row[0]
@@ -52,7 +52,7 @@ def pick_tracks(cur=None):
     tracks with up to that weight."""
     cur = cur or ardj.database.cursor()
     weight = get_highest_weight(cur)
-    rows = cur.execute('SELECT id FROM tracks WHERE weight > 0 AND weight <= ? AND id IN (SELECT track_id FROM labels WHERE label = ?) ORDER BY RANDOM() LIMIT 10', (weight, 'music', ))
+    rows = cur.execute('SELECT id FROM tracks WHERE weight > 0 AND real_weight <= ? AND id IN (SELECT track_id FROM labels WHERE label = ?) ORDER BY RANDOM() LIMIT 10', (weight, 'music', ))
     return [row[0] for row in rows]
 
 
