@@ -56,7 +56,8 @@ def get_air_duration(filename):
 def purge(dirname):
     limit = time.time() - MAX_FILE_AGE_DAYS * 86400
     for filename in os.listdir(dirname):
-        ctime = os.stat(os.path.join(dirname, filename)).st_ctime
+        filename = os.path.join(dirname, filename)
+        ctime = os.stat(filename).st_ctime
         if ctime < limit:
             ardj.log.info('Delete file: %s' % filename)
             os.unlink(filename)
