@@ -26,9 +26,12 @@ class LastFM(object):
             authToken=self.get_auth_token(),
             api_sig=True
         )
-        self.sk = str(data['session']['key'])
-        if self.sk:
-            ardj.log.info('Successfully authenticated with Last.FM')
+        if not data:
+            ardj.log.error('Could not authenticate with last.fm: no data.')
+        else:
+            self.sk = str(data['session']['key'])
+            if self.sk:
+                ardj.log.info('Successfully authenticated with Last.FM')
         return self
 
     def scrobble(self, artist, title, ts):
