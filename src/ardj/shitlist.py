@@ -52,7 +52,7 @@ def pick_tracks(cur=None):
     tracks with up to that weight."""
     cur = cur or ardj.database.cursor()
     weight = get_highest_weight(cur)
-    rows = cur.execute('SELECT id FROM tracks WHERE weight > 0 AND real_weight <= ? AND id IN (SELECT track_id FROM labels WHERE label = ?) ORDER BY RANDOM() LIMIT 10', (weight, 'music', ))
+    rows = cur.execute('SELECT id FROM tracks WHERE weight > 0 AND real_weight <= ? AND filename IS NOT NULL AND id IN (SELECT track_id FROM labels WHERE label = ?) ORDER BY RANDOM() LIMIT 10', (weight, 'music', ))
     return [row[0] for row in rows]
 
 
