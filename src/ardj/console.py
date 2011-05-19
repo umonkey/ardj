@@ -256,7 +256,6 @@ def on_queue(args, sender, cur=None):
     tracks = ardj.tracks.get_queue(cur)[:10]
     if not tracks:
         return 'Nothing is in the queue.'
-    print tracks
     return format_track_list(tracks, u'Current queue:')
 
 
