@@ -1,22 +1,18 @@
 # encoding=utf-8
 
 import os
+import os.path
 import sys
 import traceback
 
-__all__ = ['get', 'set']
+import mutagen
+import mutagen.oggvorbis
+import mutagen.mp3 as mp3
+import mutagen.easyid3 as easyid3
+from mutagen.apev2 import APEv2 
 
-try:
-    import mutagen
-    import mutagen.oggvorbis
-    import mutagen.mp3 as mp3
-    import mutagen.easyid3 as easyid3
-    from mutagen.apev2 import APEv2 
-    easyid3.EasyID3.RegisterTXXXKey('ardj', 'ardj')
-    easyid3.EasyID3.RegisterTXXXKey('ql:ardj', 'QuodLibet::ardj')
-except ImportError, e:
-    print >>sys.stderr, 'Pleasy install python-mutagen (%s)' % e
-    sys.exit(13)
+easyid3.EasyID3.RegisterTXXXKey('ardj', 'ardj')
+easyid3.EasyID3.RegisterTXXXKey('ql:ardj', 'QuodLibet::ardj')
 
 import ardj.log
 
@@ -49,26 +45,75 @@ def raw(filename):
         return handler()
 
 
-def get(filename):
-    t = raw(filename)
-    result = dict([(k, type(v) == list and v[0] or v) for k, v in t.items()])
-    result['length'] = int(mutagen.File(filename).info.length)
+class Wrapper(dict):
+    def __init__(self, filename):
+        self.filename = filename
+        self.length = None
+        self.read()
 
-    if 'ql:ardj' in result:
-        result['ardj'] = result['ql:ardj']
-        del result['ql:ardj']
+    def read(self):
+        self.clear()
+        ext = os.path.splitext(self.filename)[1].lower()
+        if ext in ('.oga', '.ogg'):
+            self.read_vorbis()
+        elif ext in ('.mp3'):
+            self.read_mp3()
+        else:
+            raise TypeError('File %s is of an unknown type.')
+        self.parse_special()
 
-    if 'ardj' in result:
-        for part in result['ardj'].split(';'):
-            if part.startswith('ardj=') and part != 'ardj=1':
-                ardj.log.warning('%s in %s' % (part, filename))
-                break
-            elif '=' in part:
+    def parse_special(self):
+        if 'ardj' in self and self['ardj'].startswith('ardj=1;'):
+            for part in self['ardj'].split(';')[1:]:
                 k, v = part.split('=', 1)
-                if k == 'labels':
-                    result['labels'] = v.split(',')
+                self[k] = v
+            del self['ardj']
 
-    return result
+        if 'labels' in self:
+            self['labels'] = self['labels'].split(',')
+
+    def read_vorbis(self):
+        tags = mutagen.oggvorbis.Open(self.filename)
+        for k, v in tags.items():
+            self[k] = v[0]
+        self['length'] = tags.info.length
+        self['sample_rate'] = tags.info.sample_rate
+        self['channels'] = tags.info.channels
+
+    def read_mp3(self):
+        try:
+            for k, v in APEv2(self.filename).items():
+                self[k.lower()] = str(v)
+        except: pass
+
+        try:
+            tags = mp3.Open(self.filename)
+            for k, v in tags.items():
+                if k == 'TPE1':
+                    k, v = 'artist', v.text[0]
+                elif k == 'TALB':
+                    k, v = 'album', v.text[0]
+                elif k == 'TIT2':
+                    k, v = 'title', v.text[0]
+                elif k == 'TRCK':
+                    k, v = 'tracknumber', v.text[0]
+                elif k.startswith('TXXX:'):
+                    k, v = k[5:].lower(), v.text[0]
+                elif k.startswith('COMM:'):
+                    k, v = 'comment', v.text[0]
+                else:
+                    continue
+                if k.startswith('quodlibet::'):
+                    k = k[11:]
+                self[k] = v
+            self['length'] = tags.info.length
+            self['sample_rate'] = tags.info.sample_rate
+        except: pass
+
+
+def get(filename):
+    return Wrapper(filename)
+
 
 def set(filename, tags):
     try:
@@ -81,3 +126,10 @@ def set(filename, tags):
     except Exception, e:
         print filename
         ardj.log.error(u'Could not save tags to %s: %s' % (filename, e) + traceback.format_exc(e))
+
+
+def run_cli(args):
+    for arg in args:
+        print 'Tags in %s' % arg
+        for k, v in sorted(get(arg).items(), key=lambda x: x[0]):
+            print '  %s = %s' % (k, v)
