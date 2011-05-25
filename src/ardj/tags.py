@@ -12,7 +12,8 @@ try:
     import mutagen.mp3 as mp3
     import mutagen.easyid3 as easyid3
     from mutagen.apev2 import APEv2 
-    easyid3.EasyID3.RegisterTXXXKey('ardj', 'ardj metadata')
+    easyid3.EasyID3.RegisterTXXXKey('ardj', 'ardj')
+    easyid3.EasyID3.RegisterTXXXKey('ql:ardj', 'QuodLibet::ardj')
 except ImportError, e:
     print >>sys.stderr, 'Pleasy install python-mutagen (%s)' % e
     sys.exit(13)
@@ -52,6 +53,10 @@ def get(filename):
     t = raw(filename)
     result = dict([(k, type(v) == list and v[0] or v) for k, v in t.items()])
     result['length'] = int(mutagen.File(filename).info.length)
+
+    if 'ql:ardj' in result:
+        result['ardj'] = result['ql:ardj']
+        del result['ql:ardj']
 
     if 'ardj' in result:
         for part in result['ardj'].split(';'):
