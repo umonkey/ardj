@@ -94,6 +94,11 @@ def on_skip(args, sender, cur=None):
     return 'Could not send the request for some reason.'
 
 
+def on_say(args, sender, cur=None):
+    ardj.jabber.chat_say(args)
+    return 'OK'
+
+
 def on_restart(args, sender, cur=None):
     if args == 'ices':
         if signal_ices(signal.SIGTERM):
@@ -508,6 +513,7 @@ command_map = (
     ('reload', True, on_reload, 'asks ices to reconfigure'),
     ('restart', True, on_restart, 'restarts the bot or ices'),
     ('rocks', False, on_rocks, 'increases track weight'),
+    ('say', True, on_say, 'sends a message to the chat room'),
     ('set', True, on_set, 'changes track properties'),
     ('shitlist', False, on_shitlist, 'shows 10 lowest rated tracks'),
     ('show', False, on_show, 'shows basic track info'),

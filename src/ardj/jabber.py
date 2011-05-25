@@ -332,12 +332,13 @@ def run_cli(args):
     print USAGE
 
 
-def chat_say(message, recipient=None):
+def chat_say(message, recipient=None, cur=None):
     """Adds a message to the chat room queue.  This is the way for command
     handlers to notify chat users.  If the recipient is not specified, the
     message is sent to the chat room."""
     ardj.log.debug(u'Will send to chat: %s' % message)
-    ardj.database.cursor().execute('INSERT INTO jabber_messages (re, message) VALUES (?, ?)', (recipient, message, ))
+    cur = cur or ardj.database.cursor()
+    cur.execute('INSERT INTO jabber_messages (re, message) VALUES (?, ?)', (recipient, message, ))
 
 
 __all__ = [ 'Open', 'chat_say' ]
