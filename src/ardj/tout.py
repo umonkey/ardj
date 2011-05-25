@@ -142,6 +142,8 @@ def get_announce_text():
                     artists.append(event['artist'])
 
     update_labels(artists)
+    if not artists:
+        return None
 
     output = ardj.settings.get('tout/announce_prefix', u'').strip() + u'\n'
     for date in sorted(data.keys()):
@@ -170,9 +172,14 @@ def update_labels(artist_names):
 def update_announce():
     track = ardj.tracks.get_track_by_id(int(ardj.settings.get('tout/track_id')))
 
+    text = get_announce_text()
+    if not text:
+        return
+
     text_fn = ardj.util.mktemp(suffix='.txt')
-    open(str(text_fn), 'wb').write(get_announce_text().encode('utf-8'))
-    ardj.log.debug('Wrote speech text to %s' % text_fn)
+    open(str(text_fn), 'wb').write(text.encode('utf-8'))
+    ardj.log.debug('Wrote speech text to %s, dump follows.' % text_fn)
+    print text.encode('utf-8')
 
     speech_fn = ardj.util.mktemp(suffix='.wav')
     ardj.util.run(['text2wave', '-f', '44100', '-eval', '(voice_msu_ru_nsh_clunits)', str(text_fn), '-o', str(speech_fn)])

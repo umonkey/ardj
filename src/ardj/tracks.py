@@ -358,9 +358,14 @@ def get_track_id_from_queue(cur=None):
     If the queue is empty or there's no valid track in it, returns None.
     """
     cur = cur or ardj.database.cursor()
-    row = cur.execute('SELECT id, track_id FROM queue WHERE track_id = 0 OR track_id NOT IN (SELECT id FROM tracks WHERE weight <= 0 OR filename IS NULL) ORDER BY id LIMIT 1').fetchone()
+    row = cur.execute('SELECT id, track_id FROM queue ORDER BY id LIMIT 1').fetchone()
     if row:
         cur.execute('DELETE FROM queue WHERE id = ?', (row[0], ))
+        if not row[1]:
+            return None
+        track = get_track_by_id(row[1], cur=cur)
+        if not track.get('filename'):
+            return None
         return row[1]
 
 
