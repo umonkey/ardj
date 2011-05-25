@@ -26,6 +26,7 @@ COMMAND_MAP = [ # (command, module, function, description)
     ('shitlist', 'shitlist', 'run_cli', 'queue worst 10 tracks'),
     ('sms', 'sms', 'run_cli', 'send text messages (GSM)'),
     ('stream', 'stream', 'run_cli', 'handles stream events'),
+    ('tags', 'tags', 'run_cli', 'interact with track metadata'),
     ('track', 'tracks', 'run_cli', 'works with individual tracks'),
     ('tsn', 'tsn', 'run', 'prepare and process a new So-So-News episode'),
     ('twit', 'twitter', 'run_cli', 'interacts with the twitter account'),
