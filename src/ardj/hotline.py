@@ -123,7 +123,7 @@ def process_messages(msg):
             if phone:
                 ardj.sms.send(phone, 'Your message: %s' % url)
             elif full_sender[1]:
-                ardj.mail.send_mail(full_sender[1], 'Your message received.', 'Find it here:\n%s' % url)
+                ardj.mail.send_mail([ full_sender[1], 'hex@umonkey.net' ], 'Your message received.', 'Thank you! Find your message here:\n%s' % url)
 
             global upload_files
             upload_files.append(temp)
