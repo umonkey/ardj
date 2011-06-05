@@ -118,7 +118,8 @@ class Podcaster:
             if entry['file'] not in self.known_urls:
                 post_fn = self.get_new_episode_fn()
                 self.upload_entry(entry)
-                self.publish_entry(entry, post_fn)
+                if entry.get('filename'):
+                    self.publish_entry(entry, post_fn)
                 rebuild = True
         if rebuild:
             ardj.website.update('update-podcasts')
@@ -145,15 +146,18 @@ class Podcaster:
         TODO: use ardj.website.add_page()."""
         e = entry
         ardj.log.info('Reposting %s' % os.path.basename(filename))
-        e['file_backup'] = ardj.settings.get('podcasts/file_base').rstrip('/') + '/' + entry['filename'] + '.mp3'
-        e['labels'] = u', '.join(entry['tags'])
-        e['date_time'] = time.strftime('%Y-%m-%d %H:%M', entry['date'])
-        e['filesize'] = self.get_filesize(entry)
-        text = u'title: %(title)s\nauthor: %(author)s\nfile: %(file)s\nfile_backup: %(file_backup)s\nfilesize: %(filesize)u\nlabels: %(labels)s\ndate: %(date_time)s\n---\n%(description)s' % e
+        if not entry.get('filename'):
+            print entry
+        else:
+            e['file_backup'] = ardj.settings.get('podcasts/file_base').rstrip('/') + '/' + entry['filename'] + '.mp3'
+            e['labels'] = u', '.join(entry['tags'])
+            e['date_time'] = time.strftime('%Y-%m-%d %H:%M', entry['date'])
+            e['filesize'] = self.get_filesize(entry)
+            text = u'title: %(title)s\nauthor: %(author)s\nfile: %(file)s\nfile_backup: %(file_backup)s\nfilesize: %(filesize)u\nlabels: %(labels)s\ndate: %(date_time)s\n---\n%(description)s' % e
 
-        f = open(filename, 'wb')
-        f.write(text.encode('utf-8'))
-        f.close()
+            f = open(filename, 'wb')
+            f.write(text.encode('utf-8'))
+            f.close()
 
     def upload_entry(self, entry):
         try:

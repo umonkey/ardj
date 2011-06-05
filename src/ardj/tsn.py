@@ -55,7 +55,7 @@ EMAIL_TEMPLATE = u"""Скачать выпуск:
 http://files.tmradio.net/audio/sosonews/sosonews-%(episode)02u.mp3
 
 Обсуждение:
-http://www.tmradio.net/programs/tsn/%(episode)02u/
+http://tsn.tmradio.net/%(episode)02u
 
 Основные темы:
 
@@ -112,6 +112,8 @@ def find_tsn_url():
                 if page_date == parts[1]:
                     if efn_time >= 2030 and efn_time < 2200:
                         return enc['href']
+
+    print "The feed doesn't have anything interesting."
 
 def run_process():
     tsn_url = find_tsn_url()

@@ -135,6 +135,7 @@ def upload_music(filenames):
     batch = mktemp(suffix='.txt')
     f = open(str(batch), 'wb')
     for fn in filenames:
+        os.chmod(str(fn), 0664)
         f.write('put %s\n' % str(fn).replace(' ', '\\ '))
     f.close()
 
