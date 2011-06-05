@@ -837,8 +837,7 @@ def run_cli(args):
 
     if command == 'next-json':
         cur = ardj.database.cursor()
-        debug = '-n' in args
-        track_id = get_next_track_id(cur=cur, update_stats=not debug)
+        track_id = get_next_track_id(cur=cur, debug='-q' not in args, update_stats='-n' not in args)
         if track_id:
             track = get_track_by_id(track_id, cur=cur)
             output = json.dumps(track)

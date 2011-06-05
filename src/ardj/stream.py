@@ -83,7 +83,7 @@ def update_rss(dirname):
         xml += RSS_ITEM % {
             'date': time.strftime('%d.%m.%Y, %H:%M', date),
             'duration': get_air_duration(filename),
-            'link': ardj.settings.get('stream/base_url', '') + filename,
+            'link': ardj.settings.get('stream/base_url', '') + os.path.basename(filename),
             'length': os.stat(filename).st_size,
             'rss_date': email.utils.formatdate(time.mktime(date)),
         }
