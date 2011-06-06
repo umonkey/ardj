@@ -1,6 +1,7 @@
 # encoding=utf-8
 
 import hashlib
+import json
 import os
 import shutil
 import subprocess
@@ -111,6 +112,12 @@ def fetch(url, suffix=None, args=None, user=None, password=None, quiet=False, po
             return fetch(url, suffix, args, user, password, quiet, post, ret, retry - 1)
         ardj.log.error('Could not fetch %s: %s' % (url, e))
         return None
+
+
+def fetch_json(*args, **kwargs):
+    data = fetch(*args, **kwargs)
+    if data is not None:
+        return json.loads(data)
 
 
 def upload(source, target):

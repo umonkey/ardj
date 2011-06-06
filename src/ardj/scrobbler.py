@@ -1,5 +1,4 @@
 import hashlib
-import json
 import time
 
 import ardj.log
@@ -128,9 +127,7 @@ class LastFM(object):
         if api_sig:
             kwargs['api_sig'] = self.get_call_signature(kwargs)
         kwargs['format'] = 'json'
-        raw_response = ardj.util.fetch(self.ROOT, args=kwargs, post=post, quiet=True, ret=True)
-        if raw_response:
-            return json.loads(raw_response)
+        return ardj.util.fetch_json(self.ROOT, args=kwargs, post=post, quiet=True, ret=True)
 
     def get_call_signature(self, args):
         parts = sorted([''.join(x) for x in args.items()])
