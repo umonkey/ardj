@@ -230,3 +230,16 @@ def mask_sender(sender):
             parts[1] = '..' + parts[1][2:]
         sender = '@'.join(parts)
     return sender
+
+
+def lower(s):
+    return s.lower().replace(u'ё', u'е')
+
+def ucmp(a, b):
+    return cmp(lower(a), lower(b))
+
+def in_list(a, lst):
+    for i in lst:
+        if not ucmp(i, a):
+            return True
+    return False

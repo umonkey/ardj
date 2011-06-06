@@ -88,14 +88,10 @@ class Podcaster:
             if 'author' in podcast:
                 feed_author = podcast['author']
 
-            tpa = {}
-
             for entry in feed['entries']:
                 if 'enclosures' in entry:
                     for enclosure in entry['enclosures']:
                         author = feed_author
-                        if not author and 'author' in entry:
-                            author = entry['author']
 
                         if entry.get('guid', '').startswith('http://alpha.libre.fm/'):
                             parts = entry['guid'].split('/')
@@ -103,6 +99,9 @@ class Podcaster:
                                 entry['author'] = urllib.unquote_plus(parts[4])
                             if parts[3] == 'track':
                                 entry['title'] = urllib.unquote_plus(parts[8])
+
+                        if not author and 'author' in entry:
+                            author = entry['author']
 
                         item = {
                             'author': author,
@@ -115,15 +114,6 @@ class Podcaster:
                             'repost': podcast.get('repost'),
                             'add_to_db': podcast.get('add_to_db', True),
                         }
-
-                        if ardj.tracks.find_by_title(item['title'], item['author']):
-                            continue
-
-                        if author not in tpa:
-                            tpa[author] = 0
-                        if tpa[author] >= podcast.get('tracks_per_artist', 100):
-                            continue
-                        tpa[author] += 1
 
                         if 'link' in entry:
                             item['description'] = u'<p>Полное описание можно найти на <a href="%s">сайте автора</a>.</p>' % entry['link']
@@ -209,6 +199,27 @@ class Podcaster:
             return int(r['content-length'])
 
         return 0
+
+
+def find_new_tracks(artist_names=None):
+    """Returns a list of available podcast episodes."""
+    obj = Podcaster()
+
+    result = []
+    for entry in obj.get_entries():
+        if not entry['add_to_db']:
+            continue
+        if artist_names:
+            if not ardj.util.in_list(entry['author'] or '', artist_names):
+                continue
+        result.append({
+            'artist': entry['author'],
+            'title': entry['title'],
+            'url': entry['file'],
+            'tags': entry['tags'],
+        })
+    return result
+
 
 def run_cli(args):
     """CLI interface to the podcast module."""

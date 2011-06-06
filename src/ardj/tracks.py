@@ -17,8 +17,10 @@ import time
 
 import ardj.database
 import ardj.jabber
+import ardj.jamendo
 import ardj.listeners
 import ardj.log
+import ardj.podcast
 import ardj.replaygain
 import ardj.scrobbler
 import ardj.tags
@@ -838,38 +840,67 @@ def find_by_title(title, artist_name=None, cur=None):
     return [row[0] for row in cur.fetchall()]
 
 
-def find_new_tracks(args):
-    """Finds new tracks by known artists, downloads and adds them."""
-    cur = ardj.database.cursor()
-    cli = ardj.scrobbler.LastFM().authorize()
+def get_missing_tracks(tracklist, limit=100):
+    """Removes duplicate and existing tracks."""
+    tmp = {}
+    fix = lambda x: x.lower().replace(u'ё', u'е')
 
-    artist_names = args[1:]
+    for track in tracklist:
+        artist = fix(track['artist'])
+        if not artist in tmp:
+            tmp[artist] = {}
+        if len(tmp[artist]) >= limit:
+            continue
+        if find_by_title(track['title'], artist):
+            continue
+        tmp[artist][fix(track['title'])] = track
+
+    result = []
+    for artist in sorted(tmp.keys()):
+        for title in sorted(tmp[artist].keys()):
+            result.append(tmp[artist][title])
+
+    return result
+
+
+def get_new_tracks(artist_names=None, label='music', weight=1.5):
     if not artist_names:
-        artist_names = ardj.database.Open().get_artist_names('music', weight=1.5)
+        artist_names = ardj.database.Open().get_artist_names(label, weight)
 
-    todo = []
+    tracklist = ardj.jamendo.find_new_tracks(artist_names)
+    tracklist += ardj.podcast.find_new_tracks(artist_names)
+
+    cli = ardj.scrobbler.LastFM().authorize()
     for artist_name in artist_names:
-        count = 0
-        for track in cli.get_tracks_by_artist(artist_name):
-            if not find_by_title(track['title'], artist_name, cur=cur) and count < 2:
-                todo.append([ track['title'], track['artist'], track['url'] ])
-                count += 1
+        tracklist += cli.get_tracks_by_artist(artist_name)
 
-    if todo:
-        count = 0
-        labels = ardj.settings.get('last.fm/new_track_labels', [ 'music', 'tagme', 'source:last.fm' ])
-        for title, artist, url in todo:
-            try:
-                ardj.log.info(u'[%u/%u] Fetching "%s" by %s' % (count+1, len(todo), title, artist))
-                filename = ardj.util.fetch(url, suffix='.mp3')
-                add_file(str(filename), add_labels=labels)
-                count += 1
-            except KeyboardInterrupt: raise
-            except: pass
-        if count:
-            ardj.log.info('Total catch: %u tracks.' % count)
-            ardj.jabber.chat_say('Added %u new tracks from last.fm, see "news".' % count)
-        ardj.database.Open().commit()
+    print 'Total tracks: %u.' % len(tracklist)
+    return get_missing_tracks(tracklist, limit=ardj.settings.get('fresh_music/tracks_per_artist', 2))
+
+
+def find_new_tracks(args, label='music', weight=1.5):
+    """Finds new tracks by known artists, downloads and adds them."""
+    tracks = get_new_tracks(args, label=label, weight=weight)
+    print 'New tracks: %u.' % len(tracks)
+
+    added = 0
+    for track in tracks:
+        ardj.log.info(u'[%u/%u] fetching "%s" by %s' % (added+1, len(tracks), track['title'], track['artist']))
+        try:
+            filename = ardj.util.fetch(track['url'], suffix=track.get('suffix'))
+            add_file(str(filename), add_labels=track.get('tags', [ 'tagme', 'music' ]))
+            added += 1
+        except KeyboardInterrupt: raise
+        except: pass
+
+    if added:
+        ardj.log.info('Total catch: %u tracks.' % added)
+        ardj.jabber.chat_say('Added %u new tracks from external sources.' % added)
+
+        db = ardj.database.Open()
+        db.mark_recent_music()
+        db.mark_orphans()
+        db.mark_long()
 
 
 __CLI_USAGE__ = """Usage: ardj track command
