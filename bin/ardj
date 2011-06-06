@@ -58,6 +58,9 @@ if __name__ == '__main__':
         if handler is not None:
             try:
                 exit(handler(sys.argv[2:]))
+            except KeyboardInterrupt:
+                print 'Interrupted by user.'
+                exit(1)
             except Exception, e:
                 ardj.log.error('ERROR handling command %s: %s' % (sys.argv[1], e) + traceback.format_exc(e))
                 exit(1)
