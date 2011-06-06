@@ -5,12 +5,14 @@ import glob
 import httplib2
 import os
 import time
+import urllib
 import urlparse
 
 import ardj.database
 import ardj.log
 import ardj.replaygain
 import ardj.settings
+import ardj.tracks
 import ardj.util
 import ardj.website
 
@@ -86,21 +88,45 @@ class Podcaster:
             if 'author' in podcast:
                 feed_author = podcast['author']
 
+            tpa = {}
+
             for entry in feed['entries']:
                 if 'enclosures' in entry:
                     for enclosure in entry['enclosures']:
                         author = feed_author
                         if not author and 'author' in entry:
                             author = entry['author']
+
+                        if entry.get('guid', '').startswith('http://alpha.libre.fm/'):
+                            parts = entry['guid'].split('/')
+                            if parts[3] == 'artist':
+                                entry['author'] = urllib.unquote_plus(parts[4])
+                            if parts[3] == 'track':
+                                entry['title'] = urllib.unquote_plus(parts[8])
+
                         item = {
                             'author': author,
                             'date': entry.get('updated_parsed'),
-                            'description': u'<p>Полное описание можно найти на <a href="%s">сайте автора</a>.</p>' % entry['link'],
-                            'file': enclosure['href'],
+                            'description': u'Описание отсутствует.',
+                            'file': enclosure.get('href'),
                             'filesize': self.get_enclosure_size(enclosure, entry),
-                            'tags': podcast['tags'],
-                            'title': entry['title'],
+                            'tags': podcast.get('tags', []),
+                            'title': entry.get('title', 'Заголовок отсутствует'),
+                            'repost': podcast.get('repost'),
+                            'add_to_db': podcast.get('add_to_db', True),
                         }
+
+                        if ardj.tracks.find_by_title(item['title'], item['author']):
+                            continue
+
+                        if author not in tpa:
+                            tpa[author] = 0
+                        if tpa[author] >= podcast.get('tracks_per_artist', 100):
+                            continue
+                        tpa[author] += 1
+
+                        if 'link' in entry:
+                            item['description'] = u'<p>Полное описание можно найти на <a href="%s">сайте автора</a>.</p>' % entry['link']
                         if 'filename' in podcast:
                             item['filename'] = time.strftime(podcast['filename'], entry['updated_parsed'])
                         items.append(item)
@@ -112,17 +138,25 @@ class Podcaster:
         return 0
 
     def process_entries(self, entries):
-        rebuild = False
-        post_dir = os.path.join(ardj.settings.getpath('website/root_dir'), ardj.settings.getpath('podcasts/site_post_dir'))
+        """Adds entries to the database."""
+        added = 0
         for entry in entries:
+            if entry['add_to_db']:
+                ardj.log.info(u'[%u/%u] adding "%s" by %s' % (added+1, len(entries), entry['title'], entry['author']))
+                fn = ardj.util.fetch(entry['file'])
+                ardj.tracks.add_file(str(fn), add_labels=entry['tags'], quiet=True)
+                added += 1
+            """
             if entry['file'] not in self.known_urls:
                 post_fn = self.get_new_episode_fn()
                 self.upload_entry(entry)
                 if entry.get('filename'):
                     self.publish_entry(entry, post_fn)
                 rebuild = True
-        if rebuild:
-            ardj.website.update('update-podcasts')
+            """
+
+        if added:
+            ardj.jabber.chat_say('Added %u tracks from podcasts.' % added)
 
     def get_new_episode_fn(self):
         """Prepares a file for a new episode.
@@ -179,4 +213,5 @@ class Podcaster:
 def run_cli(args):
     """CLI interface to the podcast module."""
     obj = Podcaster()
-    obj.process_entries(obj.get_entries())
+    entries = obj.get_entries()
+    obj.process_entries(entries)
