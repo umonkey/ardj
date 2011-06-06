@@ -216,9 +216,9 @@ class ardjbot(MyFileReceivingBot):
         """Sends a message to the chat room, if it's configured."""
         jid = ardj.settings.get('jabber/chat_room')
         if jid:
-            ardj.log.debug(u'Trying to send to "%s" to %s' % (message, jid))
+            #ardj.log.debug(u'Trying to send to "%s" to %s' % (message, jid))
             msg = self.build_message(message)
-            ardj.log.debug(msg)
+            #ardj.log.debug(msg)
             msg.setTo(jid.split('/')[0])
             msg.setType('groupchat')
             self.send_message(msg)
