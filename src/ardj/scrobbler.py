@@ -77,6 +77,26 @@ class LastFM(object):
             artist=artist_name.encode('utf-8'),
             autocorrect='1')
 
+    def get_tracks_by_artist(self, artist_name):
+        data = self.call(method='artist.getTopTracks',
+            artist=artist_name.encode('utf-8'),
+            limit=100)
+
+        if 'toptracks' not in data:
+            return []
+        if 'track' not in data['toptracks']:
+            return []
+
+        result = []
+        for t in data['toptracks']['track']:
+            if 'downloadurl' in t:
+                result.append({
+                    'artist': t['artist']['name'],
+                    'title': t['name'],
+                    'url': t['downloadurl'],
+                })
+        return result
+
     def get_corrected_name(self, artist_name):
         data = self.call(method='artist.getCorrection',
             artist=artist_name.encode('utf-8'))

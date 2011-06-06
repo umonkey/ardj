@@ -16,9 +16,11 @@ import sys
 import time
 
 import ardj.database
+import ardj.jabber
 import ardj.listeners
 import ardj.log
 import ardj.replaygain
+import ardj.scrobbler
 import ardj.tags
 
 KARMA_TTL = 30.0
@@ -320,7 +322,7 @@ def gen_filename(suffix):
             return abs_filename, rel_filename
 
 
-def add_file(filename, add_labels=None, owner=None):
+def add_file(filename, add_labels=None, owner=None, quiet=False):
     """Adds the file to the database.
 
     Returns track id.
@@ -328,7 +330,8 @@ def add_file(filename, add_labels=None, owner=None):
     if not os.path.exists(filename):
         raise Exception('File not found: %s' % filename)
 
-    ardj.log.info('Adding from %s' % filename)
+    if not quiet:
+        ardj.log.info('Adding from %s' % filename)
     ardj.replaygain.update(filename)
 
     tags = ardj.tags.get(str(filename)) or {}
@@ -823,6 +826,50 @@ def bookmark(track_ids, owner, remove=False, cur=None):
         cur.execute('DELETE FROM labels WHERE track_id = ? AND label = ?', (track_id, label, ))
         if not remove:
             cur.execute('INSERT INTO labels (track_id, label, email) VALUES (?, ?, ?)', (track_id, label, owner, ))
+
+
+def find_by_title(title, artist_name=None, cur=None):
+    """Returns track ids by title."""
+    cur = cur or ardj.database.cursor()
+    if artist_name is None:
+        cur.execute('SELECT id FROM tracks WHERE title = ? COLLATE unicode', (title, ))
+    else:
+        cur.execute('SELECT id FROM tracks WHERE title = ? COLLATE unicode AND artist = ? COLLATE unicode', (title, artist_name, ))
+    return [row[0] for row in cur.fetchall()]
+
+
+def find_new_tracks(args):
+    """Finds new tracks by known artists, downloads and adds them."""
+    cur = ardj.database.cursor()
+    cli = ardj.scrobbler.LastFM().authorize()
+
+    artist_names = args[1:]
+    if not artist_names:
+        artist_names = ardj.database.Open().get_artist_names('music', weight=1.5)
+
+    todo = []
+    for artist_name in artist_names:
+        count = 0
+        for track in cli.get_tracks_by_artist(artist_name):
+            if not find_by_title(track['title'], artist_name, cur=cur) and count < 2:
+                todo.append([ track['title'], track['artist'], track['url'] ])
+                count += 1
+
+    if todo:
+        count = 0
+        labels = ardj.settings.get('last.fm/new_track_labels', [ 'music', 'tagme', 'source:last.fm' ])
+        for title, artist, url in todo:
+            try:
+                ardj.log.info(u'[%u/%u] Fetching "%s" by %s' % (count+1, len(todo), title, artist))
+                filename = ardj.util.fetch(url, suffix='.mp3')
+                add_file(str(filename), add_labels=labels)
+                count += 1
+            except KeyboardInterrupt: raise
+            except: pass
+        if count:
+            ardj.log.info('Total catch: %u tracks.' % count)
+            ardj.jabber.chat_say('Added %u new tracks from last.fm, see "news".' % count)
+        ardj.database.Open().commit()
 
 
 __CLI_USAGE__ = """Usage: ardj track command
