@@ -61,7 +61,8 @@ if __name__ == '__main__':
         handler = find_command(sys.argv[1])
         if handler is not None:
             try:
-                exit(handler(sys.argv[2:]))
+                args = [a.decode('utf-8') for a in sys.argv[2:]]
+                exit(handler(args))
             except KeyboardInterrupt:
                 print 'Interrupted by user.'
                 exit(1)
