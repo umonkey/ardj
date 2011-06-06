@@ -85,6 +85,8 @@ class database:
         cur.execute('CREATE INDEX IF NOT EXISTS idx_playlog_track_id ON playlog (track_id)')
         # исходящие сообщения
         cur.execute('CREATE TABLE IF NOT EXISTS jabber_messages (id INTEGER PRIMARY KEY, re TEXT, message TEXT)')
+        # музыка для загрузки
+        cur.execute('CREATE TABLE IF NOT EXISTS download_queue (artist TEXT PRIMARY KEY, owner TEXT)')
         # View для подсчёта веса дорожек на основании кармы.
         # weight = max(0.1, 1 + sum(vote * weight))
         cur.execute('CREATE VIEW IF NOT EXISTS track_weights AS SELECT v.track_id AS track_id, COUNT(*) AS count, MAX(0.1, 1 + SUM(v.vote * k.weight)) AS weight FROM votes v INNER JOIN karma k ON k.email = v.email GROUP BY v.track_id')

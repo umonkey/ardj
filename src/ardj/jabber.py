@@ -115,14 +115,18 @@ class ardjbot(MyFileReceivingBot):
         self.__idle_lastfm()
         self.__idle_incoming()
         self.send_pending_messages()
+        ardj.tracks.do_idle_tasks(self.set_busy)
         super(ardjbot, self).idle_proc()
+
+    def set_busy(self):
+        self.status = self.DND
 
     def __idle_incoming(self):
         """Sees if there's new music and processes it."""
         try:
             files = ardj.tracks.find_incoming_files()
             if files:
-                self.status_type = self.DND
+                self.set_busy()
                 success = []
                 add_labels = ardj.settings.get('database/incoming/labels', [ 'tagme', 'music' ])
                 for filename in files:
@@ -216,12 +220,13 @@ class ardjbot(MyFileReceivingBot):
         """Sends a message to the chat room, if it's configured."""
         jid = ardj.settings.get('jabber/chat_room')
         if jid:
-            #ardj.log.debug(u'Trying to send to "%s" to %s' % (message, jid))
-            msg = self.build_message(message)
-            #ardj.log.debug(msg)
-            msg.setTo(jid.split('/')[0])
-            msg.setType('groupchat')
-            self.send_message(msg)
+            self.say_to_jid(jid, message)
+
+    def say_to_jid(self, jid, message):
+        msg = self.build_message(message)
+        msg.setTo(jid.split('/')[0])
+        msg.setType('groupchat')
+        self.send_message(msg)
 
     def shutdown(self):
         # self.on_disconnect() # called by JabberBot afterwards.
@@ -259,8 +264,6 @@ class ardjbot(MyFileReceivingBot):
                     msg = mess.getBody()
                     if not msg:
                         return
-                    if msg.startswith('download '):
-                        self.status_type = self.DND
                     rep = ardj.console.process_command(msg, mess.getFrom().getStripped())
                 except Exception, e:
                     ardj.log.warning(u'ERROR: %s, MESSAGE: %s\n%s' % (e, mess, traceback.format_exc(e)))
@@ -279,7 +282,7 @@ class ardjbot(MyFileReceivingBot):
             if recipient is None:
                 self.say_to_chat(message)
             else:
-                pass
+                self.say_to_jid(recipient, message)
             cur.execute('DELETE FROM jabber_messages WHERE id = ?', (msgid, ))
 
     def run(self):

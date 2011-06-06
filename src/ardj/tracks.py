@@ -8,7 +8,6 @@ tracks.
 
 import hashlib
 import json
-import logging
 import os
 import random
 import re
@@ -712,7 +711,7 @@ def block_playlists(track_id, cur=None):
     for playlist in get_all_playlists(cur=cur):
         name = playlist.get('name')
         if name and track_matches_playlist(track, playlist):
-            logging.debug('Track %u touches playlist %s' % (track_id, name))
+            ardj.log.debug('Track %u touches playlist %s' % (track_id, name))
             cur.execute('UPDATE playlists SET last_played = ? '
                 'WHERE name = ?', (ts, name, ))
             if cur.rowcount == 0:
@@ -907,6 +906,33 @@ def find_new_tracks(args, label='music', weight=1.5):
         db.mark_long()
 
     return added
+
+
+def schedule_download(artist, owner=None):
+    """Schedules an artist for downloading from Last.fm or Jamendo."""
+    cur = ardj.database.cursor()
+    cur.execute('INSERT INTO download_queue (artist, owner) VALUES (?, ?)', (artist, owner, ))
+
+
+def do_idle_tasks(set_busy):
+    """Loads new tracks from external sources."""
+    cur = ardj.database.cursor()
+    row = cur.execute('SELECT artist, owner FROM download_queue LIMIT 1').fetchone()
+    if not row:
+        return
+
+    ardj.log.info(u'Looking for tracks by "%s", requested by %s' % row)
+
+    set_busy()
+    cur.execute('DELETE FROM download_queue WHERE artist = ?', (row[0], ))
+
+    count = find_new_tracks([ row[0] ])
+    if count:
+        msg = u'Added %u tracks by %s.' % (count, row[0])
+    else:
+        msg = u'Could not find anything by %s on Last.fm and Jamendo.' % row[0]
+    ardj.jabber.chat_say(msg, recipient=row[1], cur=cur)
+    ardj.database.commit()
 
 
 __CLI_USAGE__ = """Usage: ardj track command
