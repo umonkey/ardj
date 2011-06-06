@@ -13,7 +13,6 @@ COMMAND_MAP = [ # (command, module, function, description)
     ('console', 'console', 'run_cli', 'jabber-like CLI'),
     ('db', 'database', 'run_cli', 'database functions'),
     ('events', 'tout', 'run_cli', 'works with the upcoming events'),
-    ('find-new-podcasts', 'podcast', 'run_cli', 'fetch new podcasts'),
     ('find-new-tracks', 'tracks', 'find_new_tracks', 'fetch new songs from Last.fm'),
     ('show-news-from-jamendo', 'jamendo', 'print_new_tracks', 'show new tracks available at jamendo.com'),
     ('hotline', 'hotline', 'run_cli', 'work with the hotline'),
@@ -50,8 +49,11 @@ def find_command(command_name):
         print 'Usage: ardj command\nAvailable commands:'
     else:
         print 'Unknown command: "%s", available commands:' % command_name
+
+    maxlen = max([len(c[0]) for c in COMMAND_MAP])
+    fmt = '  %%-%us   %%s' % maxlen
     for cmd, mod, fun, doc in sorted(COMMAND_MAP, key=lambda x: x[0]):
-        print '  %-20s   %s' % (cmd, doc)
+        print fmt % (cmd, doc)
     exit(1)
 
 if __name__ == '__main__':
