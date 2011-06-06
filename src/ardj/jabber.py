@@ -337,8 +337,11 @@ def chat_say(message, recipient=None, cur=None):
     handlers to notify chat users.  If the recipient is not specified, the
     message is sent to the chat room."""
     ardj.log.debug(u'Will send to chat: %s' % message)
+    commit = cur is None
     cur = cur or ardj.database.cursor()
     cur.execute('INSERT INTO jabber_messages (re, message) VALUES (?, ?)', (recipient, message, ))
+    if commit:
+        ardj.database.commit()
 
 
 __all__ = [ 'Open', 'chat_say' ]
