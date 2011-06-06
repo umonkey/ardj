@@ -78,7 +78,6 @@ class LastFM(object):
 
     def get_tracks_by_artist(self, artist_name):
         tags = ardj.settings.get('fresh_music/tags', [])
-        tags.append('source:last.fm')
 
         data = self.call(method='artist.getTopTracks',
             artist=artist_name.encode('utf-8'),
@@ -96,7 +95,7 @@ class LastFM(object):
                     'artist': t['artist']['name'],
                     'title': t['name'],
                     'url': t['downloadurl'],
-                    'tags': [ 'music', 'tagme', 'source:last.fm' ],
+                    'tags': tags + [ 'source:last.fm' ],
                 })
         return result
 

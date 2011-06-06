@@ -24,6 +24,7 @@ import ardj.podcast
 import ardj.replaygain
 import ardj.scrobbler
 import ardj.tags
+import ardj.util
 
 KARMA_TTL = 30.0
 
@@ -843,7 +844,7 @@ def find_by_title(title, artist_name=None, cur=None):
 def get_missing_tracks(tracklist, limit=100):
     """Removes duplicate and existing tracks."""
     tmp = {}
-    fix = lambda x: x.lower().replace(u'ё', u'е')
+    fix = ardj.util.lower
 
     for track in tracklist:
         artist = fix(track['artist'])
@@ -884,9 +885,12 @@ def find_new_tracks(args, label='music', weight=1.5):
     print 'New tracks: %u.' % len(tracks)
 
     added = 0
+    artist_names = []
     for track in tracks:
         ardj.log.info(u'[%u/%u] fetching "%s" by %s' % (added+1, len(tracks), track['title'], track['artist']))
         try:
+            if track['artist'] not in artist_names:
+                artist_names.append(track['artist'])
             filename = ardj.util.fetch(track['url'], suffix=track.get('suffix'))
             add_file(str(filename), add_labels=track.get('tags', [ 'tagme', 'music' ]))
             added += 1
@@ -895,12 +899,14 @@ def find_new_tracks(args, label='music', weight=1.5):
 
     if added:
         ardj.log.info('Total catch: %u tracks.' % added)
-        ardj.jabber.chat_say('Added %u new tracks from external sources.' % added)
+        ardj.jabber.chat_say('Downloaded %u new tracks by %s.' % (added, ardj.util.shortlist(sorted(artist_names))))
 
         db = ardj.database.Open()
         db.mark_recent_music()
         db.mark_orphans()
         db.mark_long()
+
+    return added
 
 
 __CLI_USAGE__ = """Usage: ardj track command

@@ -233,6 +233,8 @@ def mask_sender(sender):
 
 
 def lower(s):
+    if type(s) == str:
+        s = s.decode('utf-8')
     return s.lower().replace(u'ё', u'е')
 
 def ucmp(a, b):
@@ -243,3 +245,15 @@ def in_list(a, lst):
         if not ucmp(i, a):
             return True
     return False
+
+
+def shortlist(items, limit=3):
+    if len(items) == 1:
+        return items[0]
+
+    if len(items) <= limit:
+        last = items[-1]
+        del items[-1]
+        return u', '.join(items) + u' and ' + last
+
+    return u', '.join(items[:limit]) + u' and %u more' % (len(items) - limit)
