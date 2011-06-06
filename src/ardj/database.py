@@ -105,7 +105,7 @@ class database:
     def sqlite_ulike(self, a, b):
         if a is None or b is None:
             return None
-        if ardj.util.lower(a) in ardj.util.lower(b):
+        if ardj.util.lower(b) in ardj.util.lower(a):
             return 1
         return 0
 
