@@ -464,6 +464,16 @@ def on_merge(args, sender, cur=None):
     return 'OK.'
 
 
+def on_download(args, sender, cur=None):
+    """Finds free tracks by the specified artsit in Last.fm or Jamendo and downloads some."""
+    if not args:
+        return 'Usage: download artist'
+    count = ardj.tracks.find_new_tracks([ args ])
+    if not count:
+        return 'Nothing was found.'
+    return 'Added %u tracks (will add more later).' % count
+
+
 def on_bookmark(args, sender, cur=None):
     """Adds a track to bookmarks.  If track id is not specified, the currently
     played track is bookmarked.  Latest bookmarks are shown afterwards."""
@@ -500,6 +510,7 @@ command_map = (
     ('bm', False, on_bookmark, 'bookmark tracks (accepts optional id)'),
     ('delete', True, on_delete, 'deletes the specified track'),
     ('dump', False, on_dump, 'shows track info in JSON'),
+    ('download', True, on_download, 'download new music from last.fm and jamendo'),
     ('echo', False, on_echo, 'sends back the message'),
     ('find', False, on_find, 'finds tracks matching a criteria'),
     ('help', False, on_help, 'shows this message'),
