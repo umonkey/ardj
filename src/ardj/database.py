@@ -105,14 +105,17 @@ class database:
     def sqlite_ulike(self, a, b):
         if a is None or b is None:
             return None
-        if b.lower() in a.lower():
+        if self.fix_cyr(b.lower()) in self.fix_cyr(a.lower()):
             return 1
         return 0
 
     def sqlite_collation(self, a, b):
-        a = a.decode('utf-8').lower()
-        b = b.decode('utf-8').lower()
+        a = self.fix_cyr(a.decode('utf-8').lower())
+        b = self.fix_cyr(b.decode('utf-8').lower())
         return cmp(a, b)
+
+    def fix_cyr(self, txt):
+        return txt.replace(u'ё', u'е')
 
     def cursor(self):
         """Returns a new SQLite cursor, for internal use."""
@@ -290,12 +293,20 @@ class database:
         count = cur.execute('SELECT COUNT(*) FROM labels WHERE label = \'long\'').fetchone()[0]
         print 'Average length is %u seconds, %u tracks match.' % (length, count)
 
+    def get_artist_names(self, label=None, weight=0, cur=None):
+        cur = cur or self.cursor()
+        if label is None:
+            cur.execute("SELECT DISTINCT artist FROM tracks WHERE weight > ?", (weight, ))
+        else:
+            cur.execute("SELECT DISTINCT artist FROM tracks WHERE weight > ? AND id IN (SELECT track_id FROM labels WHERE label = ?)", (weight, label, ))
+        return [r[0] for r in cur.fetchall()]
+
     def fix_artist_names(self):
         """Corrects artist names according to LastFM."""
         cli = ardj.scrobbler.LastFM().authorize()
 
         cur = self.cursor()
-        names = [r[0] for r in cur.execute("SELECT DISTINCT artist FROM tracks WHERE weight > 0 AND id IN (SELECT track_id FROM labels WHERE label = 'music')").fetchall()]
+        names = self.get_artist_names('music', cur=cur)
         print 'Checking %u artists.' % len(names)
 
         for name in names:
