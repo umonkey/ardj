@@ -51,7 +51,7 @@ class database:
             ardj.log.error('Could not open database %s: %s' % (filename, e))
             raise
 
-        self.db.create_collation('UNICODE', self.sqlite_collation)
+        self.db.create_collation('UNICODE', ardj.util.ucmp)
         self.db.create_function('ULIKE', 2, self.sqlite_ulike)
 
         cur = self.db.cursor()
@@ -105,17 +105,9 @@ class database:
     def sqlite_ulike(self, a, b):
         if a is None or b is None:
             return None
-        if self.fix_cyr(b.lower()) in self.fix_cyr(a.lower()):
+        if ardj.util.lower(a) in ardj.util.lower(b):
             return 1
         return 0
-
-    def sqlite_collation(self, a, b):
-        a = self.fix_cyr(a.decode('utf-8').lower())
-        b = self.fix_cyr(b.decode('utf-8').lower())
-        return cmp(a, b)
-
-    def fix_cyr(self, txt):
-        return txt.replace(u'ё', u'е')
 
     def cursor(self):
         """Returns a new SQLite cursor, for internal use."""
