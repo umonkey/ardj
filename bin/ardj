@@ -50,18 +50,18 @@ def find_command(command_name):
         print 'Unknown command: "%s", available commands:' % command_name
     for cmd, mod, fun, doc in sorted(COMMAND_MAP, key=lambda x: x[0]):
         print '  %-20s   %s' % (cmd, doc)
-    sys.exit(1)
+    exit(1)
 
 if __name__ == '__main__':
     if len(sys.argv) >= 2 and not sys.argv[1].startswith('-'):
         handler = find_command(sys.argv[1])
         if handler is not None:
             try:
-                sys.exit(handler(sys.argv[2:]) and 0 or 1)
+                exit(handler(sys.argv[2:]))
             except Exception, e:
                 ardj.log.error('ERROR handling command %s: %s' % (sys.argv[1], e) + traceback.format_exc(e))
-                sys.exit(1)
+                exit(1)
         ardj.log.error('Unknown command: %s' % sys.argv[1])
-        sys.exit(1)
+        exit(1)
 
     find_command(None)

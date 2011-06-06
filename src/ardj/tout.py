@@ -135,3 +135,6 @@ def run_cli(args):
 
     if not args:
         print 'Usage: ardj events refresh|update-website'
+        return 1
+
+    return 0
