@@ -26,12 +26,14 @@ def find_new_tracks(artist_names=None, verbose=False):
         artist_names = db.get_artist_names(label=label, weight=weight)
 
     for artist_name in artist_names:
-        data = ardj.util.fetch_json(url='http://api.jamendo.com/get2/id+name+stream/track/json', args={
-            'n': '200',
-            'artist': artist_name.encode('utf-8'),
+        data = ardj.util.fetch_json(url='http://api.jamendo.com/get2/id+name+artist_name+stream/track/json/track_album+album_artist/', args={
+            'n': 'all',
+            'artist_name': artist_name.encode('utf-8'),
             'streamencoding': 'ogg2',
         }, ret=True, quiet=False) or []
         for track in data:
+            if not track.get('stream'):
+                continue
             todo.append({
                 'artist': artist_name,
                 'title': track['name'],

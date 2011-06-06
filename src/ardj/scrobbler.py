@@ -81,7 +81,7 @@ class LastFM(object):
 
         data = self.call(method='artist.getTopTracks',
             artist=artist_name.encode('utf-8'),
-            limit=100)
+            limit=1000)
 
         if 'toptracks' not in data:
             return []
