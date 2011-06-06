@@ -259,12 +259,15 @@ class ardjbot(MyFileReceivingBot):
                     msg = mess.getBody()
                     if not msg:
                         return
+                    if msg.startswith('download '):
+                        self.status_type = self.DND
                     rep = ardj.console.process_command(msg, mess.getFrom().getStripped())
                 except Exception, e:
                     ardj.log.warning(u'ERROR: %s, MESSAGE: %s\n%s' % (e, mess, traceback.format_exc(e)))
                     rep = unicode(e)
                 self.send_simple_reply(mess, rep.strip())
                 self.send_pending_messages()
+                self.status_type = self.AVAILABLE
         finally:
             ardj.database.commit()
 
