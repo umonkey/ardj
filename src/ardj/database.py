@@ -290,6 +290,20 @@ class database:
         count = cur.execute('SELECT COUNT(*) FROM labels WHERE label = \'long\'').fetchone()[0]
         print 'Average length is %u seconds, %u tracks match.' % (length, count)
 
+    def fix_artist_names(self):
+        """Corrects artist names according to LastFM."""
+        cli = ardj.scrobbler.LastFM().authorize()
+
+        cur = self.cursor()
+        names = [r[0] for r in cur.execute("SELECT DISTINCT artist FROM tracks WHERE weight > 0 AND id IN (SELECT track_id FROM labels WHERE label = 'music')").fetchall()]
+        print 'Checking %u artists.' % len(names)
+
+        for name in names:
+            new_name = cli.get_corrected_name(name)
+            if new_name is not None and new_name != name:
+                ardj.log.info(u'Correcting "%s" to "%s"' % (name, new_name))
+                cur.execute('UPDATE tracks SET artist = ? WHERE artist = ?', (new_name, name, ))
+
 
 def Open(filename=None):
     """Returns the active database instance."""
@@ -321,6 +335,7 @@ USAGE = """Usage: ardj db commands...
 
 Commands:
   console           -- open SQLite console
+  fix-artist-names  -- correct artist names according to last.fm
   flush-queue       -- remove everything from queue
   import            -- add tracks from a public "drop box"
   mark-hitlist      -- mark best tracks with "hitlist"
@@ -362,6 +377,9 @@ def run_cli(args):
     if 'stat' in args:
         stats = db.get_stats()
         print '%u tracks, %.1f hours.' % (stats['tracks'], stats['seconds'] / 60 / 60)
+        ok = True
+    if 'fix-artist-names' in args:
+        db.fix_artist_names()
         ok = True
     if not ok:
         print USAGE

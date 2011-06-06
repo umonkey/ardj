@@ -77,6 +77,15 @@ class LastFM(object):
             artist=artist_name.encode('utf-8'),
             autocorrect='1')
 
+    def get_corrected_name(self, artist_name):
+        data = self.call(method='artist.getCorrection',
+            artist=artist_name.encode('utf-8'))
+        try:
+            return data['corrections']['correction']['artist']['name']
+        except KeyError: pass
+        except TypeError: pass
+        return None
+
     def process(self, cur):
         """Looks for stuff to scrobble in the playlog table."""
         skip_labels = ardj.settings.get('last.fm/skip_labels')
