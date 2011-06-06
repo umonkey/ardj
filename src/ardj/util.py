@@ -74,7 +74,7 @@ def get_opener(url, user, password):
     return opener
 
 
-def fetch(url, suffix=None, args=None, user=None, password=None, quiet=False, post=False, ret=False):
+def fetch(url, suffix=None, args=None, user=None, password=None, quiet=False, post=False, ret=False, retry=3):
     """Retrieves a file over HTTP.
 
     Arguments:
@@ -106,6 +106,9 @@ def fetch(url, suffix=None, args=None, user=None, password=None, quiet=False, po
             ardj.replaygain.update(str(filename))
         return filename
     except urllib2.URLError, e:
+        if retry:
+            ardj.log.error('Could not fetch %s: %s (retrying)' % (url, e))
+            return fetch(url, suffix, args, user, password, quiet, post, ret, retry - 1)
         ardj.log.error('Could not fetch %s: %s' % (url, e))
         return None
 
