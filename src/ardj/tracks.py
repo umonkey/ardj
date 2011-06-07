@@ -27,6 +27,53 @@ import ardj.util
 
 KARMA_TTL = 30.0
 
+
+class Playlist(dict):
+    def match_track(self, track):
+        if type(track) != dict:
+            raise TypeError
+        if not self.match_labels(track.get('labels')):
+            return False
+        if not self.match_repeat(track.get('count', 0)):
+            return False
+        if not self.match_weight(track.get('weight', 1.0)):
+            return False
+        return True
+
+    def match_weight(self, other):
+        if '-' not in self.get('weight', ''):
+            return True
+        min, max = [float(x) for x in self.get('weight').split('-', 1)]
+        if other >= min and other <= max:
+            return True
+        return False
+
+    def match_repeat(self, other):
+        if 'repeat' not in self or not other:
+            return True
+        return other < self['repeat']
+
+    def match_labels(self, other):
+        """Checks whether labels apply to this playlist."""
+        if not other:
+            return False
+
+        plabels = self.get('labels', [ self.get('name') ])
+        success = False
+
+        for plabel in plabels:
+            if plabel.startswith('-'):
+                if plabel[1:] in other:
+                    return False
+            if plabel.startswith('+'):
+                if plabel[1:] not in other:
+                    return False
+            elif plabel in other:
+                success = True
+
+        return success
+
+
 def get_real_track_path(filename):
     return os.path.join(ardj.settings.get_music_dir(), filename)
 
@@ -721,24 +768,8 @@ def block_playlists(track_id, cur=None):
 
 def track_matches_playlist(track, playlist):
     """Checks if the track matches the playlist labels."""
-    tlabels = track.get('labels')
-    if not tlabels:
-        return False
-
-    plabels = playlist.get('labels', [ playlist.get('name') ])
-    success = False
-
-    for plabel in plabels:
-        if plabel.startswith('-'):
-            if plabel[1:] in tlabels:
-                return False
-        if plabel.startswith('+'):
-            if plabel[1:] not in tlabels:
-                return False
-        elif plabel in tlabels:
-            success = True
-
-    return success
+    pl = Playlist(playlist)
+    return pl.match_track(track)
 
 
 def update_karma(cur=None):
