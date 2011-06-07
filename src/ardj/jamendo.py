@@ -30,7 +30,7 @@ def find_new_tracks(artist_names=None, verbose=False):
             'n': 'all',
             'artist_name': artist_name.encode('utf-8'),
             'streamencoding': 'ogg2',
-        }, ret=True, quiet=False) or []
+        }, ret=True, quiet=True) or []
         for track in data:
             if not track.get('stream'):
                 continue
