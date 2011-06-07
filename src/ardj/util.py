@@ -257,3 +257,14 @@ def shortlist(items, limit=3):
         return u', '.join(items) + u' and ' + last
 
     return u', '.join(items[:limit]) + u' and %u more' % (len(items) - limit)
+
+
+def expand(lst):
+    result = []
+    for item in lst:
+        if '-' in str(item):
+            bounds = item.split('-')
+            result += range(int(bounds[0]), int(bounds[1]))
+        else:
+            result.append(item)
+    return result

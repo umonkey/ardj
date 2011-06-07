@@ -29,6 +29,12 @@ KARMA_TTL = 30.0
 
 
 class Playlist(dict):
+    def add_ts(self, stats):
+        self['last_played'] = 0
+        if self['name'] in stats:
+            self['last_played'] = stats[self['name']]
+        return self
+
     def match_track(self, track):
         if type(track) != dict:
             raise TypeError
@@ -72,6 +78,60 @@ class Playlist(dict):
                 success = True
 
         return success
+
+    def is_active(self, timestamp=None):
+        """Checks whether the playlist can be used right now."""
+        now = time.localtime(timestamp)
+
+        now_ts = time.mktime(now)
+        now_day = int(time.strftime('%w', now))
+        now_hour = int(time.strftime('%H', now))
+
+        if 'delay' in self and self['delay'] * 60 + self['last_played'] >= now_ts:
+            return False
+        if 'hours' in self and now_hour not in self.get_hours():
+            return False
+        if 'days' in self and now_day not in self.get_days():
+            return False
+        return True
+
+    def get_days(self):
+        return ardj.util.expand(self['days'])
+
+    def get_hours(self):
+        return ardj.util.expand(self['hours'])
+
+    @classmethod
+    def get_active(cls, timestamp=None, cur=None):
+        return [p for p in cls.get_all(cur=cur) if p.is_active(timestamp)]
+
+    @classmethod
+    def get_all(cls, cur=None):
+        """Returns information about all known playlists.  Information from
+        playlists.yaml is complemented by the last_played column of the
+        `playlists' table."""
+        cur = cur or ardj.database.cursor()
+        stats = dict(cur.execute('SELECT name, last_played FROM playlists WHERE name IS NOT NULL AND last_played IS NOT NULL').fetchall())
+        return [cls(p).add_ts(stats) for p in ardj.settings.load().get_playlists()]
+
+    @classmethod
+    def touch_by_track(cls, track_id, cur=None):
+        """Finds playlists that contain this track and updates their last_played
+        property, so that they could be delayed properly."""
+        cur = cur or ardj.database.cursor()
+
+        track = get_track_by_id(track_id, cur=cur)
+        ts = int(time.time())
+
+        for playlist in cls.get_all(cur=cur):
+            name = playlist.get('name')
+            if name and playlist.match_track(track):
+                ardj.log.debug('Track %u touches playlist %s' % (track_id, name))
+                cur.execute('UPDATE playlists SET last_played = ? '
+                    'WHERE name = ?', (ts, name, ))
+                if cur.rowcount == 0:
+                    cur.execute('INSERT INTO playlists (name, last_played) '
+                        'VALUES (?, ?)', (name, ts, ))
 
 
 def get_real_track_path(filename):
@@ -422,9 +482,6 @@ def get_track_id_from_queue(cur=None):
 
 
 def get_random_track_id_from_playlist(playlist, skip_artists, cur=None):
-    if type(playlist) != dict:
-        raise TypeError('playlist must be a dictionary.')
-
     cur = cur or ardj.database.cursor()
 
     sql = 'SELECT id, weight, artist FROM tracks WHERE weight > 0 AND artist IS NOT NULL AND filename IS NOT NULL'
@@ -520,62 +577,11 @@ def get_random_row(rows):
     return None
 
 
-def get_all_playlists(cur=None):
-    """Returns information about all known playlists.  Information from
-    playlists.yaml is complemented by the last_played column of the `playlists'
-    table."""
-    cur = cur or ardj.database.cursor()
-    stats = dict(cur.execute('SELECT name, last_played FROM playlists WHERE name IS NOT NULL AND last_played IS NOT NULL').fetchall())
-    def expand(lst):
-        result = []
-        for item in lst:
-            if '-' in str(item):
-                bounds = item.split('-')
-                result += range(int(bounds[0]), int(bounds[1]))
-            else:
-                result.append(item)
-        return result
-    def add_ts(p):
-        p['last_played'] = 0
-        if p['name'] in stats:
-            p['last_played'] = stats[p['name']]
-        if 'days' in p:
-            p['days'] = expand(p['days'])
-        if 'hours' in p:
-            p['hours'] = expand(p['hours'])
-        return p
-    return [add_ts(p) for p in ardj.settings.load().get_playlists()]
-
-
-def get_active_playlists(timestamp=None, debug=False, cur=None):
-    now = time.localtime(timestamp)
-
-    now_ts = time.mktime(now)
-    now_day = int(time.strftime('%w', now))
-    now_hour = int(time.strftime('%H', now))
-
-    def is_active(p):
-        if 'delay' in p and p['delay'] * 60 + p['last_played'] >= now_ts:
-            if debug:
-                ardj.log.debug('playlist %s: delayed' % p['name'])
-            return False
-        if 'hours' in p and now_hour not in p['hours']:
-            if debug:
-                ardj.log.debug('playlist %s: wrong hour (%s not in %s)' % (p['name'], now_hour, p['hours']))
-            return False
-        if 'days' in p and now_day not in p['days']:
-            if debug:
-                ardj.log.debug('playlist %s: wrong day (%s not in %s)' % (p['name'], now_day, p['days']))
-            return False
-        return True
-
-    return [p for p in get_all_playlists(cur) if is_active(p)]
-
-
 def get_prerolls_for_labels(labels, cur):
     """Returns ids of valid prerolls that have one of the specified labels."""
     sql = "SELECT tracks.id FROM tracks INNER JOIN labels ON labels.track_id = tracks.id WHERE tracks.weight > 0 AND tracks.filename IS NOT NULL AND labels.label IN (%s)" % ', '.join(['?'] * len(labels))
     return [row[0] for row in cur.execute(sql, labels).fetchall()]
+
 
 def get_prerolls_for_track(track_id, cur):
     """Returns prerolls applicable to the specified track."""
@@ -653,7 +659,7 @@ def get_next_track_id(cur=None, debug=False, update_stats=True):
                 ardj.log.debug('Picked track %u from the urgent playlist.' % track_id)
 
     if not track_id:
-        for playlist in get_active_playlists():
+        for playlist in Playlist.get_active(cur=cur):
             if debug:
                 ardj.log.debug('Looking for tracks in playlist "%s"' % playlist.get('name', 'unnamed'))
             labels = playlist.get('labels', [ playlist.get('name', 'music') ])
@@ -671,7 +677,7 @@ def get_next_track_id(cur=None, debug=False, update_stats=True):
             count = cur.execute('SELECT count FROM tracks WHERE id = ?', (track_id, )).fetchone()[0] or 0
             cur.execute('UPDATE tracks SET count = ?, last_played = ? WHERE id = ?', (count + 1, int(time.time()), track_id, ))
 
-            block_playlists(track_id, cur=cur)
+            Playlist.touch_by_track(track_id, cur=cur)
 
             log(track_id, cur=cur)
 
@@ -745,31 +751,6 @@ def update_real_track_weights(cur=None):
     update_karma(cur=cur)
     for row in cur.execute('SELECT id FROM tracks').fetchall():
         update_real_track_weight(row[0], cur=cur)
-
-
-def block_playlists(track_id, cur=None):
-    """Finds playlists that contain this track and updates their last_played
-    property, so that they could be delayed properly."""
-    cur = cur or ardj.database.cursor()
-
-    track = get_track_by_id(track_id, cur=cur)
-    ts = int(time.time())
-
-    for playlist in get_all_playlists(cur=cur):
-        name = playlist.get('name')
-        if name and track_matches_playlist(track, playlist):
-            ardj.log.debug('Track %u touches playlist %s' % (track_id, name))
-            cur.execute('UPDATE playlists SET last_played = ? '
-                'WHERE name = ?', (ts, name, ))
-            if cur.rowcount == 0:
-                cur.execute('INSERT INTO playlists (name, last_played) '
-                    'VALUES (?, ?)', (name, ts, ))
-
-
-def track_matches_playlist(track, playlist):
-    """Checks if the track matches the playlist labels."""
-    pl = Playlist(playlist)
-    return pl.match_track(track)
 
 
 def update_karma(cur=None):
