@@ -26,6 +26,8 @@ def fetch_artist_events(lastfm, artist_name):
     try:
         print 'Updating %s' % artist_name.encode('utf-8')
         data = lastfm.get_events_for_artist(artist_name)
+        if not data:
+            ardj.log.warning(u'Could not fetch events for %s.' % artist_name)
 
         if 'error' in data:
             raise LastFmError('Last.fm reports error: %s' % data['message'])

@@ -106,7 +106,7 @@ def fetch(url, suffix=None, args=None, user=None, password=None, quiet=False, po
         if os.path.splitext(str(filename).lower()) in ('.mp3', '.ogg', '.flac'):
             ardj.replaygain.update(str(filename))
         return filename
-    except urllib2.URLError, e:
+    except Exception, e:
         if retry:
             ardj.log.error('Could not fetch %s: %s (retrying)' % (url, e))
             return fetch(url, suffix, args, user, password, quiet, post, ret, retry - 1)
