@@ -308,7 +308,7 @@ def purge(cur=None):
     music_dir = ardj.settings.get_music_dir()
 
     # mark tracks that no longer have files
-    for track_id, filename in cur.execute('SELECT id, filename FROM tracks WHERE weight > 0').fetchall():
+    for track_id, filename in cur.execute('SELECT id, filename FROM tracks WHERE weight > 0 AND filename IS NOT NULL').fetchall():
         abs_filename = os.path.join(music_dir, filename)
         if not os.path.exists(abs_filename):
             ardj.log.warning('Track %u vanished (%s), deleting.' % (track_id, filename))
