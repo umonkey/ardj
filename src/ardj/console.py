@@ -468,8 +468,7 @@ def on_download(args, sender, cur=None):
     """Finds free tracks by the specified artsit in Last.fm or Jamendo and downloads some."""
     if not args:
         return 'Usage: download artist'
-    ardj.tracks.schedule_download(args, sender)
-    return u'Это займёт какое-то время, я сообщу о результате.'
+    return ardj.tracks.schedule_download(args, sender)
 
 
 def on_bookmark(args, sender, cur=None):

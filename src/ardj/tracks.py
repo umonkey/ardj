@@ -923,7 +923,13 @@ def find_new_tracks(args, label='music', weight=1.5):
 def schedule_download(artist, owner=None):
     """Schedules an artist for downloading from Last.fm or Jamendo."""
     cur = ardj.database.cursor()
+
+    count = cur.execute('SELECT COUNT (*) FROM tracks WHERE artist = ? COLLATE unicode', (artist, )).fetchone()
+    if count[0]:
+        return u'Песни этого исполнителя уже есть.  Новые песни загружаются автоматически в фоновом режиме.'
+
     cur.execute('INSERT INTO download_queue (artist, owner) VALUES (?, ?)', (artist, owner, ))
+    return u'Это займёт какое-то время, я сообщу о результате.'
 
 
 def do_idle_tasks(set_busy):
