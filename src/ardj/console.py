@@ -588,17 +588,20 @@ def process_command(text, sender=None, cur=None, quiet=False):
     sender = sender or 'console'
     is_admin = is_user_admin(sender)
 
-    is_public_command = command in get_public_commands()
-    if not is_public_command and not is_admin:
-        ardj.log.info('CMD: %s: %s -- DENIED' % (sender, text), quiet=quiet)
-        return 'You don\' have access to that command, sorry.  ' + get_usage(sender)
-
+    options = []
     for cmd_name, is_privileged, handler, description in command_map:
-        if cmd_name == command.lower():
-            ardj.log.info('CMD: %s: %s' % (sender, text), quiet=quiet)
-            return handler(args.strip(), sender=sender, cur=cur)
+        if is_privileged and not is_admin:
+            continue
+        if cmd_name.startswith(command.lower()):
+            options.append((cmd_name, handler))
 
-    return 'What?  No such command: %s, see "help".' % command
+    if not options:
+        return 'What?  No such command: %s, see "help".' % command
+
+    if len(options) > 1:
+        return 'Did you mean %s?' % ardj.util.shortlist([o[0] for o in options], limit=1000, glue='or')
+
+    return options[0][1](args.strip(), sender=sender, cur=cur)
 
 
 def run_cli(args):

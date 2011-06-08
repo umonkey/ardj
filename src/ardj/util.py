@@ -247,14 +247,14 @@ def in_list(a, lst):
     return False
 
 
-def shortlist(items, limit=3):
+def shortlist(items, limit=3, glue='and'):
     if len(items) == 1:
         return items[0]
 
     if len(items) <= limit:
         last = items[-1]
         del items[-1]
-        return u', '.join(items) + u' and ' + last
+        return '%s %s %s' % (', '.join(items), glue, last)
 
     return u', '.join(items[:limit]) + u' and %u more' % (len(items) - limit)
 
