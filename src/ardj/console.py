@@ -143,6 +143,7 @@ def on_purge(args, sender, cur=None):
 def on_reload(args, sender, cur=None):
     if not signal_ices(signal.SIGHUP):
         return 'Failed.'
+    ardj.settings.load(True)
     return 'Ices will be reinitialized when track changes.'
 
 
