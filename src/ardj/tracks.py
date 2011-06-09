@@ -970,9 +970,12 @@ def run_cli(args):
             track = get_track_by_id(track_id, cur=cur)
             output = json.dumps(track)
 
-            f = open('/var/www/sites/stream.tmradio.net/last-track.json', 'wb')
-            f.write(output)
-            f.close()
+            try:
+                f = open(ardj.settings.getpath('last_track_json', '~/last-track.json'), 'wb')
+                f.write(output)
+                f.close()
+            except Exception, e:
+                ardj.log.error('Could not write last-track.json: %s' % e)
 
             ardj.log.debug('next-json returns: %s' % output)
             print output
