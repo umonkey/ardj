@@ -63,7 +63,7 @@ def render_and_queue(message):
     """
     track_id = int(ardj.settings.get('festival/speak_track_id', '0'))
     if not track_id:
-        return "I'm not configured properly: festival/speak_track_id not set."
+        return "Эта функция отключена." # "I'm not configured properly: festival/speak_track_id not set."
 
     cur = ardj.database.Open().cursor()
     rows = len(cur.execute('SELECT 1 FROM queue WHERE track_id = ?', (track_id, )).fetchall())
