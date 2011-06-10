@@ -415,6 +415,10 @@ def on_dump(args, sender, cur=None):
     votes = cur.execute('SELECT vote FROM votes WHERE track_id = ? AND email = ?', (track['id'], sender, )).fetchone()
     track['vote'] = votes and votes[0] or None
 
+    base_url = ardj.settings.get('database/base_files_url')
+    if base_url:
+        track['download'] = base_url + track['filename']
+
     return json.dumps(track, ensure_ascii=False)
 
 
