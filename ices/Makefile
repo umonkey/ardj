@@ -26,4 +26,4 @@ test:
 	make -C testing test
 
 ubuntu-depends:
-	sudo apt-get -y install libshout3-dev python2.6-dev libmp3lame-dev
+	sudo apt-get -y install libshout3-dev python2.6-dev libmp3lame-dev libxml2-dev
