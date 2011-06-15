@@ -18,8 +18,11 @@ import ardj.settings
 import ardj.util
 
 
-def run(command, quiet=False, stdin_data=None, grab_output=False):
+def run(command, quiet=False, stdin_data=None, grab_output=False, nice=True):
     command = [str(x) for x in command]
+
+    if nice:
+        command = ['nice', '15'] + command
 
     if stdin_data is not None:
         filename = mktemp(suffix='.txt')
