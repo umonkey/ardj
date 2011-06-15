@@ -93,6 +93,7 @@ class ardjbot(MyFileReceivingBot):
         self.lastping = None # время последнего пинга
         self.pidfile = '/tmp/ardj-jabber.pid'
         self.database_mtime = None
+        self.incoming_ts = 0
 
         self.lastfm = ardj.scrobbler.LastFM()
         self.librefm = ardj.scrobbler.LibreFM()
@@ -122,8 +123,13 @@ class ardjbot(MyFileReceivingBot):
         self.status = self.DND
 
     def __idle_incoming(self):
-        """Sees if there's new music and processes it."""
+        """Sees if there's new music and processes it.  Once every 15 seconds."""
         try:
+            now = time.time()
+            if now < self.incoming_ts:
+                return
+            self.incoming_ts = now + 15
+
             files = ardj.tracks.find_incoming_files()
             if files:
                 self.set_busy()
