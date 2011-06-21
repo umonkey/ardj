@@ -1,0 +1,7 @@
+Очень желательно
+================
+
+- Написать скрипты для перезапуска jabber и ices через upstart
+  http://code.alexreisner.com/articles/upstart.html
+  http://www.linux.com/archive/feature/125977
+  http://upstart.ubuntu.com/getting-started.html
