@@ -1,4 +1,5 @@
-COMPILE_FLAGS=-g -O2 -Wall -Werror -pthread -c -I/usr/include/libxml2
+COMPILE_FLAGS=-g -Wall -Werror -pthread -c -I/usr/include/libxml2
+#COMPILE_FLAGS=-g -O2 -Wall -Werror -pthread -c -I/usr/include/libxml2
 LINK_FLAGS=-ldl -lm -lmp3lame -logg -lpthread -lpython2.6 -lshout -lutil -lvorbis -lvorbisfile -lxml2
 
 build: ices.ardj
