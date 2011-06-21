@@ -26,7 +26,7 @@
 
 #define MPG_MD_MONO 3
 
-#define MP3_BUFFER_SIZE 4096000
+#define MP3_BUFFER_SIZE 4096
 
 typedef struct {
   unsigned int version;
