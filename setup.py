@@ -6,8 +6,8 @@ from distutils.core import setup
 
 # Files to install:
 data_files = [
-    ('/etc/cron.d/', ['share/cron.d/ardj']),
-    ('/etc/logrotate.d/icecast2', ['share/logrotate-icecast']),
+    ('/etc/cron.d', ['share/cron.d/ardj']),
+    ('/etc/logrotate.d', glob('share/logrotate.d/*')),
     ('/etc/init', glob('share/upstart/*.conf')),
     ('share/doc/examples', glob('share/doc/ardj/examples/*')),
     ('share/ardj/screen/', glob('share/ardj/screen/*')),
