@@ -280,10 +280,15 @@ def on_find(args, sender, cur=None):
     find -s something -- show olders first.
     """
     cur = cur or ardj.database.cursor()
-    tracks = [ardj.tracks.get_track_by_id(x, cur=cur) for x in ardj.tracks.find_ids(args, sender, cur=cur)][:10]
+    all_tracks = ardj.tracks.find_ids(args, sender, cur=cur)
+    tracks = [ardj.tracks.get_track_by_id(x, cur=cur) for x in all_tracks[:10]]
     if not tracks:
         return 'Nothing was found.'
-    return format_track_list(tracks, u'Found these tracks:')
+    if len(all_tracks) > len(tracks):
+        header = u'Found %u tracks, showing %u:' % (len(all_tracks), len(tracks))
+    else:
+        header = u'Found only these tracks:'
+    return format_track_list(tracks, header)
 
 
 def on_news(args, sender, cur=None):

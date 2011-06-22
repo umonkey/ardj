@@ -195,7 +195,7 @@ def get_queue(cur=None):
     return [get_track_by_id(row[0], cur) for row in cur.execute('SELECT track_id FROM queue ORDER BY id').fetchall()]
 
 
-def find_ids(pattern, sender=None, cur=None):
+def find_ids(pattern, sender=None, cur=None, limit=None):
     cur = cur or ardj.database.cursor()
 
     search_order = 'weight DESC'
@@ -245,7 +245,9 @@ def find_ids(pattern, sender=None, cur=None):
     if not params:
         return []
 
-    sql = 'SELECT id FROM tracks WHERE weight > 0 AND %s ORDER BY %s LIMIT 10' % (' AND '.join(where), search_order)
+    sql = 'SELECT id FROM tracks WHERE weight > 0 AND %s ORDER BY %s' % (' AND '.join(where), search_order)
+    if limit is not None:
+        sql += ' LIMIT %u' % limit
     rows = cur.execute(sql, params).fetchall()
     return [row[0] for row in rows]
 
