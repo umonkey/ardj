@@ -31,7 +31,7 @@ RSS_CHANNEL = u'''<?xml version="1.0"?>
 '''
 
 RSS_ITEM = u'''<item>
-<title>Прямой эфир от %(date)s (%(duration)u мин.)</title>
+<title>Прямой эфир от %(date)s (~%(duration)u мин.)</title>
 <description>Запись произведена роботом и не обработана.</description>
 <pubDate>%(rss_date)s</pubDate>
 <guid>%(link)s</guid>
@@ -47,9 +47,11 @@ def get_fqfn(filename):
     return filename
 
 def get_air_time(filename):
+    """Returns timestamp when the file was created."""
     return time.strptime(get_fqfn(filename), ardj.settings.getpath('stream/dump_rename_to', fail=True))
 
 def get_air_duration(filename):
+    """Returns file duration in seconds (mtime - ctime)."""
     tags = mutagen.File(filename)
     return int(tags.info.length / 60)
 
@@ -66,7 +68,6 @@ def twit_file(filename, silent=False):
     dur = get_air_duration(filename)
     if dur < ardj.settings.get('stream/twit_duration_min', 10):
         return
-    date = get_air_time(filename)
     twit = time.strftime(ardj.settings.get('stream/twit_end').encode('utf-8')).decode('utf-8')
     twit = twit.replace('URL', ardj.settings.get('stream/base_url') + os.path.basename(filename))
     twit = twit.replace('LENGTH', str(dur))
@@ -77,6 +78,8 @@ def twit_file(filename, silent=False):
 def update_rss(dirname):
     xml = u''
     for filename in sorted(os.listdir(dirname)):
+        if not filename.endswith('.mp3'):
+            continue
         filename = os.path.join(dirname, filename)
         date = get_air_time(filename)
         dur = get_air_duration(filename)
@@ -110,6 +113,11 @@ def stop_stream(quiet):
     purge(dirname)
     filename = os.path.join(dirname, sorted([x for x in os.listdir(dirname) if x.endswith('.mp3')])[-1])
     twit_file(filename, quiet)
+    update_rss(dirname)
+
+
+def run_rss_update(args):
+    dirname = os.path.dirname(ardj.settings.getpath('stream/dump'))
     update_rss(dirname)
 
 
