@@ -1,0 +1,22 @@
+#!/bin/sh
+# Asterisk voicemail processor.
+#
+# This script is used as a mailer: Asterisk calls it to email recorder
+# messages.  The script does that, but then also calls the transcoder/uploader,
+# then deletes old messages.
+#
+# To use this script you must have this in voicemail.conf:
+#
+#   [general]
+#   mailcmd = /var/lib/asterisk/mail-wrapper
+#
+# For details on configuring
+
+# First send the email.
+sendmail -t
+
+# Then process the messages.
+/var/lib/asterisk/tmradio-asterisk-hotline
+
+# Remove old messages.
+find /var/spool/asterisk/voicemail/ -mtime +30 -delete
