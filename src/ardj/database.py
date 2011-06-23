@@ -351,6 +351,14 @@ Commands:
   stat              -- show database statistics
   """
 
+
+def merge_votes(args):
+    """Collapses votes according to jabber/aliases."""
+    db = Open()
+    db.merge_aliases()
+    db.commit()
+
+
 def run_cli(args):
     """Implements the "ardj db" command."""
     db = Open()
