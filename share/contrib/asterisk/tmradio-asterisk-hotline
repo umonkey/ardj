@@ -1,0 +1,146 @@
+#!/usr/bin/env python
+#
+# Asterisk voicemail transcoder/uploader.
+#
+# Looks for wav messages that haven't been converted to OGG/Vorbis, transcodes
+# them, calculates ReplayGain, updates metadata and uploads using scp.
+#
+# You must have sox, vorbisgain and vorbiscomment installed.
+#
+# Configuration is stored in ~/.config/tmradio-hotline.yaml (which usually
+# means /var/lib/asterisk/.config/tmradio-hotline.yaml).  The file must look
+# like this:
+#
+#   folder: /var/spool/asterisk/voicemail/tmradio/0000/INBOX
+#   scp_target: "stream.tmradio.net:/radio/music/incoming/"
+#   aliases:
+#     "+79112223344": Alice
+#
+# The "folder" parameter defines where to look for messages.
+#
+# The "aliases" parameter maps phone numbers to whatever you want, which is
+# then stored in the "artist" tag; if a number does not have a mapping, digits
+# -7 to -4 are replaced with "X", e.g.: "+7911XXX3344".
+#
+# The "scp_target" parameter defins where to upload the files using scp (the
+# only supported method).  To define extra parameters, use ~/.ssh/config, like
+# this:
+#
+#   Host stream.tmradio.net
+#   User alice
+#   IdentityFile ~/.ssh/id_alice
+#
+# That's it.
+#
+# http://ardj.googlecode.com/
+
+
+import glob
+import os
+import re
+import subprocess
+import sys
+import time
+import yaml
+
+
+config = None
+
+
+def run(args, quiet=False):
+    """Runs an external command."""
+    stdout = stderr = None
+    if quiet:
+        stdout = stderr = subprocess.PIPE
+    return subprocess.Popen(args, stdout=stdout, stderr=stderr).wait() == 0
+
+
+def screen_number(number):
+    """Returns an alias for the number or masks some digits."""
+    if 'aliases' in config and number in config['aliases']:
+        return config['aliases'][number]
+    return number[:-7] + 'XXX' + number[-4:]
+
+
+def get_call_info(filename):
+    """Returns caller id and call number for a file."""
+    call_number = 'unknown'
+    call_time = int(time.time())
+
+    info = os.path.splitext(filename)[0] + '.txt'
+    if os.path.exists(info):
+        data = open(info, 'rb').read()
+
+        r = re.search('callerid=.*<(\+\d+)>', data)
+        if r:
+            call_number = screen_number(r.group(1))
+
+        r = re.search('origtime=(\d+)', data)
+        if r:
+            tmp = r.group(1)
+            call_time = int(tmp)
+
+    return call_number, call_time
+
+
+def update_metadata(filename):
+    """Updates file metadata, including ReplayGain."""
+    if not run(['vorbisgain', '-q', filename]):
+        return False
+
+    number, ts = get_call_info(filename) or 'unknown'
+    return run(['vorbiscomment', '-a', filename,
+        '--tag', 'artist=' + number,
+        '--tag', 'title=' + time.strftime('%d.%m.%y %H:%M', time.localtime(ts)),
+        '--tag', 'ardj=ardj=1;labels=voicemail'])
+
+
+def upload_files(filenames):
+    """Uploads files using scp."""
+    if not 'scp_target' in config:
+        print >>sys.stderr, 'Not uploading files: scp_target not set.'
+        return False
+    cmd = ['scp', '-B'] + filenames + [config['scp_target']]
+    return run(cmd)
+
+
+def process_folder(path):
+    """Transcodes new files to OGG/Vorbis and uploads them using scp."""
+    upload_names = []
+    for wav_name in glob.glob(os.path.join(path, '*.wav')):
+        ogg_name = os.path.splitext(wav_name)[0] + '.ogg'
+        if not os.path.exists(ogg_name):
+            if run(['sox', wav_name, '-r44100', '-c2', ogg_name]):
+                if update_metadata(ogg_name):
+                    upload_names.append(ogg_name)
+    if upload_names:
+        upload_files(upload_names)
+
+
+def load_config():
+    """Loads a configuration file.  Returns False on error."""
+    fn = os.path.expanduser('~/.config/tmradio-hotline.yaml')
+    if not os.path.exists(fn):
+        print >>sys.stderr, 'Could not find ' + fn
+        return False
+
+    global config
+    config = yaml.load(open(fn, 'rb'))
+
+    return True
+
+
+if __name__ == '__main__':
+    if not load_config():
+        exit(1)
+
+    folder = config.get('folder')
+    if not folder:
+        print >>sys.stderr, 'Folder not specified.'
+        exit(1)
+
+    if not os.path.exists(folder):
+        print >>sys.stderr, 'Folder %s does not exist.' % folder
+        exit(1)
+
+    process_folder(folder)
