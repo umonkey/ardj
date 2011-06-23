@@ -5,7 +5,11 @@
 # Looks for wav messages that haven't been converted to OGG/Vorbis, transcodes
 # them, calculates ReplayGain, updates metadata and uploads using scp.
 #
-# You must have sox, vorbisgain and vorbiscomment installed.
+# You must have sox, vorbisgain and vorbiscomment installed.  Recorded messages
+# must be saved in wav, i.e. you must have this in voicemail.conf:
+#
+#   [general]
+#   format=wav
 #
 # Configuration is stored in ~/.config/tmradio-hotline.yaml (which usually
 # means /var/lib/asterisk/.config/tmradio-hotline.yaml).  The file must look
