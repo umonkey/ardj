@@ -28,7 +28,8 @@ FEED_URL = 'http://stream.tmradio.net/dump/live.xml'
 TSN_FEED_URL = 'http://rss.tmradio.net/tmradio/tsn'
 NOISE_PROFILE = 'noise-sample.noise-profile'
 UPLOAD_HOST = 'stream.tmradio.net'
-UPLOAD_PATH = '/radio/sites/files.tmradio.net/audio/sosonews/sosonews-%02u-test.mp3'
+UPLOAD_PATH = '/radio/sites/files.tmradio.net/audio/sosonews/sosonews-%02u.mp3'
+DOWNLOAD_URL = 'http://files.tmradio.net/audio/sosonews/sosonews-%02u.mp3'
 
 tsn_episode_number = 0
 tsn_episode_date = None
@@ -182,7 +183,9 @@ def main():
     write_file_metadata(output, episode_id, time.mktime(tsn_episode_date))
     upload_file(output, episode_id)
 
-    print 'It all took %u minutes.' % (int((time.time() - ts) / 60))
+    print 'It all took %u minutes.\n' % (int((time.time() - ts) / 60))
+    print 'File URL:  %s' % (DOWNLOAD_URL % episode_id)
+    print 'File size: %u byte(s)' % os.stat(output).st_size
 
 
 if __name__ == '__main__':
