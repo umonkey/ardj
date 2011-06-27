@@ -1,0 +1,199 @@
+#!/usr/bin/env python
+# encoding=utf-8
+
+"""TSN post-processor.
+
+Finds recordings that took place today between 21:00 and 23:00, downloads them,
+combines, clears up with sox and encodes using lame.
+
+Part of the tmradio.net toolkit.
+
+License: Public Domain.
+"""
+
+
+import glob
+import os
+import subprocess
+import sys
+import tempfile
+import time
+import urllib2
+
+import feedparser
+import mutagen
+
+
+FEED_URL = 'http://stream.tmradio.net/dump/live.xml'
+TSN_FEED_URL = 'http://rss.tmradio.net/tmradio/tsn'
+NOISE_PROFILE = 'noise-sample.noise-profile'
+UPLOAD_HOST = 'stream.tmradio.net'
+UPLOAD_PATH = '/radio/sites/files.tmradio.net/audio/sosonews/sosonews-%02u-test.mp3'
+
+tsn_episode_number = 0
+tsn_episode_date = None
+
+
+def fetch_file(url):
+    """Downloads the file, returns the name of a temporary file (make sure you
+    delete it after use)."""
+    fd, filename = tempfile.mkstemp(prefix='tsn_', suffix='.mp3')
+    req = urllib2.urlopen(urllib2.Request(url))
+
+    print 'Downloading %s as %s' % (url, filename)
+    out = os.fdopen(fd, 'wb')
+    while True:
+        data = req.read(16384)
+        if not data:
+            break
+        out.write(data)
+    out.close()
+
+    return filename
+
+
+def run_command(cmd):
+    """Executes the specified command, returns True on success."""
+    print u'> ' + u' '.join(cmd)
+    return subprocess.Popen(cmd).wait() == 0
+
+
+def find_urls():
+    """Returns urls that correspond to the live show (recording which take
+    place during 21:00-23:00).  URLs must be of this form:
+
+    http://stream.tmradio.net/dump/live-20110623-2304.mp3
+    """
+    urls = []
+    global tsn_episode_date
+    for entry in feedparser.parse(FEED_URL)['entries']:
+        url = entry['enclosures'][0]['href']
+        ts = int(url[-8:-4])
+        if ts >= 2055 and ts < 2300:
+            urls.append(url)
+            tsn_episode_date = entry['updated_parsed']
+    return sorted(urls)
+
+
+def download_files(urls):
+    """Downloads all files, returns names of temporary files."""
+    filenames = []
+    for url in urls:
+        filenames.append(fetch_file(url))
+    return filenames
+
+
+def check_noise_profile():
+    """Makes sure that there is a noise profile."""
+    if not os.path.exists(NOISE_PROFILE):
+        raise Exception('File %s not found, unable to proceed.' % NOISE_PROFILE)
+
+
+def check_binaries():
+    """Makes sure that sox and lame are installed."""
+    have_sox = have_lame = have_mp3gain = False
+    for d in os.environ['PATH'].split(os.pathsep):
+        if os.path.exists(os.path.join(d, 'sox')):
+            have_sox = True
+        if os.path.exists(os.path.join(d, 'lame')):
+            have_lame = True
+        if os.path.exists(os.path.join(d, 'mp3gain')):
+            have_mp3gain = True
+    if not have_sox:
+        raise Exception('Please install sox.')
+    if not have_lame:
+        raise Exception('Please install lame.')
+    if not have_mp3gain:
+        raise Exception('Please install mp3gain.')
+
+
+def check_environment():
+    """Reads settings from the environment."""
+    if 'TSN_NOISE_PROFILE' in os.environ:
+        global NOISE_PROFILE
+        NOISE_PROFILE = os.environ['TSN_NOISE_PROFILE']
+
+    if 'TSN_UPLOAD_HOST' in os.environ:
+        global UPLOAD_HOST
+        UPLOAD_HOST = os.environ['TSN_UPLOAD_HOST']
+
+    if 'TSN_UPLOAD_PATH' in os.environ:
+        global UPLOAD_PATH
+        UPLOAD_PATH = os.environ['TSN_UPLOAD_PATH']
+
+
+def find_episode_id():
+    """Returns the next episode id."""
+    entry = feedparser.parse(TSN_FEED_URL)['entries'][0]
+    return int(entry['id'].split('/')[-2]) + 1
+
+
+def transcode_files(filenames):
+    """Works on the specified files, returns the new temporary file name (final output)."""
+    temp_wav = tempfile.mkstemp(prefix='tsn_', suffix='.wav')[1]
+    temp_mp3 = tempfile.mkstemp(prefix='tsn_', suffix='.mp3')[1]
+
+    run_command(['sox'] + filenames + [temp_wav, 'noisered', NOISE_PROFILE, '0.3', 'silence', '-l', '1', '0.2', '-50d', '-1', '0.2', '-50d', 'norm'])
+    run_command(['lame', '--quiet', '--preset', 'extreme', '-B', '128', '--resample', '44100', temp_wav, temp_mp3])
+
+    os.unlink(temp_wav)
+    for fn in filenames:
+        os.unlink(fn)
+
+    print 'Output is in %s' % temp_mp3
+    return temp_mp3
+
+
+def write_file_metadata(filename, episode_id, episode_ts):
+    """Writes correct file metadata."""
+    episode_date = time.strftime('%d.%m.%Y', time.localtime(episode_ts))
+
+    tags = mutagen.File(filename, easy=True)
+    tags['tracknumber'] = str(episode_id)
+    tags['artist'] = u'Тоже мне радио'
+    tags['title'] = u'ТСН №%u от %s' % (episode_id, episode_date)
+    tags.save()
+
+
+def upload_file(filename, episode_id):
+    """Uploads the file as the specified episode."""
+    output = UPLOAD_PATH % episode_id
+    run_command(['scp', '-B', filename, UPLOAD_HOST + ':' + output])
+
+
+def main():
+    """Starts processing all files."""
+    ts = time.time()
+
+    for fn in glob.glob('/tmp/tsn_*'):
+        print 'Deleting old file %s' % fn
+        os.unlink(fn)
+
+    check_environment()
+    check_noise_profile()
+    check_binaries()
+
+    episode_id = find_episode_id()
+    print 'Working on episode %u ...' % episode_id
+
+    urls = find_urls()
+    filenames = download_files(urls)
+    output = transcode_files(filenames)
+    write_file_metadata(output, episode_id, time.mktime(tsn_episode_date))
+    upload_file(output, episode_id)
+
+    print 'It all took %u minutes.' % (int((time.time() - ts) / 60))
+
+
+if __name__ == '__main__':
+    attempts = 0
+    while attempts < 100:
+        try:
+            main()
+            exit(0)
+        except KeyboardInterrupt:
+            exit(0)
+        except Exception, e:
+            print >>sys.stderr, e
+            print 'Retrying in 60 seconds.'
+        attempts += 1
