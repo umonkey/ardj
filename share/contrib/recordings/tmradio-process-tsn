@@ -36,6 +36,7 @@ NOISE_PROFILE = 'noise-sample.noise-profile'
 UPLOAD_HOST = 'stream.tmradio.net'
 UPLOAD_PATH = '/radio/sites/files.tmradio.net/audio/sosonews/sosonews-%02u.mp3'
 DOWNLOAD_URL = 'http://files.tmradio.net/audio/sosonews/sosonews-%02u.mp3'
+TEMP_FOLDER = '/tmp'
 
 tsn_episode_number = 0
 tsn_episode_date = None
@@ -44,7 +45,7 @@ tsn_episode_date = None
 def fetch_file(url):
     """Downloads the file, returns the name of a temporary file (make sure you
     delete it after use)."""
-    fd, filename = tempfile.mkstemp(prefix='tsn_', suffix='.mp3')
+    fd, filename = tempfile.mkstemp(prefix='tsn_', suffix='.mp3', dir=TEMP_FOLDER)
     req = urllib2.urlopen(urllib2.Request(url))
 
     print 'Downloading %s as %s' % (url, filename)
@@ -135,6 +136,11 @@ def check_environment():
         global UPLOAD_PATH
         UPLOAD_PATH = os.environ['TSN_UPLOAD_PATH']
 
+    if 'TSN_TEMP_FOLDER' in os.environ:
+        global TEMP_FOLDER
+        TEMP_FOLDER = os.environ['TSN_TEMP_FOLDER']
+        print 'Will store temporary files in %s' % TEMP_FOLDER
+
 
 def find_episode_id():
     """Returns the next episode id."""
@@ -182,10 +188,12 @@ def main():
     """Starts processing all files."""
     ts = time.time()
 
-    for fn in glob.glob('/tmp/tsn_*'):
+    check_environment()
+
+    pattern = os.path.join(TEMP_FOLDER, 'tsn_*')
+    for fn in glob.glob(pattern):
         unlink(fn)
 
-    check_environment()
     check_noise_profile()
     check_binaries()
 
