@@ -11,6 +11,9 @@ Part of the tmradio.net toolkit.
 Example crontab line:
 10 23 * * 4 TSN_NOISE_PROFILE=~/noise-sample.noise-profile ~/bin/tmradio-process-tsn 2>&1 | mail -s "TSN post-processing status" info@tmradio.net
 
+Debian/Ubuntu dependencies:
+python-feedparser python-mutagen sox libsox-fmt-mp3 lame mp3gain
+
 License: Public Domain.
 """
 
@@ -54,6 +57,13 @@ def fetch_file(url):
     out.close()
 
     return filename
+
+
+def unlink(filename):
+    """Deletes a file, printing its size before that."""
+    if os.path.exists(filename):
+        print 'Deleting %s (was %u bytes long).' % (filename, os.stat(filename).st_size)
+        os.unlink(filename)
 
 
 def run_command(cmd):
@@ -140,9 +150,9 @@ def transcode_files(filenames):
     run_command(['sox'] + filenames + [temp_wav, 'noisered', NOISE_PROFILE, '0.3', 'silence', '-l', '1', '0.2', '-50d', '-1', '0.2', '-50d', 'norm'])
     run_command(['lame', '--quiet', '--preset', 'extreme', '-B', '128', '--resample', '44100', temp_wav, temp_mp3])
 
-    os.unlink(temp_wav)
+    unlink(temp_wav)
     for fn in filenames:
-        os.unlink(fn)
+        unlink(fn)
 
     print 'Output is in %s' % temp_mp3
     return temp_mp3
@@ -170,8 +180,7 @@ def main():
     ts = time.time()
 
     for fn in glob.glob('/tmp/tsn_*'):
-        print 'Deleting old file %s' % fn
-        os.unlink(fn)
+        unlink(fn)
 
     check_environment()
     check_noise_profile()
