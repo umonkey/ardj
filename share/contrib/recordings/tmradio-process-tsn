@@ -86,7 +86,7 @@ def find_urls():
         ts = int(url[-8:-4])
         if ts >= 2055 and ts < 2300:
             urls.append(url)
-            tsn_episode_date = entry['updated_parsed']
+            tsn_episode_date = time.mktime(entry['updated_parsed'])
     return sorted(urls)
 
 
@@ -205,7 +205,7 @@ def main():
     if not filenames:
         raise Exception('No source files found.')
     output = transcode_files(filenames)
-    write_file_metadata(output, episode_id, time.mktime(tsn_episode_date))
+    write_file_metadata(output, episode_id, tsn_episode_date)
     upload_file(output, episode_id)
 
     print 'It all took %u minutes.\n' % (int((time.time() - ts) / 60))
