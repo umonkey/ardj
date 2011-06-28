@@ -27,7 +27,7 @@ import time
 import urllib2
 
 import feedparser
-import mutagen
+import mutagen.easyid3
 
 
 FEED_URL = 'http://stream.tmradio.net/dump/live.xml'
@@ -162,11 +162,14 @@ def write_file_metadata(filename, episode_id, episode_ts):
     """Writes correct file metadata."""
     episode_date = time.strftime('%d.%m.%Y', time.localtime(episode_ts))
 
-    tags = mutagen.File(filename, easy=True)
-    tags['tracknumber'] = str(episode_id)
-    tags['artist'] = u'Тоже мне радио'
-    tags['title'] = u'ТСН №%u от %s' % (episode_id, episode_date)
-    tags.save()
+    try:
+        tags = mutagen.easyid3.Open(filename)
+        tags['tracknumber'] = str(episode_id)
+        tags['artist'] = u'Тоже мне радио'
+        tags['title'] = u'ТСН №%u от %s' % (episode_id, episode_date)
+        tags.save()
+    except Exception, e:
+        print >>sys.stderr, 'Could not write tags: %s' % e
 
 
 def upload_file(filename, episode_id):
