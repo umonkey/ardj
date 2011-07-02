@@ -211,6 +211,10 @@ def find_ids(pattern, sender=None, cur=None, limit=None):
             search_order = 'id DESC'
         elif arg == '-f':
             search_order = 'id'
+        elif arg == '-c':
+            search_order = 'count DESC'
+        elif arg == '-c-':
+            search_order = 'count ASC'
         elif arg == '-b' and sender is not None:
             search_labels.append('bm:' + sender.lower())
             search_ids = None
