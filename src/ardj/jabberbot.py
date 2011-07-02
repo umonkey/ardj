@@ -513,7 +513,7 @@ class JabberBot(object):
 
         while not self.__finished:
             try:
-                conn.Process(1)
+                conn.Process(10)
                 self.idle_proc()
             except KeyboardInterrupt:
                 self.log.info('bot stopped by user request. shutting down.')
