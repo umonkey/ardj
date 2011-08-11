@@ -1,0 +1,4 @@
+#!/bin/sh
+ARGS="--safe-links -alvz --delete --bwlimit=1000 -e ssh"
+TARGET="backup.tmradio.net:backup"
+nice rsync --exclude=dump $ARGS /radio/ $TARGET/

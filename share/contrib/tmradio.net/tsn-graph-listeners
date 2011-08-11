@@ -1,0 +1,57 @@
+#!/usr/bin/env python
+
+import glob
+import os
+import re
+import subprocess
+import sys
+import time
+
+FILENAME = '/radio/sites/files.tmradio.net/audio/sosonews/sosonews-*.png'
+DATABASE = '/radio/data/collectd/rrd/tmradio/curl-status/gauge-current.rrd'
+IMAGE_WIDTH = 400
+IMAGE_HEIGHT = 100
+
+
+def get_next_episode_id():
+    today = time.strftime('%Y%m%d')
+    r = re.compile(FILENAME.replace('*', '(\d+)'))
+
+    last_id = 0
+    for fn in glob.glob(FILENAME):
+        ft = time.strftime('%Y%m%d', time.localtime(os.stat(fn).st_ctime))
+        if ft == today:
+            print "WARNING: there is today's graph already."
+            return None
+        tmp = int(r.search(fn).group(1))
+        last_id = max(tmp, last_id)
+
+    return last_id + 1
+
+
+def get_command(episode_id):
+    beg, end = sys.argv[1].split('-', 1)
+    date = time.strftime('%Y%m%d ')
+    filename = FILENAME.replace('*', str(episode_id))
+
+    return [ 'rrdtool', 'graph', filename, '-t', 'Listeners', '--imgformat', 'PNG', '--width', str(IMAGE_WIDTH),
+        '--height', str(IMAGE_HEIGHT), '--start', date + beg, '--end', date + end,
+        '--interlaced', 'DEF:value_avg='+ DATABASE +':value:AVERAGE',
+        'DEF:value_max='+ DATABASE +':value:MAX', 'AREA:value_max#ffe8e8',
+        'LINE2:value_avg#ff7777:value', 'GPRINT:value_avg:AVERAGE:%5.1lf%sAvg',
+        'GPRINT:value_max:MAX:%5.1lf%sMax' ]
+
+
+def update_graph():
+    episode_id = get_next_episode_id()
+    if episode_id is not None:
+        cmd = get_command(episode_id)
+        print ' '.join(cmd)
+        subprocess.Popen(cmd).wait()
+
+
+if __name__ == '__main__':
+    if len(sys.argv) < 2 or '-' not in sys.argv[1]:
+        print 'Usage: %s HH:MM-HH:MM' % sys.argv[0]
+        exit(1)
+    update_graph()

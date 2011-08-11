@@ -1,0 +1,2 @@
+#!/bin/sh
+make -C /radio/dump on-stop >>/radio/dump/log.txt 2>&1

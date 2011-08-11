@@ -1,0 +1,3 @@
+#!/bin/sh
+LOG=/radio/data/on-live-connected.log
+ardj stream start >> $LOG 2>&1

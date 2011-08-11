@@ -1,0 +1,7 @@
+#!/bin/sh
+cd $(dirname $0)/..
+#ARGS="--safe-links -alvz --delete --bwlimit=1000 -e ssh"
+ARGS="--safe-links -alvz -e ssh"
+TARGET="ext.tmradio.net:/"
+rsync $ARGS /radio/ $TARGET/radio/
+rsync $ARGS /radio/data/ $TARGET/radio/data/
