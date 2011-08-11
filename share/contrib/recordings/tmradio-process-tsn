@@ -24,6 +24,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import traceback
 import urllib2
 
 import feedparser
@@ -35,6 +36,7 @@ TSN_FEED_URL = 'http://rss.tmradio.net/tmradio/tsn'
 NOISE_PROFILE = 'noise-sample.noise-profile'
 UPLOAD_HOST = 'stream.tmradio.net'
 UPLOAD_PATH = '/radio/sites/files.tmradio.net/audio/sosonews/sosonews-%02u.mp3'
+S3_UPLOAD_PATH = 's3://files.tmradio.net/audio/sosonews/sosonews-%02u.mp3'
 DOWNLOAD_URL = 'http://files.tmradio.net/audio/sosonews/sosonews-%02u.mp3'
 TEMP_FOLDER = '/tmp'
 
@@ -80,13 +82,30 @@ def find_urls():
     http://stream.tmradio.net/dump/live-20110623-2304.mp3
     """
     urls = []
+    prefix = None
     global tsn_episode_date
-    for entry in feedparser.parse(FEED_URL)['entries']:
+
+    entries = feedparser.parse(FEED_URL)['entries']
+    if not entries:
+        return urls
+
+    for entry in entries:
         url = entry['enclosures'][0]['href']
+
+        if prefix is not None and not url.startswith(prefix):
+            print 'Skipped: %s (wrong date)' % url
+            continue
+
         ts = int(url[-8:-4])
-        if ts >= 2055 and ts < 2300:
-            urls.append(url)
-            tsn_episode_date = time.mktime(entry['updated_parsed'])
+        if ts < 2055 or ts > 2300:
+            print 'Skipped: %s (wrong time)' % url
+            continue
+
+        urls.append(url)
+        print 'Found', url
+        tsn_episode_date = time.mktime(entry['updated_parsed'])
+        if prefix is None:
+            prefix = url[:-9]
     return sorted(urls)
 
 
@@ -144,8 +163,19 @@ def check_environment():
 
 def find_episode_id():
     """Returns the next episode id."""
-    entry = feedparser.parse(TSN_FEED_URL)['entries'][0]
-    return int(entry['id'].split('/')[-2]) + 1
+    entries = feedparser.parse(TSN_FEED_URL)['entries']
+    if not entries:
+        raise Exception("Empty RSS feed: %s" % TSN_FEED_URL)
+
+    entry = entries[0]
+    parts = entry['id'].split('/')
+    if parts[2] == 'wiki.tmradio.net':
+        current = parts[-1]
+    else:
+        current = parts[-2]
+    if not current.isdigit():
+        raise ValueError('Unknown episode URL format: ' + entry['id'])
+    return int(current) + 1
 
 
 def transcode_files(filenames):
@@ -153,7 +183,8 @@ def transcode_files(filenames):
     temp_wav = tempfile.mkstemp(prefix='tsn_', suffix='.wav')[1]
     temp_mp3 = tempfile.mkstemp(prefix='tsn_', suffix='.mp3')[1]
 
-    run_command(['sox'] + filenames + [temp_wav, 'noisered', NOISE_PROFILE, '0.3', 'silence', '-l', '1', '0.2', '-50d', '-1', '0.2', '-50d', 'norm'])
+    #run_command(['sox'] + filenames + [temp_wav, 'noisered', NOISE_PROFILE, '0.3', 'silence', '-l', '1', '0.2', '-50d', '-1', '0.2', '-50d', 'norm'])
+    run_command(['sox'] + filenames + [temp_wav, 'noisered', NOISE_PROFILE, '0.2', 'silence', '-l', '1', '0.2', '-50d', '-1', '0.2', '-50d', 'norm'])
     run_command(['lame', '--quiet', '--preset', 'extreme', '-B', '128', '--resample', '44100', temp_wav, temp_mp3])
 
     unlink(temp_wav)
@@ -178,10 +209,16 @@ def write_file_metadata(filename, episode_id, episode_ts):
         print >>sys.stderr, 'Could not write tags: %s' % e
 
 
-def upload_file(filename, episode_id):
+def upload_file_scp(filename, episode_id):
     """Uploads the file as the specified episode."""
     output = UPLOAD_PATH % episode_id
     run_command(['scp', '-B', filename, UPLOAD_HOST + ':' + output])
+
+
+def upload_file_s3(filename, episode_id):
+    """Uploads the file as the specified episode."""
+    output = S3_UPLOAD_PATH % episode_id
+    run_command(['s3cmd', 'put', '-PMH', filename, output])
 
 
 def main():
@@ -198,6 +235,9 @@ def main():
     check_binaries()
 
     episode_id = find_episode_id()
+    if episode_id is None:
+        raise Exception("Could not guess episode number.")
+
     print 'Working on episode %u ...' % episode_id
 
     urls = find_urls()
@@ -206,7 +246,7 @@ def main():
         raise Exception('No source files found.')
     output = transcode_files(filenames)
     write_file_metadata(output, episode_id, tsn_episode_date)
-    upload_file(output, episode_id)
+    upload_file_s3(output, episode_id)
 
     print 'It all took %u minutes.\n' % (int((time.time() - ts) / 60))
     print 'File URL:  %s' % (DOWNLOAD_URL % episode_id)
@@ -222,6 +262,6 @@ if __name__ == '__main__':
         except KeyboardInterrupt:
             exit(0)
         except Exception, e:
-            print >>sys.stderr, e
+            print >>sys.stderr, e, traceback.format_exc(e)
             print 'Retrying in 60 seconds.'
         attempts += 1
