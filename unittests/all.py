@@ -1,31 +1,33 @@
-import glob
 import imp
 import os
 import sys
 
 import unittest
 
-if __name__ == '__main__':
-    names = sys.argv[1:] or glob.glob('unittests/*.py')
+sys.path.insert(0, "src")
+sys.path.insert(0, "unittest")
 
-    total = [os.path.basename(f) for f in glob.glob(os.path.join('src', 'ardj', '*.py'))]
-    tested = [os.path.basename(f) for f in names]
-    not_tested = [f for f in total if f not in tested]
 
-    if len(not_tested):
-        print 'These files are not tested:'
-        for f in sorted(not_tested):
-            print '\t' + os.path.join('src', 'ardj', f)
-
-    suite = unittest.TestSuite()
-
-    for name in names:
-        mod = imp.load_source('test_' + os.path.basename(name)[:-3], name)
-        for member in getattr(mod, '__all__', dir(mod)):
-            if type(getattr(mod, member)) == type:
-                suite.addTest(getattr(mod, member)())
+def run_tests():
+    loader = unittest.defaultTestLoader
+    loader.testMethodPrefix = 'test_'
 
     print 'Logging to tests.log'
-    sys.stdout = sys.stderr = open('tests.log', 'wb')
+    sys.stderr = sys.stdout = open('tests.log', 'wb')
 
-    unittest.TextTestRunner().run(suite)
+    if len(sys.argv) > 1:
+        for name in sys.argv[1:]:
+            info = imp.find_module(name)
+            module = imp.load_module(name, *info)
+
+            suite = loader.loadTestsFromModule(module)
+            unittest.TextTestRunner().run(suite)
+    else:
+        # run all tests
+        current_dir = os.path.dirname(os.path.realpath(__file__))
+        suite = loader.discover(current_dir)
+        unittest.TextTestRunner().run(suite)
+
+
+if __name__ == '__main__':
+    run_tests()

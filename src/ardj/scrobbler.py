@@ -1,6 +1,7 @@
 import hashlib
 import time
 
+import ardj.database
 import ardj.log
 import ardj.settings
 import ardj.util
@@ -110,18 +111,11 @@ class LastFM(object):
 
     def process(self, cur):
         """Looks for stuff to scrobble in the playlog table."""
-        skip_labels = ardj.settings.get('last.fm/skip_labels')
-        if skip_labels:
-            in_sql = ', '.join(['?'] * len(skip_labels))
-            sql = 'SELECT t.artist, t.title, p.ts FROM tracks t INNER JOIN playlog p ON p.track_id = t.id WHERE p.lastfm = 0 AND t.weight > 0 AND t.length > 60 AND t.id NOT IN (SELECT track_id FROM labels WHERE label IN (%s)) ORDER BY p.ts' % in_sql
-            params = skip_labels
-        else:
-            sql = 'SELECT t.artist, t.title, p.ts FROM tracks t INNER JOIN playlog p ON p.track_id = t.id WHERE p.lastfm = 0 AND t.weight > 0 AND t.length > 60 ORDER BY p.ts'
-            params = []
-        rows = cur.execute(sql, params).fetchall()
-        for artist, title, ts in rows:
-            if not self.scrobble(artist, title, ts):
+        db = ardj.database.Open()
+        for row in db.get_tracks_to_scrobble():
+            if not self.scrobble(row["artist"], row["title"], row["ts"]):
                 return False
+            db.set_track_scrobbled(row["ts"])
             cur.execute('UPDATE playlog SET lastfm = 1 WHERE ts = ?', (ts, ))
         return True
 

@@ -1,25 +1,3 @@
-# vim: set ts=4 sts=4 sw=4 et fileencoding=utf-8:
-#
-# database related functions for ardj.
-#
-# ardj is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 3 of the License, or
-# (at your option) any later version.
-#
-# ardj is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-import os
-import re
-import sys
-import time
-
 try:
     from sqlite3 import dbapi2 as sqlite
     from sqlite3 import OperationalError
@@ -27,11 +5,6 @@ except ImportError:
     print >>sys.stderr, 'Please install pysqlite2.'
     sys.exit(13)
 
-import ardj.log
-import ardj.settings
-import ardj.scrobbler
-import ardj.tracks
-import ardj.util
 
 class database:
     """
@@ -96,12 +69,11 @@ class database:
         ardj.log.debug(u'Database closed.')
 
     @classmethod
-    def get_instance(cls):
+    def Open(cls, path=None, **kwargs):
         if cls.instance is None:
-            filename = ardj.settings.getpath('database/local')
-            if filename is None:
-                raise Exception('This ardj instance does not have a local database (see database/local config option).')
-            cls.instance = cls(filename)
+            if path is None:
+                raise Exception('This ardj instance does not have a local database (see database/path config option).')
+            cls.instance = cls(path)
         return cls.instance
 
     def sqlite_ulike(self, a, b):
@@ -310,91 +282,4 @@ class database:
                 cur.execute('UPDATE tracks SET artist = ? WHERE artist = ?', (new_name, name, ))
 
 
-def Open(filename=None):
-    """Returns the active database instance."""
-    return database.get_instance()
-
-
-def cursor():
-    return Open().cursor()
-
-
-def commit():
-    Open().commit()
-
-
-def pick_jingle(cur, label):
-    """Returns a jingle with the specified label."""
-    row = cur.execute('SELECT track_id FROM labels WHERE label = ? ORDER BY RANDOM() LIMIT 1', (label, )).fetchone()
-    if row:
-        return row[0]
-
-
-def queue_tracks(cur, track_ids):
-    """Queues all specified tracks."""
-    for track_id in track_ids:
-        cur.execute('INSERT INTO queue (track_id, owner) VALUES (?, ?)', (track_id, 'robot', ))
-
-
-USAGE = """Usage: ardj db commands...
-
-Commands:
-  console           -- open SQLite console
-  fix-artist-names  -- correct artist names according to last.fm
-  flush-queue       -- remove everything from queue
-  import            -- add tracks from a public "drop box"
-  mark-hitlist      -- mark best tracks with "hitlist"
-  mark-orphans      -- mark tracks that don't belong to a playlist
-  mark-preshow      -- marks preshow music
-  mark-recent       -- mark last 100 tracks with "recent"
-  purge             -- remove dead data
-  stat              -- show database statistics
-  """
-
-
-def merge_votes(args):
-    """Collapses votes according to jabber/aliases."""
-    db = Open()
-    db.merge_aliases()
-    db.commit()
-
-
-def run_cli(args):
-    """Implements the "ardj db" command."""
-    db = Open()
-    ok = False
-    if 'console' in args or not args:
-        ardj.util.run([ 'sqlite3', '-header', db.filename ])
-        ok = True
-    if 'flush-queue' in args:
-        db.cursor().execute('DELETE FROM queue')
-        ok = True
-    if 'mark-hitlist' in args:
-        db.mark_hitlist()
-        ok = True
-    if 'mark-preshow' in args:
-        db.mark_preshow_music()
-        ok = True
-    if 'mark-recent' in args:
-        db.mark_recent_music()
-        ok = True
-    if 'mark-orphans' in args:
-        db.mark_orphans()
-        ok = True
-    if 'mark-long' in args:
-        db.mark_long()
-        ok = True
-    if 'purge' in args:
-        db.purge()
-        ok = True
-    if 'stat' in args:
-        stats = db.get_stats()
-        print '%u tracks, %.1f hours.' % (stats['tracks'], stats['seconds'] / 60 / 60)
-        ok = True
-    if 'fix-artist-names' in args:
-        db.fix_artist_names()
-        ok = True
-    if not ok:
-        print USAGE
-    else:
-        db.commit()
+Open = database.get_instance
