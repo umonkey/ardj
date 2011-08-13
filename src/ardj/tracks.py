@@ -19,6 +19,7 @@ import ardj.jabber
 import ardj.jamendo
 import ardj.listeners
 import ardj.log
+import ardj.playlist
 import ardj.podcast
 import ardj.replaygain
 import ardj.scrobbler
@@ -625,7 +626,7 @@ def add_preroll(track_id, labels=None, cur=None):
     return track_id
 
 
-def get_next_track_id(cur=None, debug=False, update_stats=True):
+def get_next_track_id(ts=None, debug=False, update_stats=True):
     """Picks a track to play.
 
     The track is chosen from the active playlists. If nothing could be chosen,
@@ -644,6 +645,13 @@ def get_next_track_id(cur=None, debug=False, update_stats=True):
     Arguments:
     update_stats -- set to False to not update last_played.
     """
+    if ts is None:
+        ts = int(time.time())
+
+    playlists = ardj.playlist.Playlist.get_active(ts)
+    print playlists
+    return playlists
+
     want_preroll = True
     cur = cur or ardj.database.cursor()
 
@@ -970,10 +978,9 @@ def run_cli(args):
     command = ''.join(args[:1])
 
     if command == 'next-json':
-        cur = ardj.database.cursor()
-        track_id = get_next_track_id(cur=cur, debug='-q' not in args, update_stats='-n' not in args)
+        track_id = get_next_track_id(debug='-q' not in args, update_stats='-n' not in args)
         if track_id:
-            track = get_track_by_id(track_id, cur=cur)
+            track = get_track_by_id(track_id)
             output = json.dumps(track)
 
             try:

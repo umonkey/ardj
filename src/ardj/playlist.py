@@ -1,3 +1,4 @@
+import json
 import os
 import time
 import yaml
@@ -106,3 +107,11 @@ class Playlist(dict):
         if "track_delay" in self:
             args["track_delay"] = self["track_delay"]
         return [cls(x) for x in db.get_tracks(timestamp, **args)]
+
+
+def cli_show_all(args):
+    print json.dumps(Playlist.get_all(), indent=True)
+
+
+def cli_show_active(args):
+    print json.dumps(Playlist.get_active(int(time.time())), indent=True)

@@ -24,6 +24,8 @@ COMMAND_MAP = [ # (command, module, function, description)
     ('news', 'news', 'run_cli', 'updates news from echo.msk.ru'),
     ('rg', 'replaygain', 'run_cli', 'scan ReplayGain in files'),
     ('say', 'speech', 'render_text_cli', 'renders text to voice using festival, then plays it'),
+    ('show-all-playlists', 'playlist', 'cli_show_all', 'shows all playlists'),
+    ('show-active-playlists', 'playlist', 'cli_show_active', 'shows active playlists'),
     ('show-news-from-jamendo', 'jamendo', 'print_new_tracks', 'show new tracks available at jamendo.com'),
     ('sms', 'sms', 'run_cli', 'send text messages (GSM)'),
     ('stream', 'stream', 'run_cli', 'handles stream events'),
