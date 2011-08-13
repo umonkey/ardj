@@ -774,22 +774,6 @@ def do_idle_tasks(set_busy):
     ardj.database.commit()
 
 
-__CLI_USAGE__ = """Usage: ardj track command
-
-Commands:
-  next-json       -- print what to play next (-n to debug).
-  update-weights  -- update the real_weight property of all tracks.
-"""
-
-def run_cli(args):
-    command = ''.join(args[:1])
-
-    if command == 'next-json':
-        return cli_next_track(args)
-    else:
-        print __CLI_USAGE__
-
-
 def cli_update_real_weights(args):
     Track.update_real_weights()
 
