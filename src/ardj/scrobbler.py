@@ -20,6 +20,8 @@ class LastFM(object):
     def authorize(self):
         """Authorizes for a session key as a mobile device.
         Details: http://www.last.fm/api/mobileauth"""
+        if not self.login or not self.password:
+            return False
         data = self.call(method='auth.getMobileSession',
             username=self.login,
             authToken=self.get_auth_token(),
