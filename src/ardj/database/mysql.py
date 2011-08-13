@@ -8,12 +8,29 @@ from MySQLdb.constants import FIELD_TYPE
 
 class MySQL(object):
     def __init__(self, **kwargs):
-        self.db = connect(conv={
-            FIELD_TYPE.VAR_STRING: lambda s: s.decode("utf-8"),
-            FIELD_TYPE.LONG: int,
-            FIELD_TYPE.DOUBLE: float,
-        }, **kwargs)
-        self.query("SET NAMES UTF8")
+        self.db = None
+        self.args = kwargs
+
+    def connect(self):
+        if self.db is None:
+            self.db = connect(conv={
+                FIELD_TYPE.VAR_STRING: lambda s: s.decode("utf-8"),
+                FIELD_TYPE.LONG: int,
+                FIELD_TYPE.DOUBLE: float,
+            }, **self.args)
+            self.query("SET NAMES UTF8")
+
+    def run_cli(self):
+        argmap = {"host":"host", "user":"user", "password":"password"}
+
+        cmd = ["mysql"]
+        for k, v in argmap.items():
+            if k in self.args:
+                cmd.append("--%s=%s" % (k, self.args[k]))
+        cmd.append(self.args["db"])
+
+        import subprocess
+        subprocess.Popen(cmd).wait()
 
     def get_tracks_to_scrobble(self, skip_labels=None, min_length=60):
         """Returns tracks to scrobble (a list of dictionaries with keys artist,
@@ -129,13 +146,25 @@ class MySQL(object):
         return track
 
     def set_track_timestamp(self, track_id, ts):
+        """Updates track's last_played timestamp."""
         self.query("UPDATE tracks SET last_played = ? WHERE id = ?", [ts, track_id])
+
+    def get_last_played_artists(self, count=10):
+        """Returns count names of recently played artists."""
+        names = []
+        for name in self.select("SELECT artist FROM tracks ORDER BY last_played DESC"):
+            if name not in names:
+                names.append(name)
+            if len(names) == count:
+                break
+        return names
 
     # ---------- LOW LEVEL STUFF ----------
 
     def select(self, sql, params=None, fields=None):
         """Returns rows, returned by the specified query.  Optionally maps to a
         dictionary according to fields."""
+        self.connect()
         sql = self.format_sql(sql, params)
         self.log_query(sql)
         cur = self.db.cursor()
@@ -146,6 +175,7 @@ class MySQL(object):
         return rows
 
     def query(self, sql, params=None):
+        self.connect()
         sql = self.format_sql(sql, params)
         self.log_query(sql)
         return self.db.query(sql)

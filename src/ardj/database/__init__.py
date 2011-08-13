@@ -17,8 +17,7 @@
 
 from __future__ import absolute_import
 
-import ardj
-import ardj.settings
+import ardj.settings as settings
 
 
 instance = None
@@ -26,9 +25,9 @@ instance = None
 
 def Open():
     """Returns the active database instance."""
-    global instance, ardj
+    global instance, settings
     if instance is None:
-        dsn = ardj.settings.get('database', {})
+        dsn = settings.get('database', {})
         dsn_type = dsn.get("type")
         if dsn_type == "sqlite":
             import ardj.database.sqlite
@@ -39,3 +38,7 @@ def Open():
         del dsn["type"]
         instance = connector(**dsn)
     return instance
+
+
+def run_cli(args):
+    Open().run_cli()
