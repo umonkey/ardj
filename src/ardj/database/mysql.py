@@ -100,7 +100,7 @@ class MySQL(object):
         labels = self.select("SELECT label FROM labels WHERE track_id = ?", [track_id])
         return list(set([l[0] for l in labels]))
 
-    def get_tracks(self, timestamp=None, artist=None, labels=None, max_count=None, min_weight=None, max_weight=None, track_delay=None):
+    def get_tracks(self, timestamp=None, artist=None, labels=None, max_count=None, min_weight=None, max_weight=None, track_delay=None, has_filename=False):
         sql = "SELECT id, artist, title, weight, real_weight, filename, last_played, count FROM tracks"
 
         where = []
@@ -109,6 +109,9 @@ class MySQL(object):
         if artist is not None:
             where.append("artist = ?")
             params.append(artist)
+
+        if has_filename:
+            where.append("filename IS NOT NULL")
 
         if max_count is not None:
             where.append("count < ?")

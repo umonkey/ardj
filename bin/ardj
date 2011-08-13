@@ -14,6 +14,7 @@ COMMAND_MAP = [ # (command, module, function, description)
     ('db', 'database', 'run_cli', 'open database console'),
     ('events', 'tout', 'run_cli', 'works with the upcoming events'),
     ('find-new-tracks', 'tracks', 'find_new_tracks', 'fetch new songs from Last.fm'),
+    ('fix-track-lengths', 'tracks', 'cli_fix_lengths', 'updates cached track lengths'),
     ('hotline', 'hotline', 'run_cli', 'work with the hotline'),
     ('icelog', 'icelogger', 'run_cli', 'work with Icecast logs'),
     ('jabber', 'jabber', 'run_cli', 'run the jabber bot'),

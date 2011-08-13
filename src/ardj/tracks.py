@@ -126,6 +126,19 @@ class Track(dict):
     def find(cls, **kwargs):
         return ardj.database.Open().get_tracks(**kwargs)
 
+    @classmethod
+    def fix_lengths(cls):
+        """Updates lengths of all tracks."""
+        for track in cls.find(has_filename=True):
+            track = cls(track)
+            if not os.path.exists(track["filepath"]):
+                print "Track %u does not exist on disk." % track["id"]
+                continue
+            tags = track.get_tags()
+            if "length" in tags and tags["length"] != track["length"]:
+                track["length"] = tags["length"]
+                track.put()
+
     def add_preroll(self, playlist):
         db = ardj.database.Open()
 
@@ -147,6 +160,10 @@ class Track(dict):
 
     def add_to_queue(self):
         ardj.database.Open().add_to_queue(self["id"])
+
+    def get_tags(self):
+        """Returns track tags."""
+        return ardj.tags.get(self["filepath"])
 
     def touch(self, ts):
         self.update_weight()
@@ -621,23 +638,6 @@ def merge(id1, id2, cur):
     update_real_track_weight(id1, cur=cur)
 
 
-def update_track_lengths():
-    cur = ardj.database.cursor()
-    rows = cur.execute('SELECT id, filename, length '
-        'FROM tracks WHERE weight > 0 AND filename').fetchall()
-
-    updates = []
-    for id, filename, length in rows:
-        tags = ardj.tags.get(track["filepath"])
-        if tags['length'] != length:
-            print '%u, %s: %s => %s' % (id, filename, length, tags['length'])
-            updates.append((tags['length'], id))
-
-    for length, id in updates:
-        cur.execute('UPDATE tracks SET length = ? WHERE id = ?', (length, id, ))
-    ardj.database.commit()
-
-
 def find_incoming_files():
     """Returns a list of incoming file names.  Only files modified more than 60
     seconds ago are reported.  If the database/incoming/path parameter is not
@@ -792,8 +792,6 @@ def run_cli(args):
     elif command == 'update-weights':
         update_real_track_weights()
         ardj.database.Open().commit()
-    elif command == 'update-lengths':
-        update_track_lengths()
     else:
         print __CLI_USAGE__
 
@@ -813,3 +811,7 @@ def cli_next_track(args):
 
         ardj.log.debug('next-json returns: %s' % output)
         print output
+
+
+def cli_fix_lengths(args):
+    Track.fix_lengths()

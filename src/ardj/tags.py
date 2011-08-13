@@ -53,13 +53,14 @@ class Wrapper(dict):
 
     def read(self):
         self.clear()
-        ext = os.path.splitext(self.filename)[1].lower()
-        if ext in ('.oga', '.ogg'):
-            self.read_vorbis()
-        elif ext in ('.mp3'):
-            self.read_mp3()
-        else:
-            raise TypeError('File %s is of an unknown type.')
+        if os.path.exists(self.filename):
+            ext = os.path.splitext(self.filename)[1].lower()
+            if ext in ('.oga', '.ogg'):
+                self.read_vorbis()
+            elif ext in ('.mp3'):
+                self.read_mp3()
+            else:
+                raise TypeError('File %s is of an unknown type.')
         self.parse_special()
 
     def parse_special(self):
