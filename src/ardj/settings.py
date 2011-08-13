@@ -92,12 +92,13 @@ def load_data():
     Options: ARDJ_SETTINGS envar, ~/.config/ardj/ardj.yaml, /etc/ardj.yaml.
     If none exist, an empty dicrionary returned.
     """
-    for filename in (os.environ.get('ARDJ_SETTINGS'), '~/.config/ardj/ardj.yaml', '/etc/ardj.yaml'):
+    local_name = os.path.expanduser('~/.config/ardj/ardj.yaml')
+    for filename in (os.environ.get('ARDJ_SETTINGS'), local_name, '/etc/ardj.yaml'):
         if filename:
             filename = os.path.expanduser(filename)
             if os.path.exists(filename):
                 return yaml.load(open(filename, 'rb')), filename
-    return {}, None
+    return {}, local_name
 
 
 def load(refresh=False):
