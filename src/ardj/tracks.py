@@ -663,16 +663,6 @@ def bookmark(track_ids, owner, remove=False, cur=None):
             cur.execute('INSERT INTO labels (track_id, label, email) VALUES (?, ?, ?)', (track_id, label, owner, ))
 
 
-def find_by_title(title, artist_name=None, cur=None):
-    """Returns track ids by title."""
-    cur = cur or ardj.database.cursor()
-    if artist_name is None:
-        cur.execute('SELECT id FROM tracks WHERE title = ? COLLATE unicode', (title, ))
-    else:
-        cur.execute('SELECT id FROM tracks WHERE title = ? COLLATE unicode AND artist = ? COLLATE unicode', (title, artist_name, ))
-    return [row[0] for row in cur.fetchall()]
-
-
 def get_missing_tracks(tracklist, limit=100):
     """Removes duplicate and existing tracks."""
     tmp = {}
@@ -684,7 +674,7 @@ def get_missing_tracks(tracklist, limit=100):
             tmp[artist] = {}
         if len(tmp[artist]) >= limit:
             continue
-        if find_by_title(track['title'], artist):
+        if Track.find(title=track["title"], artist=artist, min_weight=-1):
             continue
         tmp[artist][fix(track['title'])] = track
 
