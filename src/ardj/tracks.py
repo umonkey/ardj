@@ -253,14 +253,6 @@ class Track(dict):
         return ardj.database.Open().get_last_played_track(cls=cls)
 
 
-def get_last_track(cur=None):
-    """Returns the full description of the last played track.
-
-    Calls get_track_by_id(get_last_track_id()).
-    """
-    return Track.get_last_played()
-
-
 def identify(track_id, cur=None, unknown='an unknown track'):
     track = Track.get_by_id(track_id)
     if not track:
