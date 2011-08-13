@@ -635,16 +635,6 @@ def find_incoming_files():
     return result
 
 
-def bookmark(track_ids, owner, remove=False, cur=None):
-    """Adds a bookmark label to the specified tracks."""
-    cur = cur or ardj.database.cursor()
-    label = 'bm:' + owner.lower()
-    for track_id in track_ids:
-        cur.execute('DELETE FROM labels WHERE track_id = ? AND label = ?', (track_id, label, ))
-        if not remove:
-            cur.execute('INSERT INTO labels (track_id, label, email) VALUES (?, ?, ?)', (track_id, label, owner, ))
-
-
 def get_missing_tracks(tracklist, limit=100):
     """Removes duplicate and existing tracks."""
     tmp = {}

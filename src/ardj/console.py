@@ -498,7 +498,17 @@ def on_bookmark(args, sender, cur=None):
     if not track_ids:
         track_ids.append(ardj.tracks.get_last_track_id(cur=cur))
 
-    ardj.tracks.bookmark(track_ids, sender, remove=remove, cur=cur)
+    label = u"bm:" + sender
+
+    for track_id in track_ids:
+        track = Track.get_by_id(track_id)
+        if remove and label in track["labels"]:
+            track["labels"].remove(label)
+            track.put()
+        elif not remove and label not in track["labels"]:
+            track["labels"].append(label)
+            track.put()
+
     return 'Bookmark %s. Use "find -b" or "queue -b" to access yout bookmarks.' % (remove and 'removed' or 'added')
 
 
