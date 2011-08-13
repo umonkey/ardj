@@ -238,7 +238,7 @@ class MySQL(object):
             params = []
         params = list(params)
 
-        parts = sql.split(u'?')
+        parts = str(sql).split('?')
         for idx, part in enumerate(parts):
             if params:
                 value = params[0]
@@ -247,11 +247,12 @@ class MySQL(object):
                 elif isinstance(value, (int, long, float)):
                     value = str(value)
                 else:
-                    value = u"'" + self.db.escape_string(value) + u"'"
+                    value = self.db.escape_string(value.encode("utf-8"))
+                    value = "'%s'" % value
                 parts[idx] += value
                 del params[0]
 
-        return u''.join(parts)
+        return ''.join(parts)
 
     def map_row(self, row, fields):
         return dict([(fields[idx], value) for idx, value in enumerate(row)])
