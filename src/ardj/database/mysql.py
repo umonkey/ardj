@@ -188,6 +188,9 @@ class MySQL(object):
 
         self.query(sql, params)
 
+    def get_track_votes(self, track_id):
+        return self.select("SELECT v.email, v.vote * k.weight FROM votes v INNER JOIN karma k ON k.email = v.email WHERE v.track_id = ? ORDER BY v.ts", [track_id], ["email", "vote"])
+
     def set_track_played(self, track_id, ts):
         """Updates track's last_played timestamp."""
         self.query("UPDATE tracks SET count = count + 1, last_played = ? WHERE id = ?", [ts, track_id])

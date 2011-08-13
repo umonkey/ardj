@@ -139,6 +139,22 @@ class Track(dict):
                 track["length"] = tags["length"]
                 track.put()
 
+    def update_real_weight(self):
+        results = {}
+        for vote in ardj.database.Open().get_track_votes(self["id"]):
+            results[vote["email"]] = vote["vote"]
+        self["real_weight"] = max(sum(results.values()) * 0.25 + 1, 0.01)
+        self.put()
+
+    @classmethod
+    def update_real_weights(cls):
+        """Updates the real_weight column for all tracks.  To be used when the
+        votes table was heavily modified or when corruption is possible."""
+        update_karma()
+        for track in cls.find():
+            track = cls(track)
+            track.update_real_weight()
+
     def add_preroll(self, playlist):
         db = ardj.database.Open()
 
@@ -453,7 +469,7 @@ def add_vote(track_id, email, vote, cur=None, update_karma=False):
         current_weight = max(current_weight + vote * 0.25, 0.01)
         cur.execute('UPDATE tracks SET weight = ? WHERE id = ?', (current_weight, track_id, ))
 
-        update_real_track_weight(track_id, cur=cur)
+        Track.get_by_id(track_id).update_real_weight()
 
     real_weight = cur.execute('SELECT weight FROM tracks WHERE id = ?',
         (track_id, )).fetchone()[0]
@@ -570,30 +586,6 @@ def get_track_to_play():
     return json.loads(data)
 
 
-def update_real_track_weight(track_id, cur=None):
-    """Returns the real track weight, using the last vote for each user."""
-    cur = cur or ardj.database.cursor()
-    rows = cur.execute('SELECT v.email, v.vote * k.weight FROM votes v '
-        'INNER JOIN karma k ON k.email = v.email '
-        'WHERE v.track_id = ? ORDER BY v.ts', (track_id, )).fetchall()
-
-    results = {}
-    for email, vote in rows:
-        results[email] = vote
-
-    real_weight = max(sum(results.values()) * 0.25 + 1, 0.01)
-    cur.execute('UPDATE tracks SET real_weight = ? WHERE id = ?', (real_weight, track_id, ))
-    return real_weight
-
-def update_real_track_weights(cur=None):
-    """Updates the real_weight column for all tracks.  To be used when the
-    votes table was heavily modified or when corruption is possible."""
-    cur = cur or ardj.database.cursor()
-    update_karma(cur=cur)
-    for row in cur.execute('SELECT id FROM tracks').fetchall():
-        update_real_track_weight(row[0], cur=cur)
-
-
 def update_karma(cur=None):
     """Updates users karma based on their last voting time."""
     cur = cur or ardj.database.cursor()
@@ -635,7 +627,7 @@ def merge(id1, id2, cur):
     t2['weight'] = 0
     update_track(t2, cur=cur)
 
-    update_real_track_weight(id1, cur=cur)
+    Track.get_by_id(id1).update_real_weight()
 
 
 def find_incoming_files():
@@ -789,11 +781,12 @@ def run_cli(args):
 
     if command == 'next-json':
         return cli_next_track(args)
-    elif command == 'update-weights':
-        update_real_track_weights()
-        ardj.database.Open().commit()
     else:
         print __CLI_USAGE__
+
+
+def cli_update_real_weights(args):
+    Track.update_real_weights()
 
 
 def cli_next_track(args):
