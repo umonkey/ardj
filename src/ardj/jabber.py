@@ -217,6 +217,8 @@ class ardjbot(MyFileReceivingBot):
     def join_chat_room(self):
         """Joins the chat room if configured."""
         jid = ardj.settings.get('jabber/chat_room')
+        if jid is None:
+            return
         parts = jid.split('/', 1)
         if len(parts) == 1:
             parts.append(None)

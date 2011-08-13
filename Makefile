@@ -25,7 +25,7 @@ console:
 testv: test
 	less -S tests-ardj.log
 
-install:
+install: ices/ices.ardj
 	sudo python setup.py install --record install.log
 
 uninstall:
