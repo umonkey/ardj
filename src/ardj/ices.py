@@ -6,6 +6,7 @@ import traceback
 
 import ardj.log
 import ardj.tracks
+from ardj.tracks import Track
 
 songnumber = -1
 last_track = None
@@ -36,7 +37,7 @@ def ices_get_next():
     """
     global last_track, last_good_file
     try:
-        last_track = ardj.tracks.get_track_to_play()
+        last_track = Track.get_track_to_play()
         if os.path.exists(last_track['filepath']):
             last_good_file = last_track['filepath']
         return str(last_track['filepath'])

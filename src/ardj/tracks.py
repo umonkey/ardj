@@ -127,6 +127,16 @@ class Track(dict):
         return ardj.database.Open().get_tracks(**kwargs)
 
     @classmethod
+    def get_track_to_play(cls):
+        """Returns information about the track to play.
+        
+        The information is requested from an external ardj process, because
+        otherwise you would have to restart ices every time the track selection
+        algorithm is changed."""
+        data = ardj.util.run(["ardj", "show-next-track"], quiet=True, grab_output=True)
+        return json.loads(data)
+
+    @classmethod
     def fix_lengths(cls):
         """Updates lengths of all tracks."""
         for track in cls.find(has_filename=True):
@@ -579,16 +589,6 @@ def log(track_id, listener_count=None, ts=None, cur=None):
     if listener_count > 0:
         cur = cur or ardj.database.cursor()
         cur.execute('INSERT INTO playlog (ts, track_id, listeners) VALUES (?, ?, ?)', (int(ts or time.time()), int(track_id), listener_count, ))
-
-
-def get_track_to_play():
-    """Returns information about the track to play.
-    
-    The information is requested from an external ardj process, because
-    otherwise you would have to restart ices every time the track selection
-    algorythm is changed."""
-    data = ardj.util.run([ 'ardj', 'track', 'next-json' ], quiet=True, grab_output=True)
-    return json.loads(data)
 
 
 def update_karma(cur=None):
