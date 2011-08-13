@@ -153,22 +153,28 @@ def on_rocks(args, sender, cur=None):
     if args and not args.isdigit():
         return 'Usage: rocks [track_id]'
 
-    track_id = args and int(args) or ardj.tracks.get_last_track_id(cur=cur)
-    weight = ardj.tracks.add_vote(track_id, sender, 1, cur=cur)
+    if args:
+        track = Track.get_by_id(int(args))
+    else:
+        track = Track.get_last_played()
+    weight = ardj.tracks.add_vote(track["id"], sender, 1, cur=cur)
     if weight is None:
         return 'No such track.'
-    return 'OK, current weight of track #%u is %.04f.' % (track_id, weight)
+    return 'OK, current weight of track #%u is %.04f.' % (track["id"], weight)
 
 
 def on_sucks(args, sender, cur=None):
     if args and not args.isdigit():
         return 'Usage: sucks [track_id]'
 
-    track_id = args and int(args) or ardj.tracks.get_last_track_id(cur=cur)
-    weight = ardj.tracks.add_vote(track_id, sender, -1, cur=cur)
+    if args:
+        track = Track.get_by_id(int(args))
+    else:
+        track = Track.get_last_played()
+    weight = ardj.tracks.add_vote(track["id"], sender, -1, cur=cur)
     if weight is None:
         return 'No such track.'
-    return 'OK, current weight of track #%u is %.04f.' % (track_id, weight)
+    return 'OK, current weight of track #%u is %.04f.' % (track["id"], weight)
 
 
 def on_ban(args, sender, cur=None):
@@ -308,7 +314,7 @@ def on_votes(args, sender, cur=None):
     if args.startswith('for '):
         track_id = int(args[4:].strip())
     else:
-        track_id = ardj.tracks.get_last_track_id(cur)
+        track_id = Track.get_last_played()["id"]
 
     votes = ardj.tracks.get_track_votes(track_id, cur=cur)
     if not votes:
@@ -368,7 +374,7 @@ def on_tags(args, sender, cur=None):
         track_id = int(parts[-1])
         parts = parts[:-2]
     else:
-        track_id = ardj.tracks.get_last_track_id(cur)
+        track_id = Track.get_last_played()["id"]
 
     labels = [l.strip(' ,@') for l in parts]
     current = ardj.tracks.add_labels(track_id, labels, owner=sender, cur=cur) or ['none']
@@ -388,12 +394,11 @@ def on_set(args, sender, cur=None):
     if len(parts) > 2 and parts[-2] == 'for':
         if not parts[-1].isdigit():
             return 'The last argument (track_id) must be an integer.'
-        track_id = int(parts[-1])
+        track = Track.get_by_id(int(parts[-1]))
         parts = parts[:-2]
     else:
-        track_id = ardj.tracks.get_last_track_id(cur)
+        track = Track.get_last_played()
 
-    track = Track.get_by_id(track_id)
     track[parts[0]] = u" ".join(parts[2:])
     track.put()
 
@@ -432,12 +437,12 @@ def on_dump(args, sender, cur=None):
 def on_show(args, sender, cur=None):
     cur = cur or ardj.database.cursor()
 
-    track_id = args and int(args) or ardj.tracks.get_last_track_id(cur)
-    if not track_id:
-        return 'Nothing is playing.'
-    track = Track.get_by_id(track_id)
+    if args:
+        track = Track.get_by_id(int(args))
+    else:
+        track = Track.get_last_played()
     if not track:
-        return 'Track %s not found.' % track_id
+        return 'Track not found.' % track_id
 
     result = u'«%s» by %s' % (track['title'], track['artist'])
     result += u'; id=%u weight=%.2f playcount=%u length=%s vote=%u last_played=%s. ' % (track['id'], track['weight'] or 0, track['count'] or 0, ardj.util.format_duration(int(track.get('length', 0))), ardj.tracks.get_vote(track['id'], sender), ardj.util.format_duration(track.get('last_played', 0), age=True))
@@ -449,13 +454,9 @@ def on_show(args, sender, cur=None):
 def on_status(args, sender, cur=None):
     cur = cur or ardj.database.cursor()
 
-    track_id = ardj.tracks.get_last_track_id(cur=cur)
-    if not track_id:
-        return 'Silence.'
-
-    track = Track.get_by_id(track_id)
+    track = Track.get_last_played()
     if not track:
-        return 'Playing an unknown track.'
+        return 'Silence.'
 
     lcount = ardj.listeners.get_count()
     message = u'«%s» by %s — #%u ♺%u ⚖%.2f Σ%u' % (track.get('title', 'untitled'), track.get('artist', 'unknown artist'), track['id'], track.get('count', 0), track.get('weight', 0), lcount)
@@ -498,7 +499,7 @@ def on_bookmark(args, sender, cur=None):
         else:
             raise Exception('Usage: bm [-d] track_ids...')
     if not track_ids:
-        track_ids.append(ardj.tracks.get_last_track_id(cur=cur))
+        track_ids.append(Track.get_last_played()["id"])
 
     label = u"bm:" + sender
 

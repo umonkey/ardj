@@ -162,6 +162,12 @@ class MySQL(object):
         self.query("UPDATE votes SET track_id = ? WHERE track_id = ?", [dst_id, src_id])
         self.query("UPDATE playlog SET track_id = ? WHERE track_id = ?", [dst_id, src_id])
 
+    def get_last_played_track(self, cls=dict):
+        """Returns the last played track."""
+        tracks = self.select("SELECT id FROM tracks ORDER BY last_played DESC LIMIT 1")
+        if tracks:
+            return cls(self.get_track_by_id(tracks[0]))
+
     def get_random_track(self, timestamp, touch=False, **kwargs):
         tracks = self.get_tracks(timestamp, **kwargs)
         if not tracks:

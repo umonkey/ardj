@@ -247,18 +247,10 @@ class Track(dict):
 
         ardj.database.Open().merge_tracks(self["id"], other["id"])
 
-
-def get_last_track_id(cur=None):
-    """Returns id of the last played track.
-
-    If the database is empty, returns None, otherwise an integer.
-
-    Keyword arguments:
-    cur -- database cursor, created if None.
-    """
-    cur = cur or ardj.database.cursor()
-    row = cur.execute('SELECT id FROM tracks ORDER BY last_played DESC LIMIT 1').fetchone()
-    return row and row[0] or None
+    @classmethod
+    def get_last_played(cls):
+        """Returns the last played track."""
+        return ardj.database.Open().get_last_played_track(cls=cls)
 
 
 def get_last_track(cur=None):
@@ -266,7 +258,7 @@ def get_last_track(cur=None):
 
     Calls get_track_by_id(get_last_track_id()).
     """
-    return Track.get_by_id(get_last_track_id(cur))
+    return Track.get_last_played()
 
 
 def identify(track_id, cur=None, unknown='an unknown track'):
