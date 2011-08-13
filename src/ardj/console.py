@@ -472,7 +472,9 @@ def on_merge(args, sender, cur=None):
     ids = args.split(' ')
     if len(ids) != 2 or not ids[0].isdigit() or not ids[1].isdigit():
         return 'Usage: merge id1 id2'
-    ardj.tracks.merge(int(ids[0]), int(ids[1]), cur or ardj.database.cursor())
+    t1 = Track.get_by_id(int(ids[0]))
+    t2 = Track.get_by_id(int(ids[1]))
+    t2.merge_into(t1)
     return 'OK.'
 
 

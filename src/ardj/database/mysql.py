@@ -157,6 +157,11 @@ class MySQL(object):
 
         return self.select(sql, params, ["id", "artist", "title", "weight", "real_weight", "filename", "last_played", "count"])
 
+    def merge_tracks(self, src_id, dst_id):
+        self.query("UPDATE labels SET track_id = ? WHERE track_id = ?", [dst_id, src_id])
+        self.query("UPDATE votes SET track_id = ? WHERE track_id = ?", [dst_id, src_id])
+        self.query("UPDATE playlog SET track_id = ? WHERE track_id = ?", [dst_id, src_id])
+
     def get_random_track(self, timestamp, touch=False, **kwargs):
         tracks = self.get_tracks(timestamp, **kwargs)
         if not tracks:
