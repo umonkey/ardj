@@ -102,11 +102,15 @@ class Track(dict):
             return tracks[0]
 
         set_final_weights(tracks)
-        probability_sum = sum([t["final_weight"] for t in tracks])
+        total = sum([t["final_weight"] for t in tracks])
+        limit = random.random() * total
 
-        print "sum:", probability_sum
-        print "total tracks:", len(tracks)
-        return tracks[0]
+        for track in tracks:
+            if limit < track["final_weight"]:
+                return track
+            limit -= track["final_weight"]
+
+        return tracks[0]  # some weird fallback
 
     @classmethod
     def get_unique(cls, *chain):
