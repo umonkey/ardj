@@ -169,15 +169,10 @@ class Track(dict):
     def __getitem__(self, k):
         if k == "labels" and "labels" not in self:
             self["labels"] = ardj.database.Open().get_track_labels(self["id"])
+        if k == "filepath":
+            return os.path.join(ardj.settings.get_music_dir(), self["filename"])
         return self.get(k)
 
-    def get_real_path(self):
-        """Returns the absolute path to the track file."""
-        return os.path.join(ardj.settings.get_music_dir(), self["filename"])
-
-
-def get_real_track_path(filename):
-    return os.path.join(ardj.settings.get_music_dir(), filename)
 
 def get_track_by_id(track_id, cur=None):
     """Returns track description as a dictionary.
@@ -194,8 +189,6 @@ def get_track_by_id(track_id, cur=None):
     if row is not None:
         result = { 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'length': row[4], 'weight': row[6], 'count': row[7], 'last_played': row[8], 'real_weight': row[9] }
         result['labels'] = [row[0] for row in cur.execute('SELECT DISTINCT label FROM labels WHERE track_id = ? ORDER BY label', (track_id, )).fetchall()]
-        if result.get('filename'):
-            result['filepath'] = get_real_track_path(result['filename'])
         return result
 
 
@@ -635,7 +628,7 @@ def update_track_lengths():
 
     updates = []
     for id, filename, length in rows:
-        tags = ardj.tags.get(get_real_track_path(filename))
+        tags = ardj.tags.get(track["filepath"])
         if tags['length'] != length:
             print '%u, %s: %s => %s' % (id, filename, length, tags['length'])
             updates.append((tags['length'], id))
