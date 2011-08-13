@@ -22,6 +22,8 @@ import ardj.speech
 import ardj.tracks
 import ardj.util
 
+from ardj.tracks import Track
+
 
 def is_user_admin(sender):
     return sender in ardj.settings.get('jabber/access', [])
@@ -76,13 +78,13 @@ def on_delete(args, sender, cur=None):
     if not args.isdigit():
         return 'Must specify a single numeric track id.'
 
-    track = ardj.tracks.get_track_by_id(int(args), cur=cur)
+    track = Track.get_by_id(int(args))
     if not track:
         return 'No such track.'
-    if not track.get('weight'):
+    if not track["weight"]:
         return 'This track was already deleted.'
     track['weight'] = 0
-    ardj.tracks.update_track(track, cur=cur)
+    track.put()
     return 'Deleted track %u.' % track['id']
 
 
@@ -281,7 +283,7 @@ def on_find(args, sender, cur=None):
     """
     cur = cur or ardj.database.cursor()
     all_tracks = ardj.tracks.find_ids(args, sender, cur=cur)
-    tracks = [ardj.tracks.get_track_by_id(x, cur=cur) for x in all_tracks[:10]]
+    tracks = [Track.get_by_id(x) for x in all_tracks[:10]]
     if not tracks:
         return 'Nothing was found.'
     if len(all_tracks) > len(tracks):
@@ -391,9 +393,9 @@ def on_set(args, sender, cur=None):
     else:
         track_id = ardj.tracks.get_last_track_id(cur)
 
-    track = ardj.tracks.get_track_by_id(track_id, cur)
-    track[parts[0]] = u' '.join(parts[2:])
-    ardj.tracks.update_track(track, cur=cur)
+    track = Track.get_by_id(track_id)
+    track[parts[0]] = u" ".join(parts[2:])
+    track.put()
 
     return 'Done.'
 
@@ -411,7 +413,7 @@ def on_dump(args, sender, cur=None):
 
     cur = cur or ardj.database.cursor()
 
-    track = ardj.tracks.get_track_by_id(int(args))
+    track = Track.get_by_id(int(args))
     if not track:
         return 'Track %s not found.' % args
 
@@ -433,7 +435,7 @@ def on_show(args, sender, cur=None):
     track_id = args and int(args) or ardj.tracks.get_last_track_id(cur)
     if not track_id:
         return 'Nothing is playing.'
-    track = ardj.tracks.get_track_by_id(track_id, cur=cur)
+    track = Track.get_by_id(track_id)
     if not track:
         return 'Track %s not found.' % track_id
 
@@ -451,7 +453,7 @@ def on_status(args, sender, cur=None):
     if not track_id:
         return 'Silence.'
 
-    track = ardj.tracks.get_track_by_id(track_id, cur=cur)
+    track = Track.get_by_id(track_id)
     if not track:
         return 'Playing an unknown track.'
 
