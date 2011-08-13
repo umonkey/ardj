@@ -252,8 +252,9 @@ class database:
 
     def mark_long(self):
         """Marks unusuall long tracks."""
+        from ardj.tracks import Track
         cur = self.cursor()
-        length = ardj.tracks.get_average_length(cur)
+        length = Track.get_average_length()
         cur.execute('DELETE FROM labels WHERE label = \'long\'')
         cur.execute('INSERT INTO labels (track_id, email, label) SELECT id, \'ardj\', \'long\' FROM tracks WHERE length > ?', (length, ))
         count = cur.execute('SELECT COUNT(*) FROM labels WHERE label = \'long\'').fetchone()[0]

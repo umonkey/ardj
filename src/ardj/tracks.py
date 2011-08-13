@@ -155,6 +155,23 @@ class Track(dict):
             track = cls(track)
             track.update_real_weight()
 
+    @classmethod
+    def get_average_length(cls):
+        """Returns average track length in minutes."""
+        stats = {}
+        for track in cls.find():
+            length = round(track["length"])
+            if length not in stats:
+                stats[length] = 0
+            stats[length] += 1
+
+        s_prc = s_qty = 0.0
+        for prc, qty in stats.items():
+            s_prc += prc * qty
+            s_qty += qty
+
+        return int(s_prc / s_qty * 60 * 1.5)
+
     def add_preroll(self, playlist):
         db = ardj.database.Open()
 
@@ -562,18 +579,6 @@ def log(track_id, listener_count=None, ts=None, cur=None):
     if listener_count > 0:
         cur = cur or ardj.database.cursor()
         cur.execute('INSERT INTO playlog (ts, track_id, listeners) VALUES (?, ?, ?)', (int(ts or time.time()), int(track_id), listener_count, ))
-
-
-def get_average_length(cur=None):
-    """Returns the weighed average track length in seconds."""
-    s_prc = s_qty = 0.0
-    cur = cur or ardj.database.cursor()
-
-    for prc, qty in cur.execute('SELECT ROUND(length / 60) AS r, COUNT(*) FROM tracks GROUP BY r').fetchall():
-        s_prc += prc * qty
-        s_qty += qty
-
-    return int(s_prc / s_qty * 60 * 1.5)
 
 
 def get_track_to_play():
