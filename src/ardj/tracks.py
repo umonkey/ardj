@@ -19,120 +19,138 @@ import ardj.jabber
 import ardj.jamendo
 import ardj.listeners
 import ardj.log
-import ardj.playlist
 import ardj.podcast
 import ardj.replaygain
 import ardj.scrobbler
 import ardj.tags
 import ardj.util
 
+from ardj.playlist import Playlist
+
 KARMA_TTL = 30.0
 
 
-class Playlist(dict):
-    def add_ts(self, stats):
-        self['last_played'] = 0
-        if self['name'] in stats:
-            self['last_played'] = stats[self['name']]
+class Track(dict):
+    """Wraps a track."""
+    @classmethod
+    def get_by_id(cls, track_id):
+        return cls(ardj.database.Open().get_track_by_id(track_id))
+
+    @classmethod
+    def get_next(cls, ts=None, update_stats=True):
+        """Picks a track to play.
+
+        The track is chosen from the active playlists. If nothing could be chosen,
+        a random track is picked regardless of the playlist (e.g., the track can be
+        in no playlist or in an unexisting one).  If that fails too, None is
+        returned.
+
+        Normally returns a dictionary with keys that corresponds to the "tracks"
+        table fields, e.g.: filename, artist, title, length, weight, count,
+        last_played, playlist.  An additional key is filepath, which contains the
+        full path name to the picked track, encoded in UTF-8.
+
+        Before the track is returned, its and the playlist's statistics are
+        updated.
+
+        Arguments:
+        update_stats -- set to False to not update last_played.
+        """
+        if ts is None:
+            ts = int(time.time())
+
+        db = ardj.database.Open()
+
+        track = cls.get_from_queue()
+        if track is None:
+            track = cls.get_from_playlists(ts, update_stats)
+
+        if track and update_stats:
+            for playlist in Playlist.get_by_labels(track["labels"]):
+                playlist.touch(ts)
+
+        return track
+
+    @classmethod
+    def get_from_playlists(cls, timestamp, update_stats=True):
+        """Returns a track from an active playlist."""
+        for playlist in Playlist.get_active(timestamp):
+            tracks = playlist.get_tracks(timestamp)
+            if tracks:
+                track = cls(cls.pick_random(tracks))
+                if track is not None and update_stats:
+                    ardj.database.Open().set_track_played(track["id"], timestamp)
+                return track.add_preroll(playlist)
+
+    @classmethod
+    def get_from_queue(cls):
+        """Returns a track from the top of the queue, removes it from there."""
+        db = ardj.database.Open()
+        queue = db.get_queue()
+        if queue:
+            track = cls.get_by_id(queue[0]["track_id"])
+            db.remove_from_queue(queue[0]["id"])
+            return track
+
+    @classmethod
+    def pick_random(cls, tracks):
+        """Returns a random row list item, uses weights."""
+        if not tracks:
+            return None
+
+        if len(tracks) == 1:
+            return tracks[0]
+
+        set_final_weights(tracks)
+        probability_sum = sum([t["final_weight"] for t in tracks])
+
+        print "sum:", probability_sum
+        print "total tracks:", len(tracks)
+        return tracks[0]
+
+    @classmethod
+    def get_unique(cls, *chain):
+        """Returns unique tracks from all lists."""
+        result = {}
+        for tracks in chain:
+            for track in tracks:
+                result[track["id"]] = track
+        return result.values()
+
+    @classmethod
+    def find(cls, **kwargs):
+        return ardj.database.Open().get_tracks(**kwargs)
+
+    def add_preroll(self, playlist):
+        db = ardj.database.Open()
+
+        labels = self["labels"]
+        if "preroll" in playlist:
+            labels.extend(playlist["preroll"])
+
+        tracks1 = self.find(labels=labels)
+        tracks2 = self.find(labels=["preroll"], artist=self["artist"])
+
+        tracks = self.get_unique(tracks1, tracks2)
+        preroll = self.pick_random(tracks)
+
+        if preroll is not None:
+            self.add_to_queue()
+            return Track(preroll)
+
         return self
 
-    def match_track(self, track):
-        if type(track) != dict:
-            raise TypeError
-        if not self.match_labels(track.get('labels')):
-            return False
-        if not self.match_repeat(track.get('count', 0)):
-            return False
-        if not self.match_weight(track.get('weight', 1.0)):
-            return False
-        return True
+    def add_to_queue(self):
+        ardj.database.Open().add_to_queue(self["id"])
 
-    def match_weight(self, other):
-        if '-' not in self.get('weight', ''):
-            return True
-        min, max = [float(x) for x in self.get('weight').split('-', 1)]
-        if other >= min and other <= max:
-            return True
-        return False
+    def __getitem__(self, k):
+        if k == "labels" and "labels" not in self:
+            self["labels"] = ardj.database.Open().get_track_labels(self["id"])
+        return self.get(k)
 
-    def match_repeat(self, other):
-        if 'repeat' not in self or not other:
-            return True
-        return other < self['repeat']
-
-    def match_labels(self, other):
-        """Checks whether labels apply to this playlist."""
-        if not other:
-            return False
-
-        plabels = self.get('labels', [ self.get('name') ])
-        success = False
-
-        for plabel in plabels:
-            if plabel.startswith('-'):
-                if plabel[1:] in other:
-                    return False
-            if plabel.startswith('+'):
-                if plabel[1:] not in other:
-                    return False
-            elif plabel in other:
-                success = True
-
-        return success
-
-    def is_active(self, timestamp=None):
-        """Checks whether the playlist can be used right now."""
-        now = time.localtime(timestamp)
-
-        now_ts = time.mktime(now)
-        now_day = int(time.strftime('%w', now))
-        now_hour = int(time.strftime('%H', now))
-
-        if 'delay' in self and self['delay'] * 60 + self['last_played'] >= now_ts:
-            return False
-        if 'hours' in self and now_hour not in self.get_hours():
-            return False
-        if 'days' in self and now_day not in self.get_days():
-            return False
-        return True
-
-    def get_days(self):
-        return ardj.util.expand(self['days'])
-
-    def get_hours(self):
-        return ardj.util.expand(self['hours'])
-
-    @classmethod
-    def get_active(cls, timestamp=None, cur=None):
-        return [p for p in cls.get_all(cur=cur) if p.is_active(timestamp)]
-
-    @classmethod
-    def get_all(cls, cur=None):
-        """Returns information about all known playlists.  Information from
-        playlists.yaml is complemented by the last_played column of the
-        `playlists' table."""
-        cur = cur or ardj.database.cursor()
-        stats = dict(cur.execute('SELECT name, last_played FROM playlists WHERE name IS NOT NULL AND last_played IS NOT NULL').fetchall())
-        return [cls(p).add_ts(stats) for p in ardj.settings.load().get_playlists()]
-
-    @classmethod
-    def touch_by_track(cls, track_id, cur=None):
-        """Finds playlists that contain this track and updates their last_played
-        property, so that they could be delayed properly."""
-        cur = cur or ardj.database.cursor()
-
-        track = get_track_by_id(track_id, cur=cur)
-        ts = int(time.time())
-
-        for playlist in cls.get_all(cur=cur):
-            name = playlist.get('name')
-            if name and playlist.match_track(track):
-                ardj.log.debug('Track %u touches playlist %s' % (track_id, name))
-                cur.execute('UPDATE playlists SET last_played = ? '
-                    'WHERE name = ?', (ts, name, ))
-                if cur.rowcount == 0:
-                    cur.execute('INSERT INTO playlists (name, last_played) '
-                        'VALUES (?, ?)', (name, ts, ))
+    def get_real_path(self):
+        """Returns the absolute path to the track file."""
+        return os.path.join(ardj.settings.get_music_dir(), self["filename"])
 
 
 def get_real_track_path(filename):
@@ -471,243 +489,19 @@ def add_file(filename, add_labels=None, owner=None, quiet=False):
     return track_id
 
 
-def get_track_id_from_queue(cur=None):
-    """Returns a track from the top of the queue.
-    
-    If the queue is empty or there's no valid track in it, returns None.
-    """
-    cur = cur or ardj.database.cursor()
-    row = cur.execute('SELECT id, track_id FROM queue ORDER BY id LIMIT 1').fetchone()
-    if row:
-        cur.execute('DELETE FROM queue WHERE id = ?', (row[0], ))
-        if not row[1]:
-            return None
-        track = get_track_by_id(row[1], cur=cur)
-        if not track.get('filename'):
-            return None
-        return row[1]
+def set_final_weights(tracks):
+    """Sets the final_weight property to weight / artist_track_count."""
+    result = {}
+    for track in tracks:
+        name = track["artist"].lower()
+        if name not in result:
+            result[name] = 0
+        result[name] += 1
 
+    for idx, track in enumerate(tracks):
+        artist = track["artist"].lower()
+        tracks[idx]["final_weight"] = track["weight"] / result[artist]
 
-def get_random_track_id_from_playlist(playlist, skip_artists, cur=None):
-    cur = cur or ardj.database.cursor()
-
-    sql = 'SELECT id, weight, artist FROM tracks WHERE weight > 0 AND artist IS NOT NULL AND filename IS NOT NULL'
-    params = []
-
-    sql, params = add_labels_filter(sql, params, playlist.get('labels', [ playlist.get('name', 'music') ]))
-
-    repeat_count = playlist.get('repeat')
-    if repeat_count:
-        sql += ' AND count < ?'
-        params.append(int(repeat_count))
-
-    if skip_artists:
-        skip_artists = skip_artists[:int(playlist.get('history', '10'))]
-        if skip_artists:
-            sql += ' AND artist NOT IN (%s)' % ', '.join(['?'] * len(skip_artists))
-            params += skip_artists
-
-    weight = playlist.get('weight', '')
-    if '-' in weight:
-        parts = weight.split('-', 1)
-        sql += ' AND weight >= ? AND weight <= ?'
-        params.append(float(parts[0]))
-        params.append(float(parts[1]))
-
-    delay = playlist.get('track_delay')
-    if delay:
-        sql += ' AND (last_played IS NULL OR last_played <= ?)'
-        params.append(int(time.time()) - int(delay) * 60)
-
-    ardj.database.Open().debug(sql, params)
-    track_id = get_random_row(cur.execute(sql, tuple(params)).fetchall())
-
-    if playlist.get('preroll'):
-        track_id = add_preroll(track_id, playlist.get('preroll'), cur=cur)
-
-    return track_id
-
-
-def add_labels_filter(sql, params, labels):
-    either = [l for l in labels if not l.startswith('-') and not l.startswith('+')]
-    neither = [l[1:] for l in labels if l.startswith('-')]
-    every = [l[1:] for l in labels if l.startswith('+')]
-
-    if either:
-        sql += ' AND id IN (SELECT track_id FROM labels WHERE label IN (%s))' % ', '.join(['?'] * len(either))
-        params += either
-
-    if neither:
-        sql += ' AND id NOT IN (SELECT track_id FROM labels WHERE label IN (%s))' % ', '.join(['?'] * len(neither))
-        params += neither
-
-    if every:
-        for label in every:
-            sql += ' AND id IN (SELECT track_id FROM labels WHERE label = ?)'
-            params.append(label)
-
-    return sql, params
-
-
-def get_random_row(rows):
-    """Picks a random row.
-
-    First divides track weights by the number of tracks that the artist has,
-    then picks a random track based on the updated weight.
-    """
-    ID_COL, WEIGHT_COL, NAME_COL = 0, 1, 2
-
-    artist_counts = {}
-    for row in rows:
-        name = row[NAME_COL].lower()
-        if name not in artist_counts:
-            artist_counts[name] = 0
-        artist_counts[name] += 1
-
-    probability_sum = 0
-    for row in rows:
-        name = row[NAME_COL].lower()
-        probability_sum += row[WEIGHT_COL] / artist_counts[name]
-
-    rnd = random.random() * probability_sum
-    for row in rows:
-        name = row[NAME_COL].lower()
-        weight = row[WEIGHT_COL] / artist_counts[name]
-        if rnd < weight:
-            return row[ID_COL]
-        rnd -= weight
-
-    if len(rows):
-        ardj.log.warning('Bad RND logic, returning first track.')
-        return rows[0][ID_COL]
-
-    return None
-
-
-def get_prerolls_for_labels(labels, cur):
-    """Returns ids of valid prerolls that have one of the specified labels."""
-    sql = "SELECT tracks.id FROM tracks INNER JOIN labels ON labels.track_id = tracks.id WHERE tracks.weight > 0 AND tracks.filename IS NOT NULL AND labels.label IN (%s)" % ', '.join(['?'] * len(labels))
-    return [row[0] for row in cur.execute(sql, labels).fetchall()]
-
-
-def get_prerolls_for_track(track_id, cur):
-    """Returns prerolls applicable to the specified track."""
-    by_artist = cur.execute("SELECT t1.id FROM tracks t1 INNER JOIN tracks t2 ON t2.artist = t1.artist INNER JOIN labels l ON l.track_id = t1.id WHERE l.label = 'preroll' AND t2.id = ? AND t1.weight > 0 AND t1.filename IS NOT NULL", (track_id, )).fetchall()
-    by_label = cur.execute("SELECT t.id, t.title FROM tracks t WHERE t.weight > 0 AND t.filename IS NOT NULL AND t.id IN (SELECT track_id FROM labels WHERE label IN (SELECT l.label || '-preroll' FROM tracks t1 INNER JOIN labels l ON l.track_id = t1.id WHERE t1.id = ?))", (track_id, )).fetchall()
-    return list(set([row[0] for row in by_artist + by_label]))
-
-def add_preroll(track_id, labels=None, cur=None):
-    """Adds a preroll for the specified track.
-
-    Finds prerolls by labels and artist title, picks one and returns its id,
-    queueing the input track_id.  If `labels' is explicitly specified, only
-    tracks with those labels will be used as prerolls.
-    
-    Tracks that have a preroll-* never have a preroll.
-    """
-    cur = cur or ardj.database.cursor()
-
-    # Skip if the track is a preroll.
-    if cur.execute("SELECT COUNT(*) FROM labels WHERE track_id = ? AND label LIKE 'preroll-%'", (track_id, )).fetchone()[0]:
-        return track_id
-
-    if labels:
-        prerolls = get_prerolls_for_labels(labels, cur)
-    else:
-        prerolls = get_prerolls_for_track(track_id, cur)
-
-    if track_id in prerolls:
-        prerolls.remove(track_id)
-
-    if prerolls:
-        queue(track_id, cur=cur)
-        track_id = prerolls[random.randrange(len(prerolls))]
-
-    return track_id
-
-
-def get_next_track_id(ts=None, debug=False, update_stats=True):
-    """Picks a track to play.
-
-    The track is chosen from the active playlists. If nothing could be chosen,
-    a random track is picked regardless of the playlist (e.g., the track can be
-    in no playlist or in an unexisting one).  If that fails too, None is
-    returned.
-
-    Normally returns a dictionary with keys that corresponds to the "tracks"
-    table fields, e.g.: filename, artist, title, length, weight, count,
-    last_played, playlist.  An additional key is filepath, which contains the
-    full path name to the picked track, encoded in UTF-8.
-
-    Before the track is returned, its and the playlist's statistics are
-    updated.
-
-    Arguments:
-    update_stats -- set to False to not update last_played.
-    """
-    if ts is None:
-        ts = int(time.time())
-
-    playlists = ardj.playlist.Playlist.get_active(ts)
-    print playlists
-    return playlists
-
-    want_preroll = True
-    cur = cur or ardj.database.cursor()
-
-    skip_artists = list(set([row[0] for row in cur.execute('SELECT artist FROM tracks WHERE artist IS NOT NULL AND last_played IS NOT NULL ORDER BY last_played DESC LIMIT ' + str(ardj.settings.get('dupes', 5))).fetchall()]))
-    if debug:
-        ardj.log.debug(u'Artists to skip: %s' % u', '.join(skip_artists or ['none']) + u'.')
-
-    track_id = get_track_id_from_queue(cur)
-    if track_id:
-        want_preroll = False
-        if debug:
-            ardj.log.debug('Picked track %u from the queue.' % track_id)
-
-    if not track_id:
-        labels = get_urgent()
-        if labels:
-            track_id = get_random_track_id_from_playlist({'labels': labels}, skip_artists, cur)
-            if debug and track_id:
-                ardj.log.debug('Picked track %u from the urgent playlist.' % track_id)
-
-    if not track_id:
-        for playlist in Playlist.get_active(cur=cur):
-            if debug:
-                ardj.log.debug('Looking for tracks in playlist "%s"' % playlist.get('name', 'unnamed'))
-            labels = playlist.get('labels', [ playlist.get('name', 'music') ])
-            track_id = get_random_track_id_from_playlist(playlist, skip_artists, cur)
-            if track_id is not None:
-                if debug:
-                    ardj.log.debug('Picked track %u from playlist %s' % (track_id, playlist.get('name', 'unnamed')))
-                break
-
-    if track_id:
-        if want_preroll:
-            track_id = add_preroll(track_id, cur=cur)
-
-        if update_stats:
-            count = cur.execute('SELECT count FROM tracks WHERE id = ?', (track_id, )).fetchone()[0] or 0
-            cur.execute('UPDATE tracks SET count = ?, last_played = ? WHERE id = ?', (count + 1, int(time.time()), track_id, ))
-
-            Playlist.touch_by_track(track_id, cur=cur)
-
-            log(track_id, cur=cur)
-
-        shift_track_weight(track_id, cur)
-        ardj.database.Open().commit()
-
-    return track_id
-
-
-def shift_track_weight(track_id, cur):
-    weight, real_weight = cur.execute("SELECT weight, real_weight FROM tracks WHERE id = ?", (track_id, )).fetchone()
-    if weight < real_weight:
-        weight = min(weight + 0.1, real_weight)
-    elif weight > real_weight:
-        weight = max(weight - 0.1, real_weight)
-    cur.execute("UPDATE tracks SET weight = ? WHERE id = ?", (weight, track_id, ))
 
 
 def log(track_id, listener_count=None, ts=None, cur=None):
@@ -978,20 +772,7 @@ def run_cli(args):
     command = ''.join(args[:1])
 
     if command == 'next-json':
-        track_id = get_next_track_id(debug='-q' not in args, update_stats='-n' not in args)
-        if track_id:
-            track = get_track_by_id(track_id)
-            output = json.dumps(track)
-
-            try:
-                f = open(ardj.settings.getpath('last_track_json', '~/last-track.json'), 'wb')
-                f.write(output)
-                f.close()
-            except Exception, e:
-                ardj.log.error('Could not write last-track.json: %s' % e)
-
-            ardj.log.debug('next-json returns: %s' % output)
-            print output
+        return cli_next_track(args)
     elif command == 'update-weights':
         update_real_track_weights()
         ardj.database.Open().commit()
@@ -999,3 +780,20 @@ def run_cli(args):
         update_track_lengths()
     else:
         print __CLI_USAGE__
+
+
+def cli_next_track(args):
+    """Prints JSON description of the track to play, saves it to ~/last-track.json."""
+    track = Track.get_next(update_stats='-n' not in args)
+    if track is not None:
+        output = json.dumps(track)
+
+        try:
+            f = open(ardj.settings.getpath('last_track_json', '~/last-track.json'), 'wb')
+            f.write(output)
+            f.close()
+        except Exception, e:
+            ardj.log.error('Could not write last-track.json: %s' % e)
+
+        ardj.log.debug('next-json returns: %s' % output)
+        print output

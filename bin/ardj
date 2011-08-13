@@ -27,6 +27,7 @@ COMMAND_MAP = [ # (command, module, function, description)
     ('show-all-playlists', 'playlist', 'cli_show_all', 'shows all playlists'),
     ('show-active-playlists', 'playlist', 'cli_show_active', 'shows active playlists'),
     ('show-news-from-jamendo', 'jamendo', 'print_new_tracks', 'show new tracks available at jamendo.com'),
+    ('show-next-track', 'tracks', 'cli_next_track', 'shows next track to play (JSON)'),
     ('sms', 'sms', 'run_cli', 'send text messages (GSM)'),
     ('stream', 'stream', 'run_cli', 'handles stream events'),
     ('tags', 'tags', 'run_cli', 'interact with track metadata'),

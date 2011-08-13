@@ -84,22 +84,37 @@ class MySQL(object):
                 self.add_track_label(track_id, label)
         return track_id
 
+    def get_track_by_id(self, track_id):
+        tracks = self.select("SELECT id, artist, title, weight, real_weight, filename, last_played, count FROM tracks WHERE id = ?", [track_id],
+            fields=["id", "artist", "title", "weight", "real_weight", "filename", "last_played", "count"])
+        if tracks:
+            return tracks[0]
+
     def add_track_label(self, track_id, label, email=None):
         if email is None:
             email = 'unknown'
         self.query("INSERT INTO labels (track_id, label, email) VALUES (?, ?, ?)", [track_id, label, email])
 
-    def get_tracks(self, timestamp, labels=None, max_count=None, min_weight=None, max_weight=None, track_delay=None):
+    def get_track_labels(self, track_id):
+        """Returns all labels applied to a track."""
+        labels = self.select("SELECT label FROM labels WHERE track_id = ?", [track_id])
+        return list(set([l[0] for l in labels]))
+
+    def get_tracks(self, timestamp=None, artist=None, labels=None, max_count=None, min_weight=None, max_weight=None, track_delay=None):
         sql = "SELECT id, artist, title, weight, real_weight, filename, last_played FROM tracks"
 
         where = []
         params = []
 
+        if artist is not None:
+            where.append("artist = ?")
+            params.append(artist)
+
         if max_count is not None:
             where.append("count < ?")
             params.append(max_count)
 
-        if track_delay is not None:
+        if track_delay is not None and timestamp is not None:
             where.append("last_played < ?")
             params.append(timestamp - int(track_delay) * 60)
 
@@ -116,7 +131,7 @@ class MySQL(object):
 
         if labels is not None:
             rest = []
-            for label in labels:
+            for label in list(set(labels)):
                 if label.startswith('-'):
                     where.append("id NOT IN (SELECT track_id FROM labels WHERE label = ?)")
                     params.append(label[1:])
@@ -141,13 +156,14 @@ class MySQL(object):
             return None
         track = random.choice(tracks)
         if touch:
-            self.set_track_timestamp(track["id"], timestamp)
+            self.set_track_played(track["id"], timestamp)
             track["last_played"] = timestamp
         return track
 
-    def set_track_timestamp(self, track_id, ts):
+    def set_track_played(self, track_id, ts):
         """Updates track's last_played timestamp."""
-        self.query("UPDATE tracks SET last_played = ? WHERE id = ?", [ts, track_id])
+        self.query("UPDATE tracks SET count = count + 1, last_played = ? WHERE id = ?", [ts, track_id])
+        # TODO: weight/real_weight
 
     def get_last_played_artists(self, count=10):
         """Returns count names of recently played artists."""
@@ -158,6 +174,17 @@ class MySQL(object):
             if len(names) == count:
                 break
         return names
+
+    def get_queue(self):
+        """Returns queue status."""
+        return self.select("SELECT id, track_id, owner FROM queue ORDER BY id", fields=["id", "track_id", "owner"])
+
+    def add_to_queue(self, track_id, owner=None):
+        """Adds a track to the queue."""
+        self.query("INSERT INTO queue (track_id, owner) VALUES (?, ?)", [track_id, owner])
+
+    def remove_from_queue(self, queue_id):
+        self.query("DELETE FROM queue WHERE id = ?", [queue_id])
 
     # ---------- LOW LEVEL STUFF ----------
 

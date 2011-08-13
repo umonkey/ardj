@@ -24,13 +24,14 @@ class Playlist(dict):
         stats = ardj.database.Open().get_playlist_times()
         result = []
         for playlist in cls.get_all_static():
-            playlist["last_played"] = stats.get(playlist["name"], None)
+            playlist["last_played"] = stats.get(playlist["name"], 0)
             result.append(cls(playlist))
         return result
 
     @classmethod
     def get_active(cls, timestamp):
         """Returns playlists active at the specified moment."""
+        # TODO: inject the hot playlist
         result = []
         for pl in cls.get_all():
             if pl.is_active(timestamp):
@@ -51,6 +52,15 @@ class Playlist(dict):
             cls.static_time = os.stat(cls.static_name).st_mtime
         return cls.static_data
 
+    @classmethod
+    def get_by_labels(cls, labels):
+        """Returns all playlists that have one of the specified labels."""
+        result = []
+        for pl in cls.get_all():
+            if set(labels) & set(pl["labels"]):
+                result.append(pl)
+        return result
+
     @staticmethod
     def parse_file(contents):
         """Parses file contents, expands special values (days and hours)."""
@@ -70,6 +80,7 @@ class Playlist(dict):
                     item[k] = values
             if "labels" not in item:
                 item["labels"] = [item["name"]]
+            item["last_played"] = 0
             result.append(item)
         return result
 
@@ -94,8 +105,9 @@ class Playlist(dict):
 
         return True
 
-    def set_last_played(self, timestamp):
+    def touch(self, timestamp):
         """Modifies the last played time."""
+        self["last_played"] = timestamp
         ardj.database.Open().set_playlist_time(self["name"], timestamp)
 
     def get_tracks(self, timestamp, cls=dict):

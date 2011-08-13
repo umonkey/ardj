@@ -31,7 +31,7 @@ class DatabaseTests(unittest.TestCase):
         self.assertEquals(1, len(db.get_tracks(ts, max_count=2)))
 
         self.assertEquals(2, len(db.get_tracks(ts, track_delay=60)))
-        db.set_track_timestamp(t2_id, ts)
+        db.set_track_played(t2_id, ts)
         self.assertEquals(1, len(db.get_tracks(ts, track_delay=60)))
 
     def test_get_random_track(self):
