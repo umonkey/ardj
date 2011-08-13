@@ -23,7 +23,6 @@ COMMAND_MAP = [ # (command, module, function, description)
     ('mail', 'mail', 'run_cli', 'send or receive mail'),
     ('map-listeners', 'map', 'update_listeners', 'updates the listeners map'),
     ('merge-votes', 'database', 'merge_votes', 'merge votes according to jabber/aliases'),
-    ('news', 'news', 'run_cli', 'updates news from echo.msk.ru'),
     ('rg', 'replaygain', 'run_cli', 'scan ReplayGain in files'),
     ('say', 'speech', 'render_text_cli', 'renders text to voice using festival, then plays it'),
     ('show-all-playlists', 'playlist', 'cli_show_all', 'shows all playlists'),
