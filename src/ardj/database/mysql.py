@@ -101,7 +101,7 @@ class MySQL(object):
         return list(set([l[0] for l in labels]))
 
     def get_tracks(self, timestamp=None, artist=None, labels=None, max_count=None, min_weight=None, max_weight=None, track_delay=None):
-        sql = "SELECT id, artist, title, weight, real_weight, filename, last_played FROM tracks"
+        sql = "SELECT id, artist, title, weight, real_weight, filename, last_played, count FROM tracks"
 
         where = []
         params = []
@@ -148,7 +148,7 @@ class MySQL(object):
         if where:
             sql += ' WHERE ' + ' AND '.join(where)
 
-        return self.select(sql, params, ["id", "artist", "title", "weight", "real_weight", "filename", "last_played"])
+        return self.select(sql, params, ["id", "artist", "title", "weight", "real_weight", "filename", "last_played", "count"])
 
     def get_random_track(self, timestamp, touch=False, **kwargs):
         tracks = self.get_tracks(timestamp, **kwargs)
@@ -159,6 +159,31 @@ class MySQL(object):
             self.set_track_played(track["id"], timestamp)
             track["last_played"] = timestamp
         return track
+
+    def update_track(self, track):
+        """Updates track info."""
+        if not isinstance(track, dict):
+            raise TypeError("track must be a dictionary")
+        if "id" not in track:
+            raise ValueError("track has no id")
+
+        sql = "UPDATE tracks SET "
+        parts = []
+        params = []
+
+        for k, v in track.items():
+            if k in ("artist", "title", "last_played", "count", "weight", "real_weight", "filename"):
+                parts.append(k + " = ?")
+                params.append(v)
+        sql += ", ".join(parts)
+
+        if not parts:
+            return
+
+        sql += " WHERE id = ?"
+        params.append(track["id"])
+
+        self.query(sql, params)
 
     def set_track_played(self, track_id, ts):
         """Updates track's last_played timestamp."""

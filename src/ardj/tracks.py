@@ -63,24 +63,25 @@ class Track(dict):
 
         track = cls.get_from_queue()
         if track is None:
-            track = cls.get_from_playlists(ts, update_stats)
+            track = cls.get_from_playlists(ts)
 
         if track and update_stats:
+            track.touch(ts)
             for playlist in Playlist.get_by_labels(track["labels"]):
                 playlist.touch(ts)
 
         return track
 
     @classmethod
-    def get_from_playlists(cls, timestamp, update_stats=True):
+    def get_from_playlists(cls, timestamp):
         """Returns a track from an active playlist."""
         for playlist in Playlist.get_active(timestamp):
             tracks = playlist.get_tracks(timestamp)
             if tracks:
                 track = cls(cls.pick_random(tracks))
-                if track is not None and update_stats:
-                    ardj.database.Open().set_track_played(track["id"], timestamp)
-                return track.add_preroll(playlist)
+                if track is not None:
+                    track = track.add_preroll(playlist)
+                return track
 
     @classmethod
     def get_from_queue(cls):
@@ -146,6 +147,24 @@ class Track(dict):
 
     def add_to_queue(self):
         ardj.database.Open().add_to_queue(self["id"])
+
+    def touch(self, ts):
+        self.update_weight()
+        self["count"] += 1
+        self["last_played"] = ts
+        self.put()
+        for playlist in Playlist.get_by_labels(self["labels"]):
+            playlist.touch(ts)
+
+    def update_weight(self):
+        if self["weight"] < self["real_weight"]:
+            delta = max(self["real_weight"] - self["weight"], 0.1)
+        else:
+            delta = min(self["weight"] - self["real_weight"], -0.1)
+        self["weight"] += delta
+
+    def put(self):
+        ardj.database.Open().update_track(self)
 
     def __getitem__(self, k):
         if k == "labels" and "labels" not in self:
