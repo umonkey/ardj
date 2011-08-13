@@ -258,7 +258,7 @@ def on_queue(args, sender, cur=None):
         if not tracks:
             return 'Could not find anything.'
 
-        ardj.jabber.chat_say(u'%s requested track %s' % (sender.split('@')[0], u', '.join([ardj.tracks.identify(x, cur=cur, unknown='(a pause)') for x in tracks])))
+        ardj.jabber.chat_say(u'%s requested track %s' % (sender.split('@')[0], u', '.join([Track.get_by_id(x).identify() for x in tracks])))
 
         jingles = ardj.tracks.find_ids('-r @queue-jingle')[:1]
         if tracks and jingles and not have_tracks and not silent:

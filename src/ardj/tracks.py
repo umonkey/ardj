@@ -252,12 +252,9 @@ class Track(dict):
         """Returns the last played track."""
         return ardj.database.Open().get_last_played_track(cls=cls)
 
+    def identify(self):
+        return u"«%s» by %s" % (self.get("title", "untitled"), self.get("artist", "unknown artist"))
 
-def identify(track_id, cur=None, unknown='an unknown track'):
-    track = Track.get_by_id(track_id)
-    if not track:
-        return unknown
-    return u'«%s» by %s' % (track.get('title', 'untitled'), track.get('artist', 'unknown artist'))
 
 def queue(track_id, owner=None, cur=None):
     """Adds the track to queue."""
