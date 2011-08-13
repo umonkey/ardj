@@ -234,24 +234,6 @@ class Track(dict):
         return self.get(k)
 
 
-def get_track_by_id(track_id, cur=None):
-    """Returns track description as a dictionary.
-
-    If the track does not exist, returns None.  Extended properties,
-    such as labels, are also returned.
-
-    Arguments:
-    track_id -- identified the track to return.
-    cur -- database cursor, None to open a new one.
-    """
-    cur = cur or ardj.database.cursor()
-    row = cur.execute('SELECT id, filename, artist, title, length, NULL, weight, count, last_played, real_weight FROM tracks WHERE id = ?', (track_id, )).fetchone()
-    if row is not None:
-        result = { 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'length': row[4], 'weight': row[6], 'count': row[7], 'last_played': row[8], 'real_weight': row[9] }
-        result['labels'] = [row[0] for row in cur.execute('SELECT DISTINCT label FROM labels WHERE track_id = ? ORDER BY label', (track_id, )).fetchall()]
-        return result
-
-
 def get_last_track_id(cur=None):
     """Returns id of the last played track.
 
@@ -270,11 +252,11 @@ def get_last_track(cur=None):
 
     Calls get_track_by_id(get_last_track_id()).
     """
-    return get_track_by_id(get_last_track_id(cur), cur)
+    return Track.get_by_id(get_last_track_id(cur))
 
 
 def identify(track_id, cur=None, unknown='an unknown track'):
-    track = get_track_by_id(track_id, cur=cur)
+    track = Track.get_by_id(track_id)
     if not track:
         return unknown
     return u'«%s» by %s' % (track.get('title', 'untitled'), track.get('artist', 'unknown artist'))
@@ -287,7 +269,7 @@ def queue(track_id, owner=None, cur=None):
 
 def get_queue(cur=None):
     cur = cur or ardj.database.cursor()
-    return [get_track_by_id(row[0], cur) for row in cur.execute('SELECT track_id FROM queue ORDER BY id').fetchall()]
+    return [Track.get_by_id(row[0]) for row in cur.execute('SELECT track_id FROM queue ORDER BY id').fetchall()]
 
 
 def find_ids(pattern, sender=None, cur=None, limit=None):
@@ -614,8 +596,8 @@ def update_karma(cur=None):
 
 def merge(id1, id2, cur):
     """Merges two tracks."""
-    t1 = get_track_by_id(id1, cur=cur)
-    t2 = get_track_by_id(id2, cur=cur)
+    t1 = Track.get_by_id(id1)
+    t2 = Track.get_by_id(id2)
 
     for k in ('real_weight', 'last_played', 'weight'):
         t1[k] = max(t1[k], t2[k])
