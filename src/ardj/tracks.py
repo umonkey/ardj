@@ -15,13 +15,8 @@ import sys
 import time
 
 import ardj.database
-import ardj.jabber
-import ardj.jamendo
-import ardj.listeners
 import ardj.log
-import ardj.podcast
 import ardj.replaygain
-import ardj.scrobbler
 import ardj.tags
 import ardj.util
 
