@@ -45,7 +45,7 @@ def find_command(command_name):
                 f = getattr(m, fun)
                 return f
             except Exception, e:
-                ardj.log.error('Command "ardj %s" is broken: %s' % (cmd, e))
+                ardj.log.error('Command "ardj %s" is broken: %s\n%s' % (cmd, e, traceback.format_exc(e)))
 
 
     if command_name is None:
