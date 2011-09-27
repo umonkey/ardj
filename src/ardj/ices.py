@@ -72,6 +72,5 @@ def ices_get_lineno():
     don't use it.
     """
     global songnumber
-    # print >>sys.stderr, 'ices/ardj: returning line number.'
     songnumber = songnumber + 1
     return songnumber

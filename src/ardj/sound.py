@@ -1,3 +1,4 @@
+import logging
 import os
 import sys
 
@@ -17,7 +18,7 @@ def mkpodcast(source):
     temporary MP3 file name which must be moved somewhere else or deleted."""
     noise_profile = ardj.settings.getpath('postproduction/noise_profile')
     if not os.path.exists(noise_profile):
-        print >>sys.stderr, 'WARNING: postproduction/noise_profile not set.'
+        logging.warning('Postproduction/noise_profile not set.')
     else:
         noise_strength = str(ardj.settings.get('postproduction/noise_strength', '0.3'))
         source = sox([ source, 'OUTPUT', 'noisered', noise_profile, noise_strength, 'silence', '-l', '1', '0.2', '-50d', '-1', '0.2', '-50d', 'norm' ])
