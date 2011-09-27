@@ -25,6 +25,7 @@ import ardj.scrobbler
 import ardj.tags
 import ardj.util
 
+
 KARMA_TTL = 30.0
 
 
@@ -725,16 +726,6 @@ def get_average_length(cur=None):
     return int(s_prc / s_qty * 60 * 1.5)
 
 
-def get_track_to_play():
-    """Returns information about the track to play.
-    
-    The information is requested from an external ardj process, because
-    otherwise you would have to restart ices every time the track selection
-    algorythm is changed."""
-    data = ardj.util.run([ 'ardj', 'track', 'next-json' ], quiet=True, grab_output=True)
-    return json.loads(data)
-
-
 def update_real_track_weight(track_id, cur=None):
     """Returns the real track weight, using the last vote for each user."""
     cur = cur or ardj.database.cursor()
@@ -962,30 +953,13 @@ def do_idle_tasks(set_busy):
 __CLI_USAGE__ = """Usage: ardj track command
 
 Commands:
-  next-json       -- print what to play next (-n to debug).
   update-weights  -- update the real_weight property of all tracks.
 """
 
 def run_cli(args):
     command = ''.join(args[:1])
 
-    if command == 'next-json':
-        cur = ardj.database.cursor()
-        track_id = get_next_track_id(cur=cur, debug='-q' not in args, update_stats='-n' not in args)
-        if track_id:
-            track = get_track_by_id(track_id, cur=cur)
-            output = json.dumps(track)
-
-            try:
-                f = open(ardj.settings.getpath('last_track_json', '~/last-track.json'), 'wb')
-                f.write(output)
-                f.close()
-            except Exception, e:
-                ardj.log.error('Could not write last-track.json: %s' % e)
-
-            ardj.log.debug('next-json returns: %s' % output)
-            print output
-    elif command == 'update-weights':
+    if command == 'update-weights':
         update_real_track_weights()
         ardj.database.Open().commit()
     elif command == 'update-lengths':
