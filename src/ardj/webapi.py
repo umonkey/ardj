@@ -12,7 +12,7 @@ from ardj.util import fetch_json
 
 def call_remote(method, **kwargs):
     """Performs a remote method call using a POST HTTP request."""
-    data = fetch_json("http://127.0.0.1:8080" + method, post=True, ret=True, **kwargs)
+    data = fetch_json("http://127.0.0.1:8080" + method, args=kwargs, post=True, ret=True)
     if "error" in data:
         raise Exception(data["error"])
     return data
