@@ -55,3 +55,6 @@ deb: bdist
 
 ices/ices.ardj:
 	make -C ices
+
+serve:
+	PYTHONPATH=$(pwd)/src ./bin/ardj serve
