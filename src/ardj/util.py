@@ -93,10 +93,11 @@ def fetch(url, suffix=None, args=None, user=None, password=None, quiet=False, po
 
     opener = get_opener(url, user, password)
     try:
-        u = opener(urllib2.Request(url), post and urllib.urlencode(args) or None)
         if post:
+            u = opener(urllib2.Request(url), urllib.urlencode(args))
             ardj.log.info('Posting to %s' % url, quiet=quiet)
         else:
+            u = opener(urllib2.Request(url), None)
             ardj.log.info('Downloading %s' % url, quiet=quiet)
         if ret:
             return u.read()
