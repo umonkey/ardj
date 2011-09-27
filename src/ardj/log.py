@@ -3,6 +3,8 @@
 """Logging for ardj.
 
 Installs a custom logger that writes messages to a text file.
+
+To use the module, call the install() method before logging anything.
 """
 
 import logging
