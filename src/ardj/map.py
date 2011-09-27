@@ -1,13 +1,13 @@
 # vim: set fileencoding=utf-8:
 
 import json
+import logging
 import os
 import sys
 import time
 import urllib2
 from sqlite3 import dbapi2 as sqlite
 
-import ardj.log
 import ardj.settings
 import ardj.website
 
@@ -32,7 +32,7 @@ def locate_ip(ip):
 def get_recent_ips():
     dbname = ardj.settings.getpath('listeners_map/database', DEFAULT_DATABASE)
     if not os.path.exists(dbname):
-        ardj.log.error('SQLite database not found: %s' % dbname)
+        logging.error('SQLite database not found: %s' % dbname)
         return {}
     cur = sqlite.connect(dbname).cursor()
     limit = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time() - 60 * 60 * 24 * 30))
@@ -55,7 +55,7 @@ def locate_ips(ips):
                 ips[ip] = ','.join(data)
                 print ip, ips[ip]
             else:
-                ardj.log.debug('%s not found.' % ip)
+                logging.debug('%s not found.' % ip)
                 del ips[ip]
 
     open(cache_fn, 'wb').write(json.dumps(cache))
@@ -83,13 +83,13 @@ def export_map(markers):
     js = 'var map_data = %s;' % json.dumps({ 'bounds': get_bounds(markers), 'markers': markers }, indent=True)
     filename = ardj.settings.getpath('listeners_map/data_js', DEFAULT_MAP_FILE)
     open(filename, 'wb').write(js.encode('utf-8'))
-    ardj.log.info('Wrote %s' % filename)
+    logging.info('Wrote %s' % filename)
 
 def update_listeners(args=None):
     """Updates the listeners map."""
     ips = get_recent_ips()
     if not len(ips):
-        ardj.log.error('No listeners.')
+        logging.error('No listeners.')
         sys.exit(1)
 
     ips = locate_ips(ips)

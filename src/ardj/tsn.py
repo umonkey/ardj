@@ -2,12 +2,12 @@
 
 import feedparser
 import glob
+import logging
 import os
 import re
 import sys
 import time
 
-import ardj.log
 import ardj.mail
 import ardj.settings
 import ardj.util
@@ -72,7 +72,7 @@ def run_prepare():
 
     labels = [l.strip() for l in page['labels'].split(',')]
     if 'draft' in labels:
-        ardj.log.error('Last page has the "draft" label.')
+        logging.error('Last page has the "draft" label.')
         return 1
 
     parts = filename.split(os.path.sep)
@@ -89,13 +89,13 @@ def run_prepare():
     os.mkdir(os.path.dirname(filename))
     open(filename, 'wb').write(text.encode('utf-8'))
     
-    ardj.log.info('Wrote %s' % filename)
+    logging.info('Wrote %s' % filename)
     ardj.website.update()
 
 def find_tsn_url():
     news_feed = ardj.settings.get('tsn/live_feed')
     if not news_feed:
-        ardj.log.debug('tsn/live_feed not set.')
+        logging.debug('tsn/live_feed not set.')
         return None
 
     filename = find_last_episode()
@@ -122,7 +122,7 @@ def run_process():
 
     filename = ardj.util.fetch(tsn_url)
     if filename is None:
-        ardj.log.error('Could not fetch %s' % tsn_url)
+        logging.error('Could not fetch %s' % tsn_url)
         return 1
 
     output_wav = ardj.util.mktemp(suffix='.wav')
@@ -163,7 +163,7 @@ def run_process():
 def run_email():
     to = ardj.settings.get('tsn/mail_to', None)
     if not to:
-        ardj.log.debug('tsn/mail_to not set, not sending email.')
+        logging.debug('tsn/mail_to not set, not sending email.')
         return 0
 
     filename = find_last_episode()

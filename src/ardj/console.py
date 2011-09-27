@@ -5,6 +5,7 @@
 Lets users communicate with the system using almost human language.  Used by
 the jabber bot, a CLI is available."""
 
+import logging
 import os
 import readline
 import signal
@@ -16,7 +17,6 @@ import json
 import ardj.database
 import ardj.jabber
 import ardj.listeners
-import ardj.log
 import ardj.settings
 import ardj.speech
 import ardj.tracks
@@ -49,10 +49,10 @@ def format_track_list(tracks, header=None):
 def get_ices_pid():
     pidfile = ardj.settings.get('jabber/ices_pid')
     if not pidfile:
-        ardj.log.warning('The jabber/ices_pid file not set.')
+        logging.warning('The jabber/ices_pid file not set.')
         return None
     if not os.path.exists(pidfile):
-        ardj.log.warning('%s does not exist.' % pidfile)
+        logging.warning('%s does not exist.' % pidfile)
         return None
     return int(open(pidfile, 'rb').read().strip())
 
@@ -62,13 +62,13 @@ def signal_ices(sig):
     try:
         if ices_pid:
             os.kill(ices_pid, sig)
-            ardj.log.debug('sent signal %s to process %s.' % (sig, ices_pid))
+            logging.debug('sent signal %s to process %s.' % (sig, ices_pid))
         else:
             ardj.util.run([ 'pkill', '-' + str(sig), 'ices.ardj' ])
-            ardj.log.debug('sent signal %s to process %s using pkill (unsafe).' % (sig, ices_pid))
+            logging.debug('sent signal %s to process %s using pkill (unsafe).' % (sig, ices_pid))
         return True
     except Exception, e:
-        ardj.log.warning('could not kill(%u) ices: %s' % (sig, e))
+        logging.warning('could not kill(%u) ices: %s' % (sig, e))
         return False
 
 

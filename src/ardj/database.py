@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging 
 import os
 import re
 import sys
@@ -27,7 +28,6 @@ except ImportError:
     print >>sys.stderr, 'Please install pysqlite2.'
     sys.exit(13)
 
-import ardj.log
 import ardj.settings
 import ardj.scrobbler
 import ardj.tracks
@@ -48,7 +48,7 @@ class database:
         try:
             self.db = sqlite.connect(self.filename, check_same_thread=False)
         except Exception, e:
-            ardj.log.error('Could not open database %s: %s' % (filename, e))
+            logging.error('Could not open database %s: %s' % (filename, e))
             raise
 
         self.db.create_collation('UNICODE', ardj.util.ucmp)
@@ -93,7 +93,7 @@ class database:
 
     def __del__(self):
         self.commit()
-        ardj.log.debug(u'Database closed.')
+        logging.debug(u'Database closed.')
 
     @classmethod
     def get_instance(cls):
@@ -154,7 +154,7 @@ class database:
                 sql = sql.replace(u'?', param, 1)
             else:
                 sql = sql.replace(u'?', u"'" + param + u"'", 1)
-        ardj.log.debug(u'SQL: ' + sql, quiet=quiet)
+        logging.debug(u'SQL: ' + sql, quiet=quiet)
         return sql
 
     def merge_aliases(self, cur=None):
@@ -181,7 +181,7 @@ class database:
         for table in ('playlists', 'tracks', 'queue', 'urgent_playlists', 'labels', 'karma'):
             cur.execute('ANALYZE ' + table)
         cur.execute('VACUUM')
-        ardj.log.info('%u bytes saved after database purge.' % (os.stat(self.filename).st_size - old_size))
+        logging.info('%u bytes saved after database purge.' % (os.stat(self.filename).st_size - old_size))
 
     def mark_hitlist(self, cur=None):
         """Marks best tracks with the "hitlist" label.
@@ -219,7 +219,7 @@ class database:
         common_label, set_label = 'music', 'preshow-music'
         users = ardj.settings.get('live/hosts')
         if users is None:
-            ardj.log.warning('Could not mark preshow-music: live/hosts not set.')
+            logging.warning('Could not mark preshow-music: live/hosts not set.')
             return
 
         cur = cur or self.cursor()
@@ -259,7 +259,7 @@ class database:
         used_labels = list(set(used_labels))
 
         if not(used_labels):
-            ardj.log.warning('Could not mark orphan tracks: no labels are used in playlists.yaml')
+            logging.warning('Could not mark orphan tracks: no labels are used in playlists.yaml')
             return False
 
         cur = cur or self.cursor()
@@ -306,7 +306,7 @@ class database:
         for name in names:
             new_name = cli.get_corrected_name(name)
             if new_name is not None and new_name != name:
-                ardj.log.info(u'Correcting "%s" to "%s"' % (name, new_name))
+                logging.info(u'Correcting "%s" to "%s"' % (name, new_name))
                 cur.execute('UPDATE tracks SET artist = ? WHERE artist = ?', (new_name, name, ))
 
 

@@ -4,9 +4,9 @@
 # - reload data if file changes (all get() methods should check that).
 
 import os
+import sys
 import yaml
 
-import ardj.log
 
 class wrapper:
     """Wraps a dictionary for easier access."""
@@ -66,7 +66,6 @@ class wrapper:
     def get_playlists(self):
         filename = os.path.join(self.get_music_dir(), 'playlists.yaml')
         if not os.path.exists(filename):
-            ardj.log.warning(u'%s does not exist, assuming empty.' % filename)
             return []
         stat = os.stat(filename)
         if self.playlists_mtime is None or self.playlists_mtime < stat.st_mtime:

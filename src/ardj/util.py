@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import logging
 import os
 import shutil
 import subprocess
@@ -12,7 +13,6 @@ import urllib
 import urllib2
 import urlparse
 
-import ardj.log
 import ardj.replaygain
 import ardj.settings
 import ardj.util
@@ -30,7 +30,7 @@ def run(command, quiet=False, stdin_data=None, grab_output=False, nice=True):
         command.append('<')
         command.append(str(filename))
 
-    ardj.log.debug('> ' + ' '.join(command))
+    logging.debug('> ' + ' '.join(command))
     stdout = stderr = None
     if quiet:
         stdout = stderr = subprocess.PIPE
@@ -53,7 +53,7 @@ class mktemp:
 
     def __del__(self):
         if os.path.exists(self.filename):
-            ardj.log.debug('Deleting temporary file %s' % self.filename)
+            logging.debug('Deleting temporary file %s' % self.filename)
             os.unlink(self.filename)
 
     def __str__(self):
@@ -95,10 +95,10 @@ def fetch(url, suffix=None, args=None, user=None, password=None, quiet=False, po
     try:
         if post:
             u = opener(urllib2.Request(url), urllib.urlencode(args))
-            ardj.log.info('Posting to %s' % url, quiet=quiet)
+            logging.info('Posting to %s' % url, quiet=quiet)
         else:
             u = opener(urllib2.Request(url), None)
-            ardj.log.info('Downloading %s' % url, quiet=quiet)
+            logging.info('Downloading %s' % url, quiet=quiet)
         if ret:
             return u.read()
         if suffix is None:
@@ -112,9 +112,9 @@ def fetch(url, suffix=None, args=None, user=None, password=None, quiet=False, po
         return filename
     except Exception, e:
         if retry:
-            ardj.log.error('Could not fetch %s: %s (retrying)' % (url, e))
+            logging.error('Could not fetch %s: %s (retrying)' % (url, e))
             return fetch(url, suffix, args, user, password, quiet, post, ret, retry - 1)
-        ardj.log.error('Could not fetch %s: %s' % (url, e))
+        logging.error('Could not fetch %s: %s' % (url, e))
         return None
 
 
@@ -140,7 +140,7 @@ def upload_music(filenames):
     """Uploads music files."""
     target = ardj.settings.get('database/upload')
     if not target:
-        ardj.log.warning('Could not upload %u music files: database/upload not set.' % len(filenames))
+        logging.warning('Could not upload %u music files: database/upload not set.' % len(filenames))
         return False
 
     if type(filenames) != list:
@@ -167,7 +167,7 @@ def copy_file(src, dst):
     if dirname and not os.path.exists(dirname):
         os.makedirs(dirname)
     shutil.copyfile(str(src), str(dst))
-    ardj.log.debug('Copied %s to %s' % (src, dst))
+    logging.debug('Copied %s to %s' % (src, dst))
     return True
 
 
@@ -182,7 +182,7 @@ def move_file(src, dst):
     if dirname and not os.path.exists(dirname):
         os.makedirs(dirname)
     shutil.move(str(src), str(dst))
-    ardj.log.debug('Moved %s to %s' % (src, dst))
+    logging.debug('Moved %s to %s' % (src, dst))
     return True
 
 
@@ -212,7 +212,7 @@ def format_duration(duration, age=False, now=None):
 
 def filemd5(filename):
     """Returns the file contents' MD5 sum (in hex)."""
-    ardj.log.debug('Calculating MD5 of %s' % filename)
+    logging.debug('Calculating MD5 of %s' % filename)
     m = hashlib.md5()
     f = open(filename, 'rb')
     while True:

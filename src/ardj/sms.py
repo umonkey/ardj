@@ -1,8 +1,8 @@
 # encoding=utf-8
 
+import logging 
 import urllib
 
-import ardj.log
 import ardj.settings
 import ardj.util
 
@@ -27,7 +27,7 @@ def send(number, message):
         'to': number,
         'text': message,
     })
-    ardj.log.info('SMS sent to %s: %s' % (number, message))
+    logging.info('SMS sent to %s: %s' % (number, message))
 
 
 def run_cli(args):

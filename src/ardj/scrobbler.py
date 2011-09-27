@@ -1,7 +1,7 @@
 import hashlib
+import logging
 import time
 
-import ardj.log
 import ardj.settings
 import ardj.util
 
@@ -26,11 +26,11 @@ class LastFM(object):
             api_sig=True
         )
         if not data:
-            ardj.log.error('Could not authenticate with last.fm: no data.')
+            logging.error('Could not authenticate with last.fm: no data.')
         else:
             self.sk = str(data['session']['key'])
             if self.sk:
-                ardj.log.info('Successfully authenticated with Last.FM')
+                logging.info('Successfully authenticated with Last.FM')
         return self
 
     def scrobble(self, artist, title, ts):
@@ -44,7 +44,7 @@ class LastFM(object):
                 track=title.encode('utf-8'),
                 timestamp=str(ts), api_sig=True, sk=self.sk,
                 post=True)
-            ardj.log.info(u'Sent to last.fm: %s -- %s' % (artist, title))
+            logging.info(u'Sent to last.fm: %s -- %s' % (artist, title))
             return True
 
     def now_playing(self, artist, title):
@@ -64,10 +64,10 @@ class LastFM(object):
                 sk=self.sk,
                 post=True)
             if 'error' in data:
-                ardj.log.info(u'Could not love a track with last.fm: %s' % data['message'])
+                logging.info(u'Could not love a track with last.fm: %s' % data['message'])
                 return False
             else:
-                ardj.log.info(u'Sent to last.fm love for: %s -- %s' % (artist, title))
+                logging.info(u'Sent to last.fm love for: %s -- %s' % (artist, title))
                 return True
 
     def get_events_for_artist(self, artist_name):
@@ -164,12 +164,12 @@ class LibreFM(object):
             }, quiet=True, ret=True)
             parts = data.split('\n')
             if parts[0] != 'UPTODATE':
-                ardj.log.error('Could not log to libre.fm: %s' % parts[0])
+                logging.error('Could not log to libre.fm: %s' % parts[0])
                 return False
             else:
                 self.submit_url = parts[2].strip()
                 self.session_key = self.get_session_key(parts[1].strip())
-                ardj.log.debug('Logged in to libre.fm, will submit to %s' % (self.submit_url, ))
+                logging.debug('Logged in to libre.fm, will submit to %s' % (self.submit_url, ))
                 return True
 
     def scrobble(self, artist, title, ts=None, retry=True):
@@ -187,14 +187,14 @@ class LibreFM(object):
         }
         data = ardj.util.fetch(self.submit_url, args=args, post=True, ret=True).strip()
         if data == 'OK':
-            ardj.log.debug(u'Sent to libre.fm: %s -- %s' % (artist, title))
+            logging.debug(u'Sent to libre.fm: %s -- %s' % (artist, title))
             return True
         elif data == 'BADSESSION' and retry:
-            ardj.log.debug('Bad libre.fm session, renewing.')
+            logging.debug('Bad libre.fm session, renewing.')
             self.authorize()
             return self.scrobble(artist, title, ts, False)
         else:
-            ardj.log.error('Could not submit to libre.fm: %s' % data)
+            logging.error('Could not submit to libre.fm: %s' % data)
             return False
 
     def process(self, cur):

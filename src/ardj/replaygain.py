@@ -32,6 +32,7 @@ Command line usage:
 	python replaygain.py files...
 """
 
+import logging
 import os
 
 import mutagen
@@ -40,7 +41,6 @@ from mutagen.id3 import RVA2, TXXX
 from mutagen.apev2 import APEv2 
 
 import ardj.database
-import ardj.log
 import ardj.util
 
 def update(filename):
@@ -51,7 +51,7 @@ def update(filename):
 	peak, gain = read(filename)
 	if peak is not None and gain is not None:
 		return write(filename, peak, gain)
-	ardj.log.warning('No replaygain for %s: peak=%s gain=%s' % (filename, peak, gain))
+	logging.warning('No replaygain for %s: peak=%s gain=%s' % (filename, peak, gain))
 	return False
 
 def check(filename):
@@ -83,7 +83,7 @@ def read(filename, update=True):
 			if value.endswith(' dB'):
 				g = float(value[:-3])
 			else:
-				ardj.log.warning('Malformed track gain info: "%s" in %s' % (value, filename))
+				logging.warning('Malformed track gain info: "%s" in %s' % (value, filename))
 		return (p, g)
 
 	try: peak, gain = parse_rg(mutagen.File(filename, easy=True))

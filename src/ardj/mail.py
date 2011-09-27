@@ -12,6 +12,7 @@ from email.mime.text import MIMEText
 import email
 import email.header
 import email.parser
+import logging
 import os
 import poplib
 import rfc822
@@ -180,7 +181,7 @@ def send_mail(to, subject, message, files=None, profile=None):
     s.sendmail(login, to, msg.as_string())
     s.quit()
 
-    ardj.log.info('Sent mail to %s' % to[0])
+    logging.info('Sent mail to %s' % to[0])
 
 def process_mailbox(url, callback):
     """Process messages in a mailbox using a callback.
@@ -220,10 +221,10 @@ def process_mailbox(url, callback):
             if callback(Message(client, number)):
                 client.dele(number)
                 expunge = True
-                ardj.log.debug('Deleted message %s from mailbox %s' % (number, params['login']))
+                logging.debug('Deleted message %s from mailbox %s' % (number, params['login']))
             result = True
         except Exception, e:
-            ardj.log.error('Could not process message: %s' % e)
+            logging.error('Could not process message: %s' % e)
 
     if expunge:
         client.quit()

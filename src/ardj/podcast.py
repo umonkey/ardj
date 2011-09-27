@@ -3,13 +3,13 @@
 import feedparser
 import glob
 import httplib2
+import logging
 import os
 import time
 import urllib
 import urlparse
 
 import ardj.database
-import ardj.log
 import ardj.replaygain
 import ardj.settings
 import ardj.tracks
@@ -24,14 +24,14 @@ def add_song(artist, title, mp3_link, tags):
     cur = ardj.database.Open().cursor()
     track_id = cur.execute('SELECT id FROM tracks WHERE artist = ? AND title = ?', (artist, title, )).fetchone()
     if track_id is None:
-        ardj.log.info('Downloading "%s" by %s' % (title, artist))
+        logging.info('Downloading "%s" by %s' % (title, artist))
         try:
             filename = ardj.util.fetch(mp3_link)
             ardj.add_file(str(filename), { 'artist': artist, 'title': title, 'labels': tags, 'owner': 'podcaster' })
             ardj.database.commit()
             return True
         except Exception, e:
-            ardj.log.error('Could not fetch %s: %s' % (mp3_link, e))
+            logging.error('Could not fetch %s: %s' % (mp3_link, e))
 
 
 def update_feeds():
@@ -40,7 +40,7 @@ def update_feeds():
     Scans all feeds described in podcasts/feeds, then calls add_song() for each
     episode."""
     for podcast in ardj.settings.get('podcasts/feeds', []):
-        ardj.log.info('Updating %s' % podcast['name'].encode('utf-8'))
+        logging.info('Updating %s' % podcast['name'].encode('utf-8'))
         feed = feedparser.parse(podcast['feed'])
 
         feed_author = None
@@ -132,7 +132,7 @@ class Podcaster:
         added = 0
         for entry in entries:
             if entry['add_to_db']:
-                ardj.log.info(u'[%u/%u] adding "%s" by %s' % (added+1, len(entries), entry['title'], entry['author']))
+                logging.info(u'[%u/%u] adding "%s" by %s' % (added+1, len(entries), entry['title'], entry['author']))
                 fn = ardj.util.fetch(entry['file'])
                 ardj.tracks.add_file(str(fn), add_labels=entry['tags'], quiet=True)
                 added += 1
@@ -169,7 +169,7 @@ class Podcaster:
         
         TODO: use ardj.website.add_page()."""
         e = entry
-        ardj.log.info('Reposting %s' % os.path.basename(filename))
+        logging.info('Reposting %s' % os.path.basename(filename))
         if not entry.get('filename'):
             print entry
         else:
@@ -187,7 +187,7 @@ class Podcaster:
         try:
             ardj.util.upload(ardj.util.fetch(entry['file']), ardj.settings.get('podcasts/file_upload'))
         except Exception, e:
-            ardj.log.error(str(e))
+            logging.error(str(e))
 
     def get_filesize(self, entry):
         if entry['filesize']:

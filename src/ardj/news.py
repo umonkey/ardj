@@ -1,9 +1,9 @@
+import logging
 import os
 import re
 import sys
 import traceback
 
-import ardj.log
 import ardj.replaygain
 import ardj.settings
 import ardj.tags
@@ -56,7 +56,7 @@ def transcode(src, dst):
     tmp = ardj.util.mktemp(suffix='.ogg')
     ardj.util.run([ 'ffmpeg', '-y', '-i', src, '-ar', '44100', '-ac', '2', '-acodec', 'vorbis', str(tmp) ], quiet=True)
     if not os.stat(str(tmp)).st_size:
-        ardj.log.error('Could not transcode %s' % src)
+        logging.error('Could not transcode %s' % src)
         return False
 
     ardj.replaygain.update(str(tmp))

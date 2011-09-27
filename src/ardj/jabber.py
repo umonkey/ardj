@@ -1,5 +1,6 @@
 # vim: set ts=4 sts=4 sw=4 et fileencoding=utf-8:
 
+import logging
 import os
 import signal
 import socket # for gethostname()
@@ -14,7 +15,6 @@ from ardj import xmpp
 
 import ardj.console
 import ardj.database
-import ardj.log
 import ardj.scrobbler
 import ardj.settings
 import ardj.tracks
@@ -31,7 +31,7 @@ Commands:
 class MyFileReceivingBot(FileBot):
     def is_file_acceptable(self, sender, filename, filesize):
         if not self.check_access(sender):
-            ardj.log.warning('Refusing to accept files from %s.' % sender)
+            logging.warning('Refusing to accept files from %s.' % sender)
             raise FileNotAcceptable('I\'m not allowed to receive files from you, sorry.')
         if os.path.splitext(filename.lower())[1] not in ['.mp3', '.ogg', '.zip']:
             raise FileNotAcceptable('I only accept MP3, OGG and ZIP files, which "%s" doesn\'t look like.' % os.path.basename(filename))
@@ -64,7 +64,7 @@ class MyFileReceivingBot(FileBot):
             ardj.database.Open().commit()
 
     def process_incoming_file(self, sender, filename):
-        ardj.log.info('Received %s.' % filename)
+        logging.info('Received %s.' % filename)
         track_id = ardj.tracks.add_file(filename, labels=['incoming', 'incoming-jabber'], queue=True)
         time.sleep(1) # let ices read some data
         return track_id
@@ -138,7 +138,7 @@ class ardjbot(MyFileReceivingBot):
                 for filename in files:
                     folder = os.path.dirname(filename)
                     if not os.access(folder, os.W_OK):
-                        ardj.log.warning('File %s can not be deleted -- not adding.' % filename)
+                        logging.warning('File %s can not be deleted -- not adding.' % filename)
                     else:
                         ardj.tracks.add_file(filename, add_labels)
                         os.unlink(filename)
@@ -148,7 +148,7 @@ class ardjbot(MyFileReceivingBot):
                 if success:
                     chat_say('%u new files added, see the "news" command.' % len(success))
         except Exception, e:
-            ardj.log.error('Error adding new files: %s' % e)
+            logging.error('Error adding new files: %s' % e)
 
     def __idle_lastfm(self):
         cur = ardj.database.cursor()
@@ -158,14 +158,14 @@ class ardjbot(MyFileReceivingBot):
                 if self.lastfm.process(cur=cur):
                     commit = True
             except Exception, e:
-                ardj.log.error('Could not process LastFM queue: %s' % e)
+                logging.error('Could not process LastFM queue: %s' % e)
 
         if self.librefm:
             try:
                 if self.librefm.process(cur=cur):
                     commit = True
             except Exception, e:
-                ardj.log.error('Could not process LibreFM queue: %s' % e)
+                logging.error('Could not process LibreFM queue: %s' % e)
 
         if commit:
             ardj.database.commit()
@@ -186,26 +186,26 @@ class ardjbot(MyFileReceivingBot):
         """
         if time.time() - self.lastping > self.PING_FREQUENCY:
             self.lastping = time.time()
-            #ardj.log.debug('Pinging the server.')
+            #logging.debug('Pinging the server.')
             ping = xmpp.Protocol('iq',typ='get',payload=[xmpp.Node('ping',attrs={'xmlns':'urn:xmpp:ping'})])
             try:
                 res = self.conn.SendAndWaitForResponse(ping, self.PING_TIMEOUT)
-                #ardj.log.debug('Got response: ' + str(res))
+                #logging.debug('Got response: ' + str(res))
                 if res is None:
-                    ardj.log.error('Terminating due to PING timeout.')
+                    logging.error('Terminating due to PING timeout.')
                     self.quit(1)
             except IOError, e:
-                ardj.log.error('Error pinging the server: %s, shutting down.' % e)
+                logging.error('Error pinging the server: %s, shutting down.' % e)
                 self.quit(1)
 
     def on_connected(self):
-        ardj.log.debug('on_connected called.')
+        logging.debug('on_connected called.')
         self.lastping = time.time()
         if self.pidfile:
             try:
                 open(self.pidfile, 'w').write(str(os.getpid()))
             except IOError, e:
-                ardj.log.error(u'Could not write to %s: %s' % (self.pidfile, e))
+                logging.error(u'Could not write to %s: %s' % (self.pidfile, e))
         self.update_status()
         self.join_chat_room()
 
@@ -236,12 +236,12 @@ class ardjbot(MyFileReceivingBot):
 
     def shutdown(self):
         # self.on_disconnect() # called by JabberBot afterwards.
-        ardj.log.info('shutdown: shutting down JabberBot.')
+        logging.info('shutdown: shutting down JabberBot.')
         JabberBot.shutdown(self)
         if self.pidfile and os.path.exists(self.pidfile):
-            ardj.log.debug('shutdown: removing the pid file.')
+            logging.debug('shutdown: removing the pid file.')
             os.unlink(self.pidfile)
-        ardj.log.info('shutdown: over.')
+        logging.info('shutdown: over.')
 
     def update_status(self, onstart=False):
         """
@@ -272,7 +272,7 @@ class ardjbot(MyFileReceivingBot):
                         return
                     rep = ardj.console.process_command(msg, mess.getFrom().getStripped())
                 except Exception, e:
-                    ardj.log.warning(u'ERROR: %s, MESSAGE: %s\n%s' % (e, mess, traceback.format_exc(e)))
+                    logging.warning(u'ERROR: %s, MESSAGE: %s\n%s' % (e, mess, traceback.format_exc(e)))
                     rep = unicode(e)
                 self.send_simple_reply(mess, rep.strip())
                 self.send_pending_messages()
@@ -304,7 +304,7 @@ class ardjbot(MyFileReceivingBot):
         return conn
 
     def on_disconnect(self):
-        ardj.log.debug('on_disconnect called.')
+        logging.debug('on_disconnect called.')
 
 def Open(debug=False):
     """
@@ -336,9 +336,9 @@ def run_cli(args):
             try:
                 if ardj.util.run(command):
                     return True
-                ardj.log.error('Unclean jabber bot shutdown, restarting in %u seconds.' % delay)
+                logging.error('Unclean jabber bot shutdown, restarting in %u seconds.' % delay)
             except KeyboardInterrupt:
-                ardj.log.info('Jabber bot killed by ^C.')
+                logging.info('Jabber bot killed by ^C.')
             time.sleep(delay)
 
     print USAGE
@@ -348,7 +348,7 @@ def chat_say(message, recipient=None, cur=None):
     """Adds a message to the chat room queue.  This is the way for command
     handlers to notify chat users.  If the recipient is not specified, the
     message is sent to the chat room."""
-    ardj.log.debug(u'Will send to chat: %s' % message)
+    logging.debug(u'Will send to chat: %s' % message)
     commit = cur is None
     cur = cur or ardj.database.cursor()
     cur.execute('INSERT INTO jabber_messages (re, message) VALUES (?, ?)', (recipient, message, ))

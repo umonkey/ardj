@@ -2,13 +2,13 @@
 
 import glob
 import gzip
+import logging
 import os
 import sys
 import time
 
 from sqlite3 import dbapi2 as sqlite
 
-import ardj.log
 import ardj.settings
 
 USAGE = """Usage: ardj icelog command
@@ -32,7 +32,7 @@ def parse_log_line(line):
         duration = parts[-1]
         agent = u' '.join(parts[11:-2]).lstrip('"')
     except Exception, e:
-        ardj.log.error('Unable to parse log line: %s; %s' % (e, line))
+        logging.error('Unable to parse log line: %s; %s' % (e, line))
     return date, remote_addr, uri or '', status, length, duration, agent
 
 def add_files(filenames, dbname):
@@ -53,7 +53,7 @@ def add_files(filenames, dbname):
             os.unlink(filename)
             db.commit()
         except Exception, e:
-            ardj.log.error('Could not remove file %s: %s' % (filename, e))
+            logging.error('Could not remove file %s: %s' % (filename, e))
             db.rollback()
 
 def show_agent_stats(dbname):

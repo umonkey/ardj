@@ -1,6 +1,7 @@
 # vim: set fileencoding=utf-8:
 
 import csv
+import logging
 import os
 import re
 import sys
@@ -21,7 +22,7 @@ def get_count():
     """Returns the number of active listeners."""
     url = ardj.settings.get('icecast/stats/url')
     if not url:
-        ardj.log.debug('Unable to count listeners: icecast/stats/url not set.')
+        logging.debug('Unable to count listeners: icecast/stats/url not set.')
         return 0
 
     data = ardj.util.fetch(url, user=ardj.settings.get('icecast/stats/login'), password=ardj.settings.get('icecast/stats/password'), quiet=True, ret=True)
@@ -29,7 +30,7 @@ def get_count():
     stats_re = re.compile(ardj.settings.get('icecast_stats/re', '<listeners>(\d+)</listeners>'))
     m = stats_re.search(data)
     if not m:
-        ardj.log.warning('Could not find listener count in icecast2 stats.xml')
+        logging.warning('Could not find listener count in icecast2 stats.xml')
         return 0
 
     return int(m.group(1))

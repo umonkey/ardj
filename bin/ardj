@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # vim: set ts=4 sts=4 sw=4 et fileencoding=utf-8:
 
+import logging
 import os
 import sys
 import traceback
@@ -43,7 +44,7 @@ def find_command(command_name):
                 f = getattr(m, fun)
                 return f
             except Exception, e:
-                ardj.log.error('Command "ardj %s" is broken: %s' % (cmd, e))
+                logging.error('Command "ardj %s" is broken: %s' % (cmd, e))
 
 
     if command_name is None:
@@ -58,6 +59,7 @@ def find_command(command_name):
     exit(1)
 
 if __name__ == '__main__':
+    ardj.log.install()
     if len(sys.argv) >= 2 and not sys.argv[1].startswith('-'):
         handler = find_command(sys.argv[1])
         if handler is not None:
@@ -68,9 +70,9 @@ if __name__ == '__main__':
                 print 'Interrupted by user.'
                 exit(1)
             except Exception, e:
-                ardj.log.error('ERROR handling command %s: %s' % (sys.argv[1], e) + traceback.format_exc(e))
+                logging.error('ERROR handling command %s: %s' % (sys.argv[1], e) + traceback.format_exc(e))
                 exit(1)
-        ardj.log.error('Unknown command: %s' % sys.argv[1])
+        logging.error('Unknown command: %s' % sys.argv[1])
         exit(1)
 
     find_command(None)

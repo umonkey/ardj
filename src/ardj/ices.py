@@ -1,4 +1,5 @@
 import glob
+import logging
 import os
 import random
 import sys
@@ -20,7 +21,8 @@ def ices_init():
     Function called to initialize your python environment.
     Should return 1 if ok, and 0 if something went wrong.
     """
-    ardj.log.info('ices/ardj: initializing.')
+    ardj.log.install()
+    logging.info('ices/ardj: initializing.')
     return 1
 
 def ices_shutdown():
@@ -28,7 +30,7 @@ def ices_shutdown():
     Function called to shutdown your python enviroment.
     Return 1 if ok, 0 if something went wrong.
     """
-    ardj.log.info('ices/ardj: shutting down.')
+    logging.info('ices/ardj: shutting down.')
     return 1
 
 def ices_get_next():
@@ -43,11 +45,11 @@ def ices_get_next():
             last_good_file = last_track['filepath']
         return str(last_track['filepath'])
     except Exception, e:
-        ardj.log.error('ices.ardj failed: %s\n%s' % (e, traceback.format_exc(e)))
+        logging.error('ices.ardj failed: %s\n%s' % (e, traceback.format_exc(e)))
         fallback = glob.glob(FAILURE_GLOB)
         if fallback:
             return fallback[random.randrange(len(fallback))]
-        ardj.log.error('Failure files not found (%s).  Please, please have one.' % FAILURE_GLOB)
+        logging.error('Failure files not found (%s).  Please, please have one.' % FAILURE_GLOB)
         return last_good_file
 
 def ices_get_metadata():

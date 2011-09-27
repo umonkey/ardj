@@ -4,11 +4,11 @@
 
 Uses festival to render text."""
 
+import logging
 import os
 import sys
 
 import ardj.database
-import ardj.log
 import ardj.settings
 import ardj.tags
 import ardj.util
@@ -49,7 +49,7 @@ def render_text(text, artist=None, title=None, play=False):
     if type(text) == unicode:
         text = text.encode('utf-8')
     open(str(filename), 'wb').write(text.strip())
-    ardj.log.info('Rendering text: %s' % text)
+    logging.info('Rendering text: %s' % text)
     filename, length = render_text_file(filename, artist, title)
     if play and length:
         ardj.util.run([ 'play', str(filename) ])

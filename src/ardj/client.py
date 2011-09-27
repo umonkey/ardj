@@ -6,6 +6,7 @@ Performs commands on local and/or remote ardj media databases."""
 
 import StringIO
 import json
+import logging
 import os
 import sys
 
@@ -19,6 +20,7 @@ Commands:
   queue track_id               -- queue a track
   add_track filename [-queue]  -- add a file to the database and queue it
 """
+
 
 class LocalClient:
     def __init__(self, path):
@@ -64,7 +66,7 @@ class RemoteClient:
 
     def call_remote(self, args):
         data = json.dumps(args)
-        ardj.log.debug('Calling remote ardj with: ' + data)
+        logging.debug('Calling remote ardj with: ' + data)
         ardj.util.run([ 'ssh', self.host, self.path, 'client', 'exec' ], stdin_data=data)
 
 

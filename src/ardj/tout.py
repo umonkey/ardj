@@ -1,11 +1,11 @@
 # vim: set fileencoding=utf-8:
 
 import json
+import logging
 import os
 import time
 
 import ardj.database
-import ardj.log
 import ardj.settings
 import ardj.scrobbler
 import ardj.website
@@ -27,13 +27,13 @@ def fetch_artist_events(lastfm, artist_name):
         print 'Updating %s' % artist_name.encode('utf-8')
         data = lastfm.get_events_for_artist(artist_name)
         if not data:
-            ardj.log.warning(u'Could not fetch events for %s.' % artist_name)
+            logging.warning(u'Could not fetch events for %s.' % artist_name)
 
         if 'error' in data:
             raise LastFmError('Last.fm reports error: %s' % data['message'])
 
         if 'events' not in data:
-            ardj.log.debug('Oops: %s had no "events" block -- no such artist?' % artist_name.encode('utf-8'))
+            logging.debug('Oops: %s had no "events" block -- no such artist?' % artist_name.encode('utf-8'))
             print data
             return []
         data = data['events']
@@ -59,10 +59,10 @@ def fetch_artist_events(lastfm, artist_name):
                     'venue_location': event['venue']['location']['geo:point'],
                 })
     except LastFmError, e:
-        ardj.log.error('Fatal: %s' % e)
+        logging.error('Fatal: %s' % e)
         return None
     except Exception, e:
-        ardj.log.error('ERROR fetching events for %s: %s' % (artist_name.encode('utf-8'), e))
+        logging.error('ERROR fetching events for %s: %s' % (artist_name.encode('utf-8'), e))
     return events
 
 
@@ -109,7 +109,7 @@ def update_website():
     filename = ardj.settings.getpath('tout/website_js', '~/.config/ardj/event-map.js')
     output = 'var map_data = %s;' % json.dumps(data, indent=True)
     open(filename, 'wb').write(output)
-    ardj.log.info('Wrote %s' % filename)
+    logging.info('Wrote %s' % filename)
 
 
 def update_labels(artist_names):
@@ -133,7 +133,7 @@ def run_cli(args):
         if ardj.settings.get('tout/website_js'):
             update_website()
         else:
-            ardj.log.debug('Not updating website: tout/website_js not set.')
+            logging.debug('Not updating website: tout/website_js not set.')
 
     if not args:
         print 'Usage: ardj events refresh|update-website'

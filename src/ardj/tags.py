@@ -1,5 +1,6 @@
 # encoding=utf-8
 
+import logging
 import os
 import os.path
 import sys
@@ -13,8 +14,6 @@ from mutagen.apev2 import APEv2
 
 easyid3.EasyID3.RegisterTXXXKey('ardj', 'ardj')
 easyid3.EasyID3.RegisterTXXXKey('ql:ardj', 'QuodLibet::ardj')
-
-import ardj.log
 
 
 class FileNotFound(RuntimeError): pass
@@ -125,7 +124,7 @@ def set(filename, tags):
         t.save(filename)
     except Exception, e:
         print filename
-        ardj.log.error(u'Could not save tags to %s: %s' % (filename, e) + traceback.format_exc(e))
+        logging.error(u'Could not save tags to %s: %s' % (filename, e) + traceback.format_exc(e))
 
 
 def run_cli(args):

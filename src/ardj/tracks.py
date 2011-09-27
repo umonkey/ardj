@@ -8,6 +8,7 @@ tracks.
 
 import hashlib
 import json
+import logging
 import os
 import random
 import re
@@ -18,7 +19,6 @@ import ardj.database
 import ardj.jabber
 import ardj.jamendo
 import ardj.listeners
-import ardj.log
 import ardj.podcast
 import ardj.replaygain
 import ardj.scrobbler
@@ -127,7 +127,7 @@ class Playlist(dict):
         for playlist in cls.get_all(cur=cur):
             name = playlist.get('name')
             if name and playlist.match_track(track):
-                ardj.log.debug('Track %u touches playlist %s' % (track_id, name))
+                logging.debug('Track %u touches playlist %s' % (track_id, name))
                 cur.execute('UPDATE playlists SET last_played = ? '
                     'WHERE name = ?', (ts, name, ))
                 if cur.rowcount == 0:
@@ -294,7 +294,7 @@ def update_track(properties, cur=None):
             params.append(properties[k])
 
     if not sql:
-        ardj.log.debug('No fields to update.')
+        logging.debug('No fields to update.')
     else:
         params.append(properties['id'])
         sql = 'UPDATE tracks SET ' + ', '.join(sql) + ' WHERE id = ?'
@@ -318,14 +318,14 @@ def purge(cur=None):
     for track_id, filename in cur.execute('SELECT id, filename FROM tracks WHERE weight > 0 AND filename IS NOT NULL').fetchall():
         abs_filename = os.path.join(music_dir, filename)
         if not os.path.exists(abs_filename):
-            ardj.log.warning('Track %u vanished (%s), deleting.' % (track_id, filename))
+            logging.warning('Track %u vanished (%s), deleting.' % (track_id, filename))
             cur.execute('UPDATE tracks SET weight = 0 WHERE id = ?', (track_id, ))
 
     for track_id, filename in cur.execute('SELECT id, filename FROM tracks WHERE weight = 0 AND filename IS NOT NULL').fetchall():
         abs_filename = os.path.join(music_dir, filename)
         if os.path.exists(abs_filename):
             os.unlink(abs_filename)
-            ardj.log.info('Deleted track %u (%s) from file system.' % (track_id, filename))
+            logging.info('Deleted track %u (%s) from file system.' % (track_id, filename))
 
     cur.execute('UPDATE tracks SET filename = NULL WHERE weight = 0')
     ardj.database.Open().purge(cur)
@@ -447,7 +447,7 @@ def add_file(filename, add_labels=None, owner=None, quiet=False):
         raise Exception('File not found: %s' % filename)
 
     if not quiet:
-        ardj.log.info('Adding from %s' % filename)
+        logging.info('Adding from %s' % filename)
     ardj.replaygain.update(filename)
 
     tags = ardj.tags.get(str(filename)) or {}
@@ -578,7 +578,7 @@ def get_random_row(rows):
         rnd -= weight
 
     if len(rows):
-        ardj.log.warning('Bad RND logic, returning first track.')
+        logging.warning('Bad RND logic, returning first track.')
         return rows[0][ID_COL]
 
     return None
@@ -650,30 +650,30 @@ def get_next_track_id(cur=None, debug=False, update_stats=True):
 
     skip_artists = list(set([row[0] for row in cur.execute('SELECT artist FROM tracks WHERE artist IS NOT NULL AND last_played IS NOT NULL ORDER BY last_played DESC LIMIT ' + str(ardj.settings.get('dupes', 5))).fetchall()]))
     if debug:
-        ardj.log.debug(u'Artists to skip: %s' % u', '.join(skip_artists or ['none']) + u'.')
+        logging.debug(u'Artists to skip: %s' % u', '.join(skip_artists or ['none']) + u'.')
 
     track_id = get_track_id_from_queue(cur)
     if track_id:
         want_preroll = False
         if debug:
-            ardj.log.debug('Picked track %u from the queue.' % track_id)
+            logging.debug('Picked track %u from the queue.' % track_id)
 
     if not track_id:
         labels = get_urgent()
         if labels:
             track_id = get_random_track_id_from_playlist({'labels': labels}, skip_artists, cur)
             if debug and track_id:
-                ardj.log.debug('Picked track %u from the urgent playlist.' % track_id)
+                logging.debug('Picked track %u from the urgent playlist.' % track_id)
 
     if not track_id:
         for playlist in Playlist.get_active(cur=cur):
             if debug:
-                ardj.log.debug('Looking for tracks in playlist "%s"' % playlist.get('name', 'unnamed'))
+                logging.debug('Looking for tracks in playlist "%s"' % playlist.get('name', 'unnamed'))
             labels = playlist.get('labels', [ playlist.get('name', 'music') ])
             track_id = get_random_track_id_from_playlist(playlist, skip_artists, cur)
             if track_id is not None:
                 if debug:
-                    ardj.log.debug('Picked track %u from playlist %s' % (track_id, playlist.get('name', 'unnamed')))
+                    logging.debug('Picked track %u from playlist %s' % (track_id, playlist.get('name', 'unnamed')))
                 break
 
     if track_id:
@@ -895,7 +895,7 @@ def find_new_tracks(args, label='music', weight=1.5):
     added = 0
     artist_names = []
     for track in tracks:
-        ardj.log.info(u'[%u/%u] fetching "%s" by %s' % (added+1, len(tracks), track['title'], track['artist']))
+        logging.info(u'[%u/%u] fetching "%s" by %s' % (added+1, len(tracks), track['title'], track['artist']))
         try:
             if track['artist'] not in artist_names:
                 artist_names.append(track['artist'])
@@ -906,7 +906,7 @@ def find_new_tracks(args, label='music', weight=1.5):
         except: pass
 
     if added:
-        ardj.log.info('Total catch: %u tracks.' % added)
+        logging.info('Total catch: %u tracks.' % added)
         ardj.jabber.chat_say('Downloaded %u new tracks by %s.' % (added, ardj.util.shortlist(sorted(artist_names))))
 
         db = ardj.database.Open()
@@ -936,7 +936,7 @@ def do_idle_tasks(set_busy):
     if not row:
         return
 
-    ardj.log.info(u'Looking for tracks by "%s", requested by %s' % row)
+    logging.info(u'Looking for tracks by "%s", requested by %s' % row)
 
     set_busy()
     cur.execute('DELETE FROM download_queue WHERE artist = ?', (row[0], ))

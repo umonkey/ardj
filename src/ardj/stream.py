@@ -1,12 +1,13 @@
 # vim: set fileencoding=utf-8:
 
-import mutagen
+import logging
 import email.utils
 import os
 import sys
 import time
 
-import ardj.log
+import mutagen
+
 import ardj.settings
 import ardj.twitter
 
@@ -29,7 +30,7 @@ def start_stream():
     dst = time.strftime(ardj.settings.getpath('stream/dump_rename_to', fail=True))
 
     if not os.path.exists(src):
-        ardj.log.error('False start: %s not found.' % src)
+        logging.error('False start: %s not found.' % src)
         return False
 
     os.rename(src, dst)
