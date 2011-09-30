@@ -29,9 +29,8 @@ def cmd_config(*args):
 def cmd_db(*args):
     """database functions
 
-    Subcommands: console, flush-queue, mark-hitlist, mark-preshow, mark-recent,
-    mark-orphans, mark-long, purge, stat, fix-artist-names.  By default opens
-    the database console."""
+    Subcommands: console, mark-hitlist, mark-preshow, mark-recent,
+    mark-orphans, mark-long, purge, By default opens the database console."""
     import database
     return database.run_cli(args)
 
@@ -221,6 +220,28 @@ def cmd_queue_flush(*args):
     commit()
 
 
+def cmd_fix_artist_names(*args):
+    """correct names according to Last.fm"""
+    from ardj.scrobbler import LastFM
+    from ardj.database import Track, commit
+
+    cli = LastFM().authorize()
+    if cli is None:
+        print "Last.fm authentication failed."
+        return False
+
+    names = Track.get_artist_names()
+    print "Correcting %u artists." % len(names)
+
+    for name in names:
+        new_name = cli.get_corrected_name(name)
+        if new_name is not None and new_name != name:
+            logging.info(u"Correcting artist name \"%s\" to \"%s\"" % (name, new_name))
+            Track.rename_artist(name, new_name)
+
+    commit()
+
+
 def cmd_help(*args):
     """shows this help screen"""
     commands = []
@@ -279,7 +300,7 @@ def run(args):
         handler = find_handler(args[1])
         if handler is not None:
             try:
-                if handler(*args[1:]):
+                if handler(*args[2:]):
                     exit(0)
             except KeyboardInterrupt:
                 pass

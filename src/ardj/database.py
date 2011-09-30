@@ -174,6 +174,22 @@ class Track(Model):
         """Returns all tracks with positive weight."""
         return cls._get_store().find(cls, cls.weight > 0)
 
+    @classmethod
+    def get_artist_names(cls):
+        """Returns all artist names."""
+        names = []
+        for track in cls.find_all():
+            if track.artist not in names:
+                names.append(track.artist)
+        return names
+
+    @classmethod
+    def rename_artist(cls, old_name, new_name):
+        """Renames an artist."""
+        tracks = cls._get_store().find(cls, cls.artist == unicode(old_name))
+        for track in tracks:
+            track.artist = unicode(new_name)
+
 
 class Queue(Model):
     """Stores information about a track to play ASAP."""
@@ -284,7 +300,7 @@ class database:
                 sql = sql.replace(u'?', param, 1)
             else:
                 sql = sql.replace(u'?', u"'" + param + u"'", 1)
-        logging.debug(u'SQL: ' + sql, quiet=quiet)
+        logging.debug(u'SQL: ' + sql)
         return sql
 
     def merge_aliases(self, cur=None):
@@ -412,20 +428,6 @@ class database:
             cur.execute("SELECT DISTINCT artist FROM tracks WHERE weight > ? AND id IN (SELECT track_id FROM labels WHERE label = ?)", (weight, label, ))
         return [r[0] for r in cur.fetchall()]
 
-    def fix_artist_names(self):
-        """Corrects artist names according to LastFM."""
-        cli = ardj.scrobbler.LastFM().authorize()
-
-        cur = self.cursor()
-        names = self.get_artist_names('music', cur=cur)
-        print 'Checking %u artists.' % len(names)
-
-        for name in names:
-            new_name = cli.get_corrected_name(name)
-            if new_name is not None and new_name != name:
-                logging.info(u'Correcting "%s" to "%s"' % (name, new_name))
-                cur.execute('UPDATE tracks SET artist = ? WHERE artist = ?', (new_name, name, ))
-
 
 def Open(filename=None):
     """Returns the active database instance."""
@@ -445,7 +447,6 @@ USAGE = """Usage: ardj db commands...
 
 Commands:
   console           -- open SQLite console
-  fix-artist-names  -- correct artist names according to last.fm
   mark-hitlist      -- mark best tracks with "hitlist"
   mark-orphans      -- mark tracks that don't belong to a playlist
   mark-preshow      -- marks preshow music
@@ -485,9 +486,6 @@ def run_cli(args):
         ok = True
     if 'purge' in args:
         db.purge()
-        ok = True
-    if 'fix-artist-names' in args:
-        db.fix_artist_names()
         ok = True
     if not ok:
         print USAGE
