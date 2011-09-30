@@ -10,7 +10,6 @@ data_files = [
     ('/etc/logrotate.d', glob('share/logrotate.d/*')),
     ('/etc/init', glob('share/upstart/*.conf')),
     ('share/doc/examples', glob('share/doc/ardj/examples/*')),
-    ('share/ardj/screen/', glob('share/ardj/screen/*')),
 ]
 
 classifiers = [
