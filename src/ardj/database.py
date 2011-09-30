@@ -175,6 +175,18 @@ class Track(Model):
         return cls._get_store().find(cls, cls.weight > 0)
 
 
+class Queue(Model):
+    """Stores information about a track to play ASAP."""
+    __storm_table__ = "queue"
+    id = Int(primary=True)
+    track_id = Int()
+    owner = Unicode()
+
+    def __init__(self, track_id, owner):
+        self.track_id = int(track_id)
+        self.owner = unicode(owner)
+
+
 def get_init_statements(dbtype):
     """Returns a list of SQL statements to initialize the database."""
     paths = []
@@ -286,7 +298,7 @@ class database:
     def purge(self, cur=None):
         """Removes stale data.
 
-        Stale data is queue items, labels and votes linked to tracks that no
+        Stale data in queue items, labels and votes linked to tracks that no
         longer exist.  In addition to deleting such links, this function also
         analyzed all tables (to optimize indexes) and vacuums the database.
         """
@@ -471,9 +483,6 @@ def run_cli(args):
     ok = False
     if 'console' in args or not args:
         ardj.util.run([ 'sqlite3', '-header', db.filename ])
-        ok = True
-    if 'flush-queue' in args:
-        db.cursor().execute('DELETE FROM queue')
         ok = True
     if 'mark-hitlist' in args:
         db.mark_hitlist()

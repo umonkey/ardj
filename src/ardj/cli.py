@@ -213,6 +213,14 @@ def cmd_db_stats(*args):
     print "%u tracks, %.1f hours." % (count, length / 60 / 60)
 
 
+def cmd_queue_flush(*args):
+    """delete everything from the queue"""
+    from ardj.database import Queue, commit
+    for item in Queue.find_all():
+        item.delete()
+    commit()
+
+
 def cmd_help(*args):
     """shows this help screen"""
     commands = []

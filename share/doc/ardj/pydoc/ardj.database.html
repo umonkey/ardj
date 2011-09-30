@@ -44,6 +44,7 @@ moved&nbsp;to&nbsp;StORM.</tt></p>
 <dl>
 <dt><font face="helvetica, arial"><a href="ardj.database.html#ArtistDownloadRequest">ArtistDownloadRequest</a>
 </font></dt><dt><font face="helvetica, arial"><a href="ardj.database.html#Message">Message</a>
+</font></dt><dt><font face="helvetica, arial"><a href="ardj.database.html#Queue">Queue</a>
 </font></dt><dt><font face="helvetica, arial"><a href="ardj.database.html#Track">Track</a>
 </font></dt></dl>
 </dd>
@@ -188,6 +189,54 @@ Data descriptors defined here:<br>
 <table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
 <tr bgcolor="#ffc8d8">
 <td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="Queue">class <strong>Queue</strong></a>(<a href="ardj.database.html#Model">Model</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Stores&nbsp;information&nbsp;about&nbsp;a&nbsp;track&nbsp;to&nbsp;play&nbsp;ASAP.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="ardj.database.html#Queue">Queue</a></dd>
+<dd><a href="ardj.database.html#Model">Model</a></dd>
+<dd><a href="__builtin__.html#object">__builtin__.object</a></dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="Queue-__init__"><strong>__init__</strong></a>(self, track_id, owner)</dt></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>id</strong></dt>
+</dl>
+<dl><dt><strong>owner</strong></dt>
+</dl>
+<dl><dt><strong>track_id</strong></dt>
+</dl>
+<hr>
+Data and other attributes defined here:<br>
+<dl><dt><strong>__storm_table__</strong> = 'queue'</dl>
+
+<hr>
+Methods inherited from <a href="ardj.database.html#Model">Model</a>:<br>
+<dl><dt><a name="Queue-delete"><strong>delete</strong></a>(self)</dt></dl>
+
+<hr>
+Class methods inherited from <a href="ardj.database.html#Model">Model</a>:<br>
+<dl><dt><a name="Queue-create"><strong>create</strong></a>(cls, *args, **kwargs)<font color="#909090"><font face="helvetica, arial"> from <a href="__builtin__.html#type">__builtin__.type</a></font></font></dt></dl>
+
+<dl><dt><a name="Queue-find_all"><strong>find_all</strong></a>(cls)<font color="#909090"><font face="helvetica, arial"> from <a href="__builtin__.html#type">__builtin__.type</a></font></font></dt></dl>
+
+<hr>
+Data descriptors inherited from <a href="ardj.database.html#Model">Model</a>:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
 <font color="#000000" face="helvetica, arial"><a name="Track">class <strong>Track</strong></a>(<a href="ardj.database.html#Model">Model</a>)</font></td></tr>
     
 <tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
@@ -293,7 +342,7 @@ Orphans&nbsp;are&nbsp;tracks&nbsp;that&nbsp;don't&nbsp;belong&nbsp;to&nbsp;a&nbs
 
 <dl><dt><a name="database-purge"><strong>purge</strong></a>(self, cur<font color="#909090">=None</font>)</dt><dd><tt>Removes&nbsp;stale&nbsp;data.<br>
 &nbsp;<br>
-Stale&nbsp;data&nbsp;is&nbsp;queue&nbsp;items,&nbsp;labels&nbsp;and&nbsp;votes&nbsp;linked&nbsp;to&nbsp;tracks&nbsp;that&nbsp;no<br>
+Stale&nbsp;data&nbsp;in&nbsp;queue&nbsp;items,&nbsp;labels&nbsp;and&nbsp;votes&nbsp;linked&nbsp;to&nbsp;tracks&nbsp;that&nbsp;no<br>
 longer&nbsp;exist.&nbsp;&nbsp;In&nbsp;addition&nbsp;to&nbsp;deleting&nbsp;such&nbsp;links,&nbsp;this&nbsp;function&nbsp;also<br>
 analyzed&nbsp;all&nbsp;tables&nbsp;(to&nbsp;optimize&nbsp;indexes)&nbsp;and&nbsp;vacuums&nbsp;the&nbsp;<a href="#database">database</a>.</tt></dd></dl>
 
