@@ -441,32 +441,16 @@ def commit():
     Open().commit()
 
 
-def pick_jingle(cur, label):
-    """Returns a jingle with the specified label."""
-    row = cur.execute('SELECT track_id FROM labels WHERE label = ? ORDER BY RANDOM() LIMIT 1', (label, )).fetchone()
-    if row:
-        return row[0]
-
-
-def queue_tracks(cur, track_ids):
-    """Queues all specified tracks."""
-    for track_id in track_ids:
-        cur.execute('INSERT INTO queue (track_id, owner) VALUES (?, ?)', (track_id, 'robot', ))
-
-
 USAGE = """Usage: ardj db commands...
 
 Commands:
   console           -- open SQLite console
   fix-artist-names  -- correct artist names according to last.fm
-  flush-queue       -- remove everything from queue
-  import            -- add tracks from a public "drop box"
   mark-hitlist      -- mark best tracks with "hitlist"
   mark-orphans      -- mark tracks that don't belong to a playlist
   mark-preshow      -- marks preshow music
   mark-recent       -- mark last 100 tracks with "recent"
   purge             -- remove dead data
-  stat              -- show database statistics
   """
 
 
