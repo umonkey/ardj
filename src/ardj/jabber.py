@@ -281,15 +281,15 @@ class ardjbot(MyFileReceivingBot):
             ardj.database.commit()
 
     def send_pending_messages(self):
-        """Sends outgoing messages added using the chat_say() function."""
-        cur = ardj.database.cursor()
-        messages = cur.execute('SELECT id, re, message FROM jabber_messages')
-        for msgid, recipient, message in messages:
-            if recipient is None:
-                self.say_to_chat(message)
+        """Sends all pending messages to the chat room or exact recipients.
+        Messages are added to the queue using the chat_say() function."""
+        for msg in ardj.database.Message.find_all():
+            if msg.recipient is None:
+                self.say_to_chat(msg.message)
             else:
-                self.say_to_jid(recipient, message)
-            cur.execute('DELETE FROM jabber_messages WHERE id = ?', (msgid, ))
+                self.say_to_jid(msg.re, msg.message)
+            msg.delete()
+        ardj.database.commit()
 
     def run(self):
         return self.serve_forever(connect_callback=self.on_connected, disconnect_callback=self.on_disconnect)
@@ -345,15 +345,11 @@ def run_cli(args):
 
 
 def chat_say(message, recipient=None, cur=None):
-    """Adds a message to the chat room queue.  This is the way for command
+    """Adds a message to the chat room queue.  This is the only way for command
     handlers to notify chat users.  If the recipient is not specified, the
     message is sent to the chat room."""
-    logging.debug(u'Will send to chat: %s' % message)
-    commit = cur is None
-    cur = cur or ardj.database.cursor()
-    cur.execute('INSERT INTO jabber_messages (re, message) VALUES (?, ?)', (recipient, message, ))
-    if commit:
-        ardj.database.commit()
+    ardj.database.Message.create(re=recipient, message=message)
+    ardj.database.commit()
 
 
 __all__ = [ 'Open', 'chat_say' ]

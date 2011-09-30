@@ -15,6 +15,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+"""ARDJ, an artificial DJ.
+
+This module contains the database related code.  It currently is a mixture of
+hand-made SQLite code and some new StORM based parts.  Later everything will be
+moved to StORM.
+"""
+
 import logging 
 import os
 import re
@@ -28,16 +35,78 @@ except ImportError:
     print >>sys.stderr, 'Please install pysqlite2.'
     sys.exit(13)
 
+from storm.locals import *  # https://storm.canonical.com
+
 import ardj.settings
 import ardj.scrobbler
 import ardj.tracks
 import ardj.util
 
 
+class _store:
+    _db = None
+    _store = None
+
+    @classmethod
+    def init(cls):
+        if cls._store is None:
+            cls._db = create_database(ardj.settings.get("database_uri"))
+            cls._store = Store(cls._db)
+
+    @classmethod
+    def get(cls):
+        """Contains an instance of a store, to access the databse.
+
+        This is a read-only property."""
+        cls.init()
+        return cls._store
+
+    @classmethod
+    def get_db(cls):
+        cls.init()
+        return cls._db
+
+
+class Message(object):
+    """Used for storing outgoing XMPP messages.  When you need to send an XMPP
+    message, create a Message instance and save it.
+
+    Data:
+    re -- recipient JID
+    text -- message text
+    """
+
+    __storm_table__ = "jabber_messages"
+
+    id = Int(primary=True)
+    re = Unicode()
+    message = Unicode()
+
+    @classmethod
+    def create(cls, message, re=None):
+        """Creates and saves a new message which will be sent as soon as the
+        jabber bot wants.  If the recipient is not specified, the message is
+        sent to the configured chat room."""
+        _message = cls()
+        _message.re = unicode(re)
+        _message.message = unicode(message)
+        _store.get().add(_message)
+        return _message
+
+    @classmethod
+    def find_all(cls):
+        """Returns all existing messages."""
+        return _store.get().find(cls)
+
+    def delete(self):
+        """Removes the message from the database."""
+        return _store.get().remove(self)
+
+
 def get_init_statements(dbtype):
     """Returns a list of SQL statements to initialize the database."""
     paths = []
-    paths.append(os.path.realpath(os.path.join(os.path.dirname(sys.argv[0]), "../share/database")))
+    paths.append(os.path.realpath(os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), "../share/database")))
     paths.append("/usr/local/share/ardj/database")
     for path in paths:
         filename = os.path.join(path, dbtype + ".sql")
@@ -298,6 +367,7 @@ def cursor():
 
 def commit():
     Open().commit()
+    _store.get().commit()
 
 
 def pick_jingle(cur, label):
@@ -380,7 +450,11 @@ def run_cli(args):
 def cli_init(args):
     """Initializes the database."""
     db = Open()
+    cur = db.cursor()
+    store = _store.get()
     for statement in get_init_statements("sqlite"):
-        db.execute(statement)
+        cur.execute(statement)
+        store.execute(statement)
     db.commit()
+    store.commit()
     return True

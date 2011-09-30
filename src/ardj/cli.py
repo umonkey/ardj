@@ -176,6 +176,21 @@ def cmd_twit(*args):
     return twitter.run_cli(args)
 
 
+def cmd_xmpp_send(*args):
+    """send a Jabber message"""
+    if len(args) < 2:
+        print "Usage: ardj xmpp-send \"message text\" [recipient_jid]"
+        exit(1)
+
+    recipient = None
+    if len(args) >= 3:
+        recipient = args[2]
+
+    from database import Message, commit
+    Message.create(args[1], recipient)
+    commit()
+
+
 def cmd_help(*args):
     """shows this help screen"""
     commands = []
@@ -240,6 +255,7 @@ def run(args):
                 pass
             except Exception, e:
                 logging.error('ERROR handling command %s: %s' % (args[1], e) + traceback.format_exc(e))
+                print "ERROR: %s" % e
             exit(1)
 
     cmd_help(*args)

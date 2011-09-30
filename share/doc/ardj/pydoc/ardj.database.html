@@ -9,22 +9,11 @@
 <font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="ardj.html"><font color="#ffffff">ardj</font></a>.database</strong></big></big></font></td
 ><td align=right valign=bottom
 ><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/hex/.local/lib/python2.7/site-packages/ardj/database.py">/home/hex/.local/lib/python2.7/site-packages/ardj/database.py</a></font></td></tr></table>
-    <p><tt>#&nbsp;vim:&nbsp;set&nbsp;ts=4&nbsp;sts=4&nbsp;sw=4&nbsp;et&nbsp;fileencoding=utf-8:<br>
-#<br>
-#&nbsp;<a href="#database">database</a>&nbsp;related&nbsp;functions&nbsp;for&nbsp;ardj.<br>
-#<br>
-#&nbsp;ardj&nbsp;is&nbsp;free&nbsp;software;&nbsp;you&nbsp;can&nbsp;redistribute&nbsp;it&nbsp;and/or&nbsp;modify<br>
-#&nbsp;it&nbsp;under&nbsp;the&nbsp;terms&nbsp;of&nbsp;the&nbsp;GNU&nbsp;General&nbsp;Public&nbsp;License&nbsp;as&nbsp;published&nbsp;by<br>
-#&nbsp;the&nbsp;Free&nbsp;Software&nbsp;Foundation;&nbsp;either&nbsp;version&nbsp;3&nbsp;of&nbsp;the&nbsp;License,&nbsp;or<br>
-#&nbsp;(at&nbsp;your&nbsp;option)&nbsp;any&nbsp;later&nbsp;version.<br>
-#<br>
-#&nbsp;ardj&nbsp;is&nbsp;distributed&nbsp;in&nbsp;the&nbsp;hope&nbsp;that&nbsp;it&nbsp;will&nbsp;be&nbsp;useful,<br>
-#&nbsp;but&nbsp;WITHOUT&nbsp;ANY&nbsp;WARRANTY;&nbsp;without&nbsp;even&nbsp;the&nbsp;implied&nbsp;warranty&nbsp;of<br>
-#&nbsp;MERCHANTABILITY&nbsp;or&nbsp;FITNESS&nbsp;FOR&nbsp;A&nbsp;PARTICULAR&nbsp;PURPOSE.&nbsp;&nbsp;See&nbsp;the<br>
-#&nbsp;GNU&nbsp;General&nbsp;Public&nbsp;License&nbsp;for&nbsp;more&nbsp;details.<br>
-#<br>
-#&nbsp;You&nbsp;should&nbsp;have&nbsp;received&nbsp;a&nbsp;copy&nbsp;of&nbsp;the&nbsp;GNU&nbsp;General&nbsp;Public&nbsp;License<br>
-#&nbsp;along&nbsp;with&nbsp;this&nbsp;program.&nbsp;&nbsp;If&nbsp;not,&nbsp;see&nbsp;&lt;<a href="http://www.gnu.org/licenses/">http://www.gnu.org/licenses/</a>&gt;.</tt></p>
+    <p><tt>ARDJ,&nbsp;an&nbsp;artificial&nbsp;DJ.<br>
+&nbsp;<br>
+This&nbsp;module&nbsp;contains&nbsp;the&nbsp;<a href="#database">database</a>&nbsp;related&nbsp;code.&nbsp;&nbsp;It&nbsp;currently&nbsp;is&nbsp;a&nbsp;mixture&nbsp;of<br>
+hand-made&nbsp;SQLite&nbsp;code&nbsp;and&nbsp;some&nbsp;new&nbsp;StORM&nbsp;based&nbsp;parts.&nbsp;&nbsp;Later&nbsp;everything&nbsp;will&nbsp;be<br>
+moved&nbsp;to&nbsp;StORM.</tt></p>
 <p>
 <table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
 <tr bgcolor="#aa55cc">
@@ -47,9 +36,58 @@
     
 <tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
 <td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="__builtin__.html#object">__builtin__.object</a>
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="ardj.database.html#Message">Message</a>
+</font></dt></dl>
+</dd>
 <dt><font face="helvetica, arial"><a href="ardj.database.html#database">database</a>
 </font></dt></dl>
  <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="Message">class <strong>Message</strong></a>(<a href="__builtin__.html#object">__builtin__.object</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Used&nbsp;for&nbsp;storing&nbsp;outgoing&nbsp;XMPP&nbsp;messages.&nbsp;&nbsp;When&nbsp;you&nbsp;need&nbsp;to&nbsp;send&nbsp;an&nbsp;XMPP<br>
+message,&nbsp;create&nbsp;a&nbsp;<a href="#Message">Message</a>&nbsp;instance&nbsp;and&nbsp;save&nbsp;it.<br>
+&nbsp;<br>
+Data:<br>
+re&nbsp;--&nbsp;recipient&nbsp;JID<br>
+text&nbsp;--&nbsp;message&nbsp;text<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="Message-delete"><strong>delete</strong></a>(self)</dt><dd><tt>Removes&nbsp;the&nbsp;message&nbsp;from&nbsp;the&nbsp;<a href="#database">database</a>.</tt></dd></dl>
+
+<hr>
+Class methods defined here:<br>
+<dl><dt><a name="Message-create"><strong>create</strong></a>(cls, message, re<font color="#909090">=None</font>)<font color="#909090"><font face="helvetica, arial"> from <a href="__builtin__.html#type">__builtin__.type</a></font></font></dt><dd><tt>Creates&nbsp;and&nbsp;saves&nbsp;a&nbsp;new&nbsp;message&nbsp;which&nbsp;will&nbsp;be&nbsp;sent&nbsp;as&nbsp;soon&nbsp;as&nbsp;the<br>
+jabber&nbsp;bot&nbsp;wants.&nbsp;&nbsp;If&nbsp;the&nbsp;recipient&nbsp;is&nbsp;not&nbsp;specified,&nbsp;the&nbsp;message&nbsp;is<br>
+sent&nbsp;to&nbsp;the&nbsp;configured&nbsp;chat&nbsp;room.</tt></dd></dl>
+
+<dl><dt><a name="Message-find_all"><strong>find_all</strong></a>(cls)<font color="#909090"><font face="helvetica, arial"> from <a href="__builtin__.html#type">__builtin__.type</a></font></font></dt><dd><tt>Returns&nbsp;all&nbsp;existing&nbsp;messages.</tt></dd></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>id</strong></dt>
+</dl>
+<dl><dt><strong>message</strong></dt>
+</dl>
+<dl><dt><strong>re</strong></dt>
+</dl>
+<hr>
+Data and other attributes defined here:<br>
+<dl><dt><strong>__storm_table__</strong> = 'jabber_messages'</dl>
+
+</td></tr></table> <p>
 <table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
 <tr bgcolor="#ffc8d8">
 <td colspan=3 valign=bottom>&nbsp;<br>
