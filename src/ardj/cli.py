@@ -19,67 +19,97 @@ import ardj.log
 
 
 def cmd_config(*args):
-    """edit settings"""
+    """edit settings
+
+    Opens the currently used config file in your preferred text editor."""
     import settings
     return settings.edit_cli(args)
 
 
 def cmd_db(*args):
-    """database functions"""
+    """database functions
+
+    Subcommands: console, flush-queue, mark-hitlist, mark-preshow, mark-recent,
+    mark-orphans, mark-long, purge, stat, fix-artist-names.  By default opens
+    the database console."""
     import database
     return database.run_cli(args)
 
 
 def cmd_db_init(*args):
-    """initializes the database"""
+    """initializes the database
+
+    Initializes the configured database by executing a set of preconfigured SQL
+    instructions.  This is non-destructive.  You should run this after you
+    install or upgrade ardj."""
     import database
     return database.cli_init(args)
 
 
 def cmd_events(*args):
-    """works with the upcoming events"""
+    """works with the upcoming events
+
+    Interacts with the Last.fm event database.  Subcommands: refresh,
+    update-website."""
     import tout
     return tout.run_cli(args)
 
 
 def cmd_find_new_tracks(*args):
-    """adds new songs from Last.fm"""
+    """adds new songs from Last.fm
+
+    See ardj.tracks.find_new_tracks() for details."""
     import tracks
     return tracks.find_new_tracks(args)
 
 
 def cmd_hotline(*args):
-    """work with the hotline"""
+    """work with the hotline
+
+    Interacts with the hotline mailbox.  Subcommands: list, process.  See
+    ardj.hotline.run_cli() for details."""
     import hotline
     return hotline.run_cli(args)
 
 
 def cmd_icelog(*args):
-    """work with Icecast logs"""
+    """work with icecast2 logs
+
+    Subcommands: show-agents, add.  See the ardj.icelogger module for details."""
     import icelogger
     return icelogger.run_cli(args)
 
 
 def cmd_jabber(*args):
-    """run the jabber bot"""
+    """run the jabber bot
+
+    Controls the jabber bot.  Subcommands: run, run-child.  See the ardj.jabber
+    module for details."""
     import jabber
     return jabber.run_cli(args)
 
 
 def cmd_listeners(*args):
-    """summarizes listeners.csv"""
+    """summarizes listeners.csv
+
+    Subcommands: stats."""
     import listeners
     return listeners.run_cli(args)
 
 
 def cmd_mail(*args):
-    """send or receive mail"""
+    """send or receive mail
+
+    Can be used to send mail or list incoming messages.  Subcommands: list,
+    send.  See the ardj.mail module for details."""
     import mail
     return mail.run_cli(args)
 
 
 def cmd_map_listeners(*args):
-    """updates the listeners map"""
+    """updates the listeners map
+
+    Updates the listener map.  See ardj.map.update_listeners() for details."""
     import map
     return map.update_listeners(args)
 
@@ -97,7 +127,9 @@ def cmd_news(*args):
 
 
 def cmd_rg(*args):
-    """scan ReplayGain in files"""
+    """scan ReplayGain in files
+
+    Calculates ReplayGain for all files which don't have these tags yet."""
     import replaygain
     return replaygain.run_cli(args)
 
