@@ -3,6 +3,8 @@ DEB=ardj-${VERSION}.deb
 ZIP=ardj-${VERSION}.zip
 TAR=ardj-${VERSION}.tar.gz
 
+all: docs
+
 help:
 	@echo "bdist      -- prepares a tar.gz"
 	@echo "clean      -- removes temporary files"
