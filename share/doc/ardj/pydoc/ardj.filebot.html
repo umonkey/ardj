@@ -1,0 +1,411 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module ardj.filebot</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="ardj.html"><font color="#ffffff">ardj</font></a>.filebot</strong></big></big></font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/hex/.local/lib/python2.7/site-packages/ardj/filebot.py">/home/hex/.local/lib/python2.7/site-packages/ardj/filebot.py</a></font></td></tr></table>
+    <p><tt>#&nbsp;vim:&nbsp;set&nbsp;ts=4&nbsp;sts=4&nbsp;sw=4&nbsp;et&nbsp;fileencoding=utf-8:<br>
+#<br>
+#&nbsp;RTFM:<br>
+#<br>
+#&nbsp;-&nbsp;SOCKS5&nbsp;Bytestreams:<br>
+#&nbsp;&nbsp;&nbsp;<a href="http://xmpp.org/extensions/xep-0065.html">http://xmpp.org/extensions/xep-0065.html</a><br>
+#&nbsp;-&nbsp;SI&nbsp;File&nbsp;Transfer:<br>
+#&nbsp;&nbsp;&nbsp;<a href="http://xmpp.org/extensions/xep-0096.html">http://xmpp.org/extensions/xep-0096.html</a></tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="hashlib.html">hashlib</a><br>
+<a href="logging.html">logging</a><br>
+<a href="os.html">os</a><br>
+</td><td width="25%" valign=top><a href="socket.html">socket</a><br>
+<a href="ardj.socks.html">ardj.socks</a><br>
+<a href="tempfile.html">tempfile</a><br>
+</td><td width="25%" valign=top><a href="time.html">time</a><br>
+<a href="traceback.html">traceback</a><br>
+<a href="ardj.xmpp.html">ardj.xmpp</a><br>
+</td><td width="25%" valign=top></td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="ardj.jabberbot.html#JabberBot">ardj.jabberbot.JabberBot</a>(<a href="__builtin__.html#object">__builtin__.object</a>)
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="ardj.filebot.html#DiscoBot">DiscoBot</a>
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="ardj.filebot.html#FileBot">FileBot</a>
+</font></dt></dl>
+</dd>
+</dl>
+</dd>
+<dt><font face="helvetica, arial"><a href="exceptions.html#Exception">exceptions.Exception</a>(<a href="exceptions.html#BaseException">exceptions.BaseException</a>)
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="ardj.filebot.html#FileNotAcceptable">FileNotAcceptable</a>
+</font></dt></dl>
+</dd>
+</dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="DiscoBot">class <strong>DiscoBot</strong></a>(<a href="ardj.jabberbot.html#JabberBot">ardj.jabberbot.JabberBot</a>)</font></td></tr>
+    
+<tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="ardj.filebot.html#DiscoBot">DiscoBot</a></dd>
+<dd><a href="ardj.jabberbot.html#JabberBot">ardj.jabberbot.JabberBot</a></dd>
+<dd><a href="__builtin__.html#object">__builtin__.object</a></dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="DiscoBot-connect"><strong>connect</strong></a>(self)</dt><dd><tt>Add&nbsp;support&nbsp;for&nbsp;XEP-0115.</tt></dd></dl>
+
+<dl><dt><a name="DiscoBot-on_disco_info"><strong>on_disco_info</strong></a>(self, conn, mess)</dt></dl>
+
+<hr>
+Methods inherited from <a href="ardj.jabberbot.html#JabberBot">ardj.jabberbot.JabberBot</a>:<br>
+<dl><dt><a name="DiscoBot-__init__"><strong>__init__</strong></a>(self, username, password, res<font color="#909090">=None</font>, debug<font color="#909090">=False</font>)</dt><dd><tt>Initializes&nbsp;the&nbsp;jabber&nbsp;bot&nbsp;and&nbsp;sets&nbsp;up&nbsp;commands.</tt></dd></dl>
+
+<dl><dt><a name="DiscoBot-bottom_of_help_message"><strong>bottom_of_help_message</strong></a>(self)</dt><dd><tt>Returns&nbsp;a&nbsp;string&nbsp;that&nbsp;forms&nbsp;the&nbsp;bottom&nbsp;of&nbsp;the&nbsp;help&nbsp;message<br>
+&nbsp;<br>
+Override&nbsp;this&nbsp;method&nbsp;in&nbsp;derived&nbsp;class&nbsp;if&nbsp;you<br>
+want&nbsp;to&nbsp;add&nbsp;additional&nbsp;help&nbsp;text&nbsp;at&nbsp;the&nbsp;end<br>
+of&nbsp;the&nbsp;help&nbsp;message.</tt></dd></dl>
+
+<dl><dt><a name="DiscoBot-broadcast"><strong>broadcast</strong></a>(self, message, only_available<font color="#909090">=False</font>)</dt><dd><tt>Broadcast&nbsp;a&nbsp;message&nbsp;to&nbsp;all&nbsp;users&nbsp;'seen'&nbsp;by&nbsp;this&nbsp;bot.<br>
+&nbsp;<br>
+If&nbsp;the&nbsp;parameter&nbsp;'only_available'&nbsp;is&nbsp;True,&nbsp;the&nbsp;broadcast<br>
+will&nbsp;not&nbsp;go&nbsp;to&nbsp;users&nbsp;whose&nbsp;status&nbsp;is&nbsp;not&nbsp;'Available'.</tt></dd></dl>
+
+<dl><dt><a name="DiscoBot-build_message"><strong>build_message</strong></a>(self, text)</dt><dd><tt>Builds&nbsp;an&nbsp;xhtml&nbsp;message&nbsp;without&nbsp;attributes.</tt></dd></dl>
+
+<dl><dt><a name="DiscoBot-build_reply"><strong>build_reply</strong></a>(self, mess, text<font color="#909090">=None</font>, private<font color="#909090">=False</font>)</dt><dd><tt>Build&nbsp;a&nbsp;message&nbsp;for&nbsp;responding&nbsp;to&nbsp;another&nbsp;message.&nbsp;&nbsp;Message&nbsp;is&nbsp;NOT&nbsp;sent</tt></dd></dl>
+
+<dl><dt><a name="DiscoBot-callback_message"><strong>callback_message</strong></a>(self, conn, mess)</dt><dd><tt>Messages&nbsp;sent&nbsp;to&nbsp;the&nbsp;bot&nbsp;will&nbsp;arrive&nbsp;here.&nbsp;Command&nbsp;handling&nbsp;+&nbsp;routing&nbsp;is&nbsp;done&nbsp;in&nbsp;this&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="DiscoBot-callback_presence"><strong>callback_presence</strong></a>(self, conn, presence)</dt></dl>
+
+<dl><dt><a name="DiscoBot-get_sender_username"><strong>get_sender_username</strong></a>(self, mess)</dt><dd><tt>Extract&nbsp;the&nbsp;sender's&nbsp;user&nbsp;name&nbsp;from&nbsp;a&nbsp;message</tt></dd></dl>
+
+<dl><dt><a name="DiscoBot-help"><strong>help</strong></a>(self, mess, args)</dt><dd><tt>Returns&nbsp;a&nbsp;help&nbsp;string&nbsp;listing&nbsp;available&nbsp;options.<br>
+&nbsp;<br>
+Automatically&nbsp;assigned&nbsp;to&nbsp;the&nbsp;"help"&nbsp;command.</tt></dd></dl>
+
+<dl><dt><a name="DiscoBot-idle_proc"><strong>idle_proc</strong></a>(self)</dt><dd><tt>This&nbsp;function&nbsp;will&nbsp;be&nbsp;called&nbsp;in&nbsp;the&nbsp;main&nbsp;loop.</tt></dd></dl>
+
+<dl><dt><a name="DiscoBot-join_room"><strong>join_room</strong></a>(self, room, username<font color="#909090">=None</font>)</dt><dd><tt>Join&nbsp;the&nbsp;specified&nbsp;multi-user&nbsp;chat&nbsp;room</tt></dd></dl>
+
+<dl><dt><a name="DiscoBot-parse_command"><strong>parse_command</strong></a>(self, text)</dt></dl>
+
+<dl><dt><a name="DiscoBot-quit"><strong>quit</strong></a>(self, exitcode<font color="#909090">=0</font>)</dt><dd><tt>Stop&nbsp;serving&nbsp;messages&nbsp;and&nbsp;exit.<br>
+&nbsp;<br>
+I&nbsp;find&nbsp;it&nbsp;is&nbsp;handy&nbsp;for&nbsp;development&nbsp;to&nbsp;run&nbsp;the<br>
+jabberbot&nbsp;in&nbsp;a&nbsp;'while&nbsp;true'&nbsp;loop&nbsp;in&nbsp;the&nbsp;shell,&nbsp;so<br>
+whenever&nbsp;I&nbsp;make&nbsp;a&nbsp;code&nbsp;change&nbsp;to&nbsp;the&nbsp;bot,&nbsp;I&nbsp;send<br>
+the&nbsp;'reload'&nbsp;command,&nbsp;which&nbsp;I&nbsp;have&nbsp;mapped&nbsp;to&nbsp;call<br>
+<a href="#DiscoBot-quit">quit</a>(),&nbsp;and&nbsp;my&nbsp;shell&nbsp;script&nbsp;relaunches&nbsp;the<br>
+new&nbsp;version.</tt></dd></dl>
+
+<dl><dt><a name="DiscoBot-send"><strong>send</strong></a>(self, user, text, in_reply_to<font color="#909090">=None</font>, message_type<font color="#909090">='chat'</font>)</dt><dd><tt>Sends&nbsp;a&nbsp;simple&nbsp;message&nbsp;to&nbsp;the&nbsp;specified&nbsp;user.</tt></dd></dl>
+
+<dl><dt><a name="DiscoBot-send_message"><strong>send_message</strong></a>(self, mess)</dt><dd><tt>Send&nbsp;an&nbsp;XMPP&nbsp;message</tt></dd></dl>
+
+<dl><dt><a name="DiscoBot-send_simple_reply"><strong>send_simple_reply</strong></a>(self, mess, text, private<font color="#909090">=False</font>)</dt><dd><tt>Send&nbsp;a&nbsp;simple&nbsp;response&nbsp;to&nbsp;a&nbsp;message</tt></dd></dl>
+
+<dl><dt><a name="DiscoBot-send_tune"><strong>send_tune</strong></a>(self, song, debug<font color="#909090">=False</font>)</dt><dd><tt>Set&nbsp;information&nbsp;about&nbsp;the&nbsp;currently&nbsp;played&nbsp;tune<br>
+&nbsp;<br>
+Song&nbsp;is&nbsp;a&nbsp;dictionary&nbsp;with&nbsp;keys:&nbsp;file,&nbsp;title,&nbsp;artist,&nbsp;album,&nbsp;pos,&nbsp;track,<br>
+length,&nbsp;uri.&nbsp;For&nbsp;details&nbsp;see&nbsp;&lt;<a href="http://xmpp.org/protocols/tune/">http://xmpp.org/protocols/tune/</a>&gt;.</tt></dd></dl>
+
+<dl><dt><a name="DiscoBot-serve_forever"><strong>serve_forever</strong></a>(self, connect_callback<font color="#909090">=None</font>, disconnect_callback<font color="#909090">=None</font>)</dt><dd><tt>Connects&nbsp;to&nbsp;the&nbsp;server&nbsp;and&nbsp;handles&nbsp;messages.</tt></dd></dl>
+
+<dl><dt><a name="DiscoBot-shutdown"><strong>shutdown</strong></a>(self)</dt><dd><tt>This&nbsp;function&nbsp;will&nbsp;be&nbsp;called&nbsp;when&nbsp;we're&nbsp;done&nbsp;serving<br>
+&nbsp;<br>
+Override&nbsp;this&nbsp;method&nbsp;in&nbsp;derived&nbsp;class&nbsp;if&nbsp;you<br>
+want&nbsp;to&nbsp;do&nbsp;anything&nbsp;special&nbsp;at&nbsp;shutdown.</tt></dd></dl>
+
+<dl><dt><a name="DiscoBot-status_message_changed"><strong>status_message_changed</strong></a>(self, jid, new_status_message)</dt><dd><tt>Callback&nbsp;for&nbsp;tracking&nbsp;status&nbsp;messages&nbsp;(the&nbsp;free-form&nbsp;status&nbsp;text)</tt></dd></dl>
+
+<dl><dt><a name="DiscoBot-status_type_changed"><strong>status_type_changed</strong></a>(self, jid, new_status_type)</dt><dd><tt>Callback&nbsp;for&nbsp;tracking&nbsp;status&nbsp;types&nbsp;(available,&nbsp;away,&nbsp;offline,&nbsp;...)</tt></dd></dl>
+
+<dl><dt><a name="DiscoBot-top_of_help_message"><strong>top_of_help_message</strong></a>(self)</dt><dd><tt>Returns&nbsp;a&nbsp;string&nbsp;that&nbsp;forms&nbsp;the&nbsp;top&nbsp;of&nbsp;the&nbsp;help&nbsp;message<br>
+&nbsp;<br>
+Override&nbsp;this&nbsp;method&nbsp;in&nbsp;derived&nbsp;class&nbsp;if&nbsp;you<br>
+want&nbsp;to&nbsp;add&nbsp;additional&nbsp;help&nbsp;text&nbsp;at&nbsp;the<br>
+beginning&nbsp;of&nbsp;the&nbsp;help&nbsp;message.</tt></dd></dl>
+
+<dl><dt><a name="DiscoBot-unknown_command"><strong>unknown_command</strong></a>(self, mess, cmd, args)</dt><dd><tt>Default&nbsp;handler&nbsp;for&nbsp;unknown&nbsp;commands<br>
+&nbsp;<br>
+Override&nbsp;this&nbsp;method&nbsp;in&nbsp;derived&nbsp;class&nbsp;if&nbsp;you<br>
+want&nbsp;to&nbsp;trap&nbsp;some&nbsp;unrecognized&nbsp;commands.&nbsp;&nbsp;If<br>
+'cmd'&nbsp;is&nbsp;handled,&nbsp;you&nbsp;must&nbsp;return&nbsp;some&nbsp;non-false<br>
+value,&nbsp;else&nbsp;some&nbsp;helpful&nbsp;text&nbsp;will&nbsp;be&nbsp;sent&nbsp;back<br>
+to&nbsp;the&nbsp;sender.</tt></dd></dl>
+
+<hr>
+Data descriptors inherited from <a href="ardj.jabberbot.html#JabberBot">ardj.jabberbot.JabberBot</a>:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>status_message</strong></dt>
+</dl>
+<dl><dt><strong>status_type</strong></dt>
+</dl>
+<hr>
+Data and other attributes inherited from <a href="ardj.jabberbot.html#JabberBot">ardj.jabberbot.JabberBot</a>:<br>
+<dl><dt><strong>AVAILABLE</strong> = None</dl>
+
+<dl><dt><strong>AWAY</strong> = 'away'</dl>
+
+<dl><dt><strong>CHAT</strong> = 'chat'</dl>
+
+<dl><dt><strong>DND</strong> = 'dnd'</dl>
+
+<dl><dt><strong>MSG_AUTHORIZE_ME</strong> = 'Hey there. You are not yet on my roster. Authorize my request and I will do the same.'</dl>
+
+<dl><dt><strong>MSG_NOT_AUTHORIZED</strong> = 'You did not authorize my subscription request. Access denied.'</dl>
+
+<dl><dt><strong>OFFLINE</strong> = 'unavailable'</dl>
+
+<dl><dt><strong>PROCESS_MSG_FROM_SELF</strong> = False</dl>
+
+<dl><dt><strong>PROCESS_MSG_FROM_UNSEEN</strong> = False</dl>
+
+<dl><dt><strong>XA</strong> = 'xa'</dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="FileBot">class <strong>FileBot</strong></a>(<a href="ardj.filebot.html#DiscoBot">DiscoBot</a>)</font></td></tr>
+    
+<tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="ardj.filebot.html#FileBot">FileBot</a></dd>
+<dd><a href="ardj.filebot.html#DiscoBot">DiscoBot</a></dd>
+<dd><a href="ardj.jabberbot.html#JabberBot">ardj.jabberbot.JabberBot</a></dd>
+<dd><a href="__builtin__.html#object">__builtin__.object</a></dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="FileBot-__init__"><strong>__init__</strong></a>(self, username, password, res<font color="#909090">=None</font>, debug<font color="#909090">=False</font>)</dt></dl>
+
+<dl><dt><a name="FileBot-callback_file"><strong>callback_file</strong></a>(self, sender, filename)</dt><dd><tt>Called&nbsp;when&nbsp;a&nbsp;file&nbsp;is&nbsp;successfully&nbsp;received.&nbsp;&nbsp;The&nbsp;file&nbsp;should&nbsp;be&nbsp;moved<br>
+to&nbsp;a&nbsp;new&nbsp;location.&nbsp;&nbsp;If&nbsp;that&nbsp;is&nbsp;not&nbsp;done,&nbsp;the&nbsp;file&nbsp;is&nbsp;deleted&nbsp;when&nbsp;this<br>
+method&nbsp;returns.<br>
+&nbsp;<br>
+If&nbsp;anything&nbsp;is&nbsp;returned,&nbsp;it's&nbsp;sent&nbsp;back&nbsp;to&nbsp;file&nbsp;sender&nbsp;as&nbsp;a&nbsp;message,<br>
+e.g.:&nbsp;"Thank&nbsp;you&nbsp;for&nbsp;this&nbsp;file."</tt></dd></dl>
+
+<dl><dt><a name="FileBot-connect"><strong>connect</strong></a>(self)</dt><dd><tt>Add&nbsp;support&nbsp;for&nbsp;SI&nbsp;and&nbsp;Bytestream.</tt></dd></dl>
+
+<dl><dt><a name="FileBot-idle_proc"><strong>idle_proc</strong></a>(self)</dt><dd><tt>Checks&nbsp;for&nbsp;data&nbsp;in&nbsp;active&nbsp;sockets.&nbsp;&nbsp;If&nbsp;all&nbsp;data&nbsp;is&nbsp;received&nbsp;for&nbsp;a&nbsp;file,<br>
+calls&nbsp;<a href="#FileBot-callback_file">callback_file</a>().&nbsp;&nbsp;If&nbsp;no&nbsp;data&nbsp;was&nbsp;received&nbsp;from&nbsp;a&nbsp;socket&nbsp;for<br>
+as&nbsp;long&nbsp;as&nbsp;self.<strong>SOCKET_TIMEOUT</strong>&nbsp;seconds,&nbsp;the&nbsp;connection&nbsp;is&nbsp;dropped&nbsp;and<br>
+the&nbsp;temporary&nbsp;file&nbsp;is&nbsp;deleted.</tt></dd></dl>
+
+<dl><dt><a name="FileBot-is_file_acceptable"><strong>is_file_acceptable</strong></a>(self, sender, filename, filesize)</dt><dd><tt>Checks&nbsp;whether&nbsp;you&nbsp;want&nbsp;to&nbsp;receive&nbsp;a&nbsp;file.&nbsp;&nbsp;By&nbsp;default&nbsp;all&nbsp;files<br>
+are&nbsp;accepted;&nbsp;override&nbsp;to&nbsp;redefine&nbsp;this&nbsp;logic.</tt></dd></dl>
+
+<dl><dt><a name="FileBot-on_bytestream"><strong>on_bytestream</strong></a>(self, conn, mess)</dt><dd><tt>Tries&nbsp;to&nbsp;connect&nbsp;to&nbsp;all&nbsp;specified&nbsp;streamhosts.</tt></dd></dl>
+
+<dl><dt><a name="FileBot-on_file_aborted"><strong>on_file_aborted</strong></a>(self, transfer)</dt></dl>
+
+<dl><dt><a name="FileBot-si_req_handler"><strong>si_req_handler</strong></a>(self, conn, mess)</dt><dd><tt>SI&nbsp;profile&nbsp;negotiation.</tt></dd></dl>
+
+<hr>
+Data and other attributes defined here:<br>
+<dl><dt><strong>SOCKET_TIMEOUT</strong> = 30</dl>
+
+<hr>
+Methods inherited from <a href="ardj.filebot.html#DiscoBot">DiscoBot</a>:<br>
+<dl><dt><a name="FileBot-on_disco_info"><strong>on_disco_info</strong></a>(self, conn, mess)</dt></dl>
+
+<hr>
+Methods inherited from <a href="ardj.jabberbot.html#JabberBot">ardj.jabberbot.JabberBot</a>:<br>
+<dl><dt><a name="FileBot-bottom_of_help_message"><strong>bottom_of_help_message</strong></a>(self)</dt><dd><tt>Returns&nbsp;a&nbsp;string&nbsp;that&nbsp;forms&nbsp;the&nbsp;bottom&nbsp;of&nbsp;the&nbsp;help&nbsp;message<br>
+&nbsp;<br>
+Override&nbsp;this&nbsp;method&nbsp;in&nbsp;derived&nbsp;class&nbsp;if&nbsp;you<br>
+want&nbsp;to&nbsp;add&nbsp;additional&nbsp;help&nbsp;text&nbsp;at&nbsp;the&nbsp;end<br>
+of&nbsp;the&nbsp;help&nbsp;message.</tt></dd></dl>
+
+<dl><dt><a name="FileBot-broadcast"><strong>broadcast</strong></a>(self, message, only_available<font color="#909090">=False</font>)</dt><dd><tt>Broadcast&nbsp;a&nbsp;message&nbsp;to&nbsp;all&nbsp;users&nbsp;'seen'&nbsp;by&nbsp;this&nbsp;bot.<br>
+&nbsp;<br>
+If&nbsp;the&nbsp;parameter&nbsp;'only_available'&nbsp;is&nbsp;True,&nbsp;the&nbsp;broadcast<br>
+will&nbsp;not&nbsp;go&nbsp;to&nbsp;users&nbsp;whose&nbsp;status&nbsp;is&nbsp;not&nbsp;'Available'.</tt></dd></dl>
+
+<dl><dt><a name="FileBot-build_message"><strong>build_message</strong></a>(self, text)</dt><dd><tt>Builds&nbsp;an&nbsp;xhtml&nbsp;message&nbsp;without&nbsp;attributes.</tt></dd></dl>
+
+<dl><dt><a name="FileBot-build_reply"><strong>build_reply</strong></a>(self, mess, text<font color="#909090">=None</font>, private<font color="#909090">=False</font>)</dt><dd><tt>Build&nbsp;a&nbsp;message&nbsp;for&nbsp;responding&nbsp;to&nbsp;another&nbsp;message.&nbsp;&nbsp;Message&nbsp;is&nbsp;NOT&nbsp;sent</tt></dd></dl>
+
+<dl><dt><a name="FileBot-callback_message"><strong>callback_message</strong></a>(self, conn, mess)</dt><dd><tt>Messages&nbsp;sent&nbsp;to&nbsp;the&nbsp;bot&nbsp;will&nbsp;arrive&nbsp;here.&nbsp;Command&nbsp;handling&nbsp;+&nbsp;routing&nbsp;is&nbsp;done&nbsp;in&nbsp;this&nbsp;function.</tt></dd></dl>
+
+<dl><dt><a name="FileBot-callback_presence"><strong>callback_presence</strong></a>(self, conn, presence)</dt></dl>
+
+<dl><dt><a name="FileBot-get_sender_username"><strong>get_sender_username</strong></a>(self, mess)</dt><dd><tt>Extract&nbsp;the&nbsp;sender's&nbsp;user&nbsp;name&nbsp;from&nbsp;a&nbsp;message</tt></dd></dl>
+
+<dl><dt><a name="FileBot-help"><strong>help</strong></a>(self, mess, args)</dt><dd><tt>Returns&nbsp;a&nbsp;help&nbsp;string&nbsp;listing&nbsp;available&nbsp;options.<br>
+&nbsp;<br>
+Automatically&nbsp;assigned&nbsp;to&nbsp;the&nbsp;"help"&nbsp;command.</tt></dd></dl>
+
+<dl><dt><a name="FileBot-join_room"><strong>join_room</strong></a>(self, room, username<font color="#909090">=None</font>)</dt><dd><tt>Join&nbsp;the&nbsp;specified&nbsp;multi-user&nbsp;chat&nbsp;room</tt></dd></dl>
+
+<dl><dt><a name="FileBot-parse_command"><strong>parse_command</strong></a>(self, text)</dt></dl>
+
+<dl><dt><a name="FileBot-quit"><strong>quit</strong></a>(self, exitcode<font color="#909090">=0</font>)</dt><dd><tt>Stop&nbsp;serving&nbsp;messages&nbsp;and&nbsp;exit.<br>
+&nbsp;<br>
+I&nbsp;find&nbsp;it&nbsp;is&nbsp;handy&nbsp;for&nbsp;development&nbsp;to&nbsp;run&nbsp;the<br>
+jabberbot&nbsp;in&nbsp;a&nbsp;'while&nbsp;true'&nbsp;loop&nbsp;in&nbsp;the&nbsp;shell,&nbsp;so<br>
+whenever&nbsp;I&nbsp;make&nbsp;a&nbsp;code&nbsp;change&nbsp;to&nbsp;the&nbsp;bot,&nbsp;I&nbsp;send<br>
+the&nbsp;'reload'&nbsp;command,&nbsp;which&nbsp;I&nbsp;have&nbsp;mapped&nbsp;to&nbsp;call<br>
+<a href="#FileBot-quit">quit</a>(),&nbsp;and&nbsp;my&nbsp;shell&nbsp;script&nbsp;relaunches&nbsp;the<br>
+new&nbsp;version.</tt></dd></dl>
+
+<dl><dt><a name="FileBot-send"><strong>send</strong></a>(self, user, text, in_reply_to<font color="#909090">=None</font>, message_type<font color="#909090">='chat'</font>)</dt><dd><tt>Sends&nbsp;a&nbsp;simple&nbsp;message&nbsp;to&nbsp;the&nbsp;specified&nbsp;user.</tt></dd></dl>
+
+<dl><dt><a name="FileBot-send_message"><strong>send_message</strong></a>(self, mess)</dt><dd><tt>Send&nbsp;an&nbsp;XMPP&nbsp;message</tt></dd></dl>
+
+<dl><dt><a name="FileBot-send_simple_reply"><strong>send_simple_reply</strong></a>(self, mess, text, private<font color="#909090">=False</font>)</dt><dd><tt>Send&nbsp;a&nbsp;simple&nbsp;response&nbsp;to&nbsp;a&nbsp;message</tt></dd></dl>
+
+<dl><dt><a name="FileBot-send_tune"><strong>send_tune</strong></a>(self, song, debug<font color="#909090">=False</font>)</dt><dd><tt>Set&nbsp;information&nbsp;about&nbsp;the&nbsp;currently&nbsp;played&nbsp;tune<br>
+&nbsp;<br>
+Song&nbsp;is&nbsp;a&nbsp;dictionary&nbsp;with&nbsp;keys:&nbsp;file,&nbsp;title,&nbsp;artist,&nbsp;album,&nbsp;pos,&nbsp;track,<br>
+length,&nbsp;uri.&nbsp;For&nbsp;details&nbsp;see&nbsp;&lt;<a href="http://xmpp.org/protocols/tune/">http://xmpp.org/protocols/tune/</a>&gt;.</tt></dd></dl>
+
+<dl><dt><a name="FileBot-serve_forever"><strong>serve_forever</strong></a>(self, connect_callback<font color="#909090">=None</font>, disconnect_callback<font color="#909090">=None</font>)</dt><dd><tt>Connects&nbsp;to&nbsp;the&nbsp;server&nbsp;and&nbsp;handles&nbsp;messages.</tt></dd></dl>
+
+<dl><dt><a name="FileBot-shutdown"><strong>shutdown</strong></a>(self)</dt><dd><tt>This&nbsp;function&nbsp;will&nbsp;be&nbsp;called&nbsp;when&nbsp;we're&nbsp;done&nbsp;serving<br>
+&nbsp;<br>
+Override&nbsp;this&nbsp;method&nbsp;in&nbsp;derived&nbsp;class&nbsp;if&nbsp;you<br>
+want&nbsp;to&nbsp;do&nbsp;anything&nbsp;special&nbsp;at&nbsp;shutdown.</tt></dd></dl>
+
+<dl><dt><a name="FileBot-status_message_changed"><strong>status_message_changed</strong></a>(self, jid, new_status_message)</dt><dd><tt>Callback&nbsp;for&nbsp;tracking&nbsp;status&nbsp;messages&nbsp;(the&nbsp;free-form&nbsp;status&nbsp;text)</tt></dd></dl>
+
+<dl><dt><a name="FileBot-status_type_changed"><strong>status_type_changed</strong></a>(self, jid, new_status_type)</dt><dd><tt>Callback&nbsp;for&nbsp;tracking&nbsp;status&nbsp;types&nbsp;(available,&nbsp;away,&nbsp;offline,&nbsp;...)</tt></dd></dl>
+
+<dl><dt><a name="FileBot-top_of_help_message"><strong>top_of_help_message</strong></a>(self)</dt><dd><tt>Returns&nbsp;a&nbsp;string&nbsp;that&nbsp;forms&nbsp;the&nbsp;top&nbsp;of&nbsp;the&nbsp;help&nbsp;message<br>
+&nbsp;<br>
+Override&nbsp;this&nbsp;method&nbsp;in&nbsp;derived&nbsp;class&nbsp;if&nbsp;you<br>
+want&nbsp;to&nbsp;add&nbsp;additional&nbsp;help&nbsp;text&nbsp;at&nbsp;the<br>
+beginning&nbsp;of&nbsp;the&nbsp;help&nbsp;message.</tt></dd></dl>
+
+<dl><dt><a name="FileBot-unknown_command"><strong>unknown_command</strong></a>(self, mess, cmd, args)</dt><dd><tt>Default&nbsp;handler&nbsp;for&nbsp;unknown&nbsp;commands<br>
+&nbsp;<br>
+Override&nbsp;this&nbsp;method&nbsp;in&nbsp;derived&nbsp;class&nbsp;if&nbsp;you<br>
+want&nbsp;to&nbsp;trap&nbsp;some&nbsp;unrecognized&nbsp;commands.&nbsp;&nbsp;If<br>
+'cmd'&nbsp;is&nbsp;handled,&nbsp;you&nbsp;must&nbsp;return&nbsp;some&nbsp;non-false<br>
+value,&nbsp;else&nbsp;some&nbsp;helpful&nbsp;text&nbsp;will&nbsp;be&nbsp;sent&nbsp;back<br>
+to&nbsp;the&nbsp;sender.</tt></dd></dl>
+
+<hr>
+Data descriptors inherited from <a href="ardj.jabberbot.html#JabberBot">ardj.jabberbot.JabberBot</a>:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>status_message</strong></dt>
+</dl>
+<dl><dt><strong>status_type</strong></dt>
+</dl>
+<hr>
+Data and other attributes inherited from <a href="ardj.jabberbot.html#JabberBot">ardj.jabberbot.JabberBot</a>:<br>
+<dl><dt><strong>AVAILABLE</strong> = None</dl>
+
+<dl><dt><strong>AWAY</strong> = 'away'</dl>
+
+<dl><dt><strong>CHAT</strong> = 'chat'</dl>
+
+<dl><dt><strong>DND</strong> = 'dnd'</dl>
+
+<dl><dt><strong>MSG_AUTHORIZE_ME</strong> = 'Hey there. You are not yet on my roster. Authorize my request and I will do the same.'</dl>
+
+<dl><dt><strong>MSG_NOT_AUTHORIZED</strong> = 'You did not authorize my subscription request. Access denied.'</dl>
+
+<dl><dt><strong>OFFLINE</strong> = 'unavailable'</dl>
+
+<dl><dt><strong>PROCESS_MSG_FROM_SELF</strong> = False</dl>
+
+<dl><dt><strong>PROCESS_MSG_FROM_UNSEEN</strong> = False</dl>
+
+<dl><dt><strong>XA</strong> = 'xa'</dl>
+
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="FileNotAcceptable">class <strong>FileNotAcceptable</strong></a>(<a href="exceptions.html#Exception">exceptions.Exception</a>)</font></td></tr>
+    
+<tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="ardj.filebot.html#FileNotAcceptable">FileNotAcceptable</a></dd>
+<dd><a href="exceptions.html#Exception">exceptions.Exception</a></dd>
+<dd><a href="exceptions.html#BaseException">exceptions.BaseException</a></dd>
+<dd><a href="__builtin__.html#object">__builtin__.object</a></dd>
+</dl>
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<hr>
+Methods inherited from <a href="exceptions.html#Exception">exceptions.Exception</a>:<br>
+<dl><dt><a name="FileNotAcceptable-__init__"><strong>__init__</strong></a>(...)</dt><dd><tt>x.<a href="#FileNotAcceptable-__init__">__init__</a>(...)&nbsp;initializes&nbsp;x;&nbsp;see&nbsp;help(type(x))&nbsp;for&nbsp;signature</tt></dd></dl>
+
+<hr>
+Data and other attributes inherited from <a href="exceptions.html#Exception">exceptions.Exception</a>:<br>
+<dl><dt><strong>__new__</strong> = &lt;built-in method __new__ of type object&gt;<dd><tt>T.<a href="#FileNotAcceptable-__new__">__new__</a>(S,&nbsp;...)&nbsp;-&gt;&nbsp;a&nbsp;new&nbsp;object&nbsp;with&nbsp;type&nbsp;S,&nbsp;a&nbsp;subtype&nbsp;of&nbsp;T</tt></dl>
+
+<hr>
+Methods inherited from <a href="exceptions.html#BaseException">exceptions.BaseException</a>:<br>
+<dl><dt><a name="FileNotAcceptable-__delattr__"><strong>__delattr__</strong></a>(...)</dt><dd><tt>x.<a href="#FileNotAcceptable-__delattr__">__delattr__</a>('name')&nbsp;&lt;==&gt;&nbsp;del&nbsp;x.name</tt></dd></dl>
+
+<dl><dt><a name="FileNotAcceptable-__getattribute__"><strong>__getattribute__</strong></a>(...)</dt><dd><tt>x.<a href="#FileNotAcceptable-__getattribute__">__getattribute__</a>('name')&nbsp;&lt;==&gt;&nbsp;x.name</tt></dd></dl>
+
+<dl><dt><a name="FileNotAcceptable-__getitem__"><strong>__getitem__</strong></a>(...)</dt><dd><tt>x.<a href="#FileNotAcceptable-__getitem__">__getitem__</a>(y)&nbsp;&lt;==&gt;&nbsp;x[y]</tt></dd></dl>
+
+<dl><dt><a name="FileNotAcceptable-__getslice__"><strong>__getslice__</strong></a>(...)</dt><dd><tt>x.<a href="#FileNotAcceptable-__getslice__">__getslice__</a>(i,&nbsp;j)&nbsp;&lt;==&gt;&nbsp;x[i:j]<br>
+&nbsp;<br>
+Use&nbsp;of&nbsp;negative&nbsp;indices&nbsp;is&nbsp;not&nbsp;supported.</tt></dd></dl>
+
+<dl><dt><a name="FileNotAcceptable-__reduce__"><strong>__reduce__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="FileNotAcceptable-__repr__"><strong>__repr__</strong></a>(...)</dt><dd><tt>x.<a href="#FileNotAcceptable-__repr__">__repr__</a>()&nbsp;&lt;==&gt;&nbsp;repr(x)</tt></dd></dl>
+
+<dl><dt><a name="FileNotAcceptable-__setattr__"><strong>__setattr__</strong></a>(...)</dt><dd><tt>x.<a href="#FileNotAcceptable-__setattr__">__setattr__</a>('name',&nbsp;value)&nbsp;&lt;==&gt;&nbsp;x.name&nbsp;=&nbsp;value</tt></dd></dl>
+
+<dl><dt><a name="FileNotAcceptable-__setstate__"><strong>__setstate__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="FileNotAcceptable-__str__"><strong>__str__</strong></a>(...)</dt><dd><tt>x.<a href="#FileNotAcceptable-__str__">__str__</a>()&nbsp;&lt;==&gt;&nbsp;str(x)</tt></dd></dl>
+
+<dl><dt><a name="FileNotAcceptable-__unicode__"><strong>__unicode__</strong></a>(...)</dt></dl>
+
+<hr>
+Data descriptors inherited from <a href="exceptions.html#BaseException">exceptions.BaseException</a>:<br>
+<dl><dt><strong>__dict__</strong></dt>
+</dl>
+<dl><dt><strong>args</strong></dt>
+</dl>
+<dl><dt><strong>message</strong></dt>
+</dl>
+</td></tr></table></td></tr></table>
+</body></html>

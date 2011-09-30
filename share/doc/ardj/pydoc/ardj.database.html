@@ -1,0 +1,149 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module ardj.database</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="ardj.html"><font color="#ffffff">ardj</font></a>.database</strong></big></big></font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/hex/.local/lib/python2.7/site-packages/ardj/database.py">/home/hex/.local/lib/python2.7/site-packages/ardj/database.py</a></font></td></tr></table>
+    <p><tt>#&nbsp;vim:&nbsp;set&nbsp;ts=4&nbsp;sts=4&nbsp;sw=4&nbsp;et&nbsp;fileencoding=utf-8:<br>
+#<br>
+#&nbsp;<a href="#database">database</a>&nbsp;related&nbsp;functions&nbsp;for&nbsp;ardj.<br>
+#<br>
+#&nbsp;ardj&nbsp;is&nbsp;free&nbsp;software;&nbsp;you&nbsp;can&nbsp;redistribute&nbsp;it&nbsp;and/or&nbsp;modify<br>
+#&nbsp;it&nbsp;under&nbsp;the&nbsp;terms&nbsp;of&nbsp;the&nbsp;GNU&nbsp;General&nbsp;Public&nbsp;License&nbsp;as&nbsp;published&nbsp;by<br>
+#&nbsp;the&nbsp;Free&nbsp;Software&nbsp;Foundation;&nbsp;either&nbsp;version&nbsp;3&nbsp;of&nbsp;the&nbsp;License,&nbsp;or<br>
+#&nbsp;(at&nbsp;your&nbsp;option)&nbsp;any&nbsp;later&nbsp;version.<br>
+#<br>
+#&nbsp;ardj&nbsp;is&nbsp;distributed&nbsp;in&nbsp;the&nbsp;hope&nbsp;that&nbsp;it&nbsp;will&nbsp;be&nbsp;useful,<br>
+#&nbsp;but&nbsp;WITHOUT&nbsp;ANY&nbsp;WARRANTY;&nbsp;without&nbsp;even&nbsp;the&nbsp;implied&nbsp;warranty&nbsp;of<br>
+#&nbsp;MERCHANTABILITY&nbsp;or&nbsp;FITNESS&nbsp;FOR&nbsp;A&nbsp;PARTICULAR&nbsp;PURPOSE.&nbsp;&nbsp;See&nbsp;the<br>
+#&nbsp;GNU&nbsp;General&nbsp;Public&nbsp;License&nbsp;for&nbsp;more&nbsp;details.<br>
+#<br>
+#&nbsp;You&nbsp;should&nbsp;have&nbsp;received&nbsp;a&nbsp;copy&nbsp;of&nbsp;the&nbsp;GNU&nbsp;General&nbsp;Public&nbsp;License<br>
+#&nbsp;along&nbsp;with&nbsp;this&nbsp;program.&nbsp;&nbsp;If&nbsp;not,&nbsp;see&nbsp;&lt;<a href="http://www.gnu.org/licenses/">http://www.gnu.org/licenses/</a>&gt;.</tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="ardj.html">ardj</a><br>
+<a href="logging.html">logging</a><br>
+</td><td width="25%" valign=top><a href="os.html">os</a><br>
+<a href="re.html">re</a><br>
+</td><td width="25%" valign=top><a href="sqlite3.dbapi2.html">sqlite3.dbapi2</a><br>
+<a href="sys.html">sys</a><br>
+</td><td width="25%" valign=top><a href="time.html">time</a><br>
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="ardj.database.html#database">database</a>
+</font></dt></dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="database">class <strong>database</strong></a></font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>Interface&nbsp;to&nbsp;the&nbsp;<a href="#database">database</a>.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="database-__del__"><strong>__del__</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="database-__init__"><strong>__init__</strong></a>(self, filename)</dt><dd><tt>Opens&nbsp;the&nbsp;<a href="#database">database</a>,&nbsp;creates&nbsp;tables&nbsp;if&nbsp;necessary.</tt></dd></dl>
+
+<dl><dt><a name="database-commit"><strong>commit</strong></a>(self)</dt><dd><tt>Commits&nbsp;current&nbsp;transaction,&nbsp;for&nbsp;internal&nbsp;use.</tt></dd></dl>
+
+<dl><dt><a name="database-cursor"><strong>cursor</strong></a>(self)</dt><dd><tt>Returns&nbsp;a&nbsp;new&nbsp;SQLite&nbsp;cursor,&nbsp;for&nbsp;internal&nbsp;use.</tt></dd></dl>
+
+<dl><dt><a name="database-debug"><strong>debug</strong></a>(self, sql, params, quiet<font color="#909090">=False</font>)</dt><dd><tt>Logs&nbsp;the&nbsp;query&nbsp;in&nbsp;human&nbsp;readable&nbsp;form.<br>
+&nbsp;<br>
+Replaces&nbsp;question&nbsp;marks&nbsp;with&nbsp;parameter&nbsp;values&nbsp;(roughly).</tt></dd></dl>
+
+<dl><dt><a name="database-fix_artist_names"><strong>fix_artist_names</strong></a>(self)</dt><dd><tt>Corrects&nbsp;artist&nbsp;names&nbsp;according&nbsp;to&nbsp;LastFM.</tt></dd></dl>
+
+<dl><dt><a name="database-get_artist_names"><strong>get_artist_names</strong></a>(self, label<font color="#909090">=None</font>, weight<font color="#909090">=0</font>, cur<font color="#909090">=None</font>)</dt></dl>
+
+<dl><dt><a name="database-get_stats"><strong>get_stats</strong></a>(self, cur<font color="#909090">=None</font>)</dt><dd><tt>Returns&nbsp;<a href="#database">database</a>&nbsp;statistics.<br>
+&nbsp;<br>
+Returns&nbsp;information&nbsp;about&nbsp;the&nbsp;<a href="#database">database</a>&nbsp;in&nbsp;the&nbsp;form&nbsp;of&nbsp;a<br>
+dictionary&nbsp;with&nbsp;the&nbsp;following&nbsp;keys:&nbsp;tracks,&nbsp;seconds.</tt></dd></dl>
+
+<dl><dt><a name="database-mark_hitlist"><strong>mark_hitlist</strong></a>(self, cur<font color="#909090">=None</font>)</dt><dd><tt>Marks&nbsp;best&nbsp;tracks&nbsp;with&nbsp;the&nbsp;"hitlist"&nbsp;label.<br>
+&nbsp;<br>
+Only&nbsp;processes&nbsp;tracks&nbsp;labelled&nbsp;with&nbsp;"music".&nbsp;&nbsp;Before&nbsp;applying&nbsp;the<br>
+label,&nbsp;removes&nbsp;it&nbsp;from&nbsp;the&nbsp;tracks&nbsp;that&nbsp;have&nbsp;it&nbsp;already.</tt></dd></dl>
+
+<dl><dt><a name="database-mark_long"><strong>mark_long</strong></a>(self)</dt><dd><tt>Marks&nbsp;unusuall&nbsp;long&nbsp;tracks.</tt></dd></dl>
+
+<dl><dt><a name="database-mark_orphans"><strong>mark_orphans</strong></a>(self, set_label<font color="#909090">='orphan'</font>, cur<font color="#909090">=None</font>, quiet<font color="#909090">=False</font>)</dt><dd><tt>Labels&nbsp;orphan&nbsp;tracks&nbsp;with&nbsp;"orphan".<br>
+&nbsp;<br>
+Orphans&nbsp;are&nbsp;tracks&nbsp;that&nbsp;don't&nbsp;belong&nbsp;to&nbsp;a&nbsp;playlist.</tt></dd></dl>
+
+<dl><dt><a name="database-mark_preshow_music"><strong>mark_preshow_music</strong></a>(self, cur<font color="#909090">=None</font>)</dt><dd><tt>Marks&nbsp;music&nbsp;liked&nbsp;by&nbsp;all&nbsp;show&nbsp;hosts&nbsp;with&nbsp;"preshow-music".</tt></dd></dl>
+
+<dl><dt><a name="database-mark_recent_music"><strong>mark_recent_music</strong></a>(self, cur<font color="#909090">=None</font>)</dt><dd><tt>Marks&nbsp;last&nbsp;100&nbsp;tracks&nbsp;with&nbsp;"recent".</tt></dd></dl>
+
+<dl><dt><a name="database-merge_aliases"><strong>merge_aliases</strong></a>(self, cur<font color="#909090">=None</font>)</dt><dd><tt>Moves&nbsp;votes&nbsp;from&nbsp;similar&nbsp;accounts&nbsp;to&nbsp;one.</tt></dd></dl>
+
+<dl><dt><a name="database-purge"><strong>purge</strong></a>(self, cur<font color="#909090">=None</font>)</dt><dd><tt>Removes&nbsp;stale&nbsp;data.<br>
+&nbsp;<br>
+Stale&nbsp;data&nbsp;is&nbsp;queue&nbsp;items,&nbsp;labels&nbsp;and&nbsp;votes&nbsp;linked&nbsp;to&nbsp;tracks&nbsp;that&nbsp;no<br>
+longer&nbsp;exist.&nbsp;&nbsp;In&nbsp;addition&nbsp;to&nbsp;deleting&nbsp;such&nbsp;links,&nbsp;this&nbsp;function&nbsp;also<br>
+analyzed&nbsp;all&nbsp;tables&nbsp;(to&nbsp;optimize&nbsp;indexes)&nbsp;and&nbsp;vacuums&nbsp;the&nbsp;<a href="#database">database</a>.</tt></dd></dl>
+
+<dl><dt><a name="database-rollback"><strong>rollback</strong></a>(self)</dt><dd><tt>Cancel&nbsp;pending&nbsp;changes.</tt></dd></dl>
+
+<dl><dt><a name="database-sqlite_ulike"><strong>sqlite_ulike</strong></a>(self, a, b)</dt></dl>
+
+<dl><dt><a name="database-update"><strong>update</strong></a>(self, table, args, cur<font color="#909090">=None</font>)</dt><dd><tt>Performs&nbsp;update&nbsp;on&nbsp;a&nbsp;label.<br>
+&nbsp;<br>
+Updates&nbsp;the&nbsp;table&nbsp;with&nbsp;values&nbsp;from&nbsp;the&nbsp;args&nbsp;dictionary,&nbsp;key&nbsp;"id"&nbsp;must<br>
+identify&nbsp;the&nbsp;record.&nbsp;&nbsp;Example:<br>
+&nbsp;<br>
+db.<a href="#database-update">update</a>('tracks',&nbsp;{&nbsp;'weight':&nbsp;1,&nbsp;'id':&nbsp;123&nbsp;})</tt></dd></dl>
+
+<hr>
+Class methods defined here:<br>
+<dl><dt><a name="database-get_instance"><strong>get_instance</strong></a>(cls)<font color="#909090"><font face="helvetica, arial"> from __builtin__.classobj</font></font></dt></dl>
+
+<hr>
+Data and other attributes defined here:<br>
+<dl><dt><strong>instance</strong> = None</dl>
+
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-Open"><strong>Open</strong></a>(filename<font color="#909090">=None</font>)</dt><dd><tt>Returns&nbsp;the&nbsp;active&nbsp;<a href="#database">database</a>&nbsp;instance.</tt></dd></dl>
+ <dl><dt><a name="-cli_init"><strong>cli_init</strong></a>(args)</dt><dd><tt>Initializes&nbsp;the&nbsp;<a href="#database">database</a>.</tt></dd></dl>
+ <dl><dt><a name="-commit"><strong>commit</strong></a>()</dt></dl>
+ <dl><dt><a name="-cursor"><strong>cursor</strong></a>()</dt></dl>
+ <dl><dt><a name="-get_init_statements"><strong>get_init_statements</strong></a>(dbtype)</dt><dd><tt>Returns&nbsp;a&nbsp;list&nbsp;of&nbsp;SQL&nbsp;statements&nbsp;to&nbsp;initialize&nbsp;the&nbsp;<a href="#database">database</a>.</tt></dd></dl>
+ <dl><dt><a name="-merge_votes"><strong>merge_votes</strong></a>(args)</dt><dd><tt>Collapses&nbsp;votes&nbsp;according&nbsp;to&nbsp;jabber/aliases.</tt></dd></dl>
+ <dl><dt><a name="-pick_jingle"><strong>pick_jingle</strong></a>(cur, label)</dt><dd><tt>Returns&nbsp;a&nbsp;jingle&nbsp;with&nbsp;the&nbsp;specified&nbsp;label.</tt></dd></dl>
+ <dl><dt><a name="-queue_tracks"><strong>queue_tracks</strong></a>(cur, track_ids)</dt><dd><tt>Queues&nbsp;all&nbsp;specified&nbsp;tracks.</tt></dd></dl>
+ <dl><dt><a name="-run_cli"><strong>run_cli</strong></a>(args)</dt><dd><tt>Implements&nbsp;the&nbsp;"ardj&nbsp;db"&nbsp;command.</tt></dd></dl>
+</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>USAGE</strong> = 'Usage: ardj db commands...<font color="#c040c0">\n\n</font>Commands:<font color="#c040c0">\n</font>  console ... stat              -- show database statistics<font color="#c040c0">\n</font>  '</td></tr></table>
+</body></html>

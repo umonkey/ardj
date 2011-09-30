@@ -58,3 +58,9 @@ ices/ices.ardj:
 
 serve:
 	PYTHONPATH=$(pwd)/src ./bin/ardj serve
+
+docs:
+	mkdir -p share/doc/ardj/pydoc
+	rm -f share/doc/ardj/pydoc/*.html
+	ls -1 src/ardj/*.py | grep -v __init__ | cut -d/ -f3 | cut -d. -f1 | sed -re 's/(.*)/ardj.\1/g' | xargs pydoc -w ardj
+	mv *.html share/doc/ardj/pydoc/

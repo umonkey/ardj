@@ -1,0 +1,312 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module ardj.tracks</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="ardj.html"><font color="#ffffff">ardj</font></a>.tracks</strong></big></big></font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/hex/.local/lib/python2.7/site-packages/ardj/tracks.py">/home/hex/.local/lib/python2.7/site-packages/ardj/tracks.py</a></font></td></tr></table>
+    <p><tt>Track&nbsp;management&nbsp;for&nbsp;ardj.<br>
+&nbsp;<br>
+Contains&nbsp;functions&nbsp;that&nbsp;interact&nbsp;with&nbsp;the&nbsp;database&nbsp;in&nbsp;order&nbsp;to&nbsp;modify&nbsp;or&nbsp;query<br>
+tracks.</tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="ardj.html">ardj</a><br>
+<a href="hashlib.html">hashlib</a><br>
+<a href="json.html">json</a><br>
+</td><td width="25%" valign=top><a href="logging.html">logging</a><br>
+<a href="os.html">os</a><br>
+<a href="random.html">random</a><br>
+</td><td width="25%" valign=top><a href="re.html">re</a><br>
+<a href="sys.html">sys</a><br>
+<a href="time.html">time</a><br>
+</td><td width="25%" valign=top></td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="__builtin__.html#dict">__builtin__.dict</a>(<a href="__builtin__.html#object">__builtin__.object</a>)
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="ardj.tracks.html#Playlist">Playlist</a>
+</font></dt></dl>
+</dd>
+</dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="Playlist">class <strong>Playlist</strong></a>(<a href="__builtin__.html#dict">__builtin__.dict</a>)</font></td></tr>
+    
+<tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="ardj.tracks.html#Playlist">Playlist</a></dd>
+<dd><a href="__builtin__.html#dict">__builtin__.dict</a></dd>
+<dd><a href="__builtin__.html#object">__builtin__.object</a></dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="Playlist-add_ts"><strong>add_ts</strong></a>(self, stats)</dt></dl>
+
+<dl><dt><a name="Playlist-get_days"><strong>get_days</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="Playlist-get_hours"><strong>get_hours</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="Playlist-is_active"><strong>is_active</strong></a>(self, timestamp<font color="#909090">=None</font>)</dt><dd><tt>Checks&nbsp;whether&nbsp;the&nbsp;playlist&nbsp;can&nbsp;be&nbsp;used&nbsp;right&nbsp;now.</tt></dd></dl>
+
+<dl><dt><a name="Playlist-match_labels"><strong>match_labels</strong></a>(self, other)</dt><dd><tt>Checks&nbsp;whether&nbsp;labels&nbsp;apply&nbsp;to&nbsp;this&nbsp;playlist.</tt></dd></dl>
+
+<dl><dt><a name="Playlist-match_repeat"><strong>match_repeat</strong></a>(self, other)</dt></dl>
+
+<dl><dt><a name="Playlist-match_track"><strong>match_track</strong></a>(self, track)</dt></dl>
+
+<dl><dt><a name="Playlist-match_weight"><strong>match_weight</strong></a>(self, other)</dt></dl>
+
+<hr>
+Class methods defined here:<br>
+<dl><dt><a name="Playlist-get_active"><strong>get_active</strong></a>(cls, timestamp<font color="#909090">=None</font>, cur<font color="#909090">=None</font>)<font color="#909090"><font face="helvetica, arial"> from <a href="__builtin__.html#type">__builtin__.type</a></font></font></dt></dl>
+
+<dl><dt><a name="Playlist-get_all"><strong>get_all</strong></a>(cls, cur<font color="#909090">=None</font>)<font color="#909090"><font face="helvetica, arial"> from <a href="__builtin__.html#type">__builtin__.type</a></font></font></dt><dd><tt>Returns&nbsp;information&nbsp;about&nbsp;all&nbsp;known&nbsp;playlists.&nbsp;&nbsp;Information&nbsp;from<br>
+playlists.yaml&nbsp;is&nbsp;complemented&nbsp;by&nbsp;the&nbsp;last_played&nbsp;column&nbsp;of&nbsp;the<br>
+`playlists'&nbsp;table.</tt></dd></dl>
+
+<dl><dt><a name="Playlist-touch_by_track"><strong>touch_by_track</strong></a>(cls, track_id, cur<font color="#909090">=None</font>)<font color="#909090"><font face="helvetica, arial"> from <a href="__builtin__.html#type">__builtin__.type</a></font></font></dt><dd><tt>Finds&nbsp;playlists&nbsp;that&nbsp;contain&nbsp;this&nbsp;track&nbsp;and&nbsp;updates&nbsp;their&nbsp;last_played<br>
+property,&nbsp;so&nbsp;that&nbsp;they&nbsp;could&nbsp;be&nbsp;delayed&nbsp;properly.</tt></dd></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<hr>
+Methods inherited from <a href="__builtin__.html#dict">__builtin__.dict</a>:<br>
+<dl><dt><a name="Playlist-__cmp__"><strong>__cmp__</strong></a>(...)</dt><dd><tt>x.<a href="#Playlist-__cmp__">__cmp__</a>(y)&nbsp;&lt;==&gt;&nbsp;cmp(x,y)</tt></dd></dl>
+
+<dl><dt><a name="Playlist-__contains__"><strong>__contains__</strong></a>(...)</dt><dd><tt>D.<a href="#Playlist-__contains__">__contains__</a>(k)&nbsp;-&gt;&nbsp;True&nbsp;if&nbsp;D&nbsp;has&nbsp;a&nbsp;key&nbsp;k,&nbsp;else&nbsp;False</tt></dd></dl>
+
+<dl><dt><a name="Playlist-__delitem__"><strong>__delitem__</strong></a>(...)</dt><dd><tt>x.<a href="#Playlist-__delitem__">__delitem__</a>(y)&nbsp;&lt;==&gt;&nbsp;del&nbsp;x[y]</tt></dd></dl>
+
+<dl><dt><a name="Playlist-__eq__"><strong>__eq__</strong></a>(...)</dt><dd><tt>x.<a href="#Playlist-__eq__">__eq__</a>(y)&nbsp;&lt;==&gt;&nbsp;x==y</tt></dd></dl>
+
+<dl><dt><a name="Playlist-__ge__"><strong>__ge__</strong></a>(...)</dt><dd><tt>x.<a href="#Playlist-__ge__">__ge__</a>(y)&nbsp;&lt;==&gt;&nbsp;x&gt;=y</tt></dd></dl>
+
+<dl><dt><a name="Playlist-__getattribute__"><strong>__getattribute__</strong></a>(...)</dt><dd><tt>x.<a href="#Playlist-__getattribute__">__getattribute__</a>('name')&nbsp;&lt;==&gt;&nbsp;x.name</tt></dd></dl>
+
+<dl><dt><a name="Playlist-__getitem__"><strong>__getitem__</strong></a>(...)</dt><dd><tt>x.<a href="#Playlist-__getitem__">__getitem__</a>(y)&nbsp;&lt;==&gt;&nbsp;x[y]</tt></dd></dl>
+
+<dl><dt><a name="Playlist-__gt__"><strong>__gt__</strong></a>(...)</dt><dd><tt>x.<a href="#Playlist-__gt__">__gt__</a>(y)&nbsp;&lt;==&gt;&nbsp;x&gt;y</tt></dd></dl>
+
+<dl><dt><a name="Playlist-__init__"><strong>__init__</strong></a>(...)</dt><dd><tt>x.<a href="#Playlist-__init__">__init__</a>(...)&nbsp;initializes&nbsp;x;&nbsp;see&nbsp;help(type(x))&nbsp;for&nbsp;signature</tt></dd></dl>
+
+<dl><dt><a name="Playlist-__iter__"><strong>__iter__</strong></a>(...)</dt><dd><tt>x.<a href="#Playlist-__iter__">__iter__</a>()&nbsp;&lt;==&gt;&nbsp;iter(x)</tt></dd></dl>
+
+<dl><dt><a name="Playlist-__le__"><strong>__le__</strong></a>(...)</dt><dd><tt>x.<a href="#Playlist-__le__">__le__</a>(y)&nbsp;&lt;==&gt;&nbsp;x&lt;=y</tt></dd></dl>
+
+<dl><dt><a name="Playlist-__len__"><strong>__len__</strong></a>(...)</dt><dd><tt>x.<a href="#Playlist-__len__">__len__</a>()&nbsp;&lt;==&gt;&nbsp;len(x)</tt></dd></dl>
+
+<dl><dt><a name="Playlist-__lt__"><strong>__lt__</strong></a>(...)</dt><dd><tt>x.<a href="#Playlist-__lt__">__lt__</a>(y)&nbsp;&lt;==&gt;&nbsp;x&lt;y</tt></dd></dl>
+
+<dl><dt><a name="Playlist-__ne__"><strong>__ne__</strong></a>(...)</dt><dd><tt>x.<a href="#Playlist-__ne__">__ne__</a>(y)&nbsp;&lt;==&gt;&nbsp;x!=y</tt></dd></dl>
+
+<dl><dt><a name="Playlist-__repr__"><strong>__repr__</strong></a>(...)</dt><dd><tt>x.<a href="#Playlist-__repr__">__repr__</a>()&nbsp;&lt;==&gt;&nbsp;repr(x)</tt></dd></dl>
+
+<dl><dt><a name="Playlist-__setitem__"><strong>__setitem__</strong></a>(...)</dt><dd><tt>x.<a href="#Playlist-__setitem__">__setitem__</a>(i,&nbsp;y)&nbsp;&lt;==&gt;&nbsp;x[i]=y</tt></dd></dl>
+
+<dl><dt><a name="Playlist-__sizeof__"><strong>__sizeof__</strong></a>(...)</dt><dd><tt>D.<a href="#Playlist-__sizeof__">__sizeof__</a>()&nbsp;-&gt;&nbsp;size&nbsp;of&nbsp;D&nbsp;in&nbsp;memory,&nbsp;in&nbsp;bytes</tt></dd></dl>
+
+<dl><dt><a name="Playlist-clear"><strong>clear</strong></a>(...)</dt><dd><tt>D.<a href="#Playlist-clear">clear</a>()&nbsp;-&gt;&nbsp;None.&nbsp;&nbsp;Remove&nbsp;all&nbsp;items&nbsp;from&nbsp;D.</tt></dd></dl>
+
+<dl><dt><a name="Playlist-copy"><strong>copy</strong></a>(...)</dt><dd><tt>D.<a href="#Playlist-copy">copy</a>()&nbsp;-&gt;&nbsp;a&nbsp;shallow&nbsp;copy&nbsp;of&nbsp;D</tt></dd></dl>
+
+<dl><dt><a name="Playlist-get"><strong>get</strong></a>(...)</dt><dd><tt>D.<a href="#Playlist-get">get</a>(k[,d])&nbsp;-&gt;&nbsp;D[k]&nbsp;if&nbsp;k&nbsp;in&nbsp;D,&nbsp;else&nbsp;d.&nbsp;&nbsp;d&nbsp;defaults&nbsp;to&nbsp;None.</tt></dd></dl>
+
+<dl><dt><a name="Playlist-has_key"><strong>has_key</strong></a>(...)</dt><dd><tt>D.<a href="#Playlist-has_key">has_key</a>(k)&nbsp;-&gt;&nbsp;True&nbsp;if&nbsp;D&nbsp;has&nbsp;a&nbsp;key&nbsp;k,&nbsp;else&nbsp;False</tt></dd></dl>
+
+<dl><dt><a name="Playlist-items"><strong>items</strong></a>(...)</dt><dd><tt>D.<a href="#Playlist-items">items</a>()&nbsp;-&gt;&nbsp;list&nbsp;of&nbsp;D's&nbsp;(key,&nbsp;value)&nbsp;pairs,&nbsp;as&nbsp;2-tuples</tt></dd></dl>
+
+<dl><dt><a name="Playlist-iteritems"><strong>iteritems</strong></a>(...)</dt><dd><tt>D.<a href="#Playlist-iteritems">iteritems</a>()&nbsp;-&gt;&nbsp;an&nbsp;iterator&nbsp;over&nbsp;the&nbsp;(key,&nbsp;value)&nbsp;items&nbsp;of&nbsp;D</tt></dd></dl>
+
+<dl><dt><a name="Playlist-iterkeys"><strong>iterkeys</strong></a>(...)</dt><dd><tt>D.<a href="#Playlist-iterkeys">iterkeys</a>()&nbsp;-&gt;&nbsp;an&nbsp;iterator&nbsp;over&nbsp;the&nbsp;keys&nbsp;of&nbsp;D</tt></dd></dl>
+
+<dl><dt><a name="Playlist-itervalues"><strong>itervalues</strong></a>(...)</dt><dd><tt>D.<a href="#Playlist-itervalues">itervalues</a>()&nbsp;-&gt;&nbsp;an&nbsp;iterator&nbsp;over&nbsp;the&nbsp;values&nbsp;of&nbsp;D</tt></dd></dl>
+
+<dl><dt><a name="Playlist-keys"><strong>keys</strong></a>(...)</dt><dd><tt>D.<a href="#Playlist-keys">keys</a>()&nbsp;-&gt;&nbsp;list&nbsp;of&nbsp;D's&nbsp;keys</tt></dd></dl>
+
+<dl><dt><a name="Playlist-pop"><strong>pop</strong></a>(...)</dt><dd><tt>D.<a href="#Playlist-pop">pop</a>(k[,d])&nbsp;-&gt;&nbsp;v,&nbsp;remove&nbsp;specified&nbsp;key&nbsp;and&nbsp;return&nbsp;the&nbsp;corresponding&nbsp;value.<br>
+If&nbsp;key&nbsp;is&nbsp;not&nbsp;found,&nbsp;d&nbsp;is&nbsp;returned&nbsp;if&nbsp;given,&nbsp;otherwise&nbsp;KeyError&nbsp;is&nbsp;raised</tt></dd></dl>
+
+<dl><dt><a name="Playlist-popitem"><strong>popitem</strong></a>(...)</dt><dd><tt>D.<a href="#Playlist-popitem">popitem</a>()&nbsp;-&gt;&nbsp;(k,&nbsp;v),&nbsp;remove&nbsp;and&nbsp;return&nbsp;some&nbsp;(key,&nbsp;value)&nbsp;pair&nbsp;as&nbsp;a<br>
+2-tuple;&nbsp;but&nbsp;raise&nbsp;KeyError&nbsp;if&nbsp;D&nbsp;is&nbsp;empty.</tt></dd></dl>
+
+<dl><dt><a name="Playlist-setdefault"><strong>setdefault</strong></a>(...)</dt><dd><tt>D.<a href="#Playlist-setdefault">setdefault</a>(k[,d])&nbsp;-&gt;&nbsp;D.<a href="#Playlist-get">get</a>(k,d),&nbsp;also&nbsp;set&nbsp;D[k]=d&nbsp;if&nbsp;k&nbsp;not&nbsp;in&nbsp;D</tt></dd></dl>
+
+<dl><dt><a name="Playlist-update"><strong>update</strong></a>(...)</dt><dd><tt>D.<a href="#Playlist-update">update</a>(E,&nbsp;**F)&nbsp;-&gt;&nbsp;None.&nbsp;&nbsp;Update&nbsp;D&nbsp;from&nbsp;<a href="__builtin__.html#dict">dict</a>/iterable&nbsp;E&nbsp;and&nbsp;F.<br>
+If&nbsp;E&nbsp;has&nbsp;a&nbsp;.<a href="#Playlist-keys">keys</a>()&nbsp;method,&nbsp;does:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;k&nbsp;in&nbsp;E:&nbsp;D[k]&nbsp;=&nbsp;E[k]<br>
+If&nbsp;E&nbsp;lacks&nbsp;.<a href="#Playlist-keys">keys</a>()&nbsp;method,&nbsp;does:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;(k,&nbsp;v)&nbsp;in&nbsp;E:&nbsp;D[k]&nbsp;=&nbsp;v<br>
+In&nbsp;either&nbsp;case,&nbsp;this&nbsp;is&nbsp;followed&nbsp;by:&nbsp;for&nbsp;k&nbsp;in&nbsp;F:&nbsp;D[k]&nbsp;=&nbsp;F[k]</tt></dd></dl>
+
+<dl><dt><a name="Playlist-values"><strong>values</strong></a>(...)</dt><dd><tt>D.<a href="#Playlist-values">values</a>()&nbsp;-&gt;&nbsp;list&nbsp;of&nbsp;D's&nbsp;values</tt></dd></dl>
+
+<dl><dt><a name="Playlist-viewitems"><strong>viewitems</strong></a>(...)</dt><dd><tt>D.<a href="#Playlist-viewitems">viewitems</a>()&nbsp;-&gt;&nbsp;a&nbsp;set-like&nbsp;object&nbsp;providing&nbsp;a&nbsp;view&nbsp;on&nbsp;D's&nbsp;items</tt></dd></dl>
+
+<dl><dt><a name="Playlist-viewkeys"><strong>viewkeys</strong></a>(...)</dt><dd><tt>D.<a href="#Playlist-viewkeys">viewkeys</a>()&nbsp;-&gt;&nbsp;a&nbsp;set-like&nbsp;object&nbsp;providing&nbsp;a&nbsp;view&nbsp;on&nbsp;D's&nbsp;keys</tt></dd></dl>
+
+<dl><dt><a name="Playlist-viewvalues"><strong>viewvalues</strong></a>(...)</dt><dd><tt>D.<a href="#Playlist-viewvalues">viewvalues</a>()&nbsp;-&gt;&nbsp;an&nbsp;object&nbsp;providing&nbsp;a&nbsp;view&nbsp;on&nbsp;D's&nbsp;values</tt></dd></dl>
+
+<hr>
+Data and other attributes inherited from <a href="__builtin__.html#dict">__builtin__.dict</a>:<br>
+<dl><dt><strong>__hash__</strong> = None</dl>
+
+<dl><dt><strong>__new__</strong> = &lt;built-in method __new__ of type object&gt;<dd><tt>T.<a href="#Playlist-__new__">__new__</a>(S,&nbsp;...)&nbsp;-&gt;&nbsp;a&nbsp;new&nbsp;object&nbsp;with&nbsp;type&nbsp;S,&nbsp;a&nbsp;subtype&nbsp;of&nbsp;T</tt></dl>
+
+<dl><dt><strong>fromkeys</strong> = &lt;built-in method fromkeys of type object&gt;<dd><tt><a href="__builtin__.html#dict">dict</a>.<a href="#Playlist-fromkeys">fromkeys</a>(S[,v])&nbsp;-&gt;&nbsp;New&nbsp;<a href="__builtin__.html#dict">dict</a>&nbsp;with&nbsp;keys&nbsp;from&nbsp;S&nbsp;and&nbsp;values&nbsp;equal&nbsp;to&nbsp;v.<br>
+v&nbsp;defaults&nbsp;to&nbsp;None.</tt></dl>
+
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-add_file"><strong>add_file</strong></a>(filename, add_labels<font color="#909090">=None</font>, owner<font color="#909090">=None</font>, quiet<font color="#909090">=False</font>)</dt><dd><tt>Adds&nbsp;the&nbsp;file&nbsp;to&nbsp;the&nbsp;database.<br>
+&nbsp;<br>
+Returns&nbsp;track&nbsp;id.</tt></dd></dl>
+ <dl><dt><a name="-add_labels"><strong>add_labels</strong></a>(track_id, labels, owner<font color="#909090">=None</font>, cur<font color="#909090">=None</font>)</dt></dl>
+ <dl><dt><a name="-add_labels_filter"><strong>add_labels_filter</strong></a>(sql, params, labels)</dt></dl>
+ <dl><dt><a name="-add_preroll"><strong>add_preroll</strong></a>(track_id, labels<font color="#909090">=None</font>, cur<font color="#909090">=None</font>)</dt><dd><tt>Adds&nbsp;a&nbsp;preroll&nbsp;for&nbsp;the&nbsp;specified&nbsp;track.<br>
+&nbsp;<br>
+Finds&nbsp;prerolls&nbsp;by&nbsp;labels&nbsp;and&nbsp;artist&nbsp;title,&nbsp;picks&nbsp;one&nbsp;and&nbsp;returns&nbsp;its&nbsp;id,<br>
+queueing&nbsp;the&nbsp;input&nbsp;track_id.&nbsp;&nbsp;If&nbsp;`labels'&nbsp;is&nbsp;explicitly&nbsp;specified,&nbsp;only<br>
+tracks&nbsp;with&nbsp;those&nbsp;labels&nbsp;will&nbsp;be&nbsp;used&nbsp;as&nbsp;prerolls.<br>
+&nbsp;<br>
+Tracks&nbsp;that&nbsp;have&nbsp;a&nbsp;preroll-*&nbsp;never&nbsp;have&nbsp;a&nbsp;preroll.</tt></dd></dl>
+ <dl><dt><a name="-add_vote"><strong>add_vote</strong></a>(track_id, email, vote, cur<font color="#909090">=None</font>, update_karma<font color="#909090">=False</font>)</dt><dd><tt>Adds&nbsp;a&nbsp;vote&nbsp;for/against&nbsp;a&nbsp;track.<br>
+&nbsp;<br>
+The&nbsp;process&nbsp;is:&nbsp;1)&nbsp;add&nbsp;a&nbsp;record&nbsp;to&nbsp;the&nbsp;votes&nbsp;table,&nbsp;2)&nbsp;update&nbsp;email's<br>
+record&nbsp;in&nbsp;the&nbsp;karma&nbsp;table,&nbsp;3)&nbsp;update&nbsp;weight&nbsp;for&nbsp;all&nbsp;tracks&nbsp;email&nbsp;voted<br>
+for/against.<br>
+&nbsp;<br>
+Votes&nbsp;other&nbsp;than&nbsp;+1&nbsp;and&nbsp;-1&nbsp;are&nbsp;skipped.<br>
+&nbsp;<br>
+Returns&nbsp;track's&nbsp;current&nbsp;weight.</tt></dd></dl>
+ <dl><dt><a name="-bookmark"><strong>bookmark</strong></a>(track_ids, owner, remove<font color="#909090">=False</font>, cur<font color="#909090">=None</font>)</dt><dd><tt>Adds&nbsp;a&nbsp;bookmark&nbsp;label&nbsp;to&nbsp;the&nbsp;specified&nbsp;tracks.</tt></dd></dl>
+ <dl><dt><a name="-do_idle_tasks"><strong>do_idle_tasks</strong></a>(set_busy)</dt><dd><tt>Loads&nbsp;new&nbsp;tracks&nbsp;from&nbsp;external&nbsp;sources.</tt></dd></dl>
+ <dl><dt><a name="-find_by_title"><strong>find_by_title</strong></a>(title, artist_name<font color="#909090">=None</font>, cur<font color="#909090">=None</font>)</dt><dd><tt>Returns&nbsp;track&nbsp;ids&nbsp;by&nbsp;title.</tt></dd></dl>
+ <dl><dt><a name="-find_ids"><strong>find_ids</strong></a>(pattern, sender<font color="#909090">=None</font>, cur<font color="#909090">=None</font>, limit<font color="#909090">=None</font>)</dt></dl>
+ <dl><dt><a name="-find_incoming_files"><strong>find_incoming_files</strong></a>()</dt><dd><tt>Returns&nbsp;a&nbsp;list&nbsp;of&nbsp;incoming&nbsp;file&nbsp;names.&nbsp;&nbsp;Only&nbsp;files&nbsp;modified&nbsp;more&nbsp;than&nbsp;60<br>
+seconds&nbsp;ago&nbsp;are&nbsp;reported.&nbsp;&nbsp;If&nbsp;the&nbsp;database/incoming/path&nbsp;parameter&nbsp;is&nbsp;not<br>
+set,&nbsp;an&nbsp;empty&nbsp;list&nbsp;is&nbsp;returned.</tt></dd></dl>
+ <dl><dt><a name="-find_new_tracks"><strong>find_new_tracks</strong></a>(args, label<font color="#909090">='music'</font>, weight<font color="#909090">=1.5</font>)</dt><dd><tt>Finds&nbsp;new&nbsp;tracks&nbsp;by&nbsp;known&nbsp;artists,&nbsp;downloads&nbsp;and&nbsp;adds&nbsp;them.</tt></dd></dl>
+ <dl><dt><a name="-gen_filename"><strong>gen_filename</strong></a>(suffix)</dt><dd><tt>Generates&nbsp;a&nbsp;local&nbsp;file&nbsp;name.<br>
+&nbsp;<br>
+Returns&nbsp;a&nbsp;tuple&nbsp;(abs_filename,&nbsp;rel_filename).</tt></dd></dl>
+ <dl><dt><a name="-get_average_length"><strong>get_average_length</strong></a>(cur<font color="#909090">=None</font>)</dt><dd><tt>Returns&nbsp;the&nbsp;weighed&nbsp;average&nbsp;track&nbsp;length&nbsp;in&nbsp;seconds.</tt></dd></dl>
+ <dl><dt><a name="-get_last_track"><strong>get_last_track</strong></a>(cur<font color="#909090">=None</font>)</dt><dd><tt>Returns&nbsp;the&nbsp;full&nbsp;description&nbsp;of&nbsp;the&nbsp;last&nbsp;played&nbsp;track.<br>
+&nbsp;<br>
+Calls&nbsp;<a href="#-get_track_by_id">get_track_by_id</a>(<a href="#-get_last_track_id">get_last_track_id</a>()).</tt></dd></dl>
+ <dl><dt><a name="-get_last_track_id"><strong>get_last_track_id</strong></a>(cur<font color="#909090">=None</font>)</dt><dd><tt>Returns&nbsp;id&nbsp;of&nbsp;the&nbsp;last&nbsp;played&nbsp;track.<br>
+&nbsp;<br>
+If&nbsp;the&nbsp;database&nbsp;is&nbsp;empty,&nbsp;returns&nbsp;None,&nbsp;otherwise&nbsp;an&nbsp;integer.<br>
+&nbsp;<br>
+Keyword&nbsp;arguments:<br>
+cur&nbsp;--&nbsp;database&nbsp;cursor,&nbsp;created&nbsp;if&nbsp;None.</tt></dd></dl>
+ <dl><dt><a name="-get_missing_tracks"><strong>get_missing_tracks</strong></a>(tracklist, limit<font color="#909090">=100</font>)</dt><dd><tt>Removes&nbsp;duplicate&nbsp;and&nbsp;existing&nbsp;tracks.</tt></dd></dl>
+ <dl><dt><a name="-get_new_tracks"><strong>get_new_tracks</strong></a>(artist_names<font color="#909090">=None</font>, label<font color="#909090">='music'</font>, weight<font color="#909090">=1.5</font>)</dt></dl>
+ <dl><dt><a name="-get_next_track_id"><strong>get_next_track_id</strong></a>(cur<font color="#909090">=None</font>, debug<font color="#909090">=False</font>, update_stats<font color="#909090">=True</font>)</dt><dd><tt>Picks&nbsp;a&nbsp;track&nbsp;to&nbsp;play.<br>
+&nbsp;<br>
+The&nbsp;track&nbsp;is&nbsp;chosen&nbsp;from&nbsp;the&nbsp;active&nbsp;playlists.&nbsp;If&nbsp;nothing&nbsp;could&nbsp;be&nbsp;chosen,<br>
+a&nbsp;random&nbsp;track&nbsp;is&nbsp;picked&nbsp;regardless&nbsp;of&nbsp;the&nbsp;playlist&nbsp;(e.g.,&nbsp;the&nbsp;track&nbsp;can&nbsp;be<br>
+in&nbsp;no&nbsp;playlist&nbsp;or&nbsp;in&nbsp;an&nbsp;unexisting&nbsp;one).&nbsp;&nbsp;If&nbsp;that&nbsp;fails&nbsp;too,&nbsp;None&nbsp;is<br>
+returned.<br>
+&nbsp;<br>
+Normally&nbsp;returns&nbsp;a&nbsp;dictionary&nbsp;with&nbsp;keys&nbsp;that&nbsp;corresponds&nbsp;to&nbsp;the&nbsp;"tracks"<br>
+table&nbsp;fields,&nbsp;e.g.:&nbsp;filename,&nbsp;artist,&nbsp;title,&nbsp;length,&nbsp;weight,&nbsp;count,<br>
+last_played,&nbsp;playlist.&nbsp;&nbsp;An&nbsp;additional&nbsp;key&nbsp;is&nbsp;filepath,&nbsp;which&nbsp;contains&nbsp;the<br>
+full&nbsp;path&nbsp;name&nbsp;to&nbsp;the&nbsp;picked&nbsp;track,&nbsp;encoded&nbsp;in&nbsp;UTF-8.<br>
+&nbsp;<br>
+Before&nbsp;the&nbsp;track&nbsp;is&nbsp;returned,&nbsp;its&nbsp;and&nbsp;the&nbsp;playlist's&nbsp;statistics&nbsp;are<br>
+updated.<br>
+&nbsp;<br>
+Arguments:<br>
+update_stats&nbsp;--&nbsp;set&nbsp;to&nbsp;False&nbsp;to&nbsp;not&nbsp;update&nbsp;last_played.</tt></dd></dl>
+ <dl><dt><a name="-get_prerolls_for_labels"><strong>get_prerolls_for_labels</strong></a>(labels, cur)</dt><dd><tt>Returns&nbsp;ids&nbsp;of&nbsp;valid&nbsp;prerolls&nbsp;that&nbsp;have&nbsp;one&nbsp;of&nbsp;the&nbsp;specified&nbsp;labels.</tt></dd></dl>
+ <dl><dt><a name="-get_prerolls_for_track"><strong>get_prerolls_for_track</strong></a>(track_id, cur)</dt><dd><tt>Returns&nbsp;prerolls&nbsp;applicable&nbsp;to&nbsp;the&nbsp;specified&nbsp;track.</tt></dd></dl>
+ <dl><dt><a name="-get_queue"><strong>get_queue</strong></a>(cur<font color="#909090">=None</font>)</dt></dl>
+ <dl><dt><a name="-get_random_row"><strong>get_random_row</strong></a>(rows)</dt><dd><tt>Picks&nbsp;a&nbsp;random&nbsp;row.<br>
+&nbsp;<br>
+First&nbsp;divides&nbsp;track&nbsp;weights&nbsp;by&nbsp;the&nbsp;number&nbsp;of&nbsp;tracks&nbsp;that&nbsp;the&nbsp;artist&nbsp;has,<br>
+then&nbsp;picks&nbsp;a&nbsp;random&nbsp;track&nbsp;based&nbsp;on&nbsp;the&nbsp;updated&nbsp;weight.</tt></dd></dl>
+ <dl><dt><a name="-get_random_track_id_from_playlist"><strong>get_random_track_id_from_playlist</strong></a>(playlist, skip_artists, cur<font color="#909090">=None</font>)</dt></dl>
+ <dl><dt><a name="-get_real_track_path"><strong>get_real_track_path</strong></a>(filename)</dt></dl>
+ <dl><dt><a name="-get_track_by_id"><strong>get_track_by_id</strong></a>(track_id, cur<font color="#909090">=None</font>)</dt><dd><tt>Returns&nbsp;track&nbsp;description&nbsp;as&nbsp;a&nbsp;dictionary.<br>
+&nbsp;<br>
+If&nbsp;the&nbsp;track&nbsp;does&nbsp;not&nbsp;exist,&nbsp;returns&nbsp;None.&nbsp;&nbsp;Extended&nbsp;properties,<br>
+such&nbsp;as&nbsp;labels,&nbsp;are&nbsp;also&nbsp;returned.<br>
+&nbsp;<br>
+Arguments:<br>
+track_id&nbsp;--&nbsp;identified&nbsp;the&nbsp;track&nbsp;to&nbsp;return.<br>
+cur&nbsp;--&nbsp;database&nbsp;cursor,&nbsp;None&nbsp;to&nbsp;open&nbsp;a&nbsp;new&nbsp;one.</tt></dd></dl>
+ <dl><dt><a name="-get_track_id_from_queue"><strong>get_track_id_from_queue</strong></a>(cur<font color="#909090">=None</font>)</dt><dd><tt>Returns&nbsp;a&nbsp;track&nbsp;from&nbsp;the&nbsp;top&nbsp;of&nbsp;the&nbsp;queue.<br>
+&nbsp;<br>
+If&nbsp;the&nbsp;queue&nbsp;is&nbsp;empty&nbsp;or&nbsp;there's&nbsp;no&nbsp;valid&nbsp;track&nbsp;in&nbsp;it,&nbsp;returns&nbsp;None.</tt></dd></dl>
+ <dl><dt><a name="-get_track_votes"><strong>get_track_votes</strong></a>(track_id, cur<font color="#909090">=None</font>)</dt></dl>
+ <dl><dt><a name="-get_urgent"><strong>get_urgent</strong></a>(cur<font color="#909090">=None</font>)</dt><dd><tt>Returns&nbsp;current&nbsp;playlist&nbsp;preferences.</tt></dd></dl>
+ <dl><dt><a name="-get_vote"><strong>get_vote</strong></a>(track_id, email, cur<font color="#909090">=None</font>)</dt></dl>
+ <dl><dt><a name="-identify"><strong>identify</strong></a>(track_id, cur<font color="#909090">=None</font>, unknown<font color="#909090">='an unknown track'</font>)</dt></dl>
+ <dl><dt><a name="-log"><strong>log</strong></a>(track_id, listener_count<font color="#909090">=None</font>, ts<font color="#909090">=None</font>, cur<font color="#909090">=None</font>)</dt><dd><tt>Logs&nbsp;that&nbsp;the&nbsp;track&nbsp;was&nbsp;played.<br>
+&nbsp;<br>
+Only&nbsp;logs&nbsp;tracks&nbsp;with&nbsp;more&nbsp;than&nbsp;zero&nbsp;listeners.</tt></dd></dl>
+ <dl><dt><a name="-merge"><strong>merge</strong></a>(id1, id2, cur)</dt><dd><tt>Merges&nbsp;two&nbsp;tracks.</tt></dd></dl>
+ <dl><dt><a name="-purge"><strong>purge</strong></a>(cur<font color="#909090">=None</font>)</dt><dd><tt>Deletes&nbsp;tracks&nbsp;with&nbsp;zero&nbsp;weight.<br>
+&nbsp;<br>
+Removes&nbsp;files,&nbsp;track&nbsp;entries&nbsp;are&nbsp;left&nbsp;in&nbsp;the&nbsp;database&nbsp;to&nbsp;prevent&nbsp;reloading<br>
+by&nbsp;podcaster&nbsp;etc.</tt></dd></dl>
+ <dl><dt><a name="-queue"><strong>queue</strong></a>(track_id, owner<font color="#909090">=None</font>, cur<font color="#909090">=None</font>)</dt><dd><tt>Adds&nbsp;the&nbsp;track&nbsp;to&nbsp;queue.</tt></dd></dl>
+ <dl><dt><a name="-run_cli"><strong>run_cli</strong></a>(args)</dt></dl>
+ <dl><dt><a name="-schedule_download"><strong>schedule_download</strong></a>(artist, owner<font color="#909090">=None</font>)</dt><dd><tt>Schedules&nbsp;an&nbsp;artist&nbsp;for&nbsp;downloading&nbsp;from&nbsp;Last.fm&nbsp;or&nbsp;Jamendo.</tt></dd></dl>
+ <dl><dt><a name="-set_urgent"><strong>set_urgent</strong></a>(args, cur<font color="#909090">=None</font>)</dt><dd><tt>Sets&nbsp;the&nbsp;music&nbsp;filter.<br>
+&nbsp;<br>
+Sets&nbsp;music&nbsp;filter&nbsp;to&nbsp;be&nbsp;used&nbsp;for&nbsp;picking&nbsp;random&nbsp;tracks.&nbsp;&nbsp;If&nbsp;set,&nbsp;only<br>
+matching&nbsp;tracks&nbsp;will&nbsp;be&nbsp;played,&nbsp;regardless&nbsp;of&nbsp;playlists.yaml.&nbsp;&nbsp;Labels<br>
+must&nbsp;be&nbsp;specified&nbsp;as&nbsp;a&nbsp;string,&nbsp;using&nbsp;spaces&nbsp;or&nbsp;commas&nbsp;as&nbsp;separators.<br>
+Use&nbsp;"all"&nbsp;to&nbsp;reset.</tt></dd></dl>
+ <dl><dt><a name="-shift_track_weight"><strong>shift_track_weight</strong></a>(track_id, cur)</dt></dl>
+ <dl><dt><a name="-update_karma"><strong>update_karma</strong></a>(cur<font color="#909090">=None</font>)</dt><dd><tt>Updates&nbsp;users&nbsp;karma&nbsp;based&nbsp;on&nbsp;their&nbsp;last&nbsp;voting&nbsp;time.</tt></dd></dl>
+ <dl><dt><a name="-update_real_track_weight"><strong>update_real_track_weight</strong></a>(track_id, cur<font color="#909090">=None</font>)</dt><dd><tt>Returns&nbsp;the&nbsp;real&nbsp;track&nbsp;weight,&nbsp;using&nbsp;the&nbsp;last&nbsp;vote&nbsp;for&nbsp;each&nbsp;user.</tt></dd></dl>
+ <dl><dt><a name="-update_real_track_weights"><strong>update_real_track_weights</strong></a>(cur<font color="#909090">=None</font>)</dt><dd><tt>Updates&nbsp;the&nbsp;real_weight&nbsp;column&nbsp;for&nbsp;all&nbsp;tracks.&nbsp;&nbsp;To&nbsp;be&nbsp;used&nbsp;when&nbsp;the<br>
+votes&nbsp;table&nbsp;was&nbsp;heavily&nbsp;modified&nbsp;or&nbsp;when&nbsp;corruption&nbsp;is&nbsp;possible.</tt></dd></dl>
+ <dl><dt><a name="-update_track"><strong>update_track</strong></a>(properties, cur<font color="#909090">=None</font>)</dt><dd><tt>Updates&nbsp;valid&nbsp;track&nbsp;attributes.<br>
+&nbsp;<br>
+Loads&nbsp;the&nbsp;track&nbsp;specified&nbsp;in&nbsp;properties['id'],&nbsp;then&nbsp;updates&nbsp;its&nbsp;known<br>
+fields&nbsp;with&nbsp;the&nbsp;rest&nbsp;of&nbsp;the&nbsp;properties&nbsp;dictionary,&nbsp;then&nbsp;saves&nbsp;the<br>
+track.&nbsp;&nbsp;If&nbsp;there's&nbsp;the&nbsp;"labels"&nbsp;key&nbsp;in&nbsp;properties&nbsp;(must&nbsp;be&nbsp;a&nbsp;list),<br>
+labels&nbsp;are&nbsp;added&nbsp;(old&nbsp;are&nbsp;preserved)&nbsp;to&nbsp;the&nbsp;`labels`&nbsp;table.<br>
+&nbsp;<br>
+If&nbsp;there's&nbsp;not&nbsp;fields&nbsp;to&nbsp;update,&nbsp;a&nbsp;message&nbsp;is&nbsp;written&nbsp;to&nbsp;the&nbsp;debug&nbsp;log.</tt></dd></dl>
+ <dl><dt><a name="-update_track_lengths"><strong>update_track_lengths</strong></a>()</dt></dl>
+</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>KARMA_TTL</strong> = 30.0<br>
+<strong>__CLI_USAGE__</strong> = 'Usage: ardj track command<font color="#c040c0">\n\n</font>Commands:<font color="#c040c0">\n</font>  update-we...- update the real_weight property of all tracks.<font color="#c040c0">\n</font>'</td></tr></table>
+</body></html>

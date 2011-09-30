@@ -1,0 +1,57 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module ardj.ices</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="ardj.html"><font color="#ffffff">ardj</font></a>.ices</strong></big></big></font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/hex/.local/lib/python2.7/site-packages/ardj/ices.py">/home/hex/.local/lib/python2.7/site-packages/ardj/ices.py</a></font></td></tr></table>
+    <p></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="ardj.html">ardj</a><br>
+<a href="glob.html">glob</a><br>
+</td><td width="25%" valign=top><a href="logging.html">logging</a><br>
+<a href="os.html">os</a><br>
+</td><td width="25%" valign=top><a href="random.html">random</a><br>
+<a href="sys.html">sys</a><br>
+</td><td width="25%" valign=top><a href="traceback.html">traceback</a><br>
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-ices_get_lineno"><strong>ices_get_lineno</strong></a>()</dt><dd><tt>Function&nbsp;used&nbsp;to&nbsp;put&nbsp;the&nbsp;current&nbsp;line&nbsp;number&nbsp;of<br>
+the&nbsp;playlist&nbsp;in&nbsp;the&nbsp;cue&nbsp;file.&nbsp;If&nbsp;you&nbsp;don't&nbsp;care&nbsp;about&nbsp;this&nbsp;number<br>
+don't&nbsp;use&nbsp;it.</tt></dd></dl>
+ <dl><dt><a name="-ices_get_metadata"><strong>ices_get_metadata</strong></a>()</dt><dd><tt>This&nbsp;function,&nbsp;if&nbsp;defined,&nbsp;returns&nbsp;the&nbsp;string&nbsp;you'd&nbsp;like&nbsp;used<br>
+as&nbsp;metadata&nbsp;(ie&nbsp;for&nbsp;title&nbsp;streaming)&nbsp;for&nbsp;the&nbsp;current&nbsp;song.&nbsp;You&nbsp;may<br>
+return&nbsp;null&nbsp;to&nbsp;indicate&nbsp;that&nbsp;the&nbsp;file&nbsp;comment&nbsp;should&nbsp;be&nbsp;used.</tt></dd></dl>
+ <dl><dt><a name="-ices_get_next"><strong>ices_get_next</strong></a>()</dt><dd><tt>Function&nbsp;called&nbsp;to&nbsp;get&nbsp;the&nbsp;next&nbsp;filename&nbsp;to&nbsp;stream.&nbsp;<br>
+Should&nbsp;return&nbsp;a&nbsp;string.</tt></dd></dl>
+ <dl><dt><a name="-ices_init"><strong>ices_init</strong></a>()</dt><dd><tt>Function&nbsp;called&nbsp;to&nbsp;initialize&nbsp;your&nbsp;python&nbsp;environment.<br>
+Should&nbsp;return&nbsp;1&nbsp;if&nbsp;ok,&nbsp;and&nbsp;0&nbsp;if&nbsp;something&nbsp;went&nbsp;wrong.</tt></dd></dl>
+ <dl><dt><a name="-ices_shutdown"><strong>ices_shutdown</strong></a>()</dt><dd><tt>Function&nbsp;called&nbsp;to&nbsp;shutdown&nbsp;your&nbsp;python&nbsp;enviroment.<br>
+Return&nbsp;1&nbsp;if&nbsp;ok,&nbsp;0&nbsp;if&nbsp;something&nbsp;went&nbsp;wrong.</tt></dd></dl>
+</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>FAILURE_GLOB</strong> = '/usr/local/share/ardj/failure/*.ogg'<br>
+<strong>last_good_file</strong> = None<br>
+<strong>last_track</strong> = None<br>
+<strong>songnumber</strong> = -1</td></tr></table>
+</body></html>

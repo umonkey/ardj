@@ -1,0 +1,121 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module ardj.console</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="ardj.html"><font color="#ffffff">ardj</font></a>.console</strong></big></big></font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/hex/.local/lib/python2.7/site-packages/ardj/console.py">/home/hex/.local/lib/python2.7/site-packages/ardj/console.py</a></font></td></tr></table>
+    <p><tt>ardj&nbsp;console.<br>
+&nbsp;<br>
+Lets&nbsp;users&nbsp;communicate&nbsp;with&nbsp;the&nbsp;system&nbsp;using&nbsp;almost&nbsp;human&nbsp;language.&nbsp;&nbsp;Used&nbsp;by<br>
+the&nbsp;jabber&nbsp;bot,&nbsp;a&nbsp;CLI&nbsp;is&nbsp;available.</tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="ardj.html">ardj</a><br>
+<a href="json.html">json</a><br>
+</td><td width="25%" valign=top><a href="logging.html">logging</a><br>
+<a href="os.html">os</a><br>
+</td><td width="25%" valign=top><a href="readline.html">readline</a><br>
+<a href="signal.html">signal</a><br>
+</td><td width="25%" valign=top><a href="sys.html">sys</a><br>
+<a href="traceback.html">traceback</a><br>
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-filter_labels"><strong>filter_labels</strong></a>(labels)</dt></dl>
+ <dl><dt><a name="-format_track_list"><strong>format_track_list</strong></a>(tracks, header<font color="#909090">=None</font>)</dt></dl>
+ <dl><dt><a name="-get_ices_pid"><strong>get_ices_pid</strong></a>()</dt></dl>
+ <dl><dt><a name="-get_public_commands"><strong>get_public_commands</strong></a>()</dt><dd><tt>Returns&nbsp;the&nbsp;list&nbsp;of&nbsp;commands&nbsp;available&nbsp;to&nbsp;anonymous&nbsp;users.</tt></dd></dl>
+ <dl><dt><a name="-get_usage"><strong>get_usage</strong></a>(sender)</dt><dd><tt>Describes&nbsp;available&nbsp;commands.<br>
+&nbsp;<br>
+Only&nbsp;describes&nbsp;commands&nbsp;that&nbsp;are&nbsp;available&nbsp;to&nbsp;that&nbsp;user.</tt></dd></dl>
+ <dl><dt><a name="-is_user_admin"><strong>is_user_admin</strong></a>(sender)</dt></dl>
+ <dl><dt><a name="-on_ban"><strong>on_ban</strong></a>(args, sender, cur<font color="#909090">=None</font>)</dt></dl>
+ <dl><dt><a name="-on_bookmark"><strong>on_bookmark</strong></a>(args, sender, cur<font color="#909090">=None</font>)</dt><dd><tt>Adds&nbsp;a&nbsp;track&nbsp;to&nbsp;bookmarks.&nbsp;&nbsp;If&nbsp;track&nbsp;id&nbsp;is&nbsp;not&nbsp;specified,&nbsp;the&nbsp;currently<br>
+played&nbsp;track&nbsp;is&nbsp;bookmarked.&nbsp;&nbsp;Latest&nbsp;bookmarks&nbsp;are&nbsp;shown&nbsp;afterwards.</tt></dd></dl>
+ <dl><dt><a name="-on_delete"><strong>on_delete</strong></a>(args, sender, cur<font color="#909090">=None</font>)</dt></dl>
+ <dl><dt><a name="-on_download"><strong>on_download</strong></a>(args, sender, cur<font color="#909090">=None</font>)</dt><dd><tt>Finds&nbsp;free&nbsp;tracks&nbsp;by&nbsp;the&nbsp;specified&nbsp;artsit&nbsp;in&nbsp;Last.fm&nbsp;or&nbsp;Jamendo&nbsp;and&nbsp;downloads&nbsp;some.</tt></dd></dl>
+ <dl><dt><a name="-on_dump"><strong>on_dump</strong></a>(args, sender, cur<font color="#909090">=None</font>)</dt></dl>
+ <dl><dt><a name="-on_echo"><strong>on_echo</strong></a>(args, sender, cur<font color="#909090">=None</font>)</dt></dl>
+ <dl><dt><a name="-on_find"><strong>on_find</strong></a>(args, sender, cur<font color="#909090">=None</font>)</dt><dd><tt>Finds&nbsp;tracks&nbsp;that&nbsp;match&nbsp;a&nbsp;query.&nbsp;&nbsp;Has&nbsp;two&nbsp;modes&nbsp;of&nbsp;search:<br>
+&nbsp;<br>
+find&nbsp;something&nbsp;--&nbsp;finds&nbsp;tracks&nbsp;with&nbsp;"something"&nbsp;in&nbsp;artist&nbsp;name&nbsp;or&nbsp;title;<br>
+find&nbsp;@something&nbsp;--&nbsp;finds&nbsp;tracks&nbsp;with&nbsp;the&nbsp;"something"&nbsp;label.<br>
+&nbsp;<br>
+By&nbsp;default&nbsp;results&nbsp;are&nbsp;sorted&nbsp;by&nbsp;rating,&nbsp;highest&nbsp;rated&nbsp;go&nbsp;first.&nbsp;&nbsp;You&nbsp;can<br>
+change&nbsp;this&nbsp;behaviour&nbsp;using&nbsp;the&nbsp;following&nbsp;modifiers:<br>
+&nbsp;<br>
+find&nbsp;-b&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;shows&nbsp;your&nbsp;bookmarked&nbsp;tracks,&nbsp;see&nbsp;"bm";<br>
+find&nbsp;-r&nbsp;something&nbsp;--&nbsp;show&nbsp;in&nbsp;random&nbsp;order;<br>
+find&nbsp;-l&nbsp;something&nbsp;--&nbsp;show&nbsp;newest&nbsp;first;<br>
+find&nbsp;-s&nbsp;something&nbsp;--&nbsp;show&nbsp;olders&nbsp;first.</tt></dd></dl>
+ <dl><dt><a name="-on_help"><strong>on_help</strong></a>(args, sender, cur<font color="#909090">=None</font>)</dt></dl>
+ <dl><dt><a name="-on_hitlist"><strong>on_hitlist</strong></a>(args, sender, cur<font color="#909090">=None</font>)</dt></dl>
+ <dl><dt><a name="-on_last"><strong>on_last</strong></a>(args, sender, cur<font color="#909090">=None</font>)</dt></dl>
+ <dl><dt><a name="-on_merge"><strong>on_merge</strong></a>(args, sender, cur<font color="#909090">=None</font>)</dt><dd><tt>Merges&nbsp;two&nbsp;tracks.&nbsp;&nbsp;Usage:&nbsp;merge&nbsp;id1&nbsp;id2.<br>
+&nbsp;<br>
+Track&nbsp;2&nbsp;is&nbsp;deleted,&nbsp;labels,&nbsp;votes&nbsp;and&nbsp;playcounts&nbsp;are&nbsp;moved&nbsp;to&nbsp;track&nbsp;1.</tt></dd></dl>
+ <dl><dt><a name="-on_news"><strong>on_news</strong></a>(args, sender, cur<font color="#909090">=None</font>)</dt></dl>
+ <dl><dt><a name="-on_play"><strong>on_play</strong></a>(args, sender, cur<font color="#909090">=None</font>)</dt></dl>
+ <dl><dt><a name="-on_purge"><strong>on_purge</strong></a>(args, sender, cur<font color="#909090">=None</font>)</dt></dl>
+ <dl><dt><a name="-on_queue"><strong>on_queue</strong></a>(args, sender, cur<font color="#909090">=None</font>)</dt><dd><tt>Queue&nbsp;management.&nbsp;&nbsp;Adds&nbsp;the&nbsp;first&nbsp;matching&nbsp;track&nbsp;to&nbsp;the&nbsp;playback&nbsp;queue.&nbsp;&nbsp;Usage:<br>
+&nbsp;<br>
+queue&nbsp;something&nbsp;--&nbsp;queues&nbsp;the&nbsp;first&nbsp;track&nbsp;shown&nbsp;by&nbsp;"find&nbsp;something";<br>
+queue&nbsp;flush&nbsp;--&nbsp;removes&nbsp;your&nbsp;tracks&nbsp;from&nbsp;the&nbsp;queue;<br>
+queue&nbsp;flush&nbsp;-a&nbsp;--&nbsp;removes&nbsp;all&nbsp;tracks&nbsp;(admin&nbsp;only);<br>
+queue&nbsp;-s&nbsp;--&nbsp;disables&nbsp;the&nbsp;preroll&nbsp;(admin&nbsp;only);<br>
+queue&nbsp;-d&nbsp;--&nbsp;deletes&nbsp;the&nbsp;track&nbsp;from&nbsp;queue&nbsp;(must&nbsp;be&nbsp;yours);<br>
+&nbsp;<br>
+If&nbsp;the&nbsp;user&nbsp;had&nbsp;not&nbsp;queued&nbsp;anything&nbsp;yet,&nbsp;a&nbsp;random&nbsp;jingle&nbsp;is&nbsp;added.&nbsp;&nbsp;Jingles<br>
+are&nbsp;marked&nbsp;with&nbsp;the&nbsp;"queue-jingle"&nbsp;label.&nbsp;&nbsp;If&nbsp;the&nbsp;user&nbsp;is&nbsp;not&nbsp;an&nbsp;admin,<br>
+he's&nbsp;not&nbsp;allowed&nbsp;to&nbsp;queue&nbsp;more&nbsp;than&nbsp;one&nbsp;track.</tt></dd></dl>
+ <dl><dt><a name="-on_reload"><strong>on_reload</strong></a>(args, sender, cur<font color="#909090">=None</font>)</dt></dl>
+ <dl><dt><a name="-on_restart"><strong>on_restart</strong></a>(args, sender, cur<font color="#909090">=None</font>)</dt></dl>
+ <dl><dt><a name="-on_rocks"><strong>on_rocks</strong></a>(args, sender, cur<font color="#909090">=None</font>)</dt></dl>
+ <dl><dt><a name="-on_say"><strong>on_say</strong></a>(args, sender, cur<font color="#909090">=None</font>)</dt></dl>
+ <dl><dt><a name="-on_set"><strong>on_set</strong></a>(args, sender, cur<font color="#909090">=None</font>)</dt></dl>
+ <dl><dt><a name="-on_shitlist"><strong>on_shitlist</strong></a>(args, sender, cur<font color="#909090">=None</font>)</dt></dl>
+ <dl><dt><a name="-on_show"><strong>on_show</strong></a>(args, sender, cur<font color="#909090">=None</font>)</dt></dl>
+ <dl><dt><a name="-on_skip"><strong>on_skip</strong></a>(args, sender, cur<font color="#909090">=None</font>)</dt></dl>
+ <dl><dt><a name="-on_speak"><strong>on_speak</strong></a>(args, sender, cur<font color="#909090">=None</font>)</dt></dl>
+ <dl><dt><a name="-on_sql"><strong>on_sql</strong></a>(args, sender, cur<font color="#909090">=None</font>)</dt></dl>
+ <dl><dt><a name="-on_status"><strong>on_status</strong></a>(args, sender, cur<font color="#909090">=None</font>)</dt></dl>
+ <dl><dt><a name="-on_sucks"><strong>on_sucks</strong></a>(args, sender, cur<font color="#909090">=None</font>)</dt></dl>
+ <dl><dt><a name="-on_tags"><strong>on_tags</strong></a>(args, sender, cur<font color="#909090">=None</font>)</dt><dd><tt>Shows&nbsp;or&nbsp;modifies&nbsp;tags.<br>
+&nbsp;<br>
+tags&nbsp;add&nbsp;-remove&nbsp;[for&nbsp;track_id]&nbsp;--&nbsp;manipulate&nbsp;tags<br>
+tags&nbsp;--&nbsp;show&nbsp;the&nbsp;tag&nbsp;cloud.</tt></dd></dl>
+ <dl><dt><a name="-on_twit"><strong>on_twit</strong></a>(args, sender, cur<font color="#909090">=None</font>)</dt></dl>
+ <dl><dt><a name="-on_voters"><strong>on_voters</strong></a>(args, sender, cur<font color="#909090">=None</font>)</dt></dl>
+ <dl><dt><a name="-on_votes"><strong>on_votes</strong></a>(args, sender, cur<font color="#909090">=None</font>)</dt></dl>
+ <dl><dt><a name="-process_command"><strong>process_command</strong></a>(text, sender<font color="#909090">=None</font>, cur<font color="#909090">=None</font>, quiet<font color="#909090">=False</font>)</dt><dd><tt>Processes&nbsp;one&nbsp;message,&nbsp;returns&nbsp;a&nbsp;text&nbsp;reply.<br>
+&nbsp;<br>
+Arguments:<br>
+text&nbsp;--&nbsp;the&nbsp;command,&nbsp;e.g.&nbsp;"show&nbsp;123"<br>
+sender&nbsp;--&nbsp;sender's&nbsp;email&nbsp;address<br>
+cur&nbsp;--&nbsp;pass&nbsp;if&nbsp;you&nbsp;want&nbsp;a&nbsp;transaction</tt></dd></dl>
+ <dl><dt><a name="-run_cli"><strong>run_cli</strong></a>(args)</dt></dl>
+ <dl><dt><a name="-signal_ices"><strong>signal_ices</strong></a>(sig)</dt></dl>
+</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>command_aliases</strong> = {u'<font color="#c040c0">\u043a\u0449\u0441\u043b\u044b</font>': 'rocks', u'<font color="#c040c0">\u044b\u0433\u0441\u043b\u044b</font>': 'sucks'}<br>
+<strong>command_map</strong> = (('ban', True, &lt;function on_ban&gt;, 'deletes all tracks by the specified artist'), ('bm', False, &lt;function on_bookmark&gt;, 'bookmark tracks (accepts optional id)'), ('delete', True, &lt;function on_delete&gt;, 'deletes the specified track'), ('dump', False, &lt;function on_dump&gt;, 'shows track info in JSON'), ('download', False, &lt;function on_download&gt;, 'download new music from last.fm and jamendo'), ('echo', False, &lt;function on_echo&gt;, 'sends back the message'), ('find', False, &lt;function on_find&gt;, 'finds tracks matching a criteria'), ('help', False, &lt;function on_help&gt;, 'shows this message'), ('hitlist', False, &lt;function on_hitlist&gt;, 'shows 10 highest rated tracks'), ('last', False, &lt;function on_last&gt;, 'shows last played tracks'), ('merge', True, &lt;function on_merge&gt;, 'merges two tracks'), ('news', False, &lt;function on_news&gt;, 'shows 10 recently added tracks'), ('play', True, &lt;function on_play&gt;, 'set a custom playlist for 60 minutes'), ('purge', True, &lt;function on_purge&gt;, 'cleans up the database'), ('queue', False, &lt;function on_queue&gt;, 'queues tracks for playing'), ('reload', True, &lt;function on_reload&gt;, 'asks ices to reconfigure'), ('restart', True, &lt;function on_restart&gt;, 'restarts the bot or ices'), ('rocks', False, &lt;function on_rocks&gt;, 'increases track weight'), ('say', True, &lt;function on_say&gt;, 'sends a message to the chat room'), ('set', True, &lt;function on_set&gt;, 'changes track properties'), ...)</td></tr></table>
+</body></html>
