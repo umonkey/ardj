@@ -144,12 +144,6 @@ def cmd_track(*args):
     return tracks.run_cli(args)
 
 
-def cmd_tsn(*args):
-    """prepare and process a new So-So-News episode"""
-    import tsn
-    return tsn.run(args)
-
-
 def cmd_twit(*args):
     """interacts with the twitter account"""
     import twitter
