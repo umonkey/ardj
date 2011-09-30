@@ -67,7 +67,32 @@ class _store:
         return cls._db
 
 
-class Message(object):
+class Model(object):
+    _db = None
+    _store = None
+
+    @classmethod
+    def _get_store(cls):
+        if Model._store is None:
+            Model._db = create_database(ardj.settings.get("database_uri"))
+            Model._store = Store(Model._db)
+        return Model._store
+
+    @classmethod
+    def create(cls, *args, **kwargs):
+        _tmp = cls(*args, **kwargs)
+        cls._get_store().add(_tmp)
+        return _tmp
+
+    @classmethod
+    def find_all(cls):
+        return cls._get_store().find(cls)
+
+    def delete(self):
+        return self._get_store().remove(self)
+
+
+class Message(Model):
     """Used for storing outgoing XMPP messages.  When you need to send an XMPP
     message, create a Message instance and save it.
 
@@ -77,30 +102,44 @@ class Message(object):
     """
 
     __storm_table__ = "jabber_messages"
-
     id = Int(primary=True)
     re = Unicode()
     message = Unicode()
 
-    @classmethod
-    def create(cls, message, re=None):
-        """Creates and saves a new message which will be sent as soon as the
-        jabber bot wants.  If the recipient is not specified, the message is
-        sent to the configured chat room."""
-        _message = cls()
-        _message.re = unicode(re)
-        _message.message = unicode(message)
-        _store.get().add(_message)
-        return _message
+    def __init__(self, message, re=None):
+        if re is not None:
+            re = unicode(re)
+        self.re = re
+        self.message = unicode(message)
+
+
+class ArtistDownloadRequest(Model):
+    """Stores a request to download more tracks by the specified artist.
+
+    Data:
+    artist -- artist name
+    """
+
+    __storm_table__ = "download_queue"
+    artist = Unicode(primary=True)
+    owner = Unicode()
+
+    def __init__(self, artist, owner=None):
+        if owner is not None:
+            owner = unicode(owner)
+        self.artist = unicode(artist)
+        self.owner = owner
 
     @classmethod
-    def find_all(cls):
-        """Returns all existing messages."""
-        return _store.get().find(cls)
+    def find_by_artist(cls, artist):
+        """Returns a request for artist with the specified name.  If there's no
+        such request, returns None."""
+        return cls._get_store().find(cls, cls.artist == unicode(artist)).one()
 
-    def delete(self):
-        """Removes the message from the database."""
-        return _store.get().remove(self)
+    @classmethod
+    def get_one(cls):
+        """Returns one random download ticket."""
+        return cls._get_store().find(cls)[:1].one()
 
 
 def get_init_statements(dbtype):
@@ -366,8 +405,8 @@ def cursor():
 
 
 def commit():
+    Model._get_store().commit()
     Open().commit()
-    _store.get().commit()
 
 
 def pick_jingle(cur, label):

@@ -191,6 +191,15 @@ def cmd_xmpp_send(*args):
     commit()
 
 
+def cmd_download_artist(*args):
+    """queues retrieving more tracks by the specified artists."""
+    from ardj.database import ArtistDownloadRequest, commit
+    for arg in args[1:]:
+        if ArtistDownloadRequest.find_by_artist(arg) is None:
+            ArtistDownloadRequest.create(arg, "nobody")
+    commit()
+
+
 def cmd_help(*args):
     """shows this help screen"""
     commands = []
