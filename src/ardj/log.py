@@ -1,10 +1,12 @@
 # encoding=utf-8
 
-"""Logging for ardj.
+"""ARDJ, an artificial DJ.
 
-Installs a custom logger that writes messages to a text file.
+This module installs a custom logger that writes messages to a text file.
 
-To use the module, call the install() method before logging anything.
+To use the module, call the install() method before logging anything.  This is
+done automatically when you use the CLI interface, so you only need to use this
+module explicitly if you're importing parts of ardj into your existing code.
 """
 
 import logging
@@ -15,6 +17,8 @@ import ardj.settings
 
 
 def install():
+    """Adds a custom formatter and a rotating file handler to the default
+    logger."""
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
 

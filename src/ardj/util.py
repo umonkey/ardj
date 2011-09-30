@@ -1,5 +1,10 @@
 # encoding=utf-8
 
+"""ARDJ, an artificial DJ.
+
+This module contains various utility functions.
+"""
+
 import hashlib
 import json
 import logging
@@ -46,21 +51,39 @@ def run(command, quiet=False, stdin_data=None, grab_output=False, nice=True):
 
 
 class mktemp:
+    """This class is used to deal with temporary files which should be deleted
+    automatically.  When all references to an instance are deleted, the
+    underlying file is unlinked from the file system.
+
+    Usage is simple:
+    
+    from ardj.util import mktemp
+    print str(mktemp(suffix=".log"))
+    
+    Be sure to convert the value to a string, otherwise most receivers will
+    fail (got object while expected a string, or something)."""
     def __init__(self, suffix=''):
+        """Creates a new file in the temporary folder using tempfile.mkstemp().
+        Files have a fixed prefix "ardj_" and a custom suffix, none by
+        default."""
         fd, self.filename = tempfile.mkstemp(prefix='ardj_', suffix=suffix)
         os.chmod(self.filename, 0664)
         os.close(fd)
 
     def __del__(self):
+        """Deletes the temporary file if it still exists."""
         if os.path.exists(self.filename):
             logging.debug('Deleting temporary file %s' % self.filename)
             os.unlink(self.filename)
 
     def __str__(self):
+        """Returns the name of the file."""
         return self.filename
 
     def __unicode__(self):
+        """Returns the Unicode version of the name of the file (does not differ from str)."""
         return unicode(self.filename)
+
 
 def get_opener(url, user, password):
     """Returns an opener for the url.
@@ -119,6 +142,8 @@ def fetch(url, suffix=None, args=None, user=None, password=None, quiet=False, po
 
 
 def fetch_json(*args, **kwargs):
+    """Fetches the data using fetch(), parses it using the json module, then
+    returns the result."""
     data = fetch(*args, **kwargs)
     if data is not None:
         return json.loads(data)
@@ -264,6 +289,16 @@ def shortlist(items, limit=3, glue='and'):
 
 
 def expand(lst):
+    """Expands ranges specified in the list.  For example, this:
+
+    ["1", "3-5", "7"]
+
+    Is expanded to:
+
+    ["1", "3", "4", "5", "7"]
+
+    This function is usually actively used in the playlists.
+    """
     result = []
     for item in lst:
         if '-' in str(item):
