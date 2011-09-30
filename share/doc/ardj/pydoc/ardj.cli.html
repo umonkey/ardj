@@ -13,7 +13,12 @@
 &nbsp;<br>
 This&nbsp;module&nbsp;contains&nbsp;the&nbsp;command&nbsp;line&nbsp;interface.&nbsp;&nbsp;It&nbsp;first&nbsp;initializes&nbsp;the&nbsp;log<br>
 file,&nbsp;then,&nbsp;depending&nbsp;on&nbsp;the&nbsp;command&nbsp;line&nbsp;arguments,&nbsp;loads&nbsp;and&nbsp;executes&nbsp;the<br>
-appropriate&nbsp;submodule.</tt></p>
+appropriate&nbsp;submodule.<br>
+&nbsp;<br>
+Commands&nbsp;are&nbsp;passed&nbsp;to&nbsp;the&nbsp;ardj&nbsp;binary&nbsp;as&nbsp;the&nbsp;first&nbsp;argument.&nbsp;&nbsp;Command&nbsp;handlers<br>
+are&nbsp;functions&nbsp;prefixed&nbsp;with&nbsp;"cmd_",&nbsp;which&nbsp;have&nbsp;dashes&nbsp;replaced&nbsp;with<br>
+underscores.&nbsp;&nbsp;For&nbsp;example,&nbsp;command&nbsp;"merge-votes"&nbsp;is&nbsp;handled&nbsp;by&nbsp;the<br>
+cmd_merge_votes&nbsp;function.</tt></p>
 <p>
 <table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
 <tr bgcolor="#aa55cc">
@@ -33,14 +38,43 @@ appropriate&nbsp;submodule.</tt></p>
 <font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
     
 <tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
-<td width="100%"><dl><dt><a name="-find_command"><strong>find_command</strong></a>(command_name)</dt></dl>
- <dl><dt><a name="-run"><strong>run</strong></a>(args)</dt></dl>
-</td></tr></table><p>
-<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
-<tr bgcolor="#55aa55">
-<td colspan=3 valign=bottom>&nbsp;<br>
-<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
-    
-<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
-<td width="100%"><strong>COMMAND_MAP</strong> = [('client', 'client', 'run_cli', 'run the client'), ('config', 'settings', 'edit_cli', 'edit settings'), ('console', 'console', 'run_cli', 'jabber-like CLI'), ('db', 'database', 'run_cli', 'database functions'), ('db-init', 'database', 'cli_init', 'initializes the database'), ('events', 'tout', 'run_cli', 'works with the upcoming events'), ('find-new-tracks', 'tracks', 'find_new_tracks', 'fetch new songs from Last.fm'), ('hotline', 'hotline', 'run_cli', 'work with the hotline'), ('icelog', 'icelogger', 'run_cli', 'work with Icecast logs'), ('jabber', 'jabber', 'run_cli', 'run the jabber bot'), ('listeners', 'listeners', 'run_cli', 'summarizes listeners.csv'), ('mail', 'mail', 'run_cli', 'send or receive mail'), ('map-listeners', 'map', 'update_listeners', 'updates the listeners map'), ('merge-votes', 'database', 'merge_votes', 'merge votes according to jabber/aliases'), ('news', 'news', 'run_cli', 'updates news from echo.msk.ru'), ('rg', 'replaygain', 'run_cli', 'scan ReplayGain in files'), ('say', 'speech', 'render_text_cli', 'renders text to voice using festival, then plays it'), ('serve', 'server', 'run_cli', 'start the web server'), ('show-news-from-jamendo', 'jamendo', 'print_new_tracks', 'show new tracks available at jamendo.com'), ('sms', 'sms', 'run_cli', 'send text messages (GSM)'), ...]</td></tr></table>
+<td width="100%"><dl><dt><a name="-cmd_client"><strong>cmd_client</strong></a>(*args)</dt><dd><tt>run&nbsp;the&nbsp;client</tt></dd></dl>
+ <dl><dt><a name="-cmd_config"><strong>cmd_config</strong></a>(*args)</dt><dd><tt>edit&nbsp;settings</tt></dd></dl>
+ <dl><dt><a name="-cmd_db"><strong>cmd_db</strong></a>(*args)</dt><dd><tt>database&nbsp;functions</tt></dd></dl>
+ <dl><dt><a name="-cmd_db_init"><strong>cmd_db_init</strong></a>(*args)</dt><dd><tt>initializes&nbsp;the&nbsp;database</tt></dd></dl>
+ <dl><dt><a name="-cmd_events"><strong>cmd_events</strong></a>(*args)</dt><dd><tt>works&nbsp;with&nbsp;the&nbsp;upcoming&nbsp;events</tt></dd></dl>
+ <dl><dt><a name="-cmd_find_new_tracks"><strong>cmd_find_new_tracks</strong></a>(*args)</dt><dd><tt>adds&nbsp;new&nbsp;songs&nbsp;from&nbsp;Last.fm</tt></dd></dl>
+ <dl><dt><a name="-cmd_help"><strong>cmd_help</strong></a>(*args)</dt><dd><tt>shows&nbsp;this&nbsp;help&nbsp;screen</tt></dd></dl>
+ <dl><dt><a name="-cmd_hotline"><strong>cmd_hotline</strong></a>(*args)</dt><dd><tt>work&nbsp;with&nbsp;the&nbsp;hotline</tt></dd></dl>
+ <dl><dt><a name="-cmd_icelog"><strong>cmd_icelog</strong></a>(*args)</dt><dd><tt>work&nbsp;with&nbsp;Icecast&nbsp;logs</tt></dd></dl>
+ <dl><dt><a name="-cmd_jabber"><strong>cmd_jabber</strong></a>(*args)</dt><dd><tt>run&nbsp;the&nbsp;jabber&nbsp;bot</tt></dd></dl>
+ <dl><dt><a name="-cmd_listeners"><strong>cmd_listeners</strong></a>(*args)</dt><dd><tt>summarizes&nbsp;listeners.csv</tt></dd></dl>
+ <dl><dt><a name="-cmd_mail"><strong>cmd_mail</strong></a>(*args)</dt><dd><tt>send&nbsp;or&nbsp;receive&nbsp;mail</tt></dd></dl>
+ <dl><dt><a name="-cmd_map_listeners"><strong>cmd_map_listeners</strong></a>(*args)</dt><dd><tt>updates&nbsp;the&nbsp;listeners&nbsp;map</tt></dd></dl>
+ <dl><dt><a name="-cmd_merge_votes"><strong>cmd_merge_votes</strong></a>(*args)</dt><dd><tt>merge&nbsp;votes&nbsp;according&nbsp;to&nbsp;jabber/aliases</tt></dd></dl>
+ <dl><dt><a name="-cmd_news"><strong>cmd_news</strong></a>(*args)</dt><dd><tt>updates&nbsp;news&nbsp;from&nbsp;echo.msk.ru</tt></dd></dl>
+ <dl><dt><a name="-cmd_rg"><strong>cmd_rg</strong></a>(*args)</dt><dd><tt>scan&nbsp;ReplayGain&nbsp;in&nbsp;files</tt></dd></dl>
+ <dl><dt><a name="-cmd_say"><strong>cmd_say</strong></a>(*args)</dt><dd><tt>renders&nbsp;text&nbsp;to&nbsp;voice&nbsp;using&nbsp;festival,&nbsp;then&nbsp;plays&nbsp;it</tt></dd></dl>
+ <dl><dt><a name="-cmd_serve"><strong>cmd_serve</strong></a>(*args)</dt><dd><tt>start&nbsp;the&nbsp;web&nbsp;server</tt></dd></dl>
+ <dl><dt><a name="-cmd_show_news_from_jamendo"><strong>cmd_show_news_from_jamendo</strong></a>(*args)</dt><dd><tt>show&nbsp;new&nbsp;tracks&nbsp;available&nbsp;at&nbsp;jamendo.com</tt></dd></dl>
+ <dl><dt><a name="-cmd_sms"><strong>cmd_sms</strong></a>(*args)</dt><dd><tt>send&nbsp;text&nbsp;messages&nbsp;(GSM)</tt></dd></dl>
+ <dl><dt><a name="-cmd_stream"><strong>cmd_stream</strong></a>(*args)</dt><dd><tt>handles&nbsp;stream&nbsp;events</tt></dd></dl>
+ <dl><dt><a name="-cmd_tags"><strong>cmd_tags</strong></a>(*args)</dt><dd><tt>interact&nbsp;with&nbsp;track&nbsp;metadata</tt></dd></dl>
+ <dl><dt><a name="-cmd_track"><strong>cmd_track</strong></a>(*args)</dt><dd><tt>works&nbsp;with&nbsp;individual&nbsp;tracks</tt></dd></dl>
+ <dl><dt><a name="-cmd_tsn"><strong>cmd_tsn</strong></a>(*args)</dt><dd><tt>prepare&nbsp;and&nbsp;process&nbsp;a&nbsp;new&nbsp;So-So-News&nbsp;episode</tt></dd></dl>
+ <dl><dt><a name="-cmd_twit"><strong>cmd_twit</strong></a>(*args)</dt><dd><tt>interacts&nbsp;with&nbsp;the&nbsp;twitter&nbsp;account</tt></dd></dl>
+ <dl><dt><a name="-find_handler"><strong>find_handler</strong></a>(name)</dt><dd><tt>Finds&nbsp;the&nbsp;right&nbsp;command&nbsp;handler.<br>
+&nbsp;<br>
+The&nbsp;best&nbsp;handler&nbsp;is&nbsp;the&nbsp;one&nbsp;with&nbsp;the&nbsp;exactly&nbsp;matching&nbsp;name.&nbsp;&nbsp;If&nbsp;that&nbsp;one<br>
+does&nbsp;not&nbsp;exist,&nbsp;all&nbsp;command&nbsp;handlers&nbsp;starting&nbsp;wigh&nbsp;the&nbsp;specified&nbsp;string&nbsp;are<br>
+selected.&nbsp;&nbsp;If&nbsp;more&nbsp;than&nbsp;one&nbsp;exsits,&nbsp;an&nbsp;error&nbsp;message&nbsp;is&nbsp;displayed.</tt></dd></dl>
+ <dl><dt><a name="-run"><strong>run</strong></a>(args)</dt><dd><tt>The&nbsp;main&nbsp;command&nbsp;line&nbsp;interface&nbsp;entry&nbsp;point.<br>
+&nbsp;<br>
+Initializes&nbsp;the&nbsp;log&nbsp;file&nbsp;then&nbsp;looks&nbsp;for&nbsp;the&nbsp;specified&nbsp;command&nbsp;handler&nbsp;and<br>
+executes&nbsp;it.&nbsp;&nbsp;If&nbsp;no&nbsp;command&nbsp;was&nbsp;given&nbsp;or&nbsp;no&nbsp;handler&nbsp;could&nbsp;be&nbsp;found,<br>
+displays&nbsp;a&nbsp;help&nbsp;screen.<br>
+&nbsp;<br>
+Returns&nbsp;1&nbsp;(i.e.,&nbsp;an&nbsp;error)&nbsp;if&nbsp;the&nbsp;handler&nbsp;returned&nbsp;either&nbsp;False&nbsp;or&nbsp;None,<br>
+otherwise&nbsp;returns&nbsp;zero&nbsp;(clear).</tt></dd></dl>
+</td></tr></table>
 </body></html>
