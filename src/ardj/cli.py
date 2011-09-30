@@ -18,12 +18,6 @@ import traceback
 import ardj.log
 
 
-def cmd_client(*args):
-    """run the client"""
-    import client
-    return client.run_cli(args)
-
-
 def cmd_config(*args):
     """edit settings"""
     import settings
