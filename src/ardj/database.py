@@ -142,6 +142,39 @@ class ArtistDownloadRequest(Model):
         return cls._get_store().find(cls)[:1].one()
 
 
+class Track(Model):
+    """Stores information about a track."""
+    __storm_table__ = "tracks"
+
+    id = Int(primary=True)
+    artist = Unicode()
+    title = Unicode()
+    filename = Unicode()
+    length = Int()
+    weight = Float()
+    real_weight = Float()
+    count = Int()
+    last_played = Int()
+    owner = Unicode()
+
+    def __init__(self, artist, title, filename, length=0, weight=1.0, real_weight=1.0, count=0, last_played=None, owner=None):
+        self.artist = unicode(artist)
+        self.title = unicode(title)
+        self.filename = unicode(filename)
+        self.length = length
+        self.weight = weight
+        self.real_weight = real_weight
+        self.count = count
+        self.last_played = last_played
+        if owner is not None:
+            self.owner = unicode(owner)
+
+    @classmethod
+    def find_all(cls):
+        """Returns all tracks with positive weight."""
+        return cls._get_store().find(cls, cls.weight > 0)
+
+
 def get_init_statements(dbtype):
     """Returns a list of SQL statements to initialize the database."""
     paths = []
@@ -317,19 +350,6 @@ class database:
             params += (user, )
         cur.execute(sql, params)
 
-    def get_stats(self, cur=None):
-        """Returns database statistics.
-        
-        Returns information about the database in the form of a
-        dictionary with the following keys: tracks, seconds."""
-        count, length = 0, 0
-        cur = cur or self.cursor()
-        for row in cur.execute('SELECT length FROM tracks WHERE weight > 0').fetchall():
-            count = count + 1
-            if row[0] is not None:
-                length = length + row[0]
-        return { 'tracks': count, 'seconds': length }
-
     def mark_orphans(self, set_label='orphan', cur=None, quiet=False):
         """Labels orphan tracks with "orphan".
 
@@ -472,10 +492,6 @@ def run_cli(args):
         ok = True
     if 'purge' in args:
         db.purge()
-        ok = True
-    if 'stat' in args:
-        stats = db.get_stats()
-        print '%u tracks, %.1f hours.' % (stats['tracks'], stats['seconds'] / 60 / 60)
         ok = True
     if 'fix-artist-names' in args:
         db.fix_artist_names()

@@ -200,6 +200,19 @@ def cmd_download_artist(*args):
     commit()
 
 
+def cmd_db_stats(*args):
+    """shows database statistics"""
+    from ardj.database import Track
+
+    count, length = 0, 0
+    for track in Track.find_all():
+        count += 1
+        if track.length:
+            length += track.length
+
+    print "%u tracks, %.1f hours." % (count, length / 60 / 60)
+
+
 def cmd_help(*args):
     """shows this help screen"""
     commands = []
