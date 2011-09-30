@@ -13,6 +13,7 @@ COMMAND_MAP = [ # (command, module, function, description)
     ('config', 'settings', 'edit_cli', 'edit settings'),
     ('console', 'console', 'run_cli', 'jabber-like CLI'),
     ('db', 'database', 'run_cli', 'database functions'),
+    ('db-init', 'database', 'cli_init', 'initializes the database'),
     ('events', 'tout', 'run_cli', 'works with the upcoming events'),
     ('find-new-tracks', 'tracks', 'find_new_tracks', 'fetch new songs from Last.fm'),
     ('hotline', 'hotline', 'run_cli', 'work with the hotline'),
