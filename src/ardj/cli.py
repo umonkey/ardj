@@ -120,12 +120,6 @@ def cmd_merge_votes(*args):
     return database.merge_votes(args)
 
 
-def cmd_news(*args):
-    """updates news from echo.msk.ru"""
-    import news
-    return news.run_cli(args)
-
-
 def cmd_rg(*args):
     """scan ReplayGain in files
 
