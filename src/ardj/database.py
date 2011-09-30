@@ -158,6 +158,7 @@ class Track(Model):
     owner = Unicode()
 
     def __init__(self, artist, title, filename, length=0, weight=1.0, real_weight=1.0, count=0, last_played=None, owner=None):
+        """Initializes a track.  String values are converted to Unicode."""
         self.artist = unicode(artist)
         self.title = unicode(title)
         self.filename = unicode(filename)
@@ -192,13 +193,14 @@ class Track(Model):
 
 
 class Queue(Model):
-    """Stores information about a track to play ASAP."""
+    """Stores information about a track to play out of regular order."""
     __storm_table__ = "queue"
     id = Int(primary=True)
     track_id = Int()
     owner = Unicode()
 
     def __init__(self, track_id, owner):
+        """Adds a track with the specified id to the end of the queue.  Owner is a JID."""
         self.track_id = int(track_id)
         self.owner = unicode(owner)
 
