@@ -1,3 +1,8 @@
 #!/bin/sh -e
 # Restart a running instance of the jabber bot.
 ## ardj --restart # we don't hang anymore, the "restart" command is always available.
+
+install -d -o ardj -g ardj -m 0775 /var/lib/ardj
+install -d -o ardj -g ardj -m 0775 /var/lib/ardj/incoming
+install -d -o ardj -g ardj -m 0775 /var/lib/ardj/music
+install -d -o ardj -g ardj -m 0775 /var/log/ardj

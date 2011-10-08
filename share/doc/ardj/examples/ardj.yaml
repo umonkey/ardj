@@ -1,15 +1,39 @@
----
-lastfm:
-	skip: ^(jingle|podcast|news)
-musicdir: /var/lib/ardj
+# This is where the music will be stored.  You MUST NOT put the music there
+# manually, see the incoming folder below.
+musicdir: /var/lib/ardj/music
+
+
+# Specify how many recently played artists should be skipped when picking a
+# random track.  For example, if this is set to 5, then 5 most recently played
+# artists will be ignored.
 dupes: 5
+
+
+# If you plan on using Jabber, uncomment this block and insert your arguments.
 #jabber:
-#	X-login: user:password@server
-#	access:
-#	- justin.forest@gmail.com
-#	- dugwin@gmail.com
-#	status: true # use status to show current track
-#	tunes: true # use xmpp tunes (doesn't work with Gmail)
-#twitter:
-#	name: username
-#	password: password
+#  login: user:password@server.com
+#  access:
+#  - admin1@example.com
+#  - admin2@example.net
+#  chat_room: my_radio@conference.jabber.org/Nickname
+#  status: true  # use status to show track info
+#  tunes: true  # use xmpp tunes (doesn't work with Gmail)
+
+
+# If you want to see how many users are currently listening to the stream, enable this.
+#icecast:
+#  stats:
+#    url: "http://localhost:8180/admin/stats.xml"
+#    login: admin
+#    password: secret
+
+
+# This is where the messages will be logged.
+log: /var/log/ardj/ardj.log
+
+# This is the database where the runtime data is stored.
+#
+database:
+  local: /var/lib/ardj/database.sqlite
+  incoming:
+    path: /var/lib/ardj/incoming
