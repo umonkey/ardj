@@ -49,5 +49,3 @@ log: /var/log/ardj/ardj.log
 #
 database:
   local: /var/lib/ardj/database.sqlite
-  incoming:
-    path: /var/lib/ardj/incoming
