@@ -45,7 +45,7 @@ def ices_get_next():
             last_good_file = last_track['filepath']
         return str(last_track['filepath'])
     except Exception, e:
-        logging.error('ices.ardj failed: %s\n%s' % (e, traceback.format_exc(e)))
+        logging.error('ices failed: %s\n%s' % (e, traceback.format_exc(e)))
         fallback = glob.glob(FAILURE_GLOB)
         if fallback:
             return fallback[random.randrange(len(fallback))]

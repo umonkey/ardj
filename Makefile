@@ -41,7 +41,7 @@ release: clean bdist deb
 clean:
 	find -regex '.*\.\(pyc\|rej\|orig\|deb\|zip\|tar\.gz\)$$' -delete
 
-bdist: clean ices/ices.ardj
+bdist: clean
 	python setup.py bdist
 	mv dist/*.tar.gz ${TAR}
 	rm -rf build dist
@@ -54,9 +54,6 @@ deb: bdist
 	rm -rf debian/usr/local
 	fakeroot dpkg -b debian ${DEB}
 	rm -rf debian/usr debian/DEBIAN/control
-
-ices/ices.ardj:
-	make -C ices
 
 serve:
 	PYTHONPATH=$(pwd)/src ./bin/ardj serve

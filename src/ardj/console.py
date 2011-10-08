@@ -64,7 +64,7 @@ def signal_ices(sig):
             os.kill(ices_pid, sig)
             logging.debug('sent signal %s to process %s.' % (sig, ices_pid))
         else:
-            ardj.util.run([ 'pkill', '-' + str(sig), 'ices.ardj' ])
+            ardj.util.run([ 'pkill', '-' + str(sig), 'ices' ])
             logging.debug('sent signal %s to process %s using pkill (unsafe).' % (sig, ices_pid))
         return True
     except Exception, e:
@@ -102,9 +102,9 @@ def on_say(args, sender, cur=None):
 def on_restart(args, sender, cur=None):
     if args == 'ices':
         if signal_ices(signal.SIGTERM):
-            ardj.util.run([ 'ices.ardj', '-B' ])
+            ardj.util.run([ 'ices', '-B' ])
             return 'Done.'
-        return 'Could not kill ices.ardj for some reason.'
+        return 'Could not kill ices for some reason.'
     sys.exit(1)
 
 
