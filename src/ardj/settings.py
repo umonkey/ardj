@@ -121,6 +121,9 @@ def getpath(key, default=None, fail=False):
 
 def edit_cli(args):
     editor = os.getenv('EDITOR', 'editor')
+    filename = load().filename
+    if not filename:
+        raise Exception("Config file not found, create it first.")
     os.system(editor + ' ' + load().filename)
 
 def get_music_dir():
