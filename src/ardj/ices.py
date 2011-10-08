@@ -10,11 +10,12 @@ import ardj.tracks
 import ardj.webapi
 
 
+FAILURE_GLOB = ('/usr/local/share/ardj/failure/*.ogg', '/usr/share/ardj/failure/*.ogg')
+
 songnumber = -1
 last_track = None
 last_good_file = None
 
-FAILURE_GLOB = '/usr/local/share/ardj/failure/*.ogg'
 
 def ices_init():
     """
@@ -46,10 +47,11 @@ def ices_get_next():
         return str(last_track['filepath'])
     except Exception, e:
         logging.error('ices failed: %s\n%s' % (e, traceback.format_exc(e)))
-        fallback = glob.glob(FAILURE_GLOB)
-        if fallback:
-            return fallback[random.randrange(len(fallback))]
-        logging.error('Failure files not found (%s).  Please, please have one.' % FAILURE_GLOB)
+        for _pattern in FAILURE_GLOB:
+            fallback = glob.glob(_pattern)
+            if fallback:
+                return fallback[random.randrange(len(fallback))]
+        logging.error('Failure files not found (%s).  Please, please have one.' % str(FAILURE_GLOB))
         return last_good_file
 
 def ices_get_metadata():
