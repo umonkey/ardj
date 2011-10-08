@@ -18,14 +18,11 @@ help:
 test:
 	cp -f unittests/data/src/* unittests/data/
 	rm -f tests.log tests-ardj.log
-	PYTHONPATH=src ARDJ_SETTINGS=unittests/data/settings.yaml python unittests/all.py || cat tests.log
+	PYTHONPATH=src ARDJ_SETTINGS=unittests/data/settings.yaml python unittests/all.py
 	rm -f unittests/data/*.*
 
 console:
 	PYTHONPATH=src ./bin/ardj console $(MAIL)
-
-testv: test
-	less -S tests-ardj.log
 
 install:
 	sudo VERSION=$(VERSION) python setup.py install --record install.log

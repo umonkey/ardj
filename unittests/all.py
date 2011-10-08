@@ -26,4 +26,6 @@ if __name__ == '__main__':
     print 'Logging to tests.log'
     sys.stdout = sys.stderr = open('tests.log', 'wb')
 
-    unittest.TextTestRunner().run(suite)
+    runner = unittest.TextTestRunner().run(suite)
+    if runner.errors or runner.failures:
+        exit(1)
