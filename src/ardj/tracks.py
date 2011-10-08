@@ -934,7 +934,7 @@ def schedule_download(artist, owner=None):
 def do_idle_tasks(set_busy):
     """Loads new tracks from external sources."""
     req = ardj.database.ArtistDownloadRequest.get_one()
-    logging.info(u'Looking for tracks by "%s", requested by %s' % req.artist)
+    logging.info(u'Looking for tracks by "%s", requested by %s' % (req.artist, req.owner))
 
     set_busy()
 
