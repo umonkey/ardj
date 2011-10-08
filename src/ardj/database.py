@@ -210,6 +210,7 @@ def get_init_statements(dbtype):
     paths = []
     paths.append(os.path.realpath(os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), "../share/database")))
     paths.append("/usr/local/share/ardj/database")
+    paths.append("/usr/share/ardj/database")
     for path in paths:
         filename = os.path.join(path, dbtype + ".sql")
         if os.path.exists(filename):

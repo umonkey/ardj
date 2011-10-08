@@ -18,11 +18,19 @@ case "$1" in
                 ardj
         fi
 
-        if [ -z "$2" ]; then
-            install -d -o ardj -g ardj -m 0775 /var/lib/ardj
-            install -d -o ardj -g ardj -m 0775 /var/lib/ardj/incoming
-            install -d -o ardj -g ardj -m 0775 /var/lib/ardj/music
-            install -d -o ardj -g ardj -m 0775 /var/log/ardj
+        install -d -o ardj -g ardj -m 0775 /var/lib/ardj
+        install -d -o ardj -g ardj -m 0775 /var/lib/ardj/incoming
+        install -d -o ardj -g ardj -m 0775 /var/lib/ardj/music
+        install -d -o ardj -g ardj -m 0775 /var/log/ardj
+
+        # Make sure files created in that folder always have the ardj group.
+        chmod -R +s /var/lib/ardj
+
+        # Initialize the database.
+        if [ ! -f /var/lib/ardj/database.sqlite ]; then
+            ardj db-init
+            chmod 664 /var/lib/ardj/database.sqlite
+            chown ardj:ardj /var/lib/ardj/database.sqlite
         fi
 esac
 
