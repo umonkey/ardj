@@ -925,7 +925,7 @@ def schedule_download(artist, owner=None):
     if count[0]:
         return u'Песни этого исполнителя уже есть.  Новые песни загружаются автоматически в фоновом режиме.'
 
-    ardj.database.ArtistDownloadRequest(artist, owner)
+    ardj.database.ArtistDownloadRequest.create(artist, owner)
     ardj.database.commit()
 
     return u'Это займёт какое-то время, я сообщу о результате.'
