@@ -8,6 +8,11 @@ import sys
 import yaml
 
 
+CONFIG_FILES = ('~/.config/ardj/default.yaml', '/etc/ardj.yaml',
+    '/usr/local/etc/ardj.yaml', '/usr/share/doc/ardj/examples/ardj.yaml',
+    '/usr/local/share/doc/ardj/examples/ardj.yaml')
+
+
 class wrapper:
     """Wraps a dictionary for easier access."""
     def __init__(self, data, filename):
@@ -91,11 +96,10 @@ def load_data():
     Options: ARDJ_SETTINGS envar, ~/.config/ardj/default.yaml, /etc/ardj.yaml.
     If none exist, an empty dicrionary returned.
     """
-    for filename in (os.environ.get('ARDJ_SETTINGS'), '~/.config/ardj/default.yaml', '/etc/ardj.yaml'):
-        if filename:
-            filename = os.path.expanduser(filename)
-            if os.path.exists(filename):
-                return yaml.load(open(filename, 'rb')), filename
+    for filename in CONFIG_FILES:
+        filename = os.path.expanduser(filename)
+        if os.path.exists(filename):
+            return yaml.load(open(filename, 'rb')), filename
     return {}, None
 
 
