@@ -284,7 +284,7 @@ class ardjbot(MyFileReceivingBot):
         """Sends all pending messages to the chat room or exact recipients.
         Messages are added to the queue using the chat_say() function."""
         for msg in ardj.database.Message.find_all():
-            if msg.recipient is None:
+            if msg.re is None:
                 self.say_to_chat(msg.message)
             else:
                 self.say_to_jid(msg.re, msg.message)
