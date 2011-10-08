@@ -9,7 +9,7 @@ data_files = [
     #('/etc/cron.d', ['share/cron.d/ardj']),
     ('/etc/logrotate.d', glob('share/logrotate.d/*')),
     ('/etc/init', glob('share/upstart/*.conf')),
-    ('share/doc/examples', glob('share/doc/ardj/examples/*')),
+    ('share/doc/ardj/examples', glob('share/doc/ardj/examples/*')),
     ('share/ardj/database', glob('share/database/*.sql')),
 ]
 
