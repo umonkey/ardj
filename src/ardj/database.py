@@ -495,14 +495,23 @@ def run_cli(args):
         db.commit()
 
 
-def cli_init(args):
-    """Initializes the database."""
+def init_sqlite(statements):
     db = Open()
     cur = db.cursor()
-    store = _store.get()
-    for statement in get_init_statements("sqlite"):
+    for statement in statements:
         cur.execute(statement)
-        store.execute(statement)
     db.commit()
+
+
+def init_storm(statements):
+    store = _store.get()
+    for statement in statements:
+        store.execute(statement)
     store.commit()
+
+
+def cli_init(args):
+    """Initializes the database."""
+    statements = get_init_statements("sqlite")
+    init_sqlite(statements)
     return True
