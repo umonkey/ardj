@@ -111,12 +111,15 @@ class ardjbot(MyFileReceivingBot):
         """
         Updates the status, pings the server.
         """
-        self.__idle_status()
-        self.__idle_ping()
-        self.__idle_lastfm()
-        self.__idle_incoming()
-        self.send_pending_messages()
-        ardj.tracks.do_idle_tasks(self.set_busy)
+        try:
+            self.__idle_status()
+            self.__idle_ping()
+            self.__idle_lastfm()
+            self.__idle_incoming()
+            self.send_pending_messages()
+            ardj.tracks.do_idle_tasks(self.set_busy)
+        except Exception, e:
+            logging.error("ERROR in jabber idle handlers: %s\n%s" % (e, traceback.format_exc(e)))
         super(ardjbot, self).idle_proc()
 
     def set_busy(self):
