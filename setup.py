@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 # vim: set fileencoding=utf-8:
 
-from glob import glob
 from distutils.core import setup
+from glob import glob
+import os
 
 # Files to install:
 data_files = [
@@ -35,5 +36,5 @@ setup(
     requires = [ 'yaml', 'mutagen', 'dns', 'socksipy', 'simplejson', 'oauth2' ],
     scripts = [ 'bin/ardj' ],
     url = 'http://ardj.googlecode.com/',
-    version = '0.13'
+    version = os.environ.get("VERSION", "1.0.1")
 )

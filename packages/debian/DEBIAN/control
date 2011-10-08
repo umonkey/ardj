@@ -1,8 +1,8 @@
 Package: ardj
-Version: VERSION
+Version: 1.0.1
 Section: sound
 Priority: optional
-Maintainer: Justin Forest <justin.forest@gmail.com>
+Maintainer: Justin Forest <hex@umonkey.net>
 Architecture: all
 Essential: no
 Depends: python, python-yaml, python-mutagen (>= 1.19), festival, festvox-ru,

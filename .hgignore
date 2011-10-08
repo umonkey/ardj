@@ -1,11 +1,2 @@
 .*\.(pyc|tar\.gz|deb|git|o|swp|log)$
-build
-debian/bin
-debian/etc
-debian/usr
-debian/DEBIAN/control
-ices/ices
-ices/testing/.*\.(log|pid|mp3|ogg)
-tools/podcasts/
-tools/.*\.log
 share/doc/ardj/pydoc

@@ -1,7 +1,8 @@
-VERSION=1.0-$(shell date +'%Y.%m.%d.%H%M')
-DEB=ardj-${VERSION}.deb
-ZIP=ardj-${VERSION}.zip
-TAR=ardj-${VERSION}.tar.gz
+VERSION=1.0.1
+ARCH=`uname -m`
+DEB=ardj_${VERSION}-$(ARCH).deb
+ZIP=ardj_${VERSION}.zip
+TAR=ardj_${VERSION}.tar.gz
 
 all:
 
@@ -27,7 +28,7 @@ testv: test
 	less -S tests-ardj.log
 
 install:
-	sudo python setup.py install --record install.log
+	sudo VERSION=$(VERSION) python setup.py install --record install.log
 
 uninstall:
 	cat install.log | xargs sudo rm -f
@@ -42,18 +43,17 @@ clean:
 	find -regex '.*\.\(pyc\|rej\|orig\|deb\|zip\|tar\.gz\)$$' -delete
 
 bdist: test clean
-	python setup.py bdist
-	mv dist/*.tar.gz ${TAR}
+	VERSION=$(VERSION) python setup.py bdist
+	mv dist/*.tar.gz $(TAR)
 	rm -rf build dist
 
 deb: bdist
-	rm -rf *.deb debian/usr
-	cat debian/DEBIAN/control.in | sed -e "s/VERSION/${VERSION}/g" > debian/DEBIAN/control
-	tar xfz ${TAR} -C debian
-	mv debian/usr/local/* debian/usr/
-	rm -rf debian/usr/local
-	fakeroot dpkg -b debian ${DEB}
-	rm -rf debian/usr debian/DEBIAN/control
+	rm -rf packages/debian/usr
+	tar xfz $(TAR) -C packages/debian
+	mv packages/debian/usr/local/* packages/debian/usr/
+	rm -rf packages/debian/usr/local
+	fakeroot dpkg -b packages/debian $(DEB)
+	rm -rf packages/debian/usr packages/debian/etc
 
 serve:
 	PYTHONPATH=$(pwd)/src ./bin/ardj serve
