@@ -5,6 +5,7 @@
 Lets HTTP clients access the database.
 """
 
+import logging
 import sys
 
 import json
@@ -29,10 +30,12 @@ class NextController:
     def POST(self):
         track_id = tracks.get_next_track_id()
         if not track_id:
+            logging.error("Could not satisfy a request -- no tracks.")
             raise web.internalerror("No data.")
 
         track = tracks.get_track_by_id(track_id)
         if track is None:
+            logging.error("Could not satisfy a request -- track %s is unknown." % track_id)
             raise web.internalerror("Could not pick a track.")
 
         return track
