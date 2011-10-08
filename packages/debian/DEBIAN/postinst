@@ -33,7 +33,15 @@ case "$1" in
             chmod 664 /var/lib/ardj/database.sqlite
             chown ardj:ardj /var/lib/ardj/database.sqlite
 
-            # Add sample files.
+            # Now fix the log permissions, since it's owned by root.
+            if [ -f /var/log/ardj/ardj.log ]; then
+                chown ardj:ardj /var/log/ardj/ardj.log
+                chmod g+w /var/log/ardj/ardj.log
+            fi
+
+            echo "Installing default playlists."
+            install -o ardj -g ardj -m 0664 /usr/share/doc/ardj/examples/playlists.yaml /var/lib/ardj/music/
+
             echo "Adding sample audio files."
             cp /usr/share/ardj/samples/* /var/lib/ardj/incoming/
             chmod 664 /var/lib/ardj/incoming/*

@@ -17,7 +17,10 @@ incoming_labels: [music, tagme]
 # Specify how many recently played artists should be skipped when picking a
 # random track.  For example, if this is set to 5, then 5 most recently played
 # artists will be ignored.
-dupes: 5
+#
+# Caution: only enable this when you have enough music to play without
+# repeating, otherwise ardj will go into failure mode.
+dupes: 0
 
 
 # If you plan on using Jabber, uncomment this block and insert your arguments.
