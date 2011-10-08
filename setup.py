@@ -7,13 +7,13 @@ import os
 
 # Files to install:
 data_files = [
-    #('/etc/cron.d', ['share/cron.d/ardj']),
-    ('/etc/logrotate.d', glob('share/logrotate.d/*')),
+    ('/etc', ['share/doc/ardj/examples/ardj.yaml']),
     ('/etc/init', glob('share/upstart/*.conf')),
-    ('share/doc/ardj/examples', glob('share/doc/ardj/examples/*')),
+    ('/etc/logrotate.d', glob('share/logrotate.d/*')),
     ('share/ardj/database', glob('share/database/*.sql')),
     ('share/ardj/failure', ['share/audio/stefano_mocini_leaving_you_failure_edit.ogg']),
     ('share/ardj/samples', ['share/audio/cubic_undead.mp3', 'share/audio/successful_install.ogg']),
+    ('share/doc/ardj/examples', glob('share/doc/ardj/examples/*')),
 ]
 
 classifiers = [

@@ -45,6 +45,7 @@ dupes: 0
 # This is where the messages will be logged.
 log: /var/log/ardj/ardj.log
 
+
 # This is the database where the runtime data is stored.
 #
 database:
