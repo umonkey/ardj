@@ -75,7 +75,7 @@ class Wrapper(dict):
         tags = mutagen.oggvorbis.Open(self.filename)
         for k, v in tags.items():
             self[k] = v[0]
-        self['length'] = tags.info.length
+        self['length'] = int(tags.info.length)
         self['sample_rate'] = tags.info.sample_rate
         self['channels'] = tags.info.channels
 
@@ -105,7 +105,7 @@ class Wrapper(dict):
                 if k.startswith('quodlibet::'):
                     k = k[11:]
                 self[k] = v
-            self['length'] = tags.info.length
+            self['length'] = int(tags.info.length)
             self['sample_rate'] = tags.info.sample_rate
         except: pass
 
@@ -115,20 +115,14 @@ def get(filename):
 
 
 def set(filename, tags):
-    tags = dict(tags)
-    for k in ("length", "sample_rate", "channels"):
-        if k in tags:
-            del tags[k]
-
     try:
         t = raw(filename)
         for k, v in tags.items():
-            if k not in ('length'):
+            if k not in ('length', 'length', 'sample_rate', 'channels', 'mp3gain_minmax', 'replaygain_track_peak', 'replaygain_track_gain'):
                 if v is not None:
                     t[k] = v
         t.save(filename)
     except Exception, e:
-        print filename
         logging.error(u'Could not save tags to %s: %s' % (filename, e) + traceback.format_exc(e))
 
 

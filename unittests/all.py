@@ -13,9 +13,7 @@ if __name__ == '__main__':
     not_tested = [f for f in total if f not in tested]
 
     if len(not_tested):
-        print 'These files are not tested:'
-        for f in sorted(not_tested):
-            print '\t' + os.path.join('src', 'ardj', f)
+        print 'These files are not tested: src/ardj/' + ", src/ardj/".join(sorted(not_tested)) + "."
 
     suite = unittest.TestSuite()
 
