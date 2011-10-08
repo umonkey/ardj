@@ -24,7 +24,7 @@ case "$1" in
         install -d -o ardj -g ardj -m 0775 /var/log/ardj
 
         # Make sure files created in that folder always have the ardj group.
-        chmod -R +s /var/lib/ardj /var/log/ardj
+        chmod +s /var/lib/ardj /var/lib/ardj/incoming /var/log/ardj
 
         # Initialize the database.
         if [ ! -f /var/lib/ardj/database.sqlite ]; then
