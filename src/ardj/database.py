@@ -74,7 +74,10 @@ class Model(object):
     @classmethod
     def _get_store(cls):
         if Model._store is None:
-            Model._db = create_database(ardj.settings.get("database_uri"))
+            uri = ardj.settings.get("database_uri")
+            if uri is None:
+                uri = "sqlite:" + ardj.settings.get("database/local")
+            Model._db = create_database(uri)
             Model._store = Store(Model._db)
         return Model._store
 

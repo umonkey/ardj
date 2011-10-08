@@ -169,6 +169,12 @@ def cmd_track(*args):
     return tracks.run_cli(args)
 
 
+def cmd_add_incoming_tracks(*args):
+    """moves tracks from the incoming folder to the database"""
+    import tracks
+    return tracks.cli_process_incoming()
+
+
 def cmd_twit(*args):
     """interacts with the twitter account"""
     import twitter

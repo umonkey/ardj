@@ -811,15 +811,22 @@ def update_track_lengths():
     ardj.database.commit()
 
 
-def find_incoming_files():
+def find_incoming_files(delay=120, verbose=False):
     """Returns a list of incoming file names.  Only files modified more than 60
     seconds ago are reported.  If the database/incoming/path parameter is not
     set, an empty list is returned."""
     result = []
-    incoming = ardj.settings.getpath('database/incoming/path')
-    ts_limit = int(time.time()) - 120
+
+    incoming = ardj.settings.getpath("incoming_path", ardj.settings.getpath('database/incoming/path'))
+    if verbose:
+        print "Looking for audio files in folder %s" % incoming
+
+    ts_limit = int(time.time()) - delay
     if incoming:
         for dir, dirs, files in os.walk(incoming):
+            if not os.access(dir, os.W_OK):
+                logging.warning("Folder %s is write protected. Can't delete files, won't add them." % dir)
+                continue  # not writable -- can't delete, skip it
             for filename in files:
                 realname = os.path.join(dir, filename)
                 if os.stat(realname).st_mtime > ts_limit:
@@ -827,6 +834,17 @@ def find_incoming_files():
                 if os.path.splitext(filename.lower())[1] in ('.mp3', '.ogg'):
                     result.append(realname)
     return result
+
+
+def add_incoming_files(filenames):
+    """Adds files to the database."""
+    success = []
+    add_labels = ardj.settings.get("incoming_labels", ardj.settings.get("database/incoming/labels", ["tagme", "music"]))
+    for filename in filenames:
+        add_file(filename, add_labels)
+        os.unlink(filename)
+        success.append(os.path.basename(filename))
+    return success
 
 
 def bookmark(track_ids, owner, remove=False, cur=None):
@@ -946,6 +964,14 @@ def do_idle_tasks(set_busy):
         msg = u'Could not find anything by %s on Last.fm and Jamendo.' % req.artist
     ardj.jabber.chat_say(msg, recipient=row[1])
     ardj.database.commit()
+
+
+def cli_process_incoming():
+    """Find audio files in the incoming folder and add them to the database."""
+    files = find_incoming_files(delay=0, verbose=True)
+    success = add_incoming_files(files)
+    print "Added %u files to the database." % len(success)
+    return True
 
 
 __CLI_USAGE__ = """Usage: ardj track command

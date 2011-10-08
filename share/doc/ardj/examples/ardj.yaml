@@ -3,6 +3,17 @@
 musicdir: /var/lib/ardj/music
 
 
+# This is the folder where you should put music that you want to add to the
+# database (will be moved to the internal location in few minutes).  This
+# folder is typically accessible over ftp or sftp.
+incoming_path: /var/lib/ardj/incoming
+
+
+# Define labels that will be applied to all uploaded files.  This is typically
+# one label which lets you later find untagged tracks.
+incoming_labels: [music, tagme]
+
+
 # Specify how many recently played artists should be skipped when picking a
 # random track.  For example, if this is set to 5, then 5 most recently played
 # artists will be ignored.

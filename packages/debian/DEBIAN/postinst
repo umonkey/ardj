@@ -24,14 +24,24 @@ case "$1" in
         install -d -o ardj -g ardj -m 0775 /var/log/ardj
 
         # Make sure files created in that folder always have the ardj group.
-        chmod -R +s /var/lib/ardj
+        chmod -R +s /var/lib/ardj /var/log/ardj
 
         # Initialize the database.
         if [ ! -f /var/lib/ardj/database.sqlite ]; then
+            echo "Initializing a new database at /var/lib/ardj/database.sqlite"
             ardj db-init
             chmod 664 /var/lib/ardj/database.sqlite
             chown ardj:ardj /var/lib/ardj/database.sqlite
+
+            # Add sample files.
+            echo "Adding sample audio files."
+            cp /usr/share/ardj/samples/* /var/lib/ardj/incoming/
+            chmod 664 /var/lib/ardj/incoming/*
+            ardj add-incoming-tracks
         fi
+
+        echo "Starting the web service."
+        start ardj-server || true
 esac
 
 exit 0
