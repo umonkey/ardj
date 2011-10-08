@@ -41,7 +41,7 @@ release: clean bdist deb
 clean:
 	find -regex '.*\.\(pyc\|rej\|orig\|deb\|zip\|tar\.gz\)$$' -delete
 
-bdist: clean
+bdist: test clean
 	python setup.py bdist
 	mv dist/*.tar.gz ${TAR}
 	rm -rf build dist
