@@ -8,3 +8,4 @@ ices/ices
 ices/testing/.*\.(log|pid|mp3|ogg)
 tools/podcasts/
 tools/.*\.log
+share/doc/ardj/pydoc

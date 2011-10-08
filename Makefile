@@ -3,7 +3,7 @@ DEB=ardj-${VERSION}.deb
 ZIP=ardj-${VERSION}.zip
 TAR=ardj-${VERSION}.tar.gz
 
-all: docs
+all:
 
 help:
 	@echo "bdist      -- prepares a tar.gz"
