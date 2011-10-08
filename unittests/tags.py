@@ -42,7 +42,7 @@ class OGG(unittest.TestCase):
         self.assertEquals(3, t2['length'])
         self.assertEquals('somebody', t2['artist'])
         self.assertEquals('something', t2['title'])
-        self.assertEquals('ardj=1;yes=no;labels=one,two', t2['ardj'])
+        self.assertEquals('no', t2['yes'])
         self.assertEquals(['one', 'two'], t2['labels'])
 
 

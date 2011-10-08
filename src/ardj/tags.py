@@ -115,6 +115,11 @@ def get(filename):
 
 
 def set(filename, tags):
+    tags = dict(tags)
+    for k in ("length", "sample_rate", "channels"):
+        if k in tags:
+            del tags[k]
+
     try:
         t = raw(filename)
         for k, v in tags.items():
