@@ -461,6 +461,10 @@ def commit():
     # logging.debug("Commit took %s seconds." % (time.time() - ts))
 
 
+def rollback():
+    Open().rollback()
+
+
 def fetch(sql, params=None):
     return Open().fetch(sql, params)
 

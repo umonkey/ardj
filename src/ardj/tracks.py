@@ -448,7 +448,7 @@ def add_file(filename, add_labels=None, owner=None, quiet=False):
     if not ardj.util.copy_file(filename, abs_filename):
         raise Exception('Could not copy %s to %s' % (filename, abs_filename))
 
-    track_id = ardj.database.execute('INSERT INTO tracks (artist, title, filename, length, last_played, owner, weight, real_weight, count) VALUES (?, ?, ?, ?, ?, ?, 1, 1, 0)', (artist, title, rel_filename, duration, 0, owner or 'ardj', )).lastrowid
+    track_id = ardj.database.execute('INSERT INTO tracks (artist, title, filename, length, last_played, owner, weight, real_weight, count) VALUES (?, ?, ?, ?, ?, ?, 1, 1, 0)', (artist, title, rel_filename, duration, 0, owner or 'ardj', ))
     for label in labels:
         ardj.database.execute('INSERT INTO labels (track_id, label, email) VALUES (?, ?, ?)', (track_id, label, (owner or 'ardj').lower(), ))
     return track_id
