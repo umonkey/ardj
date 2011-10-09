@@ -55,6 +55,9 @@ deb: bdist
 	fakeroot dpkg -b packages/debian $(DEB)
 	rm -rf packages/debian/usr packages/debian/etc
 
+install-deb: deb
+	sudo dpkg -i $(DEB)
+
 serve:
 	PYTHONPATH=$(pwd)/src ./bin/ardj serve
 
