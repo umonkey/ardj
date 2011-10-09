@@ -143,7 +143,7 @@ class JabberBot(object):
             self.conn = conn
             self.roster = self.conn.Roster.getRoster()
             self.log.info('*** roster ***')
-            for contact in self.roster.getItems():
+            for contact in sorted(self.roster.getItems()):
                 self.log.info('  %s' % contact)
             self.log.info('*** roster ***')
             self.conn.RegisterHandler('message', self.callback_message)
