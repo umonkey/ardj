@@ -5,47 +5,23 @@ import ardj.database as db
 import ardj.tracks
 
 
-class TestCase(unittest.TestCase):
+class DatabaseTests(unittest.TestCase):
     tables = []
-
-    def __init__(self):
-        unittest.TestCase.__init__(self)
-
-    def runTest(self):
-        pass
 
     def setUp(self):
         db.cli_init([])
 
-        for table in self.tables:
-            self.check_table_size(table)
-
     def tearDown(self):
         db.rollback()
 
-        for table in self.tables:
-            self.check_table_size(table)
-
-    def check_table_size(self, name, wanted=0):
-        size = db.fetchone('SELECT COUNT(*) FROM ' + name)[0]
-        self.assertEquals(wanted, size, 'table %s has %u records instead of %u.' % (name, size, wanted))
-
-
-class Open(TestCase):
-    def runTest(self):
+    def test_filename(self):
         self.assertEquals('unittests/data/database.sqlite', db.Open().filename)
 
-
-class Transactions(TestCase):
-    tables = ['queue']
-
-    def runTest(self):
+    def test_queue(self):
         db.execute('INSERT INTO queue (track_id, owner) VALUES (?, ?)', (0, 'test', ))
         self.assertEquals(1, db.fetchone('SELECT COUNT(*) FROM queue')[0], 'Failed to insert a record into queue.')
 
-
-class Update(TestCase):
-    def runTest(self):
+    def test_update(self):
         db.execute('DELETE FROM queue')
         row = db.execute('INSERT INTO queue (track_id, owner) VALUES (?, ?)', (1, 'ardj', ))
         self.assertEquals(row, 1)
@@ -54,17 +30,7 @@ class Update(TestCase):
         tmp = db.fetchone('SELECT * FROM queue')
         self.assertEquals(tmp, (1, 1, 'test'))
 
-
-class Debug(TestCase):
-    def runTest(self):
-        sql = db.Open().debug('SELECT ?, ?', (1, 2, ), quiet=True)
-        self.assertEquals('SELECT 1, 2', sql)
-
-
-class RecentMarker(TestCase):
-    tables = ['tracks', 'labels']
-
-    def runTest(self):
+    def test_mark_recent(self):
         for idx in range(200):
             row = db.execute('INSERT INTO tracks (title) VALUES (?)', (str(idx), ))
             db.execute("INSERT INTO labels (track_id, label, email) VALUES (?, 'music', 'test')", (row, ))
@@ -77,23 +43,17 @@ class RecentMarker(TestCase):
         self.assertEquals(200, new + old)
         self.assertEquals(100, new)
 
-
-class Stats(TestCase):
-    tables = ['tracks']
-
-    def fixme_runTest(self):
+    def test_stats(self):  # FIXME
+        """
         for x in range(100):
             db.execute('INSERT INTO tracks (length, weight) VALUES (?, ?)', (x, x, ))
 
         s = db.Open().get_stats()
         self.assertEquals(99, s['tracks'], 'zero weight track must NOT be in the stats')
         self.assertEquals(4950, s['seconds'])
+        """
 
-
-class OrphansMarker(TestCase):
-    tables = ['tracks', 'labels']
-
-    def runTest(self):
+    def test_mark_orphans(self):
         t1 = db.execute('INSERT INTO tracks (title, weight) VALUES (NULL, 1)')
         db.execute('INSERT INTO labels (track_id, label, email) VALUES (?, \'music\', \'nobody\')', (t1, ))
         t2 = db.execute('INSERT INTO tracks (title, weight) VALUES (NULL, 1)')
@@ -106,12 +66,11 @@ class OrphansMarker(TestCase):
         self.assertEquals(1, len(rows), 'one track must have been labelled orphan, not %u' % len(rows))
         self.assertEquals(t2, rows[0][0], 'wrong track labelled orphan')
 
+    def test_debug(self):
+        sql = db.Open().debug('SELECT ?, ?', (1, 2, ), quiet=True)
+        self.assertEquals('SELECT 1, 2', sql)
 
-class MarkLikedBy(TestCase):
-    def tearDown(self):
-        db.rollback()
-
-    def runTest(self):
+    def test_mark_liked_by(self):
         db.execute("DELETE FROM tracks")
         db.execute("DELETE FROM votes")
         db.execute("DELETE FROM labels")

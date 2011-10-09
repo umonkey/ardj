@@ -4,16 +4,14 @@ import ardj.tags
 
 
 class FileNotFound(unittest.TestCase):
-    def runTest(self):
+    def test_not_found(self):
         try:
             ardj.tags.raw('does/not/exist.mp3')
         except ardj.tags.FileNotFound:
             return
         self.fail('Missing file not reported.')
 
-
-class UnsupportedFileType(unittest.TestCase):
-    def runTest(self):
+    def test_unsupported_file(self):
         try:
             ardj.tags.raw(__file__)
         except ardj.tags.UnsupportedFileType:
