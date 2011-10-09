@@ -22,7 +22,14 @@ def install():
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
 
-    h = logging.handlers.RotatingFileHandler(ardj.settings.getpath('log', '/tmp/ardj.log'), maxBytes=1000000, backupCount=5)
+    filename = ardj.settings.getpath('log', '/tmp/ardj.log')
+
+    folder = os.path.dirname(filename)
+    if not os.path.exists(folder) or not os.access(folder, os.W_OK):
+        filename = "/tmp/ardj.log"
+
+    h = logging.handlers.RotatingFileHandler(filename, maxBytes=1000000, backupCount=5)
+
     h.setFormatter(logging.Formatter('%(asctime)s - %(process)6d - %(levelname)s - %(message)s'))
     h.setLevel(logging.DEBUG)
     logger.addHandler(h)
