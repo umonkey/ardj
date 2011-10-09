@@ -30,6 +30,9 @@ install:
 uninstall:
 	cat install.log | xargs sudo rm -f
 
+purge:
+	sudo rm -rf /var/lib/ardj /var/log/ardj
+
 release: clean bdist deb
 	hg archive -t zip ardj-${VERSION}.zip
 	googlecode_upload.py -s "ardj v${VERSION} (Debian)" -p ardj -l Featured,Type-Package,OpSys-Linux ardj-${VERSION}.deb
