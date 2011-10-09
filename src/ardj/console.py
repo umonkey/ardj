@@ -556,7 +556,7 @@ def get_usage(sender):
     return message
 
 
-def process_command(text, sender=Noneg, quiet=False):
+def process_command(text, sender=None, quiet=False):
     """Processes one message, returns a text reply.
 
     Arguments:
