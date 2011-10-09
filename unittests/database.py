@@ -2,6 +2,7 @@ import os
 import unittest
 
 import ardj.database
+import ardj.tracks
 
 
 class TestCase(unittest.TestCase):
@@ -77,29 +78,6 @@ class RecentMarker(TestCase):
         self.assertEquals(100, new)
 
 
-class PreshowMarker(TestCase):
-    tables = ['tracks', 'labels', 'votes']
-
-    def runTest(self):
-        tracks = (
-            (1, ('alice@example.com', )),
-            (2, ('bob@example.com', )),
-            (3, ('alice@example.com', 'bob@example.com', )),
-        )
-
-        for track in tracks:
-            ardj.database.execute('INSERT INTO tracks (id) VALUES (?)', (track[0], ))
-            ardj.database.execute("INSERT INTO labels (track_id, label, email) VALUES (?, 'music', 'test')", (track[0], ))
-            for email in track[1]:
-                ardj.database.execute('INSERT INTO votes (track_id, vote, email) VALUES (?, 1, ?)', (track[0], email, ))
-
-        ardj.database.Open().mark_preshow_music()
-
-        rows = ardj.database.fetch("SELECT track_id FROM labels WHERE label = 'preshow-music'")
-        self.assertEquals(1, len(rows))
-        self.assertEquals(3, rows[0][0])
-
-
 class Stats(TestCase):
     tables = ['tracks']
 
@@ -127,3 +105,27 @@ class OrphansMarker(TestCase):
         rows = ardj.database.fetch('SELECT track_id FROM labels WHERE label = \'orphan\'')
         self.assertEquals(1, len(rows), 'one track must have been labelled orphan, not %u' % len(rows))
         self.assertEquals(t2, rows[0][0], 'wrong track labelled orphan')
+
+
+class MarkLikedBy(TestCase):
+    def tearDown(self):
+        ardj.database.rollback()
+
+    def runTest(self):
+        ardj.database.execute("DELETE FROM tracks")
+        ardj.database.execute("DELETE FROM votes")
+        ardj.database.execute("DELETE FROM labels")
+
+        jids = ["a@example.com", "b@example.com", "c@example.com"]
+
+        for idx in range(len(jids)):
+            track_id = idx + 1
+            ardj.database.execute("INSERT INTO tracks (id) VALUES (?)", (track_id, ))
+            for jid in range(idx, len(jids)):
+                ardj.database.execute("INSERT INTO votes (track_id, email, vote) VALUES (?, ?, ?)", (track_id, jids[jid], 1, ))
+
+        count = ardj.tracks.add_label_to_tracks_liked_by("tmp", jids[1:], "test")
+        self.assertEquals(2, count)
+
+        rows = ardj.database.fetchcol("SELECT track_id FROM labels WHERE label = ?", ("tmp", ))
+        self.assertEquals([1, 2], rows)

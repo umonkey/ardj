@@ -946,7 +946,6 @@ def add_label_to_tracks_liked_by(label, jids, sender):
     for _id in _ids:
         ardj.database.execute("INSERT INTO labels (track_id, label, email) VALUES (?, ?, ?)", (_id, label, sender, ))
 
-    ardj.database.commit()
     return len(_ids)
 
 

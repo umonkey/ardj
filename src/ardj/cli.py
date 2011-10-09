@@ -250,9 +250,11 @@ def cmd_fix_artist_names(*args):
 
 def cmd_mark_liked_by(label, *jids):
     """applies a label to tracks liked by all specified jids"""
+    import database
     import tracks
     count = tracks.add_label_to_tracks_liked_by(label, jids, "console")
     print "Found %u tracks." % count
+    database.commit()
     return True
 
 
