@@ -117,11 +117,11 @@ def fetch(url, suffix=None, args=None, user=None, password=None, quiet=False, po
     opener = get_opener(url, user, password)
     try:
         if post:
-            u = opener(urllib2.Request(url), urllib.urlencode(args))
             logging.info('Posting to %s' % url)
+            u = opener(urllib2.Request(url), urllib.urlencode(args))
         else:
-            u = opener(urllib2.Request(url), None)
             logging.info('Downloading %s' % url)
+            u = opener(urllib2.Request(url), None)
         if ret:
             return u.read()
         if suffix is None:
