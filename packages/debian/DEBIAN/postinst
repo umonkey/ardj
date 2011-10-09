@@ -26,6 +26,18 @@ case "$1" in
         # Make sure files created in that folder always have the ardj group.
         chmod +s /var/lib/ardj /var/lib/ardj/incoming /var/log/ardj
 
+        # Support systems with older Python versions.
+        for pv in 2.5 2.6; do
+            if [ -d "/usr/lib/python${pv}" ]; then
+                DST="/usr/lib/python${pv}/dist-packages/ardj"
+                if [ ! -e "$DST" ]; then
+                    echo "Installing a copy for Python ${pv}"
+                    mkdir -p "/usr/lib/python${pv}/dist-packages"
+                    ln -s "/usr/lib/python2.7/dist-packages/ardj" "$DST"
+                fi
+            fi
+        done
+
         # Initialize the database.
         if [ ! -f /var/lib/ardj/database.sqlite ]; then
             echo "Initializing a new database at /var/lib/ardj/database.sqlite"
