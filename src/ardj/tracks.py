@@ -930,6 +930,26 @@ def schedule_download(artist, owner=None):
     return u'Это займёт какое-то время, я сообщу о результате.'
 
 
+def add_label_to_tracks_liked_by(label, jids, sender):
+    """Adds the specified to tracks liked by all of the specified jids."""
+    if not isinstance(jids, (list, tuple)):
+        raise TypeError("jids must be a list or a tuple")
+
+    _sets = [set(ardj.database.fetchcol("SELECT track_id FROM votes WHERE email = ? AND vote > 0", (jid, ))) for jid in jids]
+    while len(_sets) > 1:
+        _sets[0] &= _sets[1]
+        del _sets[1]
+
+    _ids = list(_sets[0])
+
+    ardj.database.execute("DELETE FROM labels WHERE label = ?", (label, ))
+    for _id in _ids:
+        ardj.database.execute("INSERT INTO labels (track_id, label, email) VALUES (?, ?, ?)", (_id, label, sender, ))
+
+    ardj.database.commit()
+    return len(_ids)
+
+
 def do_idle_tasks(set_busy):
     """Loads new tracks from external sources."""
     req = ardj.database.ArtistDownloadRequest.get_one()

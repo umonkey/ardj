@@ -29,8 +29,8 @@ def cmd_config(*args):
 def cmd_db(*args):
     """database functions
 
-    Subcommands: console, mark-hitlist, mark-preshow, mark-recent,
-    mark-orphans, mark-long, purge, By default opens the database console."""
+    Subcommands: console, mark-hitlist, mark-recent, mark-orphans, mark-long,
+    purge, By default opens the database console."""
     import database
     return database.run_cli(args)
 
@@ -246,6 +246,14 @@ def cmd_fix_artist_names(*args):
             Track.rename_artist(name, new_name)
 
     commit()
+
+
+def cmd_mark_liked_by(label, *jids):
+    """applies a label to tracks liked by all specified jids"""
+    import tracks
+    count = tracks.add_label_to_tracks_liked_by(label, jids, "console")
+    print "Found %u tracks." % count
+    return True
 
 
 def cmd_help(*args):

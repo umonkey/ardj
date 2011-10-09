@@ -384,23 +384,6 @@ class database:
         count = self.execute('INSERT INTO labels (track_id, label, email) SELECT id, ?, ? FROM tracks WHERE count < 10 AND weight > 0 AND id IN (SELECT track_id FROM labels WHERE label = ?)', ('fresh', 'ardj', 'music', ))
         print 'Found %u fresh songs.' % count
 
-    def mark_preshow_music(self):
-        """Marks music liked by all show hosts with "preshow-music"."""
-        common_label, set_label = 'music', 'preshow-music'
-        users = ardj.settings.get('live/hosts')
-        if users is None:
-            logging.warning('Could not mark preshow-music: live/hosts not set.')
-            return
-
-        self.execute('DELETE FROM labels WHERE label = ?', (set_label, ))
-
-        sql = 'INSERT INTO labels (track_id, label, email) SELECT id, ?, ? FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?)'
-        params = (set_label, 'robot', common_label, )
-        for user in users:
-            sql += ' AND id IN (SELECT track_id FROM votes WHERE vote > 0 AND email = ?)'
-            params += (user, )
-        self.execute(sql, params)
-
     def mark_orphans(self, set_label='orphan', quiet=False):
         """Labels orphan tracks with "orphan".
 
@@ -475,6 +458,13 @@ def fetchone(sql, params=None):
         return result[0]
 
 
+def fetchcol(sql, params=None):
+    """Returns a list of first column values."""
+    rows = fetch(sql, params)
+    if rows:
+        return [row[0] for row in rows]
+
+
 def execute(*args, **kwargs):
     return Open().execute(*args, **kwargs)
 
@@ -485,7 +475,6 @@ Commands:
   console           -- open SQLite console
   mark-hitlist      -- mark best tracks with "hitlist"
   mark-orphans      -- mark tracks that don't belong to a playlist
-  mark-preshow      -- marks preshow music
   mark-recent       -- mark last 100 tracks with "recent"
   purge             -- remove dead data
   """
@@ -507,9 +496,6 @@ def run_cli(args):
         ok = True
     if 'mark-hitlist' in args:
         db.mark_hitlist()
-        ok = True
-    if 'mark-preshow' in args:
-        db.mark_preshow_music()
         ok = True
     if 'mark-recent' in args:
         db.mark_recent_music()
