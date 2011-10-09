@@ -15,8 +15,7 @@ class LastFmError(Exception): pass
 
 def get_artist_names():
     """Returns names of all artists that have well rated music."""
-    cur = ardj.database.Open().cursor()
-    return sorted([row[0] for row in cur.execute('SELECT DISTINCT artist FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?) AND weight >= ?', (ardj.settings.get('tout/label', 'music'), float(ardj.settings.get('tout/weight', '1.0')), )).fetchall()])
+    return sorted([row[0] for row in ardj.database.fetch('SELECT DISTINCT artist FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?) AND weight >= ?', (ardj.settings.get('tout/label', 'music'), float(ardj.settings.get('tout/weight', '1.0')), ))])
 
 
 def fetch_artist_events(lastfm, artist_name):
@@ -114,14 +113,11 @@ def update_website():
 
 def update_labels(artist_names):
     """Adds the concert-soon labels to appropriate tracks."""
-    db = ardj.database.Open()
-    cur = db.cursor()
-    cur.execute("DELETE FROM labels WHERE label = 'concert-soon'")
+    ardj.database.execute("DELETE FROM labels WHERE label = 'concert-soon'")
     for name in artist_names:
-        cur.execute('INSERT INTO labels (track_id, label, email) '
+        ardj.database.execute('INSERT INTO labels (track_id, label, email) '
             'SELECT id, ?, ? FROM tracks WHERE artist = ?', (
             'concert-soon', 'ardj', name, ))
-    db.commit()
 
 
 def run_cli(args):

@@ -21,8 +21,7 @@ def add_song(artist, title, mp3_link, tags):
 
     Does nothing if the song is already in the database (only artist/title are
     checked).  TODO: check duration and file size also."""
-    cur = ardj.database.Open().cursor()
-    track_id = cur.execute('SELECT id FROM tracks WHERE artist = ? AND title = ?', (artist, title, )).fetchone()
+    track_id = ardj.database.fetchone('SELECT id FROM tracks WHERE artist = ? AND title = ?', (artist, title, ))
     if track_id is None:
         logging.info('Downloading "%s" by %s' % (title, artist))
         try:

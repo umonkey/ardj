@@ -120,6 +120,12 @@ class ardjbot(MyFileReceivingBot):
             ardj.tracks.do_idle_tasks(self.set_busy)
         except Exception, e:
             logging.error("ERROR in jabber idle handlers: %s\n%s" % (e, traceback.format_exc(e)))
+
+        try:
+            ardj.database.commit()
+        except Exception, e:
+            logging.error("Could not commit changes: %s." % e)
+
         super(ardjbot, self).idle_proc()
 
     def set_busy(self):
@@ -145,24 +151,17 @@ class ardjbot(MyFileReceivingBot):
             self.status_type = self.AVAILABLE
 
     def __idle_lastfm(self):
-        cur = ardj.database.cursor()
-        commit = False
         if self.lastfm:
             try:
-                if self.lastfm.process(cur=cur):
-                    commit = True
+                self.lastfm.process()
             except Exception, e:
                 logging.error('Could not process LastFM queue: %s' % e)
 
         if self.librefm:
             try:
-                if self.librefm.process(cur=cur):
-                    commit = True
+                self.librefm.process()
             except Exception, e:
                 logging.error('Could not process LibreFM queue: %s' % e)
-
-        if commit:
-            ardj.database.commit()
 
     def __idle_status(self):
         """
@@ -258,32 +257,35 @@ class ardjbot(MyFileReceivingBot):
 
         Adds an explicit database commit after all messages.
         """
-        try:
-            if mess.getType() == 'chat':
-                try:
-                    msg = mess.getBody()
-                    if not msg:
-                        return
-                    rep = ardj.console.process_command(msg, mess.getFrom().getStripped())
-                except Exception, e:
-                    logging.warning(u'ERROR: %s, MESSAGE: %s\n%s' % (e, mess, traceback.format_exc(e)))
-                    rep = unicode(e)
-                self.send_simple_reply(mess, rep.strip())
-                self.send_pending_messages()
-                self.status_type = self.AVAILABLE
-        finally:
-            ardj.database.commit()
+        if mess.getType() == 'chat':
+            try:
+                msg = mess.getBody()
+                if not msg:
+                    return
+                rep = ardj.console.process_command(msg, mess.getFrom().getStripped())
+            except Exception, e:
+                logging.warning(u'ERROR: %s, MESSAGE: %s\n%s' % (e, mess, traceback.format_exc(e)))
+                rep = unicode(e)
+            self.send_simple_reply(mess, rep.strip())
+            self.send_pending_messages()
+            self.status_type = self.AVAILABLE
 
     def send_pending_messages(self):
         """Sends all pending messages to the chat room or exact recipients.
         Messages are added to the queue using the chat_say() function."""
-        for msg in ardj.database.Message.find_all():
-            if msg.re is None:
-                self.say_to_chat(msg.message)
-            else:
-                self.say_to_jid(msg.re, msg.message)
-            msg.delete()
-        ardj.database.commit()
+        try:
+            commit = False
+            for msg in ardj.database.Message.find_all():
+                if msg.re is None:
+                    self.say_to_chat(msg.message)
+                else:
+                    self.say_to_jid(msg.re, msg.message)
+                msg.delete()
+                commit = True
+            if commit:
+                ardj.database.commit()
+        except Exception, e:
+            logging.error("Could not send pending messages: %s\n%s" % (e, traceback.format_exc(e)))
 
     def run(self):
         return self.serve_forever(connect_callback=self.on_connected, disconnect_callback=self.on_disconnect)
@@ -338,12 +340,11 @@ def run_cli(args):
     print USAGE
 
 
-def chat_say(message, recipient=None, cur=None):
+def chat_say(message, recipient=None):
     """Adds a message to the chat room queue.  This is the only way for command
     handlers to notify chat users.  If the recipient is not specified, the
     message is sent to the chat room."""
     ardj.database.Message.create(re=recipient, message=message)
-    ardj.database.commit()
 
 
 __all__ = [ 'Open', 'chat_say' ]

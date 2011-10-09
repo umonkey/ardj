@@ -7,10 +7,13 @@ Lets HTTP clients access the database.
 
 import logging
 import sys
+import traceback
 
 import json
 import web
 
+import database
+import scrobbler
 import tracks
 
 
@@ -22,23 +25,88 @@ def send_json(f):
     return wrapper
 
 
-class NextController:
+class Controller:
+    def __init__(self):
+        logging.debug("Request: %s" % web.ctx.path)
+
+    def __del__(self):
+        logging.debug("Request finished, closing the transaction.")
+        database.commit()
+
+
+class NextController(Controller):
     """Handles the /track/next.json request by returning a JSON description of
     the track that should be played next.  Only responds to POST requests to
     prevent accidential access."""
     @send_json
     def POST(self):
-        track_id = tracks.get_next_track_id()
-        if not track_id:
-            logging.error("Could not satisfy a request -- no tracks.")
-            raise web.internalerror("No data.")
+        try:
+            track = tracks.get_next_track()
+            if track is None:
+                raise web.internalerror("No data.")
+            logging.debug("Returning track info: %s" % track)
+            return track
+        except Exception, e:
+            logging.error("Error handling a request: %s\n%s" % (e, traceback.format_exc(e)))
+            return {"status": "error", "message": str(e)}
 
-        track = tracks.get_track_by_id(track_id)
-        if track is None:
-            logging.error("Could not satisfy a request -- track %s is unknown." % track_id)
-            raise web.internalerror("Could not pick a track.")
 
-        return track
+class ScrobbleController(Controller):
+    """Sends scheduled tracks to Last.fm and Libre.fm."""
+    def __init__(self):
+        self.lastfm = scrobbler.LastFM()
+        self.librefm = ardj.scrobbler.LibreFM()
+
+    def POST(self):
+        return
+        """
+        commit = False
+        if self.lastfm:
+            try:
+                if self.lastfm.process():
+                    commit = True
+            except Exception, e:
+                logging.error('Could not process LastFM queue: %s' % e)
+
+        if self.librefm:
+            try:
+                if self.librefm.process():
+                    commit = True
+            except Exception, e:
+                logging.error('Could not process LibreFM queue: %s' % e)
+
+        if commit:
+            ardj.database.commit()
+        """
+
+
+class CommitController(Controller):
+    @send_json
+    def POST(self):
+        database.commit()
+        return {"status": "ok"}
+
+
+class RocksController(Controller):
+    @send_json
+    def POST(self):
+        try:
+            args = web.input(sender=None, track_id=None)
+
+            track_id = args.track_id
+            if not track_id or track_id == "None":
+                track_id = tracks.get_last_track_id()
+
+            weight = tracks.add_vote(track_id, args.sender, 1)
+            if weight is None:
+                message = 'No such track.'
+            else:
+                message = 'OK, current weight of track #%u is %.04f.' % (track_id, weight)
+
+            return {"status": "ok", "message": message}
+        except Exception, e:
+            logging.error("ERROR: %s\n%s" % (e, traceback.format_exc(e)))
+            return {"status": "error", "message": str(e)}
 
 
 def serve_http(hostname, port):
@@ -46,8 +114,13 @@ def serve_http(hostname, port):
     del sys.argv[1:]
     sys.argv.extend([hostname, port])
 
+    logging.info("Starting the ardj web service at http://%s:%s/" % (hostname, port))
+
     web.application((
         "/track/next\.json", NextController,
+        "/track/rocks\.json", RocksController,
+        "/scrobble\.json", ScrobbleController,
+        "/commit\.json", CommitController,
     )).run()
 
 

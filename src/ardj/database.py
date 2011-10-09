@@ -27,6 +27,7 @@ import os
 import re
 import sys
 import time
+import traceback
 
 try:
     from sqlite3 import dbapi2 as sqlite
@@ -265,6 +266,8 @@ class database:
 
     def cursor(self):
         """Returns a new SQLite cursor, for internal use."""
+        stack = "".join(traceback.format_stack()[-5:-1])
+        logging.debug("Starting a transaction (returning a cursor)\n%s" % stack)
         return self.db.cursor()
 
     def commit(self):
@@ -273,9 +276,32 @@ class database:
 
     def rollback(self):
         """Cancel pending changes."""
+        logging.debug("Rolling back a transaction.")
         self.db.rollback()
 
-    def update(self, table, args, cur=None):
+    def fetch(self, sql, params=None):
+        return self.execute(sql, params, fetch=True)
+
+    def execute(self, sql, params=None, fetch=False):
+        cur = self.db.cursor()
+        try:
+            args = [sql]
+            if params is not None:
+                args.append(params)
+            cur.execute(*args)
+            if fetch:
+                return cur.fetchall()
+            elif sql.startswith("INSERT "):
+                return cur.lastrowid
+            else:
+                return cur.rowcount
+        except Exception, e:
+            logging.error("Failed SQL statement: %s, params: %s" % (sql, params))
+            raise e
+        finally:
+            cur.close()
+
+    def update(self, table, args):
         """Performs update on a label.
 
         Updates the table with values from the args dictionary, key "id" must
@@ -283,9 +309,6 @@ class database:
 
         db.update('tracks', { 'weight': 1, 'id': 123 })
         """
-        if cur is None:
-            cur = self.cursor()
-
         sql = []
         params = []
         for k in args:
@@ -294,7 +317,7 @@ class database:
                 params.append(args[k])
         params.append(args['id'])
 
-        cur.execute('UPDATE %s SET %s WHERE id = ?' % (table, ', '.join(sql)), tuple(params))
+        self.execute('UPDATE %s SET %s WHERE id = ?' % (table, ', '.join(sql)), tuple(params))
 
     def debug(self, sql, params, quiet=False):
         """Logs the query in human readable form.
@@ -309,15 +332,14 @@ class database:
         logging.debug(u'SQL: ' + sql)
         return sql
 
-    def merge_aliases(self, cur=None):
+    def merge_aliases(self):
         """Moves votes from similar accounts to one."""
-        cur = cur or self.cursor()
         for k, v in ardj.settings.get('jabber/aliases', {}).items():
             for alias in v:
-                cur.execute('UPDATE votes SET email = ? WHERE email = ?', (k, alias, ))
+                self.execute('UPDATE votes SET email = ? WHERE email = ?', (k, alias, ))
 
 
-    def purge(self, cur=None):
+    def purge(self):
         """Removes stale data.
 
         Stale data in queue items, labels and votes linked to tracks that no
@@ -325,48 +347,44 @@ class database:
         analyzed all tables (to optimize indexes) and vacuums the database.
         """
         old_size = os.stat(self.filename).st_size
-        cur = cur or self.cursor()
         self.merge_aliases(cur)
-        cur.execute('DELETE FROM queue WHERE track_id NOT IN (SELECT id FROM tracks)')
-        cur.execute('DELETE FROM labels WHERE track_id NOT IN (SELECT id FROM tracks)')
-        cur.execute('DELETE FROM votes WHERE track_id NOT IN (SELECT id FROM tracks)')
+        self.execute('DELETE FROM queue WHERE track_id NOT IN (SELECT id FROM tracks)')
+        self.execute('DELETE FROM labels WHERE track_id NOT IN (SELECT id FROM tracks)')
+        self.execute('DELETE FROM votes WHERE track_id NOT IN (SELECT id FROM tracks)')
         for table in ('playlists', 'tracks', 'queue', 'urgent_playlists', 'labels', 'karma'):
-            cur.execute('ANALYZE ' + table)
-        cur.execute('VACUUM')
+            self.execute('ANALYZE ' + table)
+        self.execute('VACUUM')
         logging.info('%u bytes saved after database purge.' % (os.stat(self.filename).st_size - old_size))
 
-    def mark_hitlist(self, cur=None):
+    def mark_hitlist(self):
         """Marks best tracks with the "hitlist" label.
 
         Only processes tracks labelled with "music".  Before applying the
         label, removes it from the tracks that have it already."""
         set_label, check_label = 'hitlist', 'music'
 
-        cur = cur or self.cursor()
-        cur.execute('DELETE FROM labels WHERE label = ?', (set_label, ))
+        self.execute('DELETE FROM labels WHERE label = ?', (set_label, ))
 
-        weight = cur.execute('SELECT real_weight FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?) ORDER BY real_weight DESC LIMIT 19, 1', (check_label, )).fetchone()
+        weight = fetchone('SELECT real_weight FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?) ORDER BY real_weight DESC LIMIT 19, 1', (check_label, ))
         if weight:
-            cur.execute('INSERT INTO labels (track_id, label, email) SELECT id, ?, ? FROM tracks WHERE real_weight >= ? AND id IN (SELECT track_id FROM labels WHERE label = ?)', (set_label, 'ardj', weight[0], check_label, ))
+            self.execute('INSERT INTO labels (track_id, label, email) SELECT id, ?, ? FROM tracks WHERE real_weight >= ? AND id IN (SELECT track_id FROM labels WHERE label = ?)', (set_label, 'ardj', weight[0], check_label, ))
 
             lastfm = ardj.scrobbler.LastFM()
             lastfm.authorize()
 
-            for artist, title in cur.execute('SELECT t.artist, t.title FROM tracks t INNER JOIN labels l ON l.track_id = t.id WHERE l.label = ?', (set_label, )).fetchall():
+            for artist, title in self.fetch('SELECT t.artist, t.title FROM tracks t INNER JOIN labels l ON l.track_id = t.id WHERE l.label = ?', (set_label, )):
                 lastfm.love(artist, title)
 
-    def mark_recent_music(self, cur=None):
+    def mark_recent_music(self):
         """Marks last 100 tracks with "recent"."""
-        cur = cur or self.cursor()
+        self.execute('DELETE FROM labels WHERE label = ?', ('recent', ))
+        self.execute('INSERT INTO labels (track_id, label, email) SELECT id, ?, ? FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?) ORDER BY id DESC LIMIT 100', ('recent', 'ardj', 'music', ))
 
-        cur.execute('DELETE FROM labels WHERE label = ?', ('recent', ))
-        cur.execute('INSERT INTO labels (track_id, label, email) SELECT id, ?, ? FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?) ORDER BY id DESC LIMIT 100', ('recent', 'ardj', 'music', ))
+        self.execute('DELETE FROM labels WHERE label = ?', ('fresh', ))
+        count = self.execute('INSERT INTO labels (track_id, label, email) SELECT id, ?, ? FROM tracks WHERE count < 10 AND weight > 0 AND id IN (SELECT track_id FROM labels WHERE label = ?)', ('fresh', 'ardj', 'music', ))
+        print 'Found %u fresh songs.' % count
 
-        cur.execute('DELETE FROM labels WHERE label = ?', ('fresh', ))
-        cur.execute('INSERT INTO labels (track_id, label, email) SELECT id, ?, ? FROM tracks WHERE count < 10 AND weight > 0 AND id IN (SELECT track_id FROM labels WHERE label = ?)', ('fresh', 'ardj', 'music', ))
-        print 'Found %u fresh songs.' % cur.rowcount
-
-    def mark_preshow_music(self, cur=None):
+    def mark_preshow_music(self):
         """Marks music liked by all show hosts with "preshow-music"."""
         common_label, set_label = 'music', 'preshow-music'
         users = ardj.settings.get('live/hosts')
@@ -374,17 +392,16 @@ class database:
             logging.warning('Could not mark preshow-music: live/hosts not set.')
             return
 
-        cur = cur or self.cursor()
-        cur.execute('DELETE FROM labels WHERE label = ?', (set_label, ))
+        self.execute('DELETE FROM labels WHERE label = ?', (set_label, ))
 
         sql = 'INSERT INTO labels (track_id, label, email) SELECT id, ?, ? FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?)'
         params = (set_label, 'robot', common_label, )
         for user in users:
             sql += ' AND id IN (SELECT track_id FROM votes WHERE vote > 0 AND email = ?)'
             params += (user, )
-        cur.execute(sql, params)
+        self.execute(sql, params)
 
-    def mark_orphans(self, set_label='orphan', cur=None, quiet=False):
+    def mark_orphans(self, set_label='orphan', quiet=False):
         """Labels orphan tracks with "orphan".
 
         Orphans are tracks that don't belong to a playlist."""
@@ -401,12 +418,10 @@ class database:
             logging.warning('Could not mark orphan tracks: no labels are used in playlists.yaml')
             return False
 
-        cur = cur or self.cursor()
-        cur.execute('DELETE FROM labels WHERE label = ?', (set_label, ))
+        self.execute('DELETE FROM labels WHERE label = ?', (set_label, ))
 
         sql = 'SELECT id, artist, title FROM tracks WHERE weight > 0 AND id NOT IN (SELECT track_id FROM labels WHERE label IN (%s)) ORDER BY artist, title' % ', '.join(['?'] * len(used_labels))
-        cur.execute(sql, used_labels)
-        rows = cur.fetchall()
+        rows = self.fetch(sql, used_labels)
 
         if rows:
             if not quiet:
@@ -414,25 +429,23 @@ class database:
             for row in rows:
                 if not quiet:
                     print '%8u; %s -- %s' % (row[0], (row[1] or 'unknown').encode('utf-8'), (row[2] or 'unknown').encode('utf-8'))
-                cur.execute('INSERT INTO labels (track_id, email, label) VALUES (?, ?, ?)', (int(row[0]), 'ardj', set_label))
+                self.execute('INSERT INTO labels (track_id, email, label) VALUES (?, ?, ?)', (int(row[0]), 'ardj', set_label))
             return True
 
     def mark_long(self):
         """Marks unusuall long tracks."""
-        cur = self.cursor()
-        length = ardj.tracks.get_average_length(cur)
-        cur.execute('DELETE FROM labels WHERE label = \'long\'')
-        cur.execute('INSERT INTO labels (track_id, email, label) SELECT id, \'ardj\', \'long\' FROM tracks WHERE length > ?', (length, ))
-        count = cur.execute('SELECT COUNT(*) FROM labels WHERE label = \'long\'').fetchone()[0]
+        length = ardj.tracks.get_average_length()
+        self.execute('DELETE FROM labels WHERE label = \'long\'')
+        self.execute('INSERT INTO labels (track_id, email, label) SELECT id, \'ardj\', \'long\' FROM tracks WHERE length > ?', (length, ))
+        count = self.fetch('SELECT COUNT(*) FROM labels WHERE label = \'long\'')[0][0]
         print 'Average length is %u seconds, %u tracks match.' % (length, count)
 
-    def get_artist_names(self, label=None, weight=0, cur=None):
-        cur = cur or self.cursor()
+    def get_artist_names(self, label=None, weight=0):
         if label is None:
-            cur.execute("SELECT DISTINCT artist FROM tracks WHERE weight > ?", (weight, ))
+            rows = self.fetch("SELECT DISTINCT artist FROM tracks WHERE weight > ?", (weight, ))
         else:
-            cur.execute("SELECT DISTINCT artist FROM tracks WHERE weight > ? AND id IN (SELECT track_id FROM labels WHERE label = ?)", (weight, label, ))
-        return [r[0] for r in cur.fetchall()]
+            rows = self.fetch("SELECT DISTINCT artist FROM tracks WHERE weight > ? AND id IN (SELECT track_id FROM labels WHERE label = ?)", (weight, label, ))
+        return [r[0] for r in rows]
 
 
 def Open(filename=None):
@@ -440,13 +453,26 @@ def Open(filename=None):
     return database.get_instance()
 
 
-def cursor():
-    return Open().cursor()
-
-
 def commit():
+    # ts = time.time()
+    # logging.debug("Commit.")
     Model._get_store().commit()
     Open().commit()
+    # logging.debug("Commit took %s seconds." % (time.time() - ts))
+
+
+def fetch(sql, params=None):
+    return Open().fetch(sql, params)
+
+
+def fetchone(sql, params=None):
+    result = fetch(sql, params)
+    if result:
+        return result[0]
+
+
+def execute(*args, **kwargs):
+    return Open().execute(*args, **kwargs)
 
 
 USAGE = """Usage: ardj db commands...

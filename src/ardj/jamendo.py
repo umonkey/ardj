@@ -14,7 +14,6 @@ def find_new_tracks(artist_names=None, verbose=False):
     """Returns tracks to fetch.  Result is a list of dictionaries with keys:
     artist, title, url, tags."""
     db = ardj.database.Open()
-    cur = db.cursor()
 
     todo = []
 

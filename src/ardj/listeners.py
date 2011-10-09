@@ -40,7 +40,7 @@ def format_data(sql, params, converters, setting, header=None):
     filename = ardj.settings.getpath(setting)
     if filename:
         print 'Writing to %s' % filename
-        data = ardj.database.cursor().execute(sql, params).fetchall()
+        data = ardj.database.fetch(sql, params)
         f = csv.writer(open(filename, 'w'))
         if header:
             f.writerow(header)

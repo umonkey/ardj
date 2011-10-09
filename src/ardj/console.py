@@ -72,21 +72,21 @@ def signal_ices(sig):
         return False
 
 
-def on_delete(args, sender, cur=None):
+def on_delete(args, sender):
     if not args.isdigit():
         return 'Must specify a single numeric track id.'
 
-    track = ardj.tracks.get_track_by_id(int(args), cur=cur)
+    track = ardj.tracks.get_track_by_id(int(args))
     if not track:
         return 'No such track.'
     if not track.get('weight'):
         return 'This track was already deleted.'
     track['weight'] = 0
-    ardj.tracks.update_track(track, cur=cur)
+    ardj.tracks.update_track(track)
     return 'Deleted track %u.' % track['id']
 
 
-def on_skip(args, sender, cur=None):
+def on_skip(args, sender):
     if signal_ices(signal.SIGUSR1):
         s = sender.split('@')[0]
         ardj.jabber.chat_say(u'%s sent a skip request.' % s,)
@@ -94,12 +94,12 @@ def on_skip(args, sender, cur=None):
     return 'Could not send the request for some reason.'
 
 
-def on_say(args, sender, cur=None):
+def on_say(args, sender):
     ardj.jabber.chat_say(args)
     return 'OK'
 
 
-def on_restart(args, sender, cur=None):
+def on_restart(args, sender):
     if args == 'ices':
         if signal_ices(signal.SIGTERM):
             ardj.util.run([ 'ices', '-B' ])
@@ -108,98 +108,94 @@ def on_restart(args, sender, cur=None):
     sys.exit(1)
 
 
-def on_sql(args, sender, cur=None):
+def on_sql(args, sender):
     if not args.endswith(';'):
         return 'SQL statements must end with a ;, for your own safety.'
 
-    cur = cur or ardj.database.cursor()
-    rows = cur.execute(args).fetchall()
+    if not args.lower().startswith("select"):
+        return u"%u rows affected." % ardj.database.fetch(args)
+
+    rows = ardj.database.fetch(args)
     if not rows:
-        if cur.rowcount:
-            return '%u rows affected.' % cur.rowcount
         return 'Nothing.'
 
     output = u'\n'.join([u'; '.join([unicode(cell) for cell in row]) for row in rows])
     return output
 
 
-def on_twit(args, sender, cur=None):
+def on_twit(args, sender):
     return ardj.twitter.send_message(args)
 
 
-def on_speak(args, sender, cur=None):
+def on_speak(args, sender):
     return ardj.speech.render_and_queue(args) or 'OK, please wait until the current song finishes playing.'
 
 
-def on_echo(args, sender, cur=None):
+def on_echo(args, sender):
     return args
 
 
-def on_purge(args, sender, cur=None):
+def on_purge(args, sender):
     ardj.tracks.purge()
     return 'OK'
 
 
-def on_reload(args, sender, cur=None):
+def on_reload(args, sender):
     if not signal_ices(signal.SIGHUP):
         return 'Failed.'
     ardj.settings.load(True)
     return 'Ices will be reinitialized when track changes.'
 
 
-def on_rocks(args, sender, cur=None):
+def on_rocks(args, sender):
     if args and not args.isdigit():
         return 'Usage: rocks [track_id]'
 
-    track_id = args and int(args) or ardj.tracks.get_last_track_id(cur=cur)
-    weight = ardj.tracks.add_vote(track_id, sender, 1, cur=cur)
+    track_id = args and int(args) or ardj.tracks.get_last_track_id()
+    weight = ardj.tracks.add_vote(track_id, sender, 1)
     if weight is None:
         return 'No such track.'
     return 'OK, current weight of track #%u is %.04f.' % (track_id, weight)
 
 
-def on_sucks(args, sender, cur=None):
+def on_sucks(args, sender):
     if args and not args.isdigit():
         return 'Usage: sucks [track_id]'
 
-    track_id = args and int(args) or ardj.tracks.get_last_track_id(cur=cur)
-    weight = ardj.tracks.add_vote(track_id, sender, -1, cur=cur)
+    track_id = args and int(args) or ardj.tracks.get_last_track_id()
+    weight = ardj.tracks.add_vote(track_id, sender, -1)
     if weight is None:
         return 'No such track.'
     return 'OK, current weight of track #%u is %.04f.' % (track_id, weight)
 
 
-def on_ban(args, sender, cur=None):
+def on_ban(args, sender):
     if not args:
         return 'Usage: ban artist_name'
-    cur = cur or ardj.database.cursor()
-    count = cur.execute('SELECT COUNT(*) FROM tracks WHERE artist = ?', (args, )).fetchone()[0]
+    count = ardj.database.fetchone('SELECT COUNT(*) FROM tracks WHERE artist = ?', (args, ))[0]
     if not count:
         return 'No tracks by this artist.'
-    cur.execute('UPDATE tracks SET weight = 0 WHERE artist = ?', (args, ))
+    ardj.database.execute('UPDATE tracks SET weight = 0 WHERE artist = ?', (args, ))
     return 'Deleted %u tracks.' % count
 
 
-def on_shitlist(args, sender, cur=None):
-    cur = cur or ardj.database.cursor()
-    rows = cur.execute('SELECT id, artist, title, weight, count FROM tracks WHERE weight > 0 ORDER BY weight, title, artist LIMIT 10').fetchall()
+def on_shitlist(args, sender):
+    rows = ardj.database.fetch('SELECT id, artist, title, weight, count FROM tracks WHERE weight > 0 ORDER BY weight, title, artist LIMIT 10')
     if not rows:
         return 'No tracks (database must be empty).'
     tracks = [{ 'id': row[0], 'artist': row[1], 'title': row[2], 'weight': row[3], 'count': row[4] } for row in rows]
     return format_track_list(tracks, u'Lowest rated tracks:')
 
 
-def on_hitlist(args, sender, cur=None):
-    cur = cur or ardj.database.cursor()
-
-    rows = cur.execute('SELECT id, artist, title, weight, count FROM tracks WHERE weight > 0 ORDER BY weight DESC, title, artist LIMIT 10').fetchall()
+def on_hitlist(args, sender):
+    rows = ardj.database.execute('SELECT id, artist, title, weight, count FROM tracks WHERE weight > 0 ORDER BY weight DESC, title, artist LIMIT 10')
     if not rows:
         return 'No tracks (database must be empty).'
     tracks = [{ 'id': row[0], 'artist': row[1], 'title': row[2], 'weight': row[3], 'count': row[4] } for row in rows]
     return format_track_list(tracks, u'Highest rated tracks:')
 
 
-def on_queue(args, sender, cur=None):
+def on_queue(args, sender):
     """Queue management.  Adds the first matching track to the playback queue.  Usage:
 
     queue something -- queues the first track shown by "find something";
@@ -212,15 +208,14 @@ def on_queue(args, sender, cur=None):
     are marked with the "queue-jingle" label.  If the user is not an admin,
     he's not allowed to queue more than one track.
     """
-    cur = cur or ardj.database.cursor()
     is_admin = is_user_admin(sender)
 
     if args == 'flush':
-        cur.execute('DELETE FROM queue WHERE owner = ?', (sender, ))
+        ardj.database.execute('DELETE FROM queue WHERE owner = ?', (sender, ))
         return 'Removed your tracks from queue.'
 
     if args == 'flush -a' and is_admin:
-        cur.execute('DELETE FROM queue')
+        ardj.database.execute('DELETE FROM queue')
         return 'Done.'
 
     elif args:
@@ -232,15 +227,15 @@ def on_queue(args, sender, cur=None):
         if delete:
             args = args[3:]
 
-        tracks = ardj.tracks.find_ids(args, sender, cur)
+        tracks = ardj.tracks.find_ids(args, sender)
 
         if delete:
             for track_id in tracks:
-                cur.execute('DELETE FROM queue WHERE owner = ? AND track_id = ?', (sender, track_id, ))
+                ardj.database.execute('DELETE FROM queue WHERE owner = ? AND track_id = ?', (sender, track_id, ))
             return 'Done.'
 
         tracks = tracks[:1]
-        have_tracks = cur.execute('SELECT COUNT(*) FROM queue WHERE owner = ?', (sender, )).fetchone()[0]
+        have_tracks = ardj.database.fetchone('SELECT COUNT(*) FROM queue WHERE owner = ?', (sender, ))[0]
 
         if not is_admin:
             silent = False
@@ -250,22 +245,22 @@ def on_queue(args, sender, cur=None):
         if not tracks:
             return 'Could not find anything.'
 
-        ardj.jabber.chat_say(u'%s requested track %s' % (sender.split('@')[0], u', '.join([ardj.tracks.identify(x, cur=cur, unknown='(a pause)') for x in tracks])))
+        ardj.jabber.chat_say(u'%s requested track %s' % (sender.split('@')[0], u', '.join([ardj.tracks.identify(x, unknown='(a pause)') for x in tracks])))
 
         jingles = ardj.tracks.find_ids('-r @queue-jingle')[:1]
         if tracks and jingles and not have_tracks and not silent:
             tracks.insert(0, jingles[0])
 
         for track_id in tracks:
-            ardj.tracks.queue(track_id, sender, cur)
+            ardj.tracks.queue(track_id, sender)
 
-    tracks = ardj.tracks.get_queue(cur)[:10]
+    tracks = ardj.tracks.get_queue()[:10]
     if not tracks:
         return 'Nothing is in the queue.'
     return format_track_list(tracks, u'Current queue:')
 
 
-def on_find(args, sender, cur=None):
+def on_find(args, sender):
     """Finds tracks that match a query.  Has two modes of search:
 
     find something -- finds tracks with "something" in artist name or title;
@@ -279,9 +274,8 @@ def on_find(args, sender, cur=None):
     find -l something -- show newest first;
     find -s something -- show olders first.
     """
-    cur = cur or ardj.database.cursor()
-    all_tracks = ardj.tracks.find_ids(args, sender, cur=cur)
-    tracks = [ardj.tracks.get_track_by_id(x, cur=cur) for x in all_tracks[:10]]
+    all_tracks = ardj.tracks.find_ids(args, sender)
+    tracks = [ardj.tracks.get_track_by_id(x) for x in all_tracks[:10]]
     if not tracks:
         return 'Nothing was found.'
     if len(all_tracks) > len(tracks):
@@ -291,24 +285,21 @@ def on_find(args, sender, cur=None):
     return format_track_list(tracks, header)
 
 
-def on_news(args, sender, cur=None):
-    cur = cur or ardj.database.cursor()
-
-    rows = cur.execute('SELECT id, artist, title, weight, count FROM tracks WHERE weight > 0 ORDER BY id DESC LIMIT 10').fetchall()
+def on_news(args, sender):
+    rows = ardj.database.fetch('SELECT id, artist, title, weight, count FROM tracks WHERE weight > 0 ORDER BY id DESC LIMIT 10')
     if not rows:
         return 'No tracks at all.'
     tracks = [{ 'id': row[0], 'artist': row[1], 'title': row[2], 'weight': row[3], 'count': row[4] } for row in rows]
     return format_track_list(tracks, 'Recently added tracks:')
 
 
-def on_votes(args, sender, cur=None):
-    cur = cur or ardj.database.cursor()
+def on_votes(args, sender):
     if args.startswith('for '):
         track_id = int(args[4:].strip())
     else:
-        track_id = ardj.tracks.get_last_track_id(cur)
+        track_id = ardj.tracks.get_last_track_id()
 
-    votes = ardj.tracks.get_track_votes(track_id, cur=cur)
+    votes = ardj.tracks.get_track_votes(track_id)
     if not votes:
         return 'No votes for that track.'
 
@@ -317,11 +308,10 @@ def on_votes(args, sender, cur=None):
     return u'Pro: %s, contra: %s. ' % (', '.join(pro or ['nobody']), ', '.join(contra or ['nobody']))
 
 
-def on_voters(args, sender, cur=None):
-    cur = cur or ardj.database.cursor()
-    rows = cur.execute('SELECT v.email, COUNT(*) AS c, k.weight '
+def on_voters(args, sender):
+    rows = ardj.database.fetch('SELECT v.email, COUNT(*) AS c, k.weight '
         'FROM votes v INNER JOIN karma k ON k.email = v.email '
-        'GROUP BY v.email ORDER BY c DESC, k.weight DESC, v.email').fetchall()
+        'GROUP BY v.email ORDER BY c DESC, k.weight DESC, v.email')
 
     output = u'Top voters:'
     for email, count, weight in rows:
@@ -329,28 +319,26 @@ def on_voters(args, sender, cur=None):
     return output
 
 
-def on_play(args, sender, cur=None):
-    cur = cur or ardj.database.cursor()
+def on_play(args, sender):
     if not args:
         current = ardj.tracks.get_urgent()
         if not current:
             return 'Playing everything.'
         return u'Current filter: %s' % u' '.join(current)
-    ardj.tracks.set_urgent(args, cur=cur)
+    ardj.tracks.set_urgent(args)
     return 'OK.'
 
 
-def on_tags(args, sender, cur=None):
+def on_tags(args, sender):
     """Shows or modifies tags.
 
     tags add -remove [for track_id] -- manipulate tags
     tags -- show the tag cloud.
     """
     if not args or args == '-a':
-        cur = cur or ardj.database.cursor()
-        data = cur.execute('SELECT l.label, COUNT(*) AS count FROM labels l '
+        data = ardj.databasea.fetch('SELECT l.label, COUNT(*) AS count FROM labels l '
             'INNER JOIN tracks t ON t.id = l.track_id '
-            'WHERE t.weight > 0 GROUP BY label ORDER BY l.label').fetchall()
+            'WHERE t.weight > 0 GROUP BY label ORDER BY l.label')
         if args != '-a':
             data = [x for x in data if ':' not in x[0]]
         output = u', '.join([u'%s (%u)' % (l, c) for l, c in data]) + u'.'
@@ -366,16 +354,14 @@ def on_tags(args, sender, cur=None):
         track_id = int(parts[-1])
         parts = parts[:-2]
     else:
-        track_id = ardj.tracks.get_last_track_id(cur)
+        track_id = ardj.tracks.get_last_track_id()
 
     labels = [l.strip(' ,@') for l in parts]
-    current = ardj.tracks.add_labels(track_id, labels, owner=sender, cur=cur) or ['none']
+    current = ardj.tracks.add_labels(track_id, labels, owner=sender) or ['none']
     return u'New labels: %s.' % (u', '.join(sorted(current)))
 
 
-def on_set(args, sender, cur=None):
-    cur = cur or ardj.database.cursor()
-
+def on_set(args, sender):
     parts = args.split(' ')
     if not args or len(parts) < 3 or parts[1] != 'to':
         return 'Usage: set artist|title to value [for track_id]'
@@ -389,27 +375,24 @@ def on_set(args, sender, cur=None):
         track_id = int(parts[-1])
         parts = parts[:-2]
     else:
-        track_id = ardj.tracks.get_last_track_id(cur)
+        track_id = ardj.tracks.get_last_track_id()
 
-    track = ardj.tracks.get_track_by_id(track_id, cur)
+    track = ardj.tracks.get_track_by_id(track_id)
     track[parts[0]] = u' '.join(parts[2:])
-    ardj.tracks.update_track(track, cur=cur)
+    ardj.tracks.update_track(track)
 
     return 'Done.'
 
 
-def on_last(args, sender, cur=None):
-    cur = cur or ardj.database.cursor()
-    rows = cur.execute('SELECT t.id, t.artist, t.title, t.weight FROM tracks t INNER JOIN playlog l ON l.track_id = t.id ORDER BY l.ts DESC LIMIT 10')
+def on_last(args, sender):
+    rows = ardj.database.fetch('SELECT t.id, t.artist, t.title, t.weight FROM tracks t INNER JOIN playlog l ON l.track_id = t.id ORDER BY l.ts DESC LIMIT 10')
     tracks = [{ 'id': row[0], 'artist': row[1], 'title': row[2], 'weight': row[3] } for row in rows]
     return format_track_list(tracks, 'Last played tracks:')
 
 
-def on_dump(args, sender, cur=None):
+def on_dump(args, sender):
     if not args or not args.isdigit():
         return 'Usage: dump track_id'
-
-    cur = cur or ardj.database.cursor()
 
     track = ardj.tracks.get_track_by_id(int(args))
     if not track:
@@ -417,7 +400,7 @@ def on_dump(args, sender, cur=None):
 
     track['editable'] = is_user_admin(sender)
 
-    votes = cur.execute('SELECT vote FROM votes WHERE track_id = ? AND email = ?', (track['id'], sender, )).fetchone()
+    votes = ardj.database.fetchone('SELECT vote FROM votes WHERE track_id = ? AND email = ?', (track['id'], sender, ))
     track['vote'] = votes and votes[0] or None
 
     base_url = ardj.settings.get('database/base_files_url')
@@ -427,13 +410,11 @@ def on_dump(args, sender, cur=None):
     return json.dumps(track, ensure_ascii=False)
 
 
-def on_show(args, sender, cur=None):
-    cur = cur or ardj.database.cursor()
-
-    track_id = args and int(args) or ardj.tracks.get_last_track_id(cur)
+def on_show(args, sender):
+    track_id = args and int(args) or ardj.tracks.get_last_track_id()
     if not track_id:
         return 'Nothing is playing.'
-    track = ardj.tracks.get_track_by_id(track_id, cur=cur)
+    track = ardj.tracks.get_track_by_id(track_id)
     if not track:
         return 'Track %s not found.' % track_id
 
@@ -444,14 +425,12 @@ def on_show(args, sender, cur=None):
     return result.strip()
 
 
-def on_status(args, sender, cur=None):
-    cur = cur or ardj.database.cursor()
-
-    track_id = ardj.tracks.get_last_track_id(cur=cur)
+def on_status(args, sender):
+    track_id = ardj.tracks.get_last_track_id()
     if not track_id:
         return 'Silence.'
 
-    track = ardj.tracks.get_track_by_id(track_id, cur=cur)
+    track = ardj.tracks.get_track_by_id(track_id)
     if not track:
         return 'Playing an unknown track.'
 
@@ -462,7 +441,7 @@ def on_status(args, sender, cur=None):
     return message
 
 
-def on_merge(args, sender, cur=None):
+def on_merge(args, sender):
     """Merges two tracks.  Usage: merge id1 id2.
 
     Track 2 is deleted, labels, votes and playcounts are moved to track 1.
@@ -470,18 +449,18 @@ def on_merge(args, sender, cur=None):
     ids = args.split(' ')
     if len(ids) != 2 or not ids[0].isdigit() or not ids[1].isdigit():
         return 'Usage: merge id1 id2'
-    ardj.tracks.merge(int(ids[0]), int(ids[1]), cur or ardj.database.cursor())
+    ardj.tracks.merge(int(ids[0]), int(ids[1]))
     return 'OK.'
 
 
-def on_download(args, sender, cur=None):
+def on_download(args, sender):
     """Finds free tracks by the specified artsit in Last.fm or Jamendo and downloads some."""
     if not args:
         return 'Usage: download artist'
     return ardj.tracks.schedule_download(args, sender)
 
 
-def on_bookmark(args, sender, cur=None):
+def on_bookmark(args, sender):
     """Adds a track to bookmarks.  If track id is not specified, the currently
     played track is bookmarked.  Latest bookmarks are shown afterwards."""
     track_ids = []
@@ -494,13 +473,13 @@ def on_bookmark(args, sender, cur=None):
         else:
             raise Exception('Usage: bm [-d] track_ids...')
     if not track_ids:
-        track_ids.append(ardj.tracks.get_last_track_id(cur=cur))
+        track_ids.append(ardj.tracks.get_last_track_id())
 
-    ardj.tracks.bookmark(track_ids, sender, remove=remove, cur=cur)
+    ardj.tracks.bookmark(track_ids, sender, remove=remove)
     return 'Bookmark %s. Use "find -b" or "queue -b" to access yout bookmarks.' % (remove and 'removed' or 'added')
 
 
-def on_help(args, sender, cur=None):
+def on_help(args, sender):
     if not args:
         return get_usage(sender)
     for cmd_name, is_privileged, handler, description in command_map:
@@ -577,7 +556,7 @@ def get_usage(sender):
     return message
 
 
-def process_command(text, sender=None, cur=None, quiet=False):
+def process_command(text, sender=Noneg, quiet=False):
     """Processes one message, returns a text reply.
 
     Arguments:
@@ -591,8 +570,6 @@ def process_command(text, sender=None, cur=None, quiet=False):
     else:
         command, args = text, ''
     command = command_aliases.get(command.lower(), command.lower())
-
-    cur = cur or ardj.database.cursor()
 
     sender = sender or 'console'
     is_admin = is_user_admin(sender)
@@ -610,7 +587,7 @@ def process_command(text, sender=None, cur=None, quiet=False):
     if len(options) > 1:
         return 'Did you mean %s?' % ardj.util.shortlist([o[0] for o in options], limit=1000, glue='or')
 
-    return options[0][1](args.strip(), sender=sender, cur=cur)
+    return options[0][1](args.strip(), sender=sender)
 
 
 def run_cli(args):

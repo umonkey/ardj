@@ -2,6 +2,7 @@ import hashlib
 import logging
 import time
 
+import ardj.database
 import ardj.settings
 import ardj.util
 
@@ -113,7 +114,7 @@ class LastFM(object):
         except TypeError: pass
         return None
 
-    def process(self, cur):
+    def process(self):
         """Looks for stuff to scrobble in the playlog table."""
         skip_labels = ardj.settings.get('last.fm/skip_labels')
         if skip_labels:
@@ -123,11 +124,11 @@ class LastFM(object):
         else:
             sql = 'SELECT t.artist, t.title, p.ts FROM tracks t INNER JOIN playlog p ON p.track_id = t.id WHERE p.lastfm = 0 AND t.weight > 0 AND t.length > 60 ORDER BY p.ts'
             params = []
-        rows = cur.execute(sql, params).fetchall()
+        rows = ardj.database.fetch(sql, params)
         for artist, title, ts in rows:
             if not self.scrobble(artist, title, ts):
                 return False
-            cur.execute('UPDATE playlog SET lastfm = 1 WHERE ts = ?', (ts, ))
+            ardj.database.execute('UPDATE playlog SET lastfm = 1 WHERE ts = ?', (ts, ))
         return True
 
     def call(self, post=False, api_sig=False, **kwargs):
@@ -202,7 +203,7 @@ class LibreFM(object):
             logging.error('Could not submit to libre.fm: %s' % data)
             return False
 
-    def process(self, cur):
+    def process(self):
         """Looks for stuff to scrobble in the playlog table."""
         skip_labels = ardj.settings.get('libre.fm/skip_labels',
             ardj.settings.get('last.fm/skip_labels'))
@@ -213,11 +214,11 @@ class LibreFM(object):
         else:
             sql = 'SELECT t.artist, t.title, p.ts FROM tracks t INNER JOIN playlog p ON p.track_id = t.id WHERE p.librefm = 0 AND t.weight > 0 AND t.length > 60 ORDER BY p.ts'
             params = []
-        rows = cur.execute(sql, params).fetchall()[:10]
+        rows = ardj.database.fetch(sql, params)[:10]
         for artist, title, ts in rows:
             if not self.scrobble(artist, title, ts):
                 return False
-            cur.execute('UPDATE playlog SET librefm = 1 WHERE ts = ?', (ts, ))
+            ardj.database.execute('UPDATE playlog SET librefm = 1 WHERE ts = ?', (ts, ))
         return True
 
     def get_session_key(self, challenge):

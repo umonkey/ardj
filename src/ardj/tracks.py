@@ -14,6 +14,7 @@ import random
 import re
 import sys
 import time
+import traceback
 
 import ardj.database
 import ardj.jabber
@@ -103,42 +104,38 @@ class Playlist(dict):
         return ardj.util.expand(self['hours'])
 
     @classmethod
-    def get_active(cls, timestamp=None, cur=None):
-        return [p for p in cls.get_all(cur=cur) if p.is_active(timestamp)]
+    def get_active(cls, timestamp=None):
+        return [p for p in cls.get_all() if p.is_active(timestamp)]
 
     @classmethod
-    def get_all(cls, cur=None):
+    def get_all(cls):
         """Returns information about all known playlists.  Information from
         playlists.yaml is complemented by the last_played column of the
         `playlists' table."""
-        cur = cur or ardj.database.cursor()
-        stats = dict(cur.execute('SELECT name, last_played FROM playlists WHERE name IS NOT NULL AND last_played IS NOT NULL').fetchall())
+        stats = dict(ardj.database.fetch('SELECT name, last_played FROM playlists WHERE name IS NOT NULL AND last_played IS NOT NULL'))
         return [cls(p).add_ts(stats) for p in ardj.settings.load().get_playlists()]
 
     @classmethod
-    def touch_by_track(cls, track_id, cur=None):
+    def touch_by_track(cls, track_id):
         """Finds playlists that contain this track and updates their last_played
         property, so that they could be delayed properly."""
-        cur = cur or ardj.database.cursor()
-
-        track = get_track_by_id(track_id, cur=cur)
+        track = get_track_by_id(track_id)
         ts = int(time.time())
 
-        for playlist in cls.get_all(cur=cur):
+        for playlist in cls.get_all():
             name = playlist.get('name')
             if name and playlist.match_track(track):
-                logging.debug('Track %u touches playlist %s' % (track_id, name))
-                cur.execute('UPDATE playlists SET last_played = ? '
-                    'WHERE name = ?', (ts, name, ))
-                if cur.rowcount == 0:
-                    cur.execute('INSERT INTO playlists (name, last_played) '
-                        'VALUES (?, ?)', (name, ts, ))
+                logging.debug('Track %u touches playlist "%s".' % (track_id, name))
+                rowcount = ardj.database.execute('UPDATE playlists SET last_played = ? WHERE name = ?', (ts, name, ))
+                if rowcount == 0:
+                    ardj.database.execute('INSERT INTO playlists (name, last_played) VALUES (?, ?)', (name, ts, ))
 
 
 def get_real_track_path(filename):
     return os.path.join(ardj.settings.get_music_dir(), filename)
 
-def get_track_by_id(track_id, cur=None):
+
+def get_track_by_id(track_id):
     """Returns track description as a dictionary.
 
     If the track does not exist, returns None.  Extended properties,
@@ -146,19 +143,19 @@ def get_track_by_id(track_id, cur=None):
 
     Arguments:
     track_id -- identified the track to return.
-    cur -- database cursor, None to open a new one.
+    cur -- unused.
     """
-    cur = cur or ardj.database.cursor()
-    row = cur.execute('SELECT id, filename, artist, title, length, NULL, weight, count, last_played, real_weight FROM tracks WHERE id = ?', (track_id, )).fetchone()
-    if row is not None:
+    rows = ardj.database.fetch("SELECT id, filename, artist, title, length, NULL, weight, count, last_played, real_weight FROM tracks WHERE id = ?", (track_id, ))
+    if rows:
+        row = rows[0]
         result = { 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'length': row[4], 'weight': row[6], 'count': row[7], 'last_played': row[8], 'real_weight': row[9] }
-        result['labels'] = [row[0] for row in cur.execute('SELECT DISTINCT label FROM labels WHERE track_id = ? ORDER BY label', (track_id, )).fetchall()]
+        result['labels'] = [row[0] for row in ardj.database.fetch('SELECT DISTINCT label FROM labels WHERE track_id = ? ORDER BY label', (track_id, ))]
         if result.get('filename'):
             result['filepath'] = get_real_track_path(result['filename'])
         return result
 
 
-def get_last_track_id(cur=None):
+def get_last_track_id():
     """Returns id of the last played track.
 
     If the database is empty, returns None, otherwise an integer.
@@ -166,39 +163,36 @@ def get_last_track_id(cur=None):
     Keyword arguments:
     cur -- database cursor, created if None.
     """
-    cur = cur or ardj.database.cursor()
-    row = cur.execute('SELECT id FROM tracks ORDER BY last_played DESC LIMIT 1').fetchone()
-    return row and row[0] or None
+    row = ardj.database.fetchone("SELECT id FROM tracks ORDER BY last_played DESC LIMIT 1")
+    if row:
+        return row[0]
 
 
-def get_last_track(cur=None):
+def get_last_track():
     """Returns the full description of the last played track.
 
     Calls get_track_by_id(get_last_track_id()).
     """
-    return get_track_by_id(get_last_track_id(cur), cur)
+    return get_track_by_id(get_last_track_id())
 
 
-def identify(track_id, cur=None, unknown='an unknown track'):
-    track = get_track_by_id(track_id, cur=cur)
+def identify(track_id, unknown='an unknown track'):
+    track = get_track_by_id(track_id)
     if not track:
         return unknown
     return u'«%s» by %s' % (track.get('title', 'untitled'), track.get('artist', 'unknown artist'))
 
-def queue(track_id, owner=None, cur=None):
+def queue(track_id, owner=None):
     """Adds the track to queue."""
-    cur = cur or ardj.database.cursor()
-    return cur.execute('INSERT INTO queue (track_id, owner) VALUES (?, ?)', (track_id, (owner or 'ardj').lower(), )).lastrowid
+    return ardj.database.execute('INSERT INTO queue (track_id, owner) VALUES (?, ?)', (track_id, (owner or 'ardj').lower(), ))
 
 
-def get_queue(cur=None):
-    cur = cur or ardj.database.cursor()
-    return [get_track_by_id(row[0], cur) for row in cur.execute('SELECT track_id FROM queue ORDER BY id').fetchall()]
+def get_queue():
+    rows = ardj.database.fetch("SELECT track_id FROM queue ORDER BY id")
+    return [get_track_by_id(row[0]) for row in rows]
 
 
-def find_ids(pattern, sender=None, cur=None, limit=None):
-    cur = cur or ardj.database.cursor()
-
+def find_ids(pattern, sender=None, limit=None):
     search_order = 'weight DESC'
     search_args = []
     search_labels = []
@@ -253,24 +247,23 @@ def find_ids(pattern, sender=None, cur=None, limit=None):
     sql = 'SELECT id FROM tracks WHERE weight > 0 AND %s ORDER BY %s' % (' AND '.join(where), search_order)
     if limit is not None:
         sql += ' LIMIT %u' % limit
-    rows = cur.execute(sql, params).fetchall()
+    rows = ardj.database.fetch(sql, params)
     return [row[0] for row in rows]
 
 
-def add_labels(track_id, labels, owner=None, cur=None):
-    cur = cur or ardj.database.cursor()
+def add_labels(track_id, labels, owner=None):
     if labels:
         for label in labels:
             if label.startswith('-'):
-                cur.execute('DELETE FROM labels WHERE track_id = ? AND label = ?', (track_id, label.lstrip('-'), ))
-            elif cur.execute('SELECT 1 FROM labels WHERE track_id = ? AND label = ?', (track_id, label.lstrip('+'), )).fetchall():
+                ardj.database.execute('DELETE FROM labels WHERE track_id = ? AND label = ?', (track_id, label.lstrip('-'), ))
+            elif ardj.database.fetch('SELECT 1 FROM labels WHERE track_id = ? AND label = ?', (track_id, label.lstrip('+'), )):
                 pass
             else:
-                cur.execute('INSERT INTO labels (track_id, label, email) VALUES (?, ?, ?)', (track_id, label.lstrip('+'), owner or 'ardj', ))
-    return sorted(list(set([row[0] for row in cur.execute('SELECT label FROM labels WHERE track_id = ?', (track_id, )).fetchall()])))
+                ardj.database.execute('INSERT INTO labels (track_id, label, email) VALUES (?, ?, ?)', (track_id, label.lstrip('+'), owner or 'ardj', ))
+    return sorted(list(set([row[0] for row in ardj.database.fetch('SELECT label FROM labels WHERE track_id = ?', (track_id, ))])))
 
 
-def update_track(properties, cur=None):
+def update_track(properties):
     """Updates valid track attributes.
 
     Loads the track specified in properties['id'], then updates its known
@@ -284,7 +277,6 @@ def update_track(properties, cur=None):
         raise Exception('Track properties must be passed as a dictionary.')
     if 'id' not in properties:
         raise Exception('Track properties have no id.')
-    cur = cur or ardj.database.cursor()
 
     sql = []
     params = []
@@ -298,49 +290,46 @@ def update_track(properties, cur=None):
     else:
         params.append(properties['id'])
         sql = 'UPDATE tracks SET ' + ', '.join(sql) + ' WHERE id = ?'
-        ardj.database.Open().debug(sql, params)
-        cur.execute(sql, tuple(params))
+        ardj.database.execute(sql, tuple(params))
 
     if properties.get('labels'):
-        add_labels(properties['id'], properties['labels'], owner=properties.get('owner'), cur=cur)
+        add_labels(properties['id'], properties['labels'], owner=properties.get('owner'))
 
 
-def purge(cur=None):
+def purge():
     """Deletes tracks with zero weight.
 
     Removes files, track entries are left in the database to prevent reloading
     by podcaster etc.
     """
-    cur = cur or ardj.database.cursor()
     music_dir = ardj.settings.get_music_dir()
 
     # mark tracks that no longer have files
-    for track_id, filename in cur.execute('SELECT id, filename FROM tracks WHERE weight > 0 AND filename IS NOT NULL').fetchall():
+    for track_id, filename in ardj.database.fetch('SELECT id, filename FROM tracks WHERE weight > 0 AND filename IS NOT NULL'):
         abs_filename = os.path.join(music_dir, filename)
         if not os.path.exists(abs_filename):
             logging.warning('Track %u vanished (%s), deleting.' % (track_id, filename))
-            cur.execute('UPDATE tracks SET weight = 0 WHERE id = ?', (track_id, ))
+            ardj.database.execute('UPDATE tracks SET weight = 0 WHERE id = ?', (track_id, ))
 
-    for track_id, filename in cur.execute('SELECT id, filename FROM tracks WHERE weight = 0 AND filename IS NOT NULL').fetchall():
+    for track_id, filename in ardj.database.fetch('SELECT id, filename FROM tracks WHERE weight = 0 AND filename IS NOT NULL'):
         abs_filename = os.path.join(music_dir, filename)
         if os.path.exists(abs_filename):
             os.unlink(abs_filename)
             logging.info('Deleted track %u (%s) from file system.' % (track_id, filename))
 
-    cur.execute('UPDATE tracks SET filename = NULL WHERE weight = 0')
-    ardj.database.Open().purge(cur)
+    ardj.database.execute('UPDATE tracks SET filename = NULL WHERE weight = 0')
+    # ardj.database.Open().purge()
 
 
-def get_urgent(cur=None):
+def get_urgent():
     """Returns current playlist preferences."""
-    cur = cur or ardj.database.cursor()
-    data = cur.execute('SELECT labels FROM urgent_playlists WHERE expires > ? ORDER BY expires', (int(time.time()), )).fetchall()
+    data = ardj.database.fetch('SELECT labels FROM urgent_playlists WHERE expires > ? ORDER BY expires', (int(time.time()), ))
     if data:
         return re.split('[,\s]+', data[0][0])
     return None
 
 
-def set_urgent(args, cur=None):
+def set_urgent(args):
     """Sets the music filter.
 
     Sets music filter to be used for picking random tracks.  If set, only
@@ -348,14 +337,13 @@ def set_urgent(args, cur=None):
     must be specified as a string, using spaces or commas as separators.
     Use "all" to reset.
     """
-    cur = cur or ardj.database.cursor()
-    cur.execute('DELETE FROM urgent_playlists')
+    ardj.database.execute('DELETE FROM urgent_playlists')
     if args != 'all':
         expires = time.time() + 3600
-        cur.execute('INSERT INTO urgent_playlists (labels, expires) VALUES (?, ?)', (args, int(expires), ))
+        ardj.database.execute('INSERT INTO urgent_playlists (labels, expires) VALUES (?, ?)', (args, int(expires), ))
 
 
-def add_vote(track_id, email, vote, cur=None, update_karma=False):
+def add_vote(track_id, email, vote, update_karma=False):
     """Adds a vote for/against a track.
 
     The process is: 1) add a record to the votes table, 2) update email's
@@ -366,8 +354,6 @@ def add_vote(track_id, email, vote, cur=None, update_karma=False):
 
     Returns track's current weight.
     """
-    cur = cur or ardj.database.cursor()
-
     email = email.lower()
 
     # Normalize the vote.
@@ -380,7 +366,7 @@ def add_vote(track_id, email, vote, cur=None, update_karma=False):
             email = k
             break
 
-    row = cur.execute("SELECT last_played, weight FROM tracks WHERE id = ?", (track_id, )).fetchone()
+    row = ardj.database.fetchone("SELECT last_played, weight FROM tracks WHERE id = ?", (track_id, ))
     if row is None:
         return None
 
@@ -390,33 +376,32 @@ def add_vote(track_id, email, vote, cur=None, update_karma=False):
     elif current_weight <= 0:
         raise Exception("Can't vote for deleted tracks.")
 
-    vote_count = cur.execute("SELECT COUNT(*) FROM votes WHERE track_id = ? "
+    vote_count = ardj.database.fetchone("SELECT COUNT(*) FROM votes WHERE track_id = ? "
         "AND email = ? AND vote = ? AND ts >= ?", (track_id, email, vote,
-        last_played, )).fetchone()[0]
+        last_played, ))[0]
 
-    cur.execute('INSERT INTO votes (track_id, email, vote, ts) '
+    ardj.database.execute('INSERT INTO votes (track_id, email, vote, ts) '
         'VALUES (?, ?, ?, ?)', (track_id, email, vote, int(time.time()), ))
 
     # Update current track weight.
     if not vote_count:
         current_weight = max(current_weight + vote * 0.25, 0.01)
-        cur.execute('UPDATE tracks SET weight = ? WHERE id = ?', (current_weight, track_id, ))
+        ardj.database.execute('UPDATE tracks SET weight = ? WHERE id = ?', (current_weight, track_id, ))
 
-        update_real_track_weight(track_id, cur=cur)
+        update_real_track_weight(track_id)
 
-    real_weight = cur.execute('SELECT weight FROM tracks WHERE id = ?',
-        (track_id, )).fetchone()[0]
+    real_weight = ardj.database.fetchone('SELECT weight FROM tracks WHERE id = ?',
+        (track_id, ))[0]
     return real_weight
 
 
-def get_vote(track_id, email, cur=None):
-    return get_track_votes(track_id, cur=cur).get(email.lower(), 0)
+def get_vote(track_id, email):
+    return get_track_votes(track_id).get(email.lower(), 0)
 
 
-def get_track_votes(track_id, cur=None):
+def get_track_votes(track_id):
     results = {}
-    cur = cur or ardj.database.cursor()
-    for email, vote in cur.execute("SELECT email, vote FROM votes WHERE track_id = ? ORDER BY id", (track_id, )).fetchall():
+    for email, vote in ardj.database.fetch("SELECT email, vote FROM votes WHERE track_id = ?", (track_id, )):
         results[email.lower()] = vote
     return results
 
@@ -463,34 +448,29 @@ def add_file(filename, add_labels=None, owner=None, quiet=False):
     if not ardj.util.copy_file(filename, abs_filename):
         raise Exception('Could not copy %s to %s' % (filename, abs_filename))
 
-    cur = ardj.database.cursor()
-    track_id = cur.execute('INSERT INTO tracks (artist, title, filename, length, last_played, owner, weight, real_weight, count) VALUES (?, ?, ?, ?, ?, ?, 1, 1, 0)', (artist, title, rel_filename, duration, 0, owner or 'ardj', )).lastrowid
+    track_id = ardj.database.execute('INSERT INTO tracks (artist, title, filename, length, last_played, owner, weight, real_weight, count) VALUES (?, ?, ?, ?, ?, ?, 1, 1, 0)', (artist, title, rel_filename, duration, 0, owner or 'ardj', )).lastrowid
     for label in labels:
-        cur.execute('INSERT INTO labels (track_id, label, email) VALUES (?, ?, ?)', (track_id, label, (owner or 'ardj').lower(), ))
-    ardj.database.commit()
+        ardj.database.execute('INSERT INTO labels (track_id, label, email) VALUES (?, ?, ?)', (track_id, label, (owner or 'ardj').lower(), ))
     return track_id
 
 
-def get_track_id_from_queue(cur=None):
+def get_track_id_from_queue():
     """Returns a track from the top of the queue.
     
     If the queue is empty or there's no valid track in it, returns None.
     """
-    cur = cur or ardj.database.cursor()
-    row = cur.execute('SELECT id, track_id FROM queue ORDER BY id LIMIT 1').fetchone()
+    row = ardj.database.fetchone('SELECT id, track_id FROM queue ORDER BY id LIMIT 1')
     if row:
-        cur.execute('DELETE FROM queue WHERE id = ?', (row[0], ))
+        ardj.database.execute('DELETE FROM queue WHERE id = ?', (row[0], ))
         if not row[1]:
             return None
-        track = get_track_by_id(row[1], cur=cur)
+        track = get_track_by_id(row[1])
         if not track.get('filename'):
             return None
         return row[1]
 
 
-def get_random_track_id_from_playlist(playlist, skip_artists, cur=None):
-    cur = cur or ardj.database.cursor()
-
+def get_random_track_id_from_playlist(playlist, skip_artists):
     sql = 'SELECT id, weight, artist FROM tracks WHERE weight > 0 AND artist IS NOT NULL AND filename IS NOT NULL'
     params = []
 
@@ -520,10 +500,10 @@ def get_random_track_id_from_playlist(playlist, skip_artists, cur=None):
         params.append(int(time.time()) - int(delay) * 60)
 
     ardj.database.Open().debug(sql, params)
-    track_id = get_random_row(cur.execute(sql, tuple(params)).fetchall())
+    track_id = get_random_row(ardj.database.fetch(sql, tuple(params)))
 
     if playlist.get('preroll'):
-        track_id = add_preroll(track_id, playlist.get('preroll'), cur=cur)
+        track_id = add_preroll(track_id, playlist.get('preroll'))
 
     return track_id
 
@@ -584,19 +564,20 @@ def get_random_row(rows):
     return None
 
 
-def get_prerolls_for_labels(labels, cur):
+def get_prerolls_for_labels(labels):
     """Returns ids of valid prerolls that have one of the specified labels."""
     sql = "SELECT tracks.id FROM tracks INNER JOIN labels ON labels.track_id = tracks.id WHERE tracks.weight > 0 AND tracks.filename IS NOT NULL AND labels.label IN (%s)" % ', '.join(['?'] * len(labels))
-    return [row[0] for row in cur.execute(sql, labels).fetchall()]
+    return [row[0] for row in ardj.database.fetch(sql, labels)]
 
 
-def get_prerolls_for_track(track_id, cur):
+def get_prerolls_for_track(track_id):
     """Returns prerolls applicable to the specified track."""
-    by_artist = cur.execute("SELECT t1.id FROM tracks t1 INNER JOIN tracks t2 ON t2.artist = t1.artist INNER JOIN labels l ON l.track_id = t1.id WHERE l.label = 'preroll' AND t2.id = ? AND t1.weight > 0 AND t1.filename IS NOT NULL", (track_id, )).fetchall()
-    by_label = cur.execute("SELECT t.id, t.title FROM tracks t WHERE t.weight > 0 AND t.filename IS NOT NULL AND t.id IN (SELECT track_id FROM labels WHERE label IN (SELECT l.label || '-preroll' FROM tracks t1 INNER JOIN labels l ON l.track_id = t1.id WHERE t1.id = ?))", (track_id, )).fetchall()
+    by_artist = ardj.database.fetch("SELECT t1.id FROM tracks t1 INNER JOIN tracks t2 ON t2.artist = t1.artist INNER JOIN labels l ON l.track_id = t1.id WHERE l.label = 'preroll' AND t2.id = ? AND t1.weight > 0 AND t1.filename IS NOT NULL", (track_id, ))
+    by_label = ardj.database.fetch("SELECT t.id, t.title FROM tracks t WHERE t.weight > 0 AND t.filename IS NOT NULL AND t.id IN (SELECT track_id FROM labels WHERE label IN (SELECT l.label || '-preroll' FROM tracks t1 INNER JOIN labels l ON l.track_id = t1.id WHERE t1.id = ?))", (track_id, ))
     return list(set([row[0] for row in by_artist + by_label]))
 
-def add_preroll(track_id, labels=None, cur=None):
+
+def add_preroll(track_id, labels=None):
     """Adds a preroll for the specified track.
 
     Finds prerolls by labels and artist title, picks one and returns its id,
@@ -605,28 +586,44 @@ def add_preroll(track_id, labels=None, cur=None):
     
     Tracks that have a preroll-* never have a preroll.
     """
-    cur = cur or ardj.database.cursor()
-
     # Skip if the track is a preroll.
-    if cur.execute("SELECT COUNT(*) FROM labels WHERE track_id = ? AND label LIKE 'preroll-%'", (track_id, )).fetchone()[0]:
+    if ardj.database.fetch("SELECT COUNT(*) FROM labels WHERE track_id = ? AND label LIKE 'preroll-%'", (track_id, ))[0]:
         return track_id
 
     if labels:
-        prerolls = get_prerolls_for_labels(labels, cur)
+        prerolls = get_prerolls_for_labels(labels)
     else:
-        prerolls = get_prerolls_for_track(track_id, cur)
+        prerolls = get_prerolls_for_track(track_id)
 
     if track_id in prerolls:
         prerolls.remove(track_id)
 
     if prerolls:
-        queue(track_id, cur=cur)
+        queue(track_id)
         track_id = prerolls[random.randrange(len(prerolls))]
 
     return track_id
 
 
-def get_next_track_id(cur=None, debug=False, update_stats=True):
+def get_next_track():
+    try:
+        track_id = get_next_track_id()
+        if not track_id:
+            logging.warning("Could not find a track to play -- empty database?")
+            return None
+
+        track = get_track_by_id(track_id)
+        if not track:
+            logging.warning("No info on track %s" % track_id)
+            return None
+
+        return track
+    except Exception, e:
+        logging.error("Could not get a track to play: %s\n%s" % (e, traceback.format_exc(e)))
+        return None
+
+
+def get_next_track_id(debug=False, update_stats=True):
     """Picks a track to play.
 
     The track is chosen from the active playlists. If nothing could be chosen,
@@ -646,13 +643,12 @@ def get_next_track_id(cur=None, debug=False, update_stats=True):
     update_stats -- set to False to not update last_played.
     """
     want_preroll = True
-    cur = cur or ardj.database.cursor()
 
-    skip_artists = list(set([row[0] for row in cur.execute('SELECT artist FROM tracks WHERE artist IS NOT NULL AND last_played IS NOT NULL ORDER BY last_played DESC LIMIT ' + str(ardj.settings.get('dupes', 5))).fetchall()]))
+    skip_artists = list(set([row[0] for row in ardj.database.fetch('SELECT artist FROM tracks WHERE artist IS NOT NULL AND last_played IS NOT NULL ORDER BY last_played DESC LIMIT ' + str(ardj.settings.get('dupes', 5)))]))
     if debug:
         logging.debug(u'Artists to skip: %s' % u', '.join(skip_artists or ['none']) + u'.')
 
-    track_id = get_track_id_from_queue(cur)
+    track_id = get_track_id_from_queue()
     if track_id:
         want_preroll = False
         if debug:
@@ -661,16 +657,16 @@ def get_next_track_id(cur=None, debug=False, update_stats=True):
     if not track_id:
         labels = get_urgent()
         if labels:
-            track_id = get_random_track_id_from_playlist({'labels': labels}, skip_artists, cur)
+            track_id = get_random_track_id_from_playlist({'labels': labels}, skip_artists)
             if debug and track_id:
                 logging.debug('Picked track %u from the urgent playlist.' % track_id)
 
     if not track_id:
-        for playlist in Playlist.get_active(cur=cur):
+        for playlist in Playlist.get_active():
             if debug:
                 logging.debug('Looking for tracks in playlist "%s"' % playlist.get('name', 'unnamed'))
             labels = playlist.get('labels', [ playlist.get('name', 'music') ])
-            track_id = get_random_track_id_from_playlist(playlist, skip_artists, cur)
+            track_id = get_random_track_id_from_playlist(playlist, skip_artists)
             if track_id is not None:
                 if debug:
                     logging.debug('Picked track %u from playlist %s' % (track_id, playlist.get('name', 'unnamed')))
@@ -678,86 +674,78 @@ def get_next_track_id(cur=None, debug=False, update_stats=True):
 
     if track_id:
         if want_preroll:
-            track_id = add_preroll(track_id, cur=cur)
+            track_id = add_preroll(track_id)
 
         if update_stats:
-            count = cur.execute('SELECT count FROM tracks WHERE id = ?', (track_id, )).fetchone()[0] or 0
-            cur.execute('UPDATE tracks SET count = ?, last_played = ? WHERE id = ?', (count + 1, int(time.time()), track_id, ))
+            count = ardj.database.fetch('SELECT count FROM tracks WHERE id = ?', (track_id, ))[0][0] or 0
+            ardj.database.execute('UPDATE tracks SET count = ?, last_played = ? WHERE id = ?', (count + 1, int(time.time()), track_id, ))
 
-            Playlist.touch_by_track(track_id, cur=cur)
+            Playlist.touch_by_track(track_id)
 
-            log(track_id, cur=cur)
+            log(track_id)
 
-        shift_track_weight(track_id, cur)
-        ardj.database.Open().commit()
+        shift_track_weight(track_id)
 
     return track_id
 
 
-def shift_track_weight(track_id, cur):
-    weight, real_weight = cur.execute("SELECT weight, real_weight FROM tracks WHERE id = ?", (track_id, )).fetchone()
+def shift_track_weight(track_id):
+    logging.debug("Shifting weight for track %u" % track_id)
+    weight, real_weight = ardj.database.fetchone("SELECT weight, real_weight FROM tracks WHERE id = ?", (track_id, ))
     if weight < real_weight:
         weight = min(weight + 0.1, real_weight)
     elif weight > real_weight:
         weight = max(weight - 0.1, real_weight)
-    cur.execute("UPDATE tracks SET weight = ? WHERE id = ?", (weight, track_id, ))
+    ardj.database.execute("UPDATE tracks SET weight = ? WHERE id = ?", (weight, track_id, ))
 
 
-def log(track_id, listener_count=None, ts=None, cur=None):
+def log(track_id, listener_count=None, ts=None):
     """Logs that the track was played.
 
     Only logs tracks with more than zero listeners."""
     if listener_count is None:
         listener_count = ardj.listeners.get_count()
     if listener_count > 0:
-        cur = cur or ardj.database.cursor()
-        cur.execute('INSERT INTO playlog (ts, track_id, listeners) VALUES (?, ?, ?)', (int(ts or time.time()), int(track_id), listener_count, ))
+        ardj.database.execute('INSERT INTO playlog (ts, track_id, listeners) VALUES (?, ?, ?)', (int(ts or time.time()), int(track_id), listener_count, ))
 
 
-def get_average_length(cur=None):
+def get_average_length():
     """Returns the weighed average track length in seconds."""
     s_prc = s_qty = 0.0
-    cur = cur or ardj.database.cursor()
-
-    for prc, qty in cur.execute('SELECT ROUND(length / 60) AS r, COUNT(*) FROM tracks GROUP BY r').fetchall():
+    for prc, qty in ardj.database.fetch('SELECT ROUND(length / 60) AS r, COUNT(*) FROM tracks GROUP BY r'):
         s_prc += prc * qty
         s_qty += qty
-
     return int(s_prc / s_qty * 60 * 1.5)
 
 
-def update_real_track_weight(track_id, cur=None):
+def update_real_track_weight(track_id):
     """Returns the real track weight, using the last vote for each user."""
-    cur = cur or ardj.database.cursor()
-    rows = cur.execute('SELECT v.email, v.vote * k.weight FROM votes v '
+    rows = ardj.database.fetch('SELECT v.email, v.vote * k.weight FROM votes v '
         'INNER JOIN karma k ON k.email = v.email '
-        'WHERE v.track_id = ? ORDER BY v.ts', (track_id, )).fetchall()
+        'WHERE v.track_id = ? ORDER BY v.ts', (track_id, ))
 
     results = {}
     for email, vote in rows:
         results[email] = vote
 
     real_weight = max(sum(results.values()) * 0.25 + 1, 0.01)
-    cur.execute('UPDATE tracks SET real_weight = ? WHERE id = ?', (real_weight, track_id, ))
+    ardj.database.execute('UPDATE tracks SET real_weight = ? WHERE id = ?', (real_weight, track_id, ))
     return real_weight
 
-def update_real_track_weights(cur=None):
+def update_real_track_weights():
     """Updates the real_weight column for all tracks.  To be used when the
     votes table was heavily modified or when corruption is possible."""
-    cur = cur or ardj.database.cursor()
-    update_karma(cur=cur)
-    for row in cur.execute('SELECT id FROM tracks').fetchall():
-        update_real_track_weight(row[0], cur=cur)
+    update_karma()
+    for row in ardj.database.fetch('SELECT id FROM tracks'):
+        update_real_track_weight(row[0])
 
 
-def update_karma(cur=None):
+def update_karma():
     """Updates users karma based on their last voting time."""
-    cur = cur or ardj.database.cursor()
-
-    cur.execute('DELETE FROM karma')
+    ardj.database.execute('DELETE FROM karma')
 
     now = int(time.time()) / 86400
-    for email, ts in cur.execute('SELECT email, MAX(ts) FROM votes GROUP BY email').fetchall():
+    for email, ts in ardj.database.fetch('SELECT email, MAX(ts) FROM votes GROUP BY email'):
         diff = now - ts / 86400
         if diff == 0:
             karma = 1
@@ -766,15 +754,15 @@ def update_karma(cur=None):
         else:
             karma = (KARMA_TTL - float(diff)) / KARMA_TTL
         if karma:
-            cur.execute('INSERT INTO karma (email, weight) VALUES (?, ?)', (email, karma, ))
+            ardj.database.execute('INSERT INTO karma (email, weight) VALUES (?, ?)', (email, karma, ))
             if '-q' not in sys.argv:
                 print '%.04f\t%s (%u)' % (karma, email, diff)
 
 
-def merge(id1, id2, cur):
+def merge(id1, id2):
     """Merges two tracks."""
-    t1 = get_track_by_id(id1, cur=cur)
-    t2 = get_track_by_id(id2, cur=cur)
+    t1 = get_track_by_id(id1)
+    t2 = get_track_by_id(id2)
 
     for k in ('real_weight', 'last_played', 'weight'):
         t1[k] = max(t1[k], t2[k])
@@ -782,22 +770,21 @@ def merge(id1, id2, cur):
 
     t1['labels'] = list(set(t1['labels'] + t2['labels']))
 
-    cur.execute('UPDATE labels SET track_id = ? WHERE track_id = ?', (id1, id2, ))
-    cur.execute('UPDATE votes SET track_id = ? WHERE track_id = ?', (id1, id2, ))
-    cur.execute('UPDATE playlog SET track_id = ? WHERE track_id = ?', (id1, id2, ))
+    ardj.database.execute('UPDATE labels SET track_id = ? WHERE track_id = ?', (id1, id2, ))
+    ardj.database.execute('UPDATE votes SET track_id = ? WHERE track_id = ?', (id1, id2, ))
+    ardj.database.execute('UPDATE playlog SET track_id = ? WHERE track_id = ?', (id1, id2, ))
 
-    update_track(t1, cur=cur)
+    update_track(t1)
 
     t2['weight'] = 0
-    update_track(t2, cur=cur)
+    update_track(t2)
 
-    update_real_track_weight(id1, cur=cur)
+    update_real_track_weight(id1)
 
 
 def update_track_lengths():
-    cur = ardj.database.cursor()
-    rows = cur.execute('SELECT id, filename, length '
-        'FROM tracks WHERE weight > 0 AND filename').fetchall()
+    rows = ardj.database.fetch('SELECT id, filename, length '
+        'FROM tracks WHERE weight > 0 AND filename')
 
     updates = []
     for id, filename, length in rows:
@@ -807,8 +794,7 @@ def update_track_lengths():
             updates.append((tags['length'], id))
 
     for length, id in updates:
-        cur.execute('UPDATE tracks SET length = ? WHERE id = ?', (length, id, ))
-    ardj.database.commit()
+        ardj.database.execute('UPDATE tracks SET length = ? WHERE id = ?', (length, id, ))
 
 
 def find_incoming_files(delay=120, verbose=False):
@@ -847,24 +833,22 @@ def add_incoming_files(filenames):
     return success
 
 
-def bookmark(track_ids, owner, remove=False, cur=None):
+def bookmark(track_ids, owner, remove=False):
     """Adds a bookmark label to the specified tracks."""
-    cur = cur or ardj.database.cursor()
     label = 'bm:' + owner.lower()
     for track_id in track_ids:
-        cur.execute('DELETE FROM labels WHERE track_id = ? AND label = ?', (track_id, label, ))
+        ardj.database.execute('DELETE FROM labels WHERE track_id = ? AND label = ?', (track_id, label, ))
         if not remove:
-            cur.execute('INSERT INTO labels (track_id, label, email) VALUES (?, ?, ?)', (track_id, label, owner, ))
+            ardj.database.execute('INSERT INTO labels (track_id, label, email) VALUES (?, ?, ?)', (track_id, label, owner, ))
 
 
-def find_by_title(title, artist_name=None, cur=None):
+def find_by_title(title, artist_name=None):
     """Returns track ids by title."""
-    cur = cur or ardj.database.cursor()
     if artist_name is None:
-        cur.execute('SELECT id FROM tracks WHERE title = ? COLLATE unicode', (title, ))
+        rows = ardj.database.fetch('SELECT id FROM tracks WHERE title = ? COLLATE unicode', (title, ))
     else:
-        cur.execute('SELECT id FROM tracks WHERE title = ? COLLATE unicode AND artist = ? COLLATE unicode', (title, artist_name, ))
-    return [row[0] for row in cur.fetchall()]
+        rows = ardj.database.fetch('SELECT id FROM tracks WHERE title = ? COLLATE unicode AND artist = ? COLLATE unicode', (title, artist_name, ))
+    return [row[0] for row in rows]
 
 
 def get_missing_tracks(tracklist, limit=100):
@@ -937,14 +921,11 @@ def find_new_tracks(args, label='music', weight=1.5):
 
 def schedule_download(artist, owner=None):
     """Schedules an artist for downloading from Last.fm or Jamendo."""
-    cur = ardj.database.cursor()
-
-    count = cur.execute('SELECT COUNT (*) FROM tracks WHERE artist = ? COLLATE unicode', (artist, )).fetchone()
+    count = ardj.database.fetchone('SELECT COUNT (*) FROM tracks WHERE artist = ? COLLATE unicode', (artist, ))
     if count[0]:
         return u'Песни этого исполнителя уже есть.  Новые песни загружаются автоматически в фоновом режиме.'
 
     ardj.database.ArtistDownloadRequest.create(artist, owner)
-    ardj.database.commit()
 
     return u'Это займёт какое-то время, я сообщу о результате.'
 
@@ -952,6 +933,9 @@ def schedule_download(artist, owner=None):
 def do_idle_tasks(set_busy):
     """Loads new tracks from external sources."""
     req = ardj.database.ArtistDownloadRequest.get_one()
+    if req is None:
+        return
+
     logging.info(u'Looking for tracks by "%s", requested by %s' % (req.artist, req.owner))
 
     set_busy()
@@ -962,7 +946,7 @@ def do_idle_tasks(set_busy):
         msg = u'Added %u tracks by %s.' % (count, req.artist)
     else:
         msg = u'Could not find anything by %s on Last.fm and Jamendo.' % req.artist
-    ardj.jabber.chat_say(msg, recipient=row[1])
+    ardj.jabber.chat_say(msg, recipient=req.owner)
     ardj.database.commit()
 
 

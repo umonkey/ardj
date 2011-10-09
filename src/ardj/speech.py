@@ -65,12 +65,11 @@ def render_and_queue(message):
     if not track_id:
         return "Эта функция отключена." # "I'm not configured properly: festival/speak_track_id not set."
 
-    cur = ardj.database.Open().cursor()
-    rows = len(cur.execute('SELECT 1 FROM queue WHERE track_id = ?', (track_id, )).fetchall())
+    rows = len(ardj.database.fetch('SELECT 1 FROM queue WHERE track_id = ?', (track_id, )))
     if rows:
         return 'All the circuits are busy.  Please retry in a few minutes.'
 
-    rows = cur.execute('SELECT filename FROM tracks WHERE id = ?', (track_id, )).fetchall()
+    rows = ardj.database.fetch('SELECT filename FROM tracks WHERE id = ?', (track_id, ))
     if not len(rows):
         return 'Track %u not found.' % track_id
 
@@ -80,8 +79,8 @@ def render_and_queue(message):
 
     tmpname, duration = render_text(message)
     ardj.util.move_file(tmpname, os.path.join(ardj.settings.get_music_dir(), filename))
-    cur.execute('UPDATE tracks SET length = ? WHERE id = ?', (duration, track_id, ))
-    cur.execute('INSERT INTO queue (track_id, owner) VALUES (?, ?)', (track_id, 'ardj', ))
+    ardj.database.execute('UPDATE tracks SET length = ? WHERE id = ?', (duration, track_id, ))
+    ardj.database.execute('INSERT INTO queue (track_id, owner) VALUES (?, ?)', (track_id, 'ardj', ))
 
 
 def render_text_cli(args):
