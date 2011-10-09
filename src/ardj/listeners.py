@@ -33,7 +33,9 @@ def get_count():
         logging.warning('Could not find listener count in icecast2 stats.xml')
         return 0
 
-    return int(m.group(1))
+    count = int(m.group(1))
+    logging.debug("There are %u listeners." % count)
+    return count
 
 
 def format_data(sql, params, converters, setting, header=None):
