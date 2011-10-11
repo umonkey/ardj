@@ -571,6 +571,8 @@ def process_command(text, sender=None, quiet=False):
         command, args = text, ''
     command = command_aliases.get(command.lower(), command.lower())
 
+    logging.debug("%s: %s" % (sender, text))
+
     sender = sender or 'console'
     is_admin = is_user_admin(sender)
 
