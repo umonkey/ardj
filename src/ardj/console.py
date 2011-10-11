@@ -188,7 +188,7 @@ def on_shitlist(args, sender):
 
 
 def on_hitlist(args, sender):
-    rows = ardj.database.execute('SELECT id, artist, title, weight, count FROM tracks WHERE weight > 0 ORDER BY weight DESC, title, artist LIMIT 10')
+    rows = ardj.database.fetch('SELECT id, artist, title, weight, count FROM tracks WHERE weight > 0 ORDER BY weight DESC, title, artist LIMIT 10')
     if not rows:
         return 'No tracks (database must be empty).'
     tracks = [{ 'id': row[0], 'artist': row[1], 'title': row[2], 'weight': row[3], 'count': row[4] } for row in rows]
