@@ -65,7 +65,7 @@ def signal_ices(sig):
             logging.debug('sent signal %s to process %s.' % (sig, ices_pid))
         else:
             ardj.util.run([ 'pkill', '-' + str(sig), 'ices' ])
-            logging.debug('sent signal %s to process %s using pkill (unsafe).' % (sig, ices_pid))
+            logging.debug('sent signal %s to ices using pkill (unsafe).' % sig)
         return True
     except Exception, e:
         logging.warning('could not kill(%u) ices: %s' % (sig, e))
