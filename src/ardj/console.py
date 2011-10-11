@@ -87,9 +87,21 @@ def on_delete(args, sender):
 
 
 def on_skip(args, sender):
+    def get_current_track():
+        track_id = ardj.tracks.get_last_track_id()
+        if track_id:
+            track = ardj.tracks.get_track_by_id(track_id)
+            return track
+
     if signal_ices(signal.SIGUSR1):
-        s = sender.split('@')[0]
-        ardj.jabber.chat_say(u'%s sent a skip request.' % s,)
+        sender_name = sender.split("@")[0]
+
+        track = get_current_track()
+        if track:
+            ardj.jabber.chat_say(u"%s skipped track %u: \"%s\" by %s", (sender_name, track["id"], track["title"], track["artist"]))
+        else:
+            ardj.jabber.chat_say(u"%s skipped an unknown track." % sender_name)
+
         return 'Request sent.'
     return 'Could not send the request for some reason.'
 
