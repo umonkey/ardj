@@ -1,0 +1,93 @@
+#!/usr/bin/env python
+# encoding=utf-8
+
+"""Twitter news fetcher.
+
+This script searches Twitter for a few words, merges results together and
+renders a static HTML page which is later embedded in the web site to get a
+news widget which doesn't need scripting."""
+
+
+import json
+import re
+import rfc822
+import sys
+import time
+import urllib2
+
+
+ITEM_TEMPLATE = u"<li><a href='http://twitter.com/%(author)s' title='%(author)s' target='_blank'><img src='%(picture)s' alt='avatar'/></a><p class='text'>%(text)s</p><p class='date'><a href='http://twitter.com/%(author)s/status/%(id)s' class='twit' target='_blank'>%(date)s</a></p></li>"
+
+PAGE_TEMPLATE = u"""<html>
+<head>
+<meta http-equiv='content-type' content='text/html; charset=utf-8'/>
+<title>Recent Twits</title>
+<style type='text/css'>body { margin: 0; padding: 4px; font: normal 9pt/11pt Ubuntu, sans-serif } img { border: none; width: 24px; height: 24px; float: left } ul { list-style: none; padding: 0; margin: 0 } li { min-height: 30px; margin: 4px 0 0; border-top: solid 1px #ccc; padding: 4px 0 0 } li:nth-child(1) { border: none } p { margin: 0 0 0 30px } p.date { margin-top: .25em; font-size: 8pt } p.date a { text-decoration: none; color: #888 } p.date a:hover { text-decoration: underline }</style>
+</head>
+<body>
+<ul>
+%s
+</ul>
+</body>
+</html>"""
+
+
+def format_text(text):
+    # Links.
+    links = re.findall("((http|https|ftp)://[a-z0-9.-_]+)", text)
+    if links is not None:
+        for link, proto in links:
+            text = text.replace(link, u"<a href='%s' class='link' target='_blank'>%s</a>" % (link, link))
+
+    # Links to profiles.
+    text = re.sub("(@(\w+))", "<a href='http://twitter.com/\\2' target='_blank' class='name'>\\1</a>", text)
+
+    # Hash tags.
+    tags = re.findall("(#(\w+))", text, re.U)
+    if tags is not None:
+        for tag, tag_name in tags:
+            link = urllib2.quote(tag.encode("utf-8"))
+            text = text.replace(tag, u"<a href='http://twitter.com/search?q=%s' target='_blank' class='tag'>%s</a>" % (link, tag))
+
+    return text
+
+
+def search_twitter(term):
+    if isinstance(term, unicode):
+        term = term.encode("utf-8")
+    url = "http://search.twitter.com/search.json?q=%s&rpp=5&include_entities=true&with_twitter_user_id=true&result_type=mixed" % urllib2.quote(term)
+    data = json.loads(urllib2.urlopen(url).read().decode("utf-8"))
+
+    result = {}
+    for entry in data["results"]:
+        ts = rfc822.parsedate(entry["created_at"])
+        result[entry["id"]] = {
+            "id": entry["id"],
+            "author": entry["from_user"],
+            "date": ts,
+            "date": time.strftime("%d.%m.%Y", ts),
+            "text": format_text(entry["text"]),
+            "picture": entry["profile_image_url"],
+        }
+
+    return result
+
+
+def format_twits(twits):
+    body = u""
+    for _id, twit in sorted(twits.items(), key=lambda t: t[0], reverse=True):
+        body += ITEM_TEMPLATE % twit
+    return PAGE_TEMPLATE % body
+
+
+if __name__ == "__main__":
+    if len(sys.argv) <= 1:
+        print >>sys.stderr, "Usage: python %s \"#search1\" @search2 ... > page.html" % sys.argv[0]
+        exit(1)
+
+    twits = {}
+    for term in sys.argv[1:]:
+        twits.update(search_twitter(term))
+
+    html = format_twits(twits)
+    print html.encode("utf-8")
