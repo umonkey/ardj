@@ -65,8 +65,7 @@ def search_twitter(term):
         result[entry["id"]] = {
             "id": entry["id"],
             "author": entry["from_user"],
-            "date": ts,
-            "date": time.strftime("%d.%m.%Y", ts),
+            "date": time.strftime("%d.%m.%Y %H:%M", ts),
             "text": format_text(entry["text"]),
             "picture": entry["profile_image_url"],
         }
