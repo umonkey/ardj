@@ -617,6 +617,11 @@ def get_next_track():
             logging.warning("No info on track %s" % track_id)
             return None
 
+        dump_filename = ardj.settings.get("dump_last_track")
+        if dump_filename is not None:
+            dump = json.dumps(track)
+            file(dump_filename, "wb").write(dump.encode("utf-8"))
+
         return track
     except Exception, e:
         logging.error("Could not get a track to play: %s\n%s" % (e, traceback.format_exc(e)))
