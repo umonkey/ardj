@@ -254,7 +254,7 @@ def cmd_mark_liked_by(label, *jids):
     import tracks
     count = tracks.add_label_to_tracks_liked_by(label, jids, "console")
     print "Found %u tracks." % count
-    database.commit()
+    database.Open().commit()
     return True
 
 
