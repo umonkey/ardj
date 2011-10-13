@@ -16,7 +16,7 @@ import time
 import urllib2
 
 
-ITEM_TEMPLATE = u"<li><a href='http://twitter.com/%(author)s' title='%(author)s' target='_blank'><img src='%(picture)s' alt='avatar'/></a><p class='text'>%(text)s</p><p class='date'><a href='http://twitter.com/%(author)s/status/%(id)s' class='twit' target='_blank'>%(date)s</a></p></li>"
+ITEM_TEMPLATE = u"<li><a href='https://twitter.com/%(author)s' title='%(author)s' target='_blank'><img src='%(picture)s' alt='avatar'/></a><p class='text'>%(text)s</p><p class='date'><a href='https://twitter.com/%(author)s/status/%(id)s' class='twit' target='_blank'>%(date)s</a></p></li>"
 
 PAGE_TEMPLATE = u"""<html>
 <head>
@@ -41,14 +41,14 @@ def format_text(text):
             text = text.replace(link, u"<a href='%s' class='link' target='_blank'>%s</a>" % (link, link))
 
     # Links to profiles.
-    text = re.sub("(@(\w+))", "<a href='http://twitter.com/\\2' target='_blank' class='name'>\\1</a>", text)
+    text = re.sub("(@(\w+))", "<a href='https://twitter.com/\\2' target='_blank' class='name'>\\1</a>", text)
 
     # Hash tags.
     tags = re.findall("(#(\w+))", text, re.U)
     if tags is not None:
         for tag, tag_name in tags:
             link = urllib2.quote(tag.encode("utf-8"))
-            text = text.replace(tag, u"<a href='http://twitter.com/search?q=%s' target='_blank' class='tag'>%s</a>" % (link, tag))
+            text = text.replace(tag, u"<a href='https://twitter.com/search?q=%s' target='_blank' class='tag'>%s</a>" % (link, tag))
 
     return text
 
