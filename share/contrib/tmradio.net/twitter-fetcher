@@ -21,6 +21,7 @@ ITEM_TEMPLATE = u"<li><a href='http://twitter.com/%(author)s' title='%(author)s'
 PAGE_TEMPLATE = u"""<html>
 <head>
 <meta http-equiv='content-type' content='text/html; charset=utf-8'/>
+<meta name='generator' content='http://ardj.googlecode.com/hg-history/dbserver2/share/contrib/tmradio.net/twitter-fetcher'/>
 <title>Recent Twits</title>
 <style type='text/css'>body { margin: 0; padding: 4px; font: normal 9pt/11pt Ubuntu, sans-serif } img { border: none; width: 24px; height: 24px; float: left } ul { list-style: none; padding: 0; margin: 0 } li { min-height: 30px; margin: 4px 0 0; border-top: solid 1px #ccc; padding: 4px 0 0 } li:nth-child(1) { border: none } p { margin: 0 0 0 30px } p.date { margin-top: .25em; font-size: 8pt } p.date a { text-decoration: none; color: #888 } p.date a:hover { text-decoration: underline }</style>
 </head>
