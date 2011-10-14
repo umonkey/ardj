@@ -139,6 +139,21 @@ def on_twit(args, sender):
     return ardj.twitter.send_message(args)
 
 
+def on_upload(args, sender):
+    """Finds files in the incoming folder and adds them to the database.  You
+    typically use this command after you upload the files using sftp to the
+    public folder.  Contact the administrator to find out the details."""
+    filenames = ardj.tracks.find_incoming_files()
+    if not filenames:
+        return "No files to import, upload some first."
+
+    success = ardj.tracks.add_incoming_files(filenames)
+    if not success:
+        return "Could not anything (bad or write-protected files)."
+
+    return u"%u new files added, see the \"news\" command." % len(success)
+
+
 def on_speak(args, sender):
     return ardj.speech.render_and_queue(args) or 'OK, please wait until the current song finishes playing.'
 
@@ -533,6 +548,7 @@ command_map = (
     ('sucks', False, on_sucks, 'decreases track weight'),
     ('tags', False, on_tags, 'see tag cloud, edit track tags (admins only)'),
     ('twit', True, on_twit, 'sends a message to Twitter'),
+    ('upload', False, on_upload, 'import files from the "incoming" folder'),
     ('voters', True, on_voters, 'shows all voters'),
     ('votes', True, on_votes, 'shows who voted for a track'),
 )
