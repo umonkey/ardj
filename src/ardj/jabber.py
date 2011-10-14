@@ -266,6 +266,7 @@ class ardjbot(MyFileReceivingBot):
             except Exception, e:
                 logging.warning(u'ERROR: %s, MESSAGE: %s\n%s' % (e, mess, traceback.format_exc(e)))
                 rep = unicode(e)
+            ardj.database.commit()
             self.send_simple_reply(mess, rep.strip())
             self.send_pending_messages()
             self.status_type = self.AVAILABLE
@@ -345,6 +346,7 @@ def chat_say(message, recipient=None):
     handlers to notify chat users.  If the recipient is not specified, the
     message is sent to the chat room."""
     ardj.database.Message.create(re=recipient, message=message)
+    ardj.database.commit_storm()
 
 
 __all__ = [ 'Open', 'chat_say' ]

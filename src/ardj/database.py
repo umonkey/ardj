@@ -436,10 +436,14 @@ def Open(filename=None):
     return database.get_instance()
 
 
+def commit_storm():
+    Model._get_store().commit()
+
+
 def commit():
     # ts = time.time()
     # logging.debug("Commit.")
-    Model._get_store().commit()
+    commit_storm()
     Open().commit()
     # logging.debug("Commit took %s seconds." % (time.time() - ts))
 
