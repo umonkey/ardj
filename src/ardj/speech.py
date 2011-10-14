@@ -15,9 +15,14 @@ import ardj.util
 
 def render_text_file(filename, artist=None, title=None):
     """Renders a text file to OGG/Vorbis.
-    
+
     Returns output file name and duration in seconds."""
-    voice = ardj.settings.get('speech/voice', 'voice_msu_ru_nsh_clunits')
+
+    for exe in ("text2wave", "sox", "oggenc"):
+        if not ardj.util.is_command(exe):
+            raise Exception("Speech synthesis is not available because the '%s' program is not installed." % exe)
+
+    voice = ardj.settings.get('festival_voice', 'voice_msu_ru_nsh_clunits')
 
     output_wav = ardj.util.mktemp(suffix='.wav')
     ardj.util.run([ 'text2wave', '-f', '44100', '-eval', '(' + voice + ')', filename, '-o', output_wav ])

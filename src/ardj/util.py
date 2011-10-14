@@ -50,6 +50,15 @@ def run(command, quiet=False, stdin_data=None, grab_output=False, nice=True):
     return response
 
 
+def is_command(name):
+    """Checks whether the named program exists, returns True on success."""
+    for folder in os.getenv("PATH").split(os.pathsep):
+        filename = os.path.join(folder, name)
+        if os.path.exists(filename):
+            return True
+    return False
+
+
 class mktemp:
     """This class is used to deal with temporary files which should be deleted
     automatically.  When all references to an instance are deleted, the
