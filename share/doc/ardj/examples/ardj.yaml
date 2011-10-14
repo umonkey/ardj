@@ -29,9 +29,13 @@ dupes: 0
 #  access:
 #  - admin1@example.com
 #  - admin2@example.net
-#  chat_room: my_radio@conference.jabber.org/Nickname
 #  status: true  # use status to show track info
 #  tunes: true  # use xmpp tunes (doesn't work with Gmail)
+
+
+# If you want to add the bot to a chat room, specify his full jid there.
+#
+#jabber_chat_room: my_radio@conference.jabber.ru/MyBot
 
 
 # If you want to see how many users are currently listening to the stream, enable this.

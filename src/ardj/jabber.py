@@ -188,7 +188,9 @@ class ardjbot(MyFileReceivingBot):
 
     def join_chat_room(self):
         """Joins the chat room if configured."""
-        jid = ardj.settings.get('jabber/chat_room')
+        jid = self.get_chat_room_jid()
+        if not jid:
+            return
         parts = jid.split('/', 1)
         if len(parts) == 1:
             parts.append(None)
@@ -196,9 +198,15 @@ class ardjbot(MyFileReceivingBot):
 
     def say_to_chat(self, message):
         """Sends a message to the chat room, if it's configured."""
-        jid = ardj.settings.get('jabber/chat_room')
+        jid = self.get_chat_room_jid()
         if jid:
             self.say_to_jid(jid, message)
+
+    def get_chat_room_jid(self):
+        """Returns the JID of the chat room.  The reason for not reading this
+        once and storing in the instance is that the configuration file can
+        change any time."""
+        return ardj.settings.get("jabber_chat_room", ardj.settings.get("jabber/chat_room"))
 
     def say_to_jid(self, jid, message):
         msg = self.build_message(message)
