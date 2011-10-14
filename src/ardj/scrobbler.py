@@ -21,6 +21,10 @@ class LastFM(object):
     def authorize(self):
         """Authorizes for a session key as a mobile device.
         Details: http://www.last.fm/api/mobileauth"""
+        if not self.login or not self.password or not self.key or not self.secret:
+            logging.debug("Last.fm disabled -- not enough configuration.")
+            return self
+
         try:
             data = self.call(method='auth.getMobileSession',
                 username=self.login,
@@ -28,7 +32,7 @@ class LastFM(object):
                 api_sig=True
             )
         except Exception, e:
-            logging.error("Authentication failure: %s" % e)
+            logging.error("Last.fm authentication failure: %s" % e)
             data = None
         if not data:
             logging.error('Could not authenticate with last.fm: no data.')
