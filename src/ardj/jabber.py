@@ -97,9 +97,9 @@ class ardjbot(MyFileReceivingBot):
         self.lastfm = ardj.scrobbler.LastFM()
         self.librefm = ardj.scrobbler.LibreFM()
 
-        login, password = self.split_login(ardj.settings.get('jabber/login', fail=True))
+        self.login, password = self.split_login(ardj.settings.get('jabber/login', fail=True))
         resource = socket.gethostname() + '/' + str(os.getpid()) + '/'
-        super(ardjbot, self).__init__(login, password, res=resource, debug=debug)
+        super(ardjbot, self).__init__(self.login, password, res=resource, debug=debug)
 
     def split_login(self, uri):
         name, password = uri.split('@', 1)[0].split(':', 1)
@@ -194,6 +194,7 @@ class ardjbot(MyFileReceivingBot):
         parts = jid.split('/', 1)
         if len(parts) == 1:
             parts.append(None)
+        logging.debug("Trying to join chat room %s" % jid)
         self.join_room(parts[0], parts[1])
 
     def say_to_chat(self, message):
@@ -244,6 +245,9 @@ class ardjbot(MyFileReceivingBot):
 
         Adds an explicit database commit after all messages.
         """
+        if self._handle_chat_room_message(mess):
+            return
+
         if mess.getType() == 'chat':
             try:
                 msg = mess.getBody()
@@ -257,6 +261,25 @@ class ardjbot(MyFileReceivingBot):
             self.send_simple_reply(mess, rep.strip())
             self.send_pending_messages()
             self.status_type = self.AVAILABLE
+
+    def _handle_chat_room_message(self, mess):
+        """Handles private chat room messages by telling the user to send
+        messages directly to the bot jid."""
+        if mess.getType() != "chat":
+            return False
+
+        chat_room_jid = self.get_chat_room_jid()
+        if chat_room_jid is None:
+            return False
+
+        sender = mess.getFrom().getStripped()
+        if sender == chat_room_jid.split("/")[0]:
+            self.send_simple_reply(mess, u"You are sending me a private "
+                "message through a chat room.  I don't work this way.  Please "
+                "add me to your roster as %s and let's talk there." % self.login)
+            return True
+
+        return False
 
     def send_pending_messages(self):
         """Sends all pending messages to the chat room or exact recipients.
