@@ -737,6 +737,7 @@ def update_real_track_weight(track_id):
     ardj.database.execute('UPDATE tracks SET real_weight = ? WHERE id = ?', (real_weight, track_id, ))
     return real_weight
 
+
 def update_real_track_weights():
     """Updates the real_weight column for all tracks.  To be used when the
     votes table was heavily modified or when corruption is possible."""
@@ -793,8 +794,17 @@ def update_track_lengths():
 
     updates = []
     for id, filename, length in rows:
-        tags = ardj.tags.get(get_real_track_path(filename))
-        if tags['length'] != length:
+        filepath = get_real_track_path(filename)
+        if not os.path.exists(filepath):
+            logging.warning("File %s is missing." % filepath)
+            continue
+
+        tags = ardj.tags.get(filepath)
+        if "length" not in tags:
+            logging.warning("Length of file %s is unknown." % filepath)
+            continue
+
+        if tags["length"] != length:
             print '%u, %s: %s => %s' % (id, filename, length, tags['length'])
             updates.append((tags['length'], id))
 
@@ -972,29 +982,3 @@ def do_idle_tasks(set_busy):
         msg = u'Could not find anything by %s on Last.fm and Jamendo.' % req.artist
     ardj.jabber.chat_say(msg, recipient=req.owner)
     ardj.database.commit()
-
-
-def cli_process_incoming():
-    """Find audio files in the incoming folder and add them to the database."""
-    files = find_incoming_files(delay=0, verbose=True)
-    success = add_incoming_files(files)
-    print "Added %u files to the database." % len(success)
-    return True
-
-
-__CLI_USAGE__ = """Usage: ardj track command
-
-Commands:
-  update-weights  -- update the real_weight property of all tracks.
-"""
-
-def run_cli(args):
-    command = ''.join(args[:1])
-
-    if command == 'update-weights':
-        update_real_track_weights()
-        ardj.database.Open().commit()
-    elif command == 'update-lengths':
-        update_track_lengths()
-    else:
-        print __CLI_USAGE__

@@ -167,8 +167,10 @@ def cmd_track(*args):
 
 def cmd_add_incoming_tracks(*args):
     """moves tracks from the incoming folder to the database"""
-    import tracks
-    return tracks.cli_process_incoming()
+    from ardj import tracks
+    files = tracks.find_incoming_files(delay=0, verbose=True)
+    success = tracks.add_incoming_files(files)
+    print "Added %u files to the database." % len(success)
 
 
 def cmd_twit(*args):
@@ -181,6 +183,19 @@ def cmd_update_schedule(*args):
     """looks for events in the Last.fm database"""
     from ardj import tout
     tout.update_schedule(refresh="--refresh" in args)
+
+
+def cmd_update_track_weights(*args):
+    """shift current weights to real weights"""
+    from ardj import database, tracks
+    tracks.update_real_track_weights()
+    database.commit()
+
+
+def cmd_update_track_lengths(*args):
+    """update track lengths from files (maintenance)"""
+    from ardj import tracks
+    tracks.update_track_lengths()
 
 
 def cmd_xmpp_send(*args):
