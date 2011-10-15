@@ -39,8 +39,7 @@ class LastFM(object):
             data = self.call(method='auth.getMobileSession',
                 username=self.login,
                 authToken=self.get_auth_token(),
-                api_sig=True
-            )
+                api_sig=True)
         except Exception, e:
             logging.error("Last.fm authentication failure: %s" % e)
             data = None
@@ -115,7 +114,7 @@ class LastFM(object):
                     'artist': t['artist']['name'],
                     'title': t['name'],
                     'url': t['downloadurl'],
-                    'tags': tags + [ 'source:last.fm' ],
+                    'tags': tags + ['source:last.fm'],
                 })
         return result
 
@@ -124,8 +123,10 @@ class LastFM(object):
             artist=artist_name.encode('utf-8'))
         try:
             return data['corrections']['correction']['artist']['name']
-        except KeyError: pass
-        except TypeError: pass
+        except KeyError:
+            pass
+        except TypeError:
+            pass
         return None
 
     def process(self):

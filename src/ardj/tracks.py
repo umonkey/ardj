@@ -66,7 +66,7 @@ class Playlist(dict):
         if not other:
             return False
 
-        plabels = self.get('labels', [ self.get('name') ])
+        plabels = self.get('labels', [self.get('name')])
         success = False
 
         for plabel in plabels:
@@ -148,7 +148,7 @@ def get_track_by_id(track_id):
     rows = ardj.database.fetch("SELECT id, filename, artist, title, length, NULL, weight, count, last_played, real_weight FROM tracks WHERE id = ?", (track_id, ))
     if rows:
         row = rows[0]
-        result = { 'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'length': row[4], 'weight': row[6], 'count': row[7], 'last_played': row[8], 'real_weight': row[9] }
+        result = {'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'length': row[4], 'weight': row[6], 'count': row[7], 'last_played': row[8], 'real_weight': row[9]}
         result['labels'] = [row[0] for row in ardj.database.fetch('SELECT DISTINCT label FROM labels WHERE track_id = ? ORDER BY label', (track_id, ))]
         if result.get('filename'):
             result['filepath'] = get_real_track_path(result['filename'])
@@ -181,6 +181,7 @@ def identify(track_id, unknown='an unknown track'):
     if not track:
         return unknown
     return u'«%s» by %s' % (track.get('title', 'untitled'), track.get('artist', 'unknown artist'))
+
 
 def queue(track_id, owner=None):
     """Adds the track to queue."""
@@ -224,7 +225,7 @@ def find_ids(pattern, sender=None, limit=None):
             search_ids = None
 
     if search_ids:
-        return [ int(x) for x in search_ids ]
+        return [int(x) for x in search_ids]
 
     pattern = u' '.join(search_args)
 
@@ -357,8 +358,10 @@ def add_vote(track_id, email, vote, update_karma=False):
     email = email.lower()
 
     # Normalize the vote.
-    if vote > 0: vote = 1
-    elif vote < 0: vote = -1
+    if vote > 0:
+        vote = 1
+    elif vote < 0:
+        vote = -1
 
     # Resolve aliases.
     for k, v in ardj.settings.get('jabber/aliases', {}).items():
@@ -456,7 +459,7 @@ def add_file(filename, add_labels=None, owner=None, quiet=False):
 
 def get_track_id_from_queue():
     """Returns a track from the top of the queue.
-    
+
     If the queue is empty or there's no valid track in it, returns None.
     """
     row = ardj.database.fetchone('SELECT id, track_id FROM queue ORDER BY id LIMIT 1')
@@ -474,7 +477,7 @@ def get_random_track_id_from_playlist(playlist, skip_artists):
     sql = 'SELECT id, weight, artist FROM tracks WHERE weight > 0 AND artist IS NOT NULL AND filename IS NOT NULL'
     params = []
 
-    sql, params = add_labels_filter(sql, params, playlist.get('labels', [ playlist.get('name', 'music') ]))
+    sql, params = add_labels_filter(sql, params, playlist.get('labels', [playlist.get('name', 'music')]))
 
     repeat_count = playlist.get('repeat')
     if repeat_count:
@@ -583,7 +586,7 @@ def add_preroll(track_id, labels=None):
     Finds prerolls by labels and artist title, picks one and returns its id,
     queueing the input track_id.  If `labels' is explicitly specified, only
     tracks with those labels will be used as prerolls.
-    
+
     Tracks that have a preroll-* never have a preroll.
     """
     # Skip if the track is a preroll.
@@ -670,7 +673,7 @@ def get_next_track_id(debug=False, update_stats=True):
         for playlist in Playlist.get_active():
             if debug:
                 logging.debug('Looking for tracks in playlist "%s"' % playlist.get('name', 'unnamed'))
-            labels = playlist.get('labels', [ playlist.get('name', 'music') ])
+            labels = playlist.get('labels', [playlist.get('name', 'music')])
             track_id = get_random_track_id_from_playlist(playlist, skip_artists)
             if track_id is not None:
                 if debug:
@@ -831,7 +834,7 @@ def find_incoming_files(delay=120, verbose=False):
             for filename in files:
                 realname = os.path.join(dir, filename)
                 if os.stat(realname).st_mtime > ts_limit:
-                    return [] # still uploading
+                    return []  # still uploading
                 if os.path.splitext(filename.lower())[1] in ('.mp3', '.ogg'):
                     result.append(realname)
     return result
@@ -912,15 +915,17 @@ def find_new_tracks(args, label='music', weight=1.5):
     added = 0
     artist_names = []
     for track in tracks:
-        logging.info(u'[%u/%u] fetching "%s" by %s' % (added+1, len(tracks), track['title'], track['artist']))
+        logging.info(u'[%u/%u] fetching "%s" by %s' % (added + 1, len(tracks), track['title'], track['artist']))
         try:
             if track['artist'] not in artist_names:
                 artist_names.append(track['artist'])
             filename = ardj.util.fetch(track['url'], suffix=track.get('suffix'))
-            add_file(str(filename), add_labels=track.get('tags', [ 'tagme', 'music' ]))
+            add_file(str(filename), add_labels=track.get('tags', ['tagme', 'music']))
             added += 1
-        except KeyboardInterrupt: raise
-        except: pass
+        except KeyboardInterrupt:
+            raise
+        except:
+            pass
 
     if added:
         logging.info('Total catch: %u tracks.' % added)

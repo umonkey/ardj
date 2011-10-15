@@ -75,7 +75,7 @@ def dump_statistics():
         str,
         str,
         lambda w: '%.02f' % w,
-    ], 'statistics/listeners/total_csv', [ 'last_played', 'artist', 'title', 'listeners', 'track_id', 'weight' ])
+    ], 'statistics/listeners/total_csv', ['last_played', 'artist', 'title', 'listeners', 'track_id', 'weight'])
 
     sql = 'SELECT l.ts, t.id, t.artist, t.title, l.listeners FROM tracks t INNER JOIN playlog l ON l.track_id = t.id WHERE l.ts BETWEEN ? AND ? AND weight > 0 ORDER BY l.ts'
     params = get_yesterday_ts()
@@ -85,7 +85,7 @@ def dump_statistics():
         lambda x: unicode(x).encode('utf-8'),
         lambda x: unicode(x).encode('utf-8'),
         str,
-    ], 'statistics/listeners/yesterday_csv', [ 'time', 'track_id', 'artist', 'title', 'listeners' ])
+    ], 'statistics/listeners/yesterday_csv', ['time', 'track_id', 'artist', 'title', 'listeners'])
 
 
 def run_cli(args):

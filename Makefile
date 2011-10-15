@@ -7,19 +7,24 @@ TAR=ardj_${VERSION}.tar.gz
 all:
 
 help:
-	@echo "bdist      -- prepares a tar.gz"
-	@echo "clean      -- removes temporary files"
-	@echo "deb        -- prepare a Debian package"
-	@echo "install    -- install using setup.py"
-	@echo "release    -- upload a new version to Google Code"
-	@echo "test       -- runs unit tests"
-	@echo "uninstall  -- uninstall (installs first to find installed files)"
+	@echo "bdist          -- prepares a tar.gz"
+	@echo "clean          -- removes temporary files"
+	@echo "deb            -- prepare a Debian package"
+	@echo "install        -- install using setup.py"
+	@echo "install-deb    -- install using a deb file"
+	@echo "release        -- upload a new version to Google Code"
+	@echo "test           -- runs unit tests"
+	@echo "test syntax    -- runs unit tests"
+	@echo "uninstall      -- uninstall (installs first to find installed files)"
 
-test:
+test: test-syntax
 	cp -f unittests/data/src/* unittests/data/
 	rm -f tests.log tests-ardj.log
 	PYTHONPATH=src ARDJ_SETTINGS=unittests/data/settings.yaml python unittests/all.py
 	rm -f unittests/data/*.*
+
+test-syntax:
+	pep8 -r --ignore=E501 --exclude=twitter.py,socks.py,jabberbot.py src/ardj/*.py unittests/*.py
 
 console:
 	PYTHONPATH=src ./bin/ardj console $(MAIL)

@@ -18,6 +18,7 @@ Commands:
     add             -- add new files to the database
 """
 
+
 def parse_log_line(line):
     # 127.0.0.1 - - [30/Jan/2011:07:45:13 +0300] "GET /admin/stats.xml HTTP/1.1" 200 1523 "-" "collectd/4.8.2" 1
     remote_addr, date, uri, status, length, duration, agent = (None,) * 7
@@ -34,6 +35,7 @@ def parse_log_line(line):
     except Exception, e:
         logging.error('Unable to parse log line: %s; %s' % (e, line))
     return date, remote_addr, uri or '', status, length, duration, agent
+
 
 def add_files(filenames, dbname):
     db = sqlite.connect(dbname)
@@ -55,6 +57,7 @@ def add_files(filenames, dbname):
         except Exception, e:
             logging.error('Could not remove file %s: %s' % (filename, e))
             db.rollback()
+
 
 def show_agent_stats(dbname):
     """Shows overall user-agent statistics."""

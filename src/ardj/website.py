@@ -4,6 +4,7 @@ import os
 import ardj.settings
 import ardj.util
 
+
 def update(task_name=None):
     """Updates the web site.
 
@@ -15,15 +16,17 @@ def update(task_name=None):
         if task_name is None:
             task_name = ardj.settings.get('website/make_task', 'autoupdate')
 
-        return ardj.util.run([ 'make', '-C', dirname, task_name ])
+        return ardj.util.run(['make', '-C', dirname, task_name])
     print 'Web site not updated: %s does not exist.' % dirname
     return False
+
 
 def load_page(filename):
     head, text = open(filename, 'rb').read().decode('utf-8').split('---\n', 1)
     page = dict([[x.strip() for x in l.strip().split(':', 1)] for l in head.split('\n') if l.strip()])
     page['text'] = text
     return page
+
 
 def filename_to_url(filename):
     base_url = ardj.settings.get('website/base_url', 'http://example.com/')
@@ -32,12 +35,13 @@ def filename_to_url(filename):
     if not filename.startswith(prefix):
         return base_url
 
-    url = base_url.rstrip('/') + '/' + filename[len(prefix)+1:]
+    url = base_url.rstrip('/') + '/' + filename[len(prefix) + 1:]
     if url.endswith('.md'):
         url = url[:-3] + '.html'
     if url.endswith('/index.html'):
         url = url[:-10]
     return url
+
 
 def add_page(pattern, data):
     max_id = 0

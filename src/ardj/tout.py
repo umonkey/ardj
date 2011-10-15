@@ -84,7 +84,7 @@ def fetch_events(refresh=False):
     for artist_name in sorted(list(set([n.lower() for n in get_artist_names()]))):
         tmp = fetch_artist_events(lastfm, artist_name)
         if tmp is None:
-            continue # wtf ?!
+            continue  # wtf ?!
         events += tmp
 
     open(cache_fn, 'wb').write(json.dumps(events))
@@ -134,7 +134,7 @@ def update_schedule(refresh=False):
     try:
         fetch_events(refresh)
     except ardj.scrobbler.Error, e:
-        print >>sys.stderr, "Last.fm error:", e
+        print >> sys.stderr, "Last.fm error:", e
         return False
 
     event_schedule_path = ardj.settings.get("event_schedule_path", ardj.settings.get("tout/website_js"))

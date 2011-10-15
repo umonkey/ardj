@@ -15,7 +15,8 @@ class Settings(unittest.TestCase):
         try:
             ardj.settings.get('database/local/error', fail=True)
             self.fail('ardj.settings.get(k, fail=True) failed to raise KeyError.')
-        except KeyError: pass
+        except KeyError:
+            pass
 
     def test_load_instance(self):
         a = ardj.settings.load()

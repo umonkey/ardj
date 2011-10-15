@@ -3,7 +3,7 @@
 import logging
 import os
 import signal
-import socket # for gethostname()
+import socket  # for gethostname()
 import time
 import traceback
 import zipfile
@@ -28,6 +28,7 @@ Commands:
   run-child     -- run the jabber bot itself (unsafe)
 """
 
+
 class MyFileReceivingBot(FileBot):
     def is_file_acceptable(self, sender, filename, filesize):
         if not self.check_access(sender):
@@ -38,7 +39,7 @@ class MyFileReceivingBot(FileBot):
 
     def callback_file(self, sender, filename):
         tmpname = None
-        sender = sender.split('/')[0] # remove the resource
+        sender = sender.split('/')[0]  # remove the resource
         try:
             ids = []
             if filename.lower().endswith('.zip'):
@@ -66,7 +67,7 @@ class MyFileReceivingBot(FileBot):
     def process_incoming_file(self, sender, filename):
         logging.info('Received %s.' % filename)
         track_id = ardj.tracks.add_file(filename, labels=['incoming', 'incoming-jabber'], queue=True)
-        time.sleep(1) # let ices read some data
+        time.sleep(1)  # let ices read some data
         return track_id
 
     def add_filename_suffix(self, filename):
@@ -82,6 +83,7 @@ class MyFileReceivingBot(FileBot):
             index += 1
         return filename
 
+
 class ardjbot(MyFileReceivingBot):
     PROCESS_MSG_FROM_SELF = True
     PROCESS_MSG_FROM_UNSEEN = True
@@ -90,7 +92,7 @@ class ardjbot(MyFileReceivingBot):
     PING_TIMEOUT = 2
 
     def __init__(self, debug=False):
-        self.lastping = None # время последнего пинга
+        self.lastping = None  # время последнего пинга
         self.pidfile = '/tmp/ardj-jabber.pid'
         self.database_mtime = None
 
@@ -159,7 +161,7 @@ class ardjbot(MyFileReceivingBot):
         if time.time() - self.lastping > self.PING_FREQUENCY:
             self.lastping = time.time()
             #logging.debug('Pinging the server.')
-            ping = xmpp.Protocol('iq',typ='get',payload=[xmpp.Node('ping',attrs={'xmlns':'urn:xmpp:ping'})])
+            ping = xmpp.Protocol('iq', typ='get', payload=[xmpp.Node('ping', attrs={'xmlns':'urn:xmpp:ping'})])
             try:
                 res = self.conn.SendAndWaitForResponse(ping, self.PING_TIMEOUT)
                 #logging.debug('Got response: ' + str(res))
@@ -313,6 +315,7 @@ class ardjbot(MyFileReceivingBot):
     def on_disconnect(self):
         logging.debug('on_disconnect called.')
 
+
 def Open(debug=False):
     """
     Returns a new bot instance.
@@ -327,8 +330,10 @@ def run_cli(args):
             pidfile = ardj.settings.getpath(param, fail=True)
             if pidfile and os.path.exists(pidfile):
                 pid = int(open(pidfile).read().strip())
-                try: os.kill(pid, signal.SIGTERM)
-                except OSError: pass
+                try:
+                    os.kill(pid, signal.SIGTERM)
+                except OSError:
+                    pass
         return True
 
     if len(args) and args[0] == 'run-child':
@@ -336,7 +341,7 @@ def run_cli(args):
 
     if len(args) and args[0] == 'run':
         delay = 5
-        command = [ 'ardj', 'jabber', 'run-child' ]
+        command = ['ardj', 'jabber', 'run-child']
         if '--debug' in args:
             command.append('--debug')
         while True:
@@ -359,4 +364,4 @@ def chat_say(message, recipient=None):
     ardj.database.commit_storm()
 
 
-__all__ = [ 'Open', 'chat_say' ]
+__all__ = ['Open', 'chat_say']

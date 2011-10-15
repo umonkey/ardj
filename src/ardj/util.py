@@ -68,10 +68,10 @@ class mktemp:
     underlying file is unlinked from the file system.
 
     Usage is simple:
-    
+
     from ardj.util import mktemp
     print str(mktemp(suffix=".log"))
-    
+
     Be sure to convert the value to a string, otherwise most receivers will
     fail (got object while expected a string, or something)."""
     def __init__(self, suffix=''):
@@ -168,7 +168,7 @@ def upload(source, target):
 
     upath = urlparse.urlparse(str(target))
     if upath.scheme == 'sftp':
-        run([ 'scp', '-q', str(source), str(target)[5:].lstrip('/') ])
+        run(['scp', '-q', str(source), str(target)[5:].lstrip('/')])
     else:
         raise Excepion("Don't know how to upload to %s." % upath.scheme)
 
@@ -190,14 +190,14 @@ def upload_music(filenames):
         f.write('put %s\n' % str(fn).replace(' ', '\\ '))
     f.close()
 
-    return run([ 'sftp', '-b', str(batch), str(target) ])
+    return run(['sftp', '-b', str(batch), str(target)])
 
 
 def copy_file(src, dst):
     """Copies the file to a new location.
 
     Supports cross-device copy.
-    
+
     If the target directory does not exist, it's created.
     """
     dirname = os.path.dirname(dst)
@@ -212,7 +212,7 @@ def move_file(src, dst):
     """Moves the file to a new location.
 
     Supports cross-device copy.
-    
+
     If the target directory does not exist, it's created.
     """
     dirname = os.path.dirname(dst)
@@ -278,8 +278,10 @@ def lower(s):
         s = s.decode('utf-8')
     return s.lower().replace(u'ё', u'е')
 
+
 def ucmp(a, b):
     return cmp(lower(a), lower(b))
+
 
 def in_list(a, lst):
     for i in lst:

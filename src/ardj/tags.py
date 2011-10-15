@@ -10,15 +10,18 @@ import mutagen
 import mutagen.oggvorbis
 import mutagen.mp3 as mp3
 import mutagen.easyid3 as easyid3
-from mutagen.apev2 import APEv2 
+from mutagen.apev2 import APEv2
 
 easyid3.EasyID3.RegisterTXXXKey('ardj', 'ardj')
 easyid3.EasyID3.RegisterTXXXKey('ql:ardj', 'QuodLibet::ardj')
 
 
-class FileNotFound(RuntimeError): pass
+class FileNotFound(RuntimeError):
+    pass
 
-class UnsupportedFileType(RuntimeError): pass
+
+class UnsupportedFileType(RuntimeError):
+    pass
 
 
 def raw(filename):
@@ -30,7 +33,7 @@ def raw(filename):
     if not os.path.exists(filename):
         raise FileNotFound('File %s not found.' % filename)
 
-    tmap = { '.mp3': mutagen.easyid3.Open, '.ogg': mutagen.oggvorbis.Open }
+    tmap = {'.mp3': mutagen.easyid3.Open, '.ogg': mutagen.oggvorbis.Open}
 
     extension = os.path.splitext(filename)[1].lower()
     if extension not in tmap:
@@ -83,7 +86,8 @@ class Wrapper(dict):
         try:
             for k, v in APEv2(self.filename).items():
                 self[k.lower()] = str(v)
-        except: pass
+        except:
+            pass
 
         try:
             tags = mp3.Open(self.filename)
@@ -107,7 +111,8 @@ class Wrapper(dict):
                 self[k] = v
             self['length'] = int(tags.info.length)
             self['sample_rate'] = tags.info.sample_rate
-        except: pass
+        except:
+            pass
 
 
 def get(filename):

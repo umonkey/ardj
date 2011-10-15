@@ -13,6 +13,7 @@ import ardj.twitter
 
 USAGE = """Usage: ardj stream start"""
 
+
 def twit_file(filename, silent=False):
     dur = get_air_duration(filename)
     if dur < ardj.settings.get('stream/twit_duration_min', 10):

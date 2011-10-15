@@ -16,6 +16,7 @@ import ardj.tracks
 import ardj.util
 import ardj.website
 
+
 def add_song(artist, title, mp3_link, tags):
     """Adds a song to the database.
 
@@ -26,7 +27,7 @@ def add_song(artist, title, mp3_link, tags):
         logging.info('Downloading "%s" by %s' % (title, artist))
         try:
             filename = ardj.util.fetch(mp3_link)
-            ardj.add_file(str(filename), { 'artist': artist, 'title': title, 'labels': tags, 'owner': 'podcaster' })
+            ardj.add_file(str(filename), {'artist': artist, 'title': title, 'labels': tags, 'owner': 'podcaster'})
             ardj.database.commit()
             return True
         except Exception, e:
@@ -35,7 +36,7 @@ def add_song(artist, title, mp3_link, tags):
 
 def update_feeds():
     """Updates all feeds.
-    
+
     Scans all feeds described in podcasts/feeds, then calls add_song() for each
     episode."""
     for podcast in ardj.settings.get('podcasts/feeds', []):
@@ -53,7 +54,8 @@ def update_feeds():
                     if not author and 'author' in entry:
                         author = entry['author']
                     if add_song(author, entry['title'], enclosure['href'], podcast['tags']):
-                        pass # return # one at a time, for testing
+                        pass  # return # one at a time, for testing
+
 
 class Podcaster:
     def __init__(self):
@@ -131,7 +133,7 @@ class Podcaster:
         added = 0
         for entry in entries:
             if entry['add_to_db']:
-                logging.info(u'[%u/%u] adding "%s" by %s' % (added+1, len(entries), entry['title'], entry['author']))
+                logging.info(u'[%u/%u] adding "%s" by %s' % (added + 1, len(entries), entry['title'], entry['author']))
                 fn = ardj.util.fetch(entry['file'])
                 ardj.tracks.add_file(str(fn), add_labels=entry['tags'], quiet=True)
                 added += 1
@@ -165,7 +167,7 @@ class Podcaster:
 
         Creates the source file for the page (index.md); to actually create the
         web page, ardj.website.update() must be called.
-        
+
         TODO: use ardj.website.add_page()."""
         e = entry
         logging.info('Reposting %s' % os.path.basename(filename))

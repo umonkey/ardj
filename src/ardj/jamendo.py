@@ -17,7 +17,7 @@ def find_new_tracks(artist_names=None, verbose=False):
 
     todo = []
 
-    tags = ardj.settings.get('fresh_music/tags', [ ])
+    tags = ardj.settings.get('fresh_music/tags', [])
 
     if not artist_names:
         label = ardj.settings.get('fresh_music/filter_tag', 'music')
@@ -38,7 +38,7 @@ def find_new_tracks(artist_names=None, verbose=False):
                 'title': track['name'],
                 'url': track['stream'],
                 'suffix': '.ogg',
-                'tags': tags + [ 'source:jamendo.com' ],
+                'tags': tags + ['source:jamendo.com'],
             })
             if verbose:
                 print u'- artist: %s' % track['artist_name']

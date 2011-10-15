@@ -1,6 +1,6 @@
 # encoding=utf-8
 
-import logging 
+import logging
 import urllib
 
 import ardj.settings
@@ -10,6 +10,7 @@ USAGE = """Usage: ardj sms number|all message...
 
 When "all" is passed as the first argument, numbers are read from the file
 specified in sms/subscribers (one number per line, sort of like CSV)."""
+
 
 def send(number, message):
     if number == 'all':

@@ -26,7 +26,7 @@ class DatabaseTests(unittest.TestCase):
         row = db.execute('INSERT INTO queue (track_id, owner) VALUES (?, ?)', (1, 'ardj', ))
         self.assertEquals(row, 1)
 
-        db.Open().update('queue', { 'owner': 'test', 'id': row })
+        db.Open().update('queue', {'owner': 'test', 'id': row})
         tmp = db.fetchone('SELECT * FROM queue')
         self.assertEquals(tmp, (1, 1, 'test'))
 

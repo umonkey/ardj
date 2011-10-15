@@ -352,7 +352,7 @@ def run(args):
     Initializes the log file then looks for the specified command handler and
     executes it.  If no command was given or no handler could be found,
     displays a help screen.
-    
+
     Returns 1 (i.e., an error) if the handler returned either False or None,
     otherwise returns zero (clear)."""
     ardj.log.install()

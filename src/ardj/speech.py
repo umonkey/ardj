@@ -13,6 +13,7 @@ import ardj.settings
 import ardj.tags
 import ardj.util
 
+
 def render_text_file(filename, artist=None, title=None):
     """Renders a text file to OGG/Vorbis.
 
@@ -25,15 +26,15 @@ def render_text_file(filename, artist=None, title=None):
     voice = ardj.settings.get('festival_voice', 'voice_msu_ru_nsh_clunits')
 
     output_wav = ardj.util.mktemp(suffix='.wav')
-    ardj.util.run([ 'text2wave', '-f', '44100', '-eval', '(' + voice + ')', filename, '-o', output_wav ])
+    ardj.util.run(['text2wave', '-f', '44100', '-eval', '(' + voice + ')', filename, '-o', output_wav])
 
     resampled_wav = ardj.util.mktemp(suffix='.wav')
-    ardj.util.run([ 'sox', output_wav, '-r', '44100', '-c', '2', resampled_wav, 'pad', '2', '5' ])
+    ardj.util.run(['sox', output_wav, '-r', '44100', '-c', '2', resampled_wav, 'pad', '2', '5'])
 
     output_ogg = ardj.util.mktemp(suffix='.ogg')
-    ardj.util.run([ 'oggenc', '-Q', '-q', '9', '-o', output_ogg, '-a', 'artist', resampled_wav ])
+    ardj.util.run(['oggenc', '-Q', '-q', '9', '-o', output_ogg, '-a', 'artist', resampled_wav])
 
-    ardj.util.run([ 'vorbisgain', '-q', output_ogg ])
+    ardj.util.run(['vorbisgain', '-q', output_ogg])
 
     tags = ardj.tags.raw(str(output_ogg))
     if tags is None:
@@ -46,6 +47,7 @@ def render_text_file(filename, artist=None, title=None):
 
     return output_ogg, int(tags.info.length)
 
+
 def render_text(text, artist=None, title=None, play=False):
     """Renders text to OGG/Vorbis.
 
@@ -57,18 +59,18 @@ def render_text(text, artist=None, title=None, play=False):
     logging.info('Rendering text: %s' % text)
     filename, length = render_text_file(filename, artist, title)
     if play and length:
-        ardj.util.run([ 'play', str(filename) ])
+        ardj.util.run(['play', str(filename)])
     return filename, length
 
 
 def render_and_queue(message):
     """Renders the text and queues it for playing.
-    
+
     Returns an error message or None.
     """
     track_id = int(ardj.settings.get('festival/speak_track_id', '0'))
     if not track_id:
-        return "Эта функция отключена." # "I'm not configured properly: festival/speak_track_id not set."
+        return "Эта функция отключена."  # "I'm not configured properly: festival/speak_track_id not set."
 
     rows = len(ardj.database.fetch('SELECT 1 FROM queue WHERE track_id = ?', (track_id, )))
     if rows:

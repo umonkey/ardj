@@ -20,7 +20,10 @@ import xmpp.protocol
 
 from ardj.jabberbot import JabberBot
 
-class FileNotAcceptable(Exception): pass
+
+class FileNotAcceptable(Exception):
+    pass
+
 
 class DiscoBot(JabberBot):
     def connect(self):
@@ -40,8 +43,9 @@ class DiscoBot(JabberBot):
         conn.send(reply)
         raise xmpp.NodeProcessed
 
+
 class FileBot(DiscoBot):
-    SOCKET_TIMEOUT = 30 # seconds
+    SOCKET_TIMEOUT = 30  # seconds
 
     def __init__(self, username, password, res=None, debug=False):
         super(FileBot, self).__init__(username, password, res, debug)
@@ -106,8 +110,8 @@ class FileBot(DiscoBot):
                                 reply = mess.buildReply('result')
                                 reply.addChild('si', namespace=xmpp.NS_SI) \
                                     .addChild('feature', namespace=xmpp.NS_FEATURE) \
-                                    .addChild('x', { 'type': 'submit' }, namespace=xmpp.NS_DATA) \
-                                    .addChild('field', { 'var': 'stream-method' }) \
+                                    .addChild('x', {'type': 'submit'}, namespace=xmpp.NS_DATA) \
+                                    .addChild('field', {'var': 'stream-method'}) \
                                     .addChild('value', payload=[xmpp.NS_BYTESTREAM])
                                 logging.debug('File transfer table:\n' + str(self.transfers))
                                 conn.send(reply)
@@ -178,7 +182,7 @@ class FileBot(DiscoBot):
 
                     # Tell the sender that we're ready to go.
                     reply = mess.buildReply('result')
-                    reply.getTag('query').addChild('streamhost-used', { 'jid': host.getAttr('jid') })
+                    reply.getTag('query').addChild('streamhost-used', {'jid': host.getAttr('jid')})
                     conn.send(reply)
 
                     raise xmpp.NodeProcessed
@@ -206,9 +210,12 @@ class FileBot(DiscoBot):
                 transfer = self.transfers[sid]
                 got = 0
                 while True:
-                    try: data = transfer['socket'].recv(8192, socket.MSG_DONTWAIT)
-                    except IOError, e: break # no data
-                    if not data: break
+                    try:
+                        data = transfer['socket'].recv(8192, socket.MSG_DONTWAIT)
+                    except IOError, e:
+                        break  # no data
+                    if not data:
+                        break
                     got += len(data)
                     transfer['file'].write(data)
                 transfer['received'] += got
@@ -232,8 +239,10 @@ class FileBot(DiscoBot):
                         if os.path.exists(transfer['name']):
                             logging.debug('File not processed, removing.')
                             os.unlink(transfer['name'])
-                        try: os.rmdir(basename(transfer['name']))
-                        except: pass
+                        try:
+                            os.rmdir(basename(transfer['name']))
+                        except:
+                            pass
                 elif transfer['lastseen'] + self.SOCKET_TIMEOUT < int(time.time()):
                     logging.error('File %s from %s timed out.' % (transfer['name'], transfer['from']))
                     self.on_file_aborted(transfer)

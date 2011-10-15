@@ -21,6 +21,7 @@ import ardj.website
 # Files to upload as music.
 upload_files = []
 
+
 def display_message(msg, atts):
     """Prints key message informations."""
     phone = msg.get_header('x-asterisk-callerid')
@@ -58,10 +59,11 @@ def transcode_file(filename):
             return filename
 
     temp2 = ardj.util.mktemp(suffix='.mp3')
-    ardj.util.run([ 'ffmpeg', '-i', str(filename), '-ar', '44100', '-ac', '2', '-y', str(temp2) ])
+    ardj.util.run(['ffmpeg', '-i', str(filename), '-ar', '44100', '-ac', '2', '-y', str(temp2)])
 
     os.chmod(str(temp2), 0664)
     return temp2
+
 
 def process_messages(msg):
     """Processes a message.
@@ -123,7 +125,7 @@ def process_messages(msg):
             if phone:
                 ardj.sms.send(phone, 'Your message: %s' % url)
             elif full_sender[1]:
-                ardj.mail.send_mail([ full_sender[1], 'hex@umonkey.net' ], 'Your message received.', 'Thank you! Find your message here:\n%s' % url)
+                ardj.mail.send_mail([full_sender[1], 'hex@umonkey.net'], 'Your message received.', 'Thank you! Find your message here:\n%s' % url)
 
             global upload_files
             upload_files.append(temp)
@@ -135,7 +137,7 @@ def run_cli(args):
     config = ardj.settings.get('mail/boxes/hotline/fetch')
     if config is None:
         if '-q' not in args:
-            print 'Hotline is not configured (see mail/boxes/hotline/fetch).';
+            print 'Hotline is not configured (see mail/boxes/hotline/fetch).'
         return
 
     if args and args[0] == 'list':

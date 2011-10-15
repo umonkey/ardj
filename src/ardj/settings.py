@@ -88,7 +88,9 @@ class wrapper:
         """Dumps the data for debugging purposes."""
         return '<ardj.settings.wrapper data=%s>' % self.data
 
+
 wrapper_instance = None
+
 
 def load_data():
     """Returns the raw contents of the config file.
@@ -123,9 +125,11 @@ def get(key, default=None, fail=False):
     """get(k, v) <==> load().get(k, v)"""
     return load().get(key, default, fail=fail)
 
+
 def getpath(key, default=None, fail=False):
     """getpath(k, v) <==> load().getpath(k, v)"""
     return load().getpath(key, default, fail=fail)
+
 
 def edit_cli(args):
     editor = os.getenv('EDITOR', 'editor')
@@ -133,6 +137,7 @@ def edit_cli(args):
     if not filename:
         raise Exception("Config file not found, create it first.")
     os.system(editor + ' ' + load().filename)
+
 
 def get_music_dir():
     return load().get_music_dir()

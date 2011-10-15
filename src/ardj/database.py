@@ -22,7 +22,7 @@ hand-made SQLite code and some new StORM based parts.  Later everything will be
 moved to StORM.
 """
 
-import logging 
+import logging
 import os
 import re
 import sys
@@ -33,7 +33,7 @@ try:
     from sqlite3 import dbapi2 as sqlite
     from sqlite3 import OperationalError
 except ImportError:
-    print >>sys.stderr, 'Please install pysqlite2.'
+    print >> sys.stderr, 'Please install pysqlite2.'
     sys.exit(13)
 
 from storm.locals import *  # https://storm.canonical.com
@@ -307,7 +307,7 @@ class database:
         Updates the table with values from the args dictionary, key "id" must
         identify the record.  Example:
 
-        db.update('tracks', { 'weight': 1, 'id': 123 })
+        db.update('tracks', {'weight': 1, 'id': 123})
         """
         sql = []
         params = []
@@ -337,7 +337,6 @@ class database:
         for k, v in ardj.settings.get('jabber/aliases', {}).items():
             for alias in v:
                 self.execute('UPDATE votes SET email = ? WHERE email = ?', (k, alias, ))
-
 
     def purge(self):
         """Removes stale data.

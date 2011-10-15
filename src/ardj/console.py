@@ -64,7 +64,7 @@ def signal_ices(sig):
             os.kill(ices_pid, sig)
             logging.debug('sent signal %s to process %s.' % (sig, ices_pid))
         else:
-            ardj.util.run([ 'pkill', '-' + str(sig), 'ices' ])
+            ardj.util.run(['pkill', '-' + str(sig), 'ices'])
             logging.debug('sent signal %s to ices using pkill (unsafe).' % sig)
         return True
     except Exception, e:
@@ -114,7 +114,7 @@ def on_say(args, sender):
 def on_restart(args, sender):
     if args == 'ices':
         if signal_ices(signal.SIGTERM):
-            ardj.util.run([ 'ices', '-B' ])
+            ardj.util.run(['ices', '-B'])
             return 'Done.'
         return 'Could not kill ices for some reason.'
     sys.exit(1)
@@ -210,7 +210,7 @@ def on_shitlist(args, sender):
     rows = ardj.database.fetch('SELECT id, artist, title, weight, count FROM tracks WHERE weight > 0 ORDER BY weight, title, artist LIMIT 10')
     if not rows:
         return 'No tracks (database must be empty).'
-    tracks = [{ 'id': row[0], 'artist': row[1], 'title': row[2], 'weight': row[3], 'count': row[4] } for row in rows]
+    tracks = [{'id': row[0], 'artist': row[1], 'title': row[2], 'weight': row[3], 'count': row[4]} for row in rows]
     return format_track_list(tracks, u'Lowest rated tracks:')
 
 
@@ -218,7 +218,7 @@ def on_hitlist(args, sender):
     rows = ardj.database.fetch('SELECT id, artist, title, weight, count FROM tracks WHERE weight > 0 ORDER BY weight DESC, title, artist LIMIT 10')
     if not rows:
         return 'No tracks (database must be empty).'
-    tracks = [{ 'id': row[0], 'artist': row[1], 'title': row[2], 'weight': row[3], 'count': row[4] } for row in rows]
+    tracks = [{'id': row[0], 'artist': row[1], 'title': row[2], 'weight': row[3], 'count': row[4]} for row in rows]
     return format_track_list(tracks, u'Highest rated tracks:')
 
 
@@ -316,7 +316,7 @@ def on_news(args, sender):
     rows = ardj.database.fetch('SELECT id, artist, title, weight, count FROM tracks WHERE weight > 0 ORDER BY id DESC LIMIT 10')
     if not rows:
         return 'No tracks at all.'
-    tracks = [{ 'id': row[0], 'artist': row[1], 'title': row[2], 'weight': row[3], 'count': row[4] } for row in rows]
+    tracks = [{'id': row[0], 'artist': row[1], 'title': row[2], 'weight': row[3], 'count': row[4]} for row in rows]
     return format_track_list(tracks, 'Recently added tracks:')
 
 
@@ -413,7 +413,7 @@ def on_set(args, sender):
 
 def on_last(args, sender):
     rows = ardj.database.fetch('SELECT t.id, t.artist, t.title, t.weight FROM tracks t INNER JOIN playlog l ON l.track_id = t.id ORDER BY l.ts DESC LIMIT 10')
-    tracks = [{ 'id': row[0], 'artist': row[1], 'title': row[2], 'weight': row[3] } for row in rows]
+    tracks = [{'id': row[0], 'artist': row[1], 'title': row[2], 'weight': row[3]} for row in rows]
     return format_track_list(tracks, 'Last played tracks:')
 
 
@@ -515,7 +515,7 @@ def on_help(args, sender):
             if not doc:
                 return 'No help on that command.'
             return doc.replace('    ', '').strip()
-    return 'What? No such command: %s, try "help".' %args
+    return 'What? No such command: %s, try "help".' % args
 
 
 command_map = (
@@ -642,4 +642,4 @@ def run_cli(args):
             print '\nBye.'
             return
         except Exception, e:
-            print >>sys.stderr, e, traceback.format_exc(e)
+            print >> sys.stderr, e, traceback.format_exc(e)

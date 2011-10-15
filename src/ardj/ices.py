@@ -26,6 +26,7 @@ def ices_init():
     logging.info('ices/ardj: initializing.')
     return 1
 
+
 def ices_shutdown():
     """
     Function called to shutdown your python enviroment.
@@ -34,9 +35,10 @@ def ices_shutdown():
     logging.info('ices/ardj: shutting down.')
     return 1
 
+
 def ices_get_next():
     """
-    Function called to get the next filename to stream. 
+    Function called to get the next filename to stream.
     Should return a string.
     """
     global last_track, last_good_file
@@ -54,6 +56,7 @@ def ices_get_next():
         logging.error('Failure files not found (%s).  Please, please have one.' % str(FAILURE_GLOB))
         return last_good_file
 
+
 def ices_get_metadata():
     """
     This function, if defined, returns the string you'd like used
@@ -66,6 +69,7 @@ def ices_get_metadata():
             return ('"%s" by %s' % (last_track['title'], last_track['artist'])).encode('utf-8')
         return os.path.basename(last_track['filepath'])
     return 'Unknown track'
+
 
 def ices_get_lineno():
     """

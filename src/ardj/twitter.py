@@ -446,7 +446,7 @@ class Status(object):
     if self.text:
       data['text'] = self.text
     if self.location:
-      data['location'] = self.location  
+      data['location'] = self.location
     if self.user:
       data['user'] = self.user.AsDict()
     if self.in_reply_to_screen_name:
@@ -809,7 +809,7 @@ class User(object):
 
   def GetFriendsCount(self):
     '''Get the friend count for this user.
-    
+
     Returns:
       The number of users this user has befriended.
     '''
@@ -828,7 +828,7 @@ class User(object):
 
   def GetFollowersCount(self):
     '''Get the follower count for this user.
-    
+
     Returns:
       The number of users following this user.
     '''
@@ -847,7 +847,7 @@ class User(object):
 
   def GetStatusesCount(self):
     '''Get the number of status updates for this user.
-    
+
     Returns:
       The number of status updates for this user.
     '''
@@ -866,7 +866,7 @@ class User(object):
 
   def GetFavouritesCount(self):
     '''Get the number of favourites for this user.
-    
+
     Returns:
       The number of favourites for this user.
     '''
@@ -1762,7 +1762,7 @@ class Api(object):
     else:
       self.base_url = base_url
 
-    if username is not None and (access_token_key is None or 
+    if username is not None and (access_token_key is None or
                                  access_token_secret is None):
       print >> sys.stderr, 'Twitter now requires an oAuth Access Token for API calls.'
       print >> sys.stderr, 'If your using this library from a command line utility, please'
@@ -1958,7 +1958,7 @@ class Api(object):
         Specifies the ID or screen name of the user for whom to return
         the friends_timeline.  If unspecified, the username and password
         must be set in the twitter.Api instance.  [Optional]
-      count: 
+      count:
         Specifies the number of statuses to retrieve. May not be
         greater than 200. [Optional]
       since:
@@ -2198,13 +2198,13 @@ class Api(object):
     results.append(self.PostUpdate(lines[-1], **kwargs))
     return results
 
-  def GetReplies(self, since=None, since_id=None, page=None): 
+  def GetReplies(self, since=None, since_id=None, page=None):
     '''Get a sequence of status messages representing the 20 most recent
     replies (status updates prefixed with @username) to the authenticating
     user.
 
     Args:
-      page: 
+      page:
       since:
         Narrows the returned results to just those statuses created
         after the specified HTTP-formatted date. [optional]
@@ -2373,7 +2373,7 @@ class Api(object):
     if since_id:
       parameters['since_id'] = since_id
     if page:
-      parameters['page'] = page 
+      parameters['page'] = page
     json = self._FetchUrl(url, parameters=parameters)
     data = simplejson.loads(json)
     self._CheckForTwitterError(data)
@@ -2491,12 +2491,12 @@ class Api(object):
     '''Return a list of Status objects representing favorited tweets.
     By default, returns the (up to) 20 most recent tweets for the
     authenticated user.
-    
+
     Args:
       user:
         The username or id of the user whose favorites you are fetching.
         If not specified, defaults to the authenticated user. [optional]
-    
+
       page:
         Retrieves the 20 next most recent favorite statuses. [optional]
     '''
@@ -2525,19 +2525,19 @@ class Api(object):
                   page=None):
     '''Returns the 20 most recent mentions (status containing @username)
     for the authenticating user.
-    
+
     Args:
       since_id:
         Returns only public statuses with an ID greater than
         (that is, more recent than) the specified ID. [optional]
-    
+
       max_id:
         Returns only statuses with an ID less than
         (that is, older than) the specified ID.  [optional]
-    
+
       page:
         Retrieves the 20 next most recent replies. [optional]
-    
+
     Returns:
       A sequence of twitter.Status instances, one for each mention of the user.
       see: http://apiwiki.twitter.com/REST-API-Documentation#statuses/mentions
@@ -2721,7 +2721,7 @@ class Api(object):
   def VerifyCredentials(self):
     '''Returns a twitter.User instance if the authenticating user is valid.
 
-    Returns: 
+    Returns:
       A twitter.User instance representing that user if the
       credentials are valid, None otherwise.
     '''
@@ -2808,7 +2808,7 @@ class Api(object):
 
   def GetRateLimitStatus(self):
     '''Fetch the rate limit status for the currently authorized user.
-    
+
     Returns:
       A dictionary containing the time the limit will reset (reset_time),
       the number of remaining hits allowed before the reset (remaining_hits),
@@ -2827,7 +2827,7 @@ class Api(object):
     '''Determines the minimum number of seconds that a program must wait before
     hitting the server again without exceeding the rate_limit imposed for the
     currently authenticated user.
-    
+
     Returns:
       The minimum second interval that a program must use so as to not exceed
       the rate_limit imposed for the user.
@@ -3141,7 +3141,7 @@ class _FileCache(object):
         hashed_key = md5(key).hexdigest()
     except TypeError:
         hashed_key = md5.new(key).hexdigest()
-        
+
     return os.path.join(self._root_directory,
                         self._GetPrefix(hashed_key),
                         hashed_key)
@@ -3162,7 +3162,7 @@ def get_replies():
 
 def speak_message(author, message, play=False, queue=True):
     """Speaks a message.
-    
+
     Renders the message using festival and queues it."""
     filename = ardj.settings.getpath('twitter/reply_filename')
     if not filename:
@@ -3181,7 +3181,7 @@ def speak_message(author, message, play=False, queue=True):
         ardj.util.move_file(str(tmpname), filename)
 
     if play:
-        ardj.util.run([ 'play', str(filename) ])
+        ardj.util.run(['play', str(filename)])
 
     if queue and update:
         track_id = int(ardj.settings.get('twitter/reply_track_id', '0'))
