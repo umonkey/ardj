@@ -74,10 +74,10 @@ docs:
 
 ardj.1.gz: share/doc/docbook/ardj.xml
 	docbook2x-man share/doc/docbook/ardj.xml
-	gzip -9 ardj.1
+	gzip -f9 ardj.1
 
 ardj.html: ardj.1.gz
 	man2html ardj.1.gz > ardj.html
 
-man: ardj.1.gz
+man: ardj.html
 	man ./ardj.1.gz
