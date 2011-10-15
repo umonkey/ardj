@@ -1,0 +1,148 @@
+<?xml version="1.0"?>
+<!-- vim: set tw=120: -->
+<!DOCTYPE book PUBLIC '-//OASIS//DTD DocBook XML V4.4//EN' '/usr/share/xml/docbook/schema/dtd/4.4/docbookx.dtd'>
+
+<article lang="en">
+	<title>ardj</title>
+	<articleinfo>
+		<author>
+			<firstname>Justin</firstname>
+			<surname>Forest</surname>
+			<affiliation>
+				<address>
+					<email>hex@umonkey.net</email>
+				</address>
+			</affiliation>
+		</author>
+	</articleinfo>
+
+	<refentry>
+		<refmeta>
+			<refentrytitle>ardj</refentrytitle>
+			<manvolnum>1</manvolnum>
+		</refmeta>
+
+		<refnamediv>
+			<refname>ardj</refname>
+			<refpurpose>an internet radio playlist manager</refpurpose>
+		</refnamediv>
+
+		<refsynopsisdiv>
+			<cmdsynopsis>
+				<command>ardj</command>
+				<arg><replaceable>command</replaceable></arg>
+			</cmdsynopsis>
+		</refsynopsisdiv>
+
+		<refsect1>
+			<title>Description</title>
+
+			<para><command>ardj</command> is a collection of tools that can be used to run a full featured fully
+			automated internet radio station. It is designed to stay alive even when there's nobody looking for it from
+			the administrative point of view: bad music will go away, fresh music will be found, as long as listeners
+			care.</para>
+
+			<para><command>ardj</command> uses an SQLite database to store the runtime data, a tiny web server to access
+			it, an XMPP (Jabber) bot for runtime management and to interact with the audience, and a plugin which feeds
+			<command>ices</command>.  The web server which is used as the database interface is built on
+			<application>web.py</application> and requires zero configuration; it's main purpose is to prevent
+			deadlocking the SQLite database by synchronizing multiple processes accessing it.</para>
+
+			<para>This document is a work in progress. The complete documentation is available on the website.</para>
+		</refsect1>
+
+		<refsect1>
+			<title>Setting up a station</title>
+
+			<para>To run a streaming radio station you will need the following components: <command>icecast2</command>,
+			<command>ices</command> and <command>ardj</command>.</para>
+
+			<para><command>Icecast2</command> is the multiplexor, it has little brain. Its main job is to receive a
+			stream from a source (<command>ices</command>) and retransmits it to as many listening clients as there are.
+			It's like a proxy for multimedia streams. It is a separate product and has nothing to do with
+			<command>ardj</command>.</para>
+
+			<para><command>Ices</command> is the stream source. It reads file names from a playlist, loads and decodes
+			the files, cross-fades them nicely, encodes the result to the configured format (typically MP3) and sends
+			the result to <command>icecast</command>. This is also an independent component that has little to do with
+			<command>ardj</command>. It only uses the playlist plugin which <command>ardj</command> provides to read
+			file names from the database instead of flat files.</para>
+
+			<para><command>ardj</command> is the virtual brain of your radio station. It maintains playlists, picks the
+			music and jingles, collects feedback from the audience, adjusts track priorities and so on.</para>
+		</refsect1>
+
+		<refsect1>
+			<title>Command line options</title>
+
+			<para>The first parameter to <command>ardj</command> is the command. Some commands require additional
+			arguments, they are described below.</para>
+
+			<variablelist>
+				<varlistentry>
+					<term><option>db-console</option></term>
+					<listitem>
+						<para>Opens the database console. This is useful if you need to perform some low-level
+						operations and don't want to type the full database path.</para>
+
+						<para>This command only works if you have <command>sqlite3</command> installed.</para>
+					</listitem>
+				</varlistentry>
+			</variablelist>
+		</refsect1>
+
+		<refsect1>
+			<title>Configuration</title>
+
+			<para>There is one configuration wile which contains all settings.  This file is named
+			<filename>/etc/ardj.yaml</filename>, if you're installing system wide, or
+			<filename>$HOME/.config/ardj/ardj.yaml</filename> if you're testing locally.</para>
+
+			<variablelist>
+				<varlistentry>
+					<term><option>musicdir</option></term>
+					<listitem>
+						<para>This option defines the folder where the music will be stored. Files in this folder have
+						scrambled names, related to the file contents' MD5 checksum, e.g.
+						<filename>2/4/24a141bfaaae48969901a9ab1206dc76.mp3</filename>. This is <emphasis>not</emphasis>
+						a publicly accessible folder, you should <emphasis>not</emphasis> try to do anything with the
+						files in it. To add new music, add it to the folder specified with the
+						<option>incoming_path</option> parameter.</para>
+
+						<para>Default location is <filename>/var/lib/ardj/music</filename>.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><option>incoming_path</option></term>
+					<listitem>
+						<para>This parameter defines the folder where you should put music that you want to add to the
+						database. This folder is typicalliy made available over ftp or sftp.  After copying files to
+						this folder, send the <command>upload</command> command to the jabber bot.</para>
+
+						<para>When files are added to the database, only two common tags are read and used: "artist" and
+						"title". One uncommon tag is "ardj", with which you can preset internal metadata, such as
+						labels. Syntax example: "ardj=1;labels=music,rock" (normally you only set the labels this way,
+						other options are currently ignored).</para>
+
+						<para>Default location is <filename>/var/lib/ardj/incoming</filename>.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><option>incoming_labels</option></term>
+					<listitem>
+						<para>With this parameter you can set default labels for new files. This typically has labels
+						which will later help you find unsorted music and label it properly. If you have a playlist for
+						incoming unsorted music, you can also specify it here.</para>
+					</listitem>
+				</varlistentry>
+			</variablelist>
+		</refsect1>
+
+		<refsect1>
+			<title>Author</title>
+			<para>Justin Forest <email>hex@umonkey.net</email></para>
+		</refsect1>
+	</refentry>
+</article>

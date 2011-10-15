@@ -47,7 +47,7 @@ release: clean bdist deb
 clean:
 	find -regex '.*\.\(pyc\|rej\|orig\|deb\|zip\|tar\.gz\)$$' -delete
 
-bdist: test clean
+bdist: test clean man
 	VERSION=$(VERSION) python setup.py bdist
 	mv dist/*.tar.gz $(TAR)
 	rm -rf build dist
@@ -71,3 +71,12 @@ docs:
 	rm -f share/doc/ardj/pydoc/*.html
 	ls -1 src/ardj/*.py | grep -v __init__ | cut -d/ -f3 | cut -d. -f1 | sed -re 's/(.*)/ardj.\1/g' | xargs pydoc -w ardj
 	mv *.html share/doc/ardj/pydoc/
+
+man:
+	docbook2x-man share/doc/docbook/ardj.xml
+	gzip -9 < ardj.1 > share/doc/man/ardj.1.gz
+	man2html share/doc/man/ardj.1.gz > share/doc/man/ardj.html
+	rm -f ardj.1
+
+man-test: man
+	man ./share/doc/man/ardj.1.gz
