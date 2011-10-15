@@ -363,7 +363,7 @@ def on_tags(args, sender):
     tags -- show the tag cloud.
     """
     if not args or args == '-a':
-        data = ardj.databasea.fetch('SELECT l.label, COUNT(*) AS count FROM labels l '
+        data = ardj.database.fetch('SELECT l.label, COUNT(*) AS count FROM labels l '
             'INNER JOIN tracks t ON t.id = l.track_id '
             'WHERE t.weight > 0 GROUP BY label ORDER BY l.label')
         if args != '-a':
