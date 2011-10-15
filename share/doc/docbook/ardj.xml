@@ -722,6 +722,81 @@
 		</refsect1>
 
 		<refsect1>
+			<title>Files</title>
+
+			<variablelist>
+				<varlistentry>
+					<term><filename>/etc/ardj.yaml</filename></term>
+					<listitem>
+						<para>This is the default location of the configuration file.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><filename>$HOME/.config/ardj/ardj.yaml</filename></term>
+					<listitem>
+						<para>This is the location of the user's local configuration file. If it exists, the system wide
+						configuration file is ignored. Having a local configuration file is good for testing purposes,
+						but on a production system you should stick to the global one.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><filename>/var/lib/ardj/database.sqlite</filename></term>
+					<listitem>
+						<para>This is the default location of the database. It can be changed using the
+						<option>database</option> configuration file parameter.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><filename>/var/lib/ardj/music</filename></term>
+					<listitem>
+						<para>This is the default location of the music library. It can be changed using the
+						<option>musicdir</option> configuration file parameter.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><filename>/var/lib/ardj/incoming</filename></term>
+					<listitem>
+						<para>This is the default location of the folder where you should put files to add them to the
+						media database (using the <command>ardj add-incoming-files</command> command). You can change it
+						using the <option>incoming_path</option> configuration file parameter.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><filename>/var/log/ardj/</filename></term>
+					<listitem>
+						<para>This is the default location of the log files. It can be changed using the
+						<option>log</option> configuration file parameter. The file is rotated after it grows over 1MB;
+						10 files are kept.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><filename>/etc/init/ardj-*.conf</filename></term>
+					<listitem>
+						<para>These are the upstart jobs that start the jabber bot
+						(<filename>ardj-jabber.conf</filename>), the Web API server
+						(<filename>ardj-server.conf</filename>) and the source client
+						(<filename>ardj-ices.conf</filename>)</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><filename>/usr/share/ardj/failure/</filename></term>
+					<listitem>
+						<para>This folder contains OGG/Vorbis files which should be played when the Web API server
+						fails. The files are picked in random order. This is typically something with neutral mood and
+						with a short voice message for the admins to go look in the log file.</para>
+					</listitem>
+				</varlistentry>
+			</variablelist>
+		</refsect1>
+
+		<refsect1>
 			<title>Author</title>
 			<para>Justin Forest <email>hex@umonkey.net</email></para>
 		</refsect1>
