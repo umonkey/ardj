@@ -7,6 +7,16 @@ import ardj.settings
 import ardj.util
 
 
+class Error(Exception):
+    """Scrobbling errors."""
+    pass
+
+
+class BadAuth(Error):
+    """Thrown when the configured credentials are wrong."""
+    pass
+
+
 class LastFM(object):
     """The LastFM client."""
     ROOT = 'http://ws.audioscrobbler.com/2.0/'
@@ -140,7 +150,13 @@ class LastFM(object):
         if api_sig:
             kwargs['api_sig'] = self.get_call_signature(kwargs)
         kwargs['format'] = 'json'
-        return ardj.util.fetch_json(self.ROOT, args=kwargs, post=post, quiet=True, ret=True)
+        response = ardj.util.fetch_json(self.ROOT, args=kwargs, post=post, quiet=True, ret=True)
+        if "error" in response:
+            logging.error("Last.fm error %u: %s" % (response["error"], response["message"]))
+            if response["error"] in (4, 9, 10, 13, 26):
+                raise BadAuth(response["message"])
+            raise Error(response["message"])
+        return response
 
     def get_call_signature(self, args):
         parts = sorted([''.join(x) for x in args.items()])
