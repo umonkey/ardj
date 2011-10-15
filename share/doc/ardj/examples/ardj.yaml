@@ -23,6 +23,22 @@ incoming_labels: [music, tagme]
 dupes: 0
 
 
+# If you want to display a schedule of upcoming events on your web site,
+# specify the name of the file where the information should be written to.  The
+# file is updated when you run the 'ardj update-events' command, so you'll need
+# to add that to your crontab, too.
+#event_schedule_path: /tmp/ardj-events.json
+
+# By default event schedule contains artists that have tracks with the "music"
+# label.  You can set a different label here.
+#event_schedule_label_filter: music
+
+# By default event schedule contains artists which have tracks with weight 1.0
+# or higher.  You can change this value here, to widen or narrow the range of
+# announced artists.
+#event_schedule_weight: 1.0
+
+
 # If you plan on using Jabber, uncomment this block and insert your arguments.
 #jabber:
 #  login: user:password@server.com

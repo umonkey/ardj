@@ -2,4 +2,4 @@
 #
 # zsh autocomplete for ardj.
 
-_arguments "1:Command:(add-incoming-tracks config db-console db-init db-purge db-stats download-artist events find-new-tracks fix-artist-names help hotline icelog jabber listeners mail map-listeners mark-hitlist mark-liked-by mark-long mark-orphans mark-recent merge-votes queue-flush rg say serve show-news-from-jamendo sms stream tags track twit xmpp-send)"
+_arguments "1:Command:(add-incoming-tracks config db-console db-init db-purge db-stats download-artist events find-new-tracks fix-artist-names help hotline icelog jabber listeners mail map-listeners mark-hitlist mark-liked-by mark-long mark-orphans mark-recent merge-votes queue-flush rg say serve show-news-from-jamendo sms stream tags track twit update-schedule xmpp-send)"

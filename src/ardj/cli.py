@@ -49,15 +49,6 @@ def cmd_db_init(*args):
     return database.cli_init(args)
 
 
-def cmd_events(*args):
-    """works with the upcoming events
-
-    Interacts with the Last.fm event database.  Subcommands: refresh,
-    update-website."""
-    import tout
-    return tout.run_cli(args)
-
-
 def cmd_find_new_tracks(*args):
     """adds new songs from Last.fm
 
@@ -184,6 +175,12 @@ def cmd_twit(*args):
     """interacts with the twitter account"""
     import twitter
     return twitter.run_cli(args)
+
+
+def cmd_update_schedule(*args):
+    """looks for events in the Last.fm database"""
+    from ardj import tout
+    tout.update_schedule(refresh="--refresh" in args)
 
 
 def cmd_xmpp_send(*args):
@@ -355,7 +352,7 @@ def run(args):
                 pass
             except Exception, e:
                 logging.error('ERROR handling command %s: %s' % (args[1], e) + traceback.format_exc(e))
-                print "ERROR: %s" % e
+                print "ERROR: %s\n%s" % (e, traceback.format_exc(e))
             exit(1)
 
     cmd_help(*args)

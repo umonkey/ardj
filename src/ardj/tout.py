@@ -3,6 +3,7 @@
 import json
 import logging
 import os
+import sys
 import time
 
 import ardj.database
@@ -10,12 +11,16 @@ import ardj.settings
 import ardj.scrobbler
 import ardj.website
 
-class LastFmError(Exception): pass
-
 
 def get_artist_names():
     """Returns names of all artists that have well rated music."""
-    return sorted([row[0] for row in ardj.database.fetch('SELECT DISTINCT artist FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?) AND weight >= ?', (ardj.settings.get('tout/label', 'music'), float(ardj.settings.get('tout/weight', '1.0')), ))])
+    label = ardj.settings.get("event_schedule_label_filter", "music")
+    weight = float(ardj.settings.get("event_schedule_label_weight", "1.0"))
+
+    rows = ardj.database.fetch("SELECT DISTINCT artist "
+        "FROM tracks WHERE id IN (SELECT track_id FROM labels "
+        "WHERE label = ?) AND weight >= ?", (label, weight, ))
+    return sorted([row[0] for row in rows])
 
 
 def fetch_artist_events(lastfm, artist_name):
@@ -27,9 +32,6 @@ def fetch_artist_events(lastfm, artist_name):
         data = lastfm.get_events_for_artist(artist_name)
         if not data:
             logging.warning(u'Could not fetch events for %s.' % artist_name)
-
-        if 'error' in data:
-            raise LastFmError('Last.fm reports error: %s' % data['message'])
 
         if 'events' not in data:
             logging.debug('Oops: %s had no "events" block -- no such artist?' % artist_name.encode('utf-8'))
@@ -57,20 +59,23 @@ def fetch_artist_events(lastfm, artist_name):
                     'venue_url': event['venue']['url'],
                     'venue_location': event['venue']['location']['geo:point'],
                 })
-    except LastFmError, e:
-        logging.error('Fatal: %s' % e)
-        return None
+    except ardj.scrobbler.BadAuth:
+        raise
+    except ardj.scrobbler.Error, e:
+        logging.warning(u"Could not fetch events for %s: %s" % (artist_name, e))
+        return []
     except Exception, e:
-        logging.error('ERROR fetching events for %s: %s' % (artist_name.encode('utf-8'), e))
+        logging.error('%s error fetching events for %s: %s' % (type(e).__name__, artist_name.encode('utf-8'), e))
     return events
 
 
-def fetch_events():
+def fetch_events(refresh=False):
     """Returns events from LastFM.  Uses caching (12 hours by default)."""
-    cache_fn = ardj.settings.getpath('tout/cache', '~/.config/ardj/events.json')
+    cache_fn = ardj.settings.getpath("event_schedule_cache", "/tmp/ardj-events-cache.json")
 
     if os.path.exists(cache_fn):
-        if time.time() - os.stat(cache_fn).st_mtime < int(ardj.settings.get('tout/cache_ttl', '43200')):
+        ttl = int(ardj.settings.get("event_schedule_cache_ttl", "43200"))
+        if time.time() - os.stat(cache_fn).st_mtime < ttl:
             return json.loads(open(cache_fn, 'rb').read())
 
     lastfm = ardj.scrobbler.LastFM().authorize()
@@ -82,30 +87,34 @@ def fetch_events():
             continue # wtf ?!
         events += tmp
 
+    open(cache_fn, 'wb').write(json.dumps(events))
+
     artist_names = list(set([e['artist'] for e in events if e.get('artist')]))
     update_labels(artist_names)
 
-    open(cache_fn, 'wb').write(json.dumps(events))
     return events
 
 
-def update_website():
-    data = { 'bounds': [], 'markers': [] }
+def update_website(filename):
+    data = {"bounds": [], "markers": []}
+
     events = fetch_events()
     if events is None:
         return
+
     for event in events:
         if event['venue_location']['geo:long'] and event['venue_location']['geo:lat']:
             data['markers'].append({
                 'll': [float(event['venue_location']['geo:lat']), float(event['venue_location']['geo:long'])],
                 'html': u'<p><strong>%s</strong><br/>%s, %s<br/>%s</p><p class="more"><a href="%s" target="_blank">Подробности</a></p>' % (event['artist'], event['venue'], event['city'], '.'.join(reversed(event['startDate'].split('-'))), event['url']),
             })
-    data['bounds'].append(min([e['ll'][0] for e in data['markers']]))
-    data['bounds'].append(max([e['ll'][0] for e in data['markers']]))
-    data['bounds'].append(min([e['ll'][1] for e in data['markers']]))
-    data['bounds'].append(max([e['ll'][1] for e in data['markers']]))
 
-    filename = ardj.settings.getpath('tout/website_js', '~/.config/ardj/event-map.js')
+    if data["markers"]:
+        data['bounds'].append(min([e['ll'][0] for e in data['markers']]))
+        data['bounds'].append(max([e['ll'][0] for e in data['markers']]))
+        data['bounds'].append(min([e['ll'][1] for e in data['markers']]))
+        data['bounds'].append(max([e['ll'][1] for e in data['markers']]))
+
     output = 'var map_data = %s;' % json.dumps(data, indent=True)
     open(filename, 'wb').write(output)
     logging.info('Wrote %s' % filename)
@@ -120,19 +129,17 @@ def update_labels(artist_names):
             'concert-soon', 'ardj', name, ))
 
 
-def run_cli(args):
-    """Implements the "ardj events" command."""
-    if 'refresh' in args:
-        fetch_events()
+def update_schedule(refresh=False):
+    """Updates the event schedule."""
+    try:
+        fetch_events(refresh)
+    except ardj.scrobbler.Error, e:
+        print >>sys.stderr, "Last.fm error:", e
+        return False
 
-    if 'update-website' in args:
-        if ardj.settings.get('tout/website_js'):
-            update_website()
-        else:
-            logging.debug('Not updating website: tout/website_js not set.')
+    event_schedule_path = ardj.settings.get("event_schedule_path", ardj.settings.get("tout/website_js"))
+    if not event_schedule_path:
+        logging.debug("No event_schedule_path, not updating the schedule.")
+        return False
 
-    if not args:
-        print 'Usage: ardj events refresh|update-website'
-        return 1
-
-    return 0
+    update_website(event_schedule_path)
