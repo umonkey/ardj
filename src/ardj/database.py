@@ -77,7 +77,7 @@ class Model(object):
         if Model._store is None:
             uri = ardj.settings.get("database_uri")
             if uri is None:
-                uri = "sqlite:" + ardj.settings.get("database/local")
+                uri = "sqlite:" + ardj.settings.get2("database_path", "database/local")
             Model._db = create_database(uri)
             Model._store = Store(Model._db)
         return Model._store
@@ -251,9 +251,9 @@ class database:
     @classmethod
     def get_instance(cls):
         if cls.instance is None:
-            filename = ardj.settings.getpath('database/local')
+            filename = ardj.settings.getpath2("database_path", "database/local")
             if filename is None:
-                raise Exception('This ardj instance does not have a local database (see database/local config option).')
+                raise Exception('This ardj instance does not have a local database (see the database_path config option).')
             cls.instance = cls(filename)
         return cls.instance
 

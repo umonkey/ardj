@@ -126,9 +126,19 @@ def get(key, default=None, fail=False):
     return load().get(key, default, fail=fail)
 
 
+def get2(key1, key2, default=None, fail=False):
+    x = load()
+    return x.get(key1, x.get(key2, default, fail))
+
+
 def getpath(key, default=None, fail=False):
     """getpath(k, v) <==> load().getpath(k, v)"""
     return load().getpath(key, default, fail=fail)
+
+
+def getpath2(key1, key2, default=None, fail=False):
+    x = load()
+    return x.getpath(key1, x.getpath(key2, default, fail)
 
 
 def edit_cli(args):

@@ -24,7 +24,8 @@ import ardj.util
 
 
 def is_user_admin(sender):
-    return sender in ardj.settings.get('jabber/access', [])
+    admins = ardj.settings.get("jabber_admins", ardj.settings.get("jabber/access", []))
+    return sender in admins
 
 
 def filter_labels(labels):

@@ -102,6 +102,13 @@
 						<para>TODO</para>
 					</listitem>
 				</varlistentry>
+
+				<varlistentry>
+					<term>Failure mode</term>
+					<listitem>
+						<para>TODO</para>
+					</listitem>
+				</varlistentry>
 			</variablelist>
 		</refsect1>
 
@@ -681,16 +688,56 @@
 
 			<variablelist>
 				<varlistentry>
-					<term><option>musicdir</option></term>
+					<term><option>database_path</option></term>
 					<listitem>
-						<para>This option defines the folder where the music will be stored. Files in this folder have
-						scrambled names, related to the file contents' MD5 checksum, e.g.
-						<filename>2/4/24a141bfaaae48969901a9ab1206dc76.mp3</filename>. This is <emphasis>not</emphasis>
-						a publicly accessible folder, you should <emphasis>not</emphasis> try to do anything with the
-						files in it. To add new music, add it to the folder specified with the
-						<option>incoming_path</option> parameter.</para>
+						<para>This names the SQLite database file.</para>
 
-						<para>Default location is <filename>/var/lib/ardj/music</filename>.</para>
+						<para>This option has no default, but the installer sets it to
+						<filename>/var/lib/ardj/database.sqlite</filename>.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><option>dupes</option></term>
+					<listitem>
+						<para>This parameter defines how many recently played artists will be ignored when picking the
+						next track. This is good for ensuring that the same artist isn't played too often even if he has
+						amazingly well rated tracks.</para>
+
+						<para>Set this to a value higher than 0 only after you upload a significant amount of music,
+						because if there's not enough artists, your stream will go into the failure mode.</para>
+
+						<para>Defaults to 5.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><option>event_schedule_label_filter</option></term>
+					<listitem>
+						<para>Here you can specify the label which tracks must have to feed the schedule updater. The
+						logic is simple: first tracks with this label are picked, from those only tracks with weight
+						above 1.0 are picked (i.e., well rated), and that's the source of artist names.</para>
+
+						<para>Defaults to nothing, all tracks are used.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><option>event_schedule_path</option></term>
+					<listitem>
+						<para>Here you name a file where the information on upcoming concerts will be saved (see the
+						<command>ardj update-schedule</command> command). If not set, the function won't work.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><option>event_schedule_weight</option></term>
+					<listitem>
+						<para>Here you can set a custom weight requirement for tracks that feed the schedule updater.
+						If you set this to a value that roughly equals to your 10th top track weight, then the schedule
+						will only feature artists from your station's hitlist.</para>
+
+						<para>Defaults to 1.0, e.g. tracks that don't suck.</para>
 					</listitem>
 				</varlistentry>
 
@@ -716,6 +763,84 @@
 						<para>With this parameter you can set default labels for new files. This typically has labels
 						which will later help you find unsorted music and label it properly. If you have a playlist for
 						incoming unsorted music, you can also specify it here.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><option>jabber_id</option></term>
+					<listitem>
+						<para>This option defines the bot's JID and password in the "user:password@server" form. If you
+						don't define this parameter, the jabber bot won't start. Look in the log file for authentication
+						error messages.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><option>jabber_admins</option></term>
+					<listitem>
+						<para>This parameter names privileged users. This is a list of jids, i.e. it must be either one
+						line of comma-separated values in square brackets (e.g., "[one, two]"), or one item per line,
+						prefixed with a dash sign. Look in the <filename>share/doc/ardj/examples</filename> folder for
+						an example.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><option>log</option></term>
+					<listitem>
+						<para>This names the log file.</para>
+
+						<para>Defaults to <filename>/var/log/ardj/ardj.log</filename>.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><option>musicdir</option></term>
+					<listitem>
+						<para>This option defines the folder where the music will be stored. Files in this folder have
+						scrambled names, related to the file contents' MD5 checksum, e.g.
+						<filename>2/4/24a141bfaaae48969901a9ab1206dc76.mp3</filename>. This is <emphasis>not</emphasis>
+						a publicly accessible folder, you should <emphasis>not</emphasis> try to do anything with the
+						files in it. To add new music, add it to the folder specified with the
+						<option>incoming_path</option> parameter.</para>
+
+						<para>This is also where the <filename>playlists.yaml</filename> file is looked for.</para>
+
+						<para>Default location is <filename>/var/lib/ardj/music</filename>.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><option>twitter</option></term>
+					<listitem>
+						<para>Having this block enables integration with Twitter. The block must contain values with
+						keys <option>consumer_key</option>, <option>consumer_secret</option>,
+						<option>access_token_key</option> and <option>access_token_secret</option>. To get these values,
+						go to the dev.twitter.com/apps website and register yourself an application.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><option>use_jabber_status</option></term>
+					<listitem>
+						<para>Set this to "yes" to add track info to the bot's status line.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><option>use_jabber_tunes</option></term>
+					<listitem>
+						<para>This enables sending track info using the XMPP Tunes extension (doesn't work with Gmail
+						servers).</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><option>webapi_socket</option></term>
+					<listitem>
+						<para>This names the socket at which the Web API server is expected to be.</para>
+
+						<para>Defaults to "127.0.0.1:8080".</para>
 					</listitem>
 				</varlistentry>
 			</variablelist>
@@ -754,6 +879,14 @@
 					<listitem>
 						<para>This is the default location of the music library. It can be changed using the
 						<option>musicdir</option> configuration file parameter.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><filename>/var/lig/ardj/music/playlists.yaml</filename></term>
+					<listitem>
+						<para>The default playlist description. Is always bound to the <option>musicdir</option>
+						folder.</para>
 					</listitem>
 				</varlistentry>
 

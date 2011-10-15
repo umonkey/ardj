@@ -39,15 +39,19 @@ dupes: 0
 #event_schedule_weight: 1.0
 
 
-# If you plan on using Jabber, uncomment this block and insert your arguments.
-#jabber:
-#  login: user:password@server.com
-#  access:
-#  - admin1@example.com
-#  - admin2@example.net
-#  status: true  # use status to show track info
-#  tunes: true  # use xmpp tunes (doesn't work with Gmail)
+# If you plan to use Jabber, uncomment this block and insert the correct values.
+#jabber_id: "alice:secret@server.com"
 
+# Here you can specify jabber admins.
+#jabber_admins:
+#- alice@example.com
+#- bob@example.com
+
+# This adds track info to the bot's status message.
+use_jabber_status: yes
+
+# This enables sending XMPP Tunes (doesn't work with Gmail).
+#use_jabber_tunes: yes
 
 # If you want to add the bot to a chat room, specify his full jid there.
 #
@@ -80,8 +84,7 @@ log: /var/log/ardj/ardj.log
 
 # This is the database where the runtime data is stored.
 #
-database:
-  local: /var/lib/ardj/database.sqlite
+database_path: /var/lib/ardj/database.sqlite
 
 
 # The socket that the database server listens to.  On a typical installation

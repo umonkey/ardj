@@ -99,7 +99,8 @@ class ardjbot(MyFileReceivingBot):
         self.lastfm = ardj.scrobbler.LastFM()
         self.librefm = ardj.scrobbler.LibreFM()
 
-        self.login, password = self.split_login(ardj.settings.get('jabber/login', fail=True))
+        _conf = ardj.settings.get("jabber_id", ardj.settings.get("jabber/login", fail=True))
+        self.login, password = self.split_login(_conf)
         resource = socket.gethostname() + '/' + str(os.getpid()) + '/'
         super(ardjbot, self).__init__(self.login, password, res=resource, debug=debug)
 
@@ -231,14 +232,14 @@ class ardjbot(MyFileReceivingBot):
         Updates the status with the current track name.
         """
         try:
-            if ardj.settings.get('jabber/status', False):
+            if ardj.settings.get2("use_jabber_status", "jabber/status", False):
                 message = ardj.console.process_command('status')
                 if message != self.status_message:
                     self.status_message = message
         except Exception, e:
             self.status_message = 'Error updating status: %s' % e
         """ FIXME
-        if ardj.settings.get('jabber/tunes', True):
+        if ardj.settings.get2('use_jabber_tunes', 'jabber/tunes', True):
             self.send_tune(track)
         """
 
