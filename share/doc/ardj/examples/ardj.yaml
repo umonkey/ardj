@@ -54,6 +54,18 @@ dupes: 0
 #jabber_chat_room: my_radio@conference.jabber.ru/MyBot
 
 
+# If you want to be able to send twits using ardj (using the "twit" jabber
+# command or "ardj twit" from the command line), you need to register yourself
+# an application and get an access token.  This can be done on the
+# dev.twitter.com/apps website.  Don't forget to set the read-write permission
+# for your application, otherwise you'll only be able to read replies.
+#twitter:
+#  consumer_key: XXXXXXXXXXXXXXXXXXXXX
+#  consumer_secret: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+#  access_token_key: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+#  access_token_secret: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+
 # If you want to see how many users are currently listening to the stream, enable this.
 #icecast:
 #  stats:

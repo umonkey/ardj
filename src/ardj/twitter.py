@@ -93,6 +93,10 @@ class TwitterError(Exception):
     return self.args[0]
 
 
+class ConfigError(Exception):
+    pass
+
+
 class Status(object):
   '''A class representing the Status structure used by the twitter API.
 
@@ -3149,16 +3153,27 @@ class _FileCache(object):
   def _GetPrefix(self,hashed_key):
     return os.path.sep.join(hashed_key[0:_FileCache.DEPTH])
 
+
 def get_client():
     """Returns a connected Twitter client."""
-    return Api(username=ardj.settings.get('twitter/consumer_key'),
-        password=ardj.settings.get('twitter/consumer_secret'),
-        access_token_key=ardj.settings.get('twitter/access_token_key'),
-        access_token_secret=ardj.settings.get('twitter/access_token_secret'))
+    consumer_key = ardj.settings.get("twitter/consumer_key")
+    consumer_secret = ardj.settings.get("twitter/consumer_secret")
+    access_token_key = ardj.settings.get("twitter/access_token_key")
+    access_token_secret = ardj.settings.get("twitter/access_token_secret")
+
+    if not consumer_key or not consumer_secret or not access_token_key or not access_token_secret:
+        raise ConfigError("Twitter not configured, see the documentation.")
+
+    return Api(username=consumer_key,
+        password=consumer_secret,
+        access_token_key=access_token_key,
+        access_token_secret=access_token_secret)
+
 
 def get_replies():
     """Returns last replies."""
     return [(s.user.screen_name, s.text) for s in sorted(get_client().GetReplies(), key=lambda s: s.created_at_in_seconds, reverse=True)]
+
 
 def speak_message(author, message, play=False, queue=True):
     """Speaks a message.
@@ -3191,35 +3206,8 @@ def speak_message(author, message, play=False, queue=True):
 
     return 'OK'
 
+
 def send_message(message):
     """Sends a message to Twitter."""
     posting = get_client().PostUpdate(message)
     return 'http://twitter.com/' + posting.GetUser().GetScreenName() + '/status/' + str(posting.GetId())
-
-def run_cli(args):
-    """Interacts with the twitter account."""
-    if args == ['-replies']:
-        for (name, text) in reversed(get_replies()):
-            print '%s: %s' % (name, text)
-
-    elif args == ['-speak']:
-        replies = get_replies()
-        if len(replies):
-            nick, text = replies[0]
-            print speak_message(nick, text.split(' ', 1)[1], play=True)
-
-    elif args == ['-queue']:
-        replies = get_replies()
-        if len(replies):
-            nick, text = replies[0]
-            print speak_message(nick, text.split(' ', 1)[1], queue=True)
-
-    elif type(args) == list and len(args):
-        print send_message(args[0])
-
-    else:
-        print 'Usage: ardj twit "message"'
-        print '   or: ardj twit -replies'
-        print '   or: ardj twit -speak'
-        print '   or: ardj twit -queue'
-        return 1

@@ -173,10 +173,38 @@ def cmd_add_incoming_tracks(*args):
     print "Added %u files to the database." % len(success)
 
 
-def cmd_twit(*args):
-    """interacts with the twitter account"""
-    import twitter
-    return twitter.run_cli(args)
+def cmd_twit(msg, *args):
+    """sends a message to twitter"""
+    from ardj import twitter
+    try:
+        print twitter.send_message(msg)
+    except twitter.ConfigError, e:
+        print >> sys.stderr, e
+        return False
+
+
+def cmd_twit_replies(*args):
+    """shows replies to your account"""
+    from ardj import twitter
+    try:
+        for (name, text) in reversed(twitter.get_replies()):
+            print '%s: %s' % (name, text)
+    except twitter.ConfigError, e:
+        print >> sys.stderr, e
+        return False
+
+
+def cmd_twit_replies_speak(*args):
+    """render replies using festival and queue for playing"""
+    from ardj import twitter
+    try:
+        replies = twitter.get_replies()
+        if len(replies):
+            nick, text = replies[0]
+            print twitter.speak_message(nick, text.split(' ', 1)[1], play=True)
+    except twitter.ConfigError, e:
+        print >> sys.stderr, e
+        return False
 
 
 def cmd_update_schedule(*args):
