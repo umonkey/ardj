@@ -26,13 +26,17 @@ def cmd_config(*args):
     return settings.edit_cli(args)
 
 
-def cmd_db(*args):
-    """database functions
+def cmd_db_purge(*args):
+    """deletes dead data from the database"""
+    from ardj import database
+    database.Open().purge()
+    database.commit()
 
-    Subcommands: console, mark-hitlist, mark-recent, mark-orphans, mark-long,
-    purge, By default opens the database console."""
-    import database
-    return database.run_cli(args)
+
+def cmd_db_console(*args):
+    """Opens the database console."""
+    from ardj import database, util
+    util.run(["sqlite3", "-header", database.Open().filename])
 
 
 def cmd_db_init(*args):
@@ -115,8 +119,9 @@ def cmd_map_listeners(*args):
 
 def cmd_merge_votes(*args):
     """merge votes according to jabber/aliases"""
-    import database
-    return database.merge_votes(args)
+    from ardj import database
+    database.Open().merge_aliases()
+    database.commit()
 
 
 def cmd_rg(*args):
@@ -248,6 +253,13 @@ def cmd_fix_artist_names(*args):
     commit()
 
 
+def cmd_mark_hitlist(*args):
+    """marks best tracks with the \"hitlist\" tag"""
+    from ardj import database
+    database.Open().mark_hitlist()
+    database.commit()
+
+
 def cmd_mark_liked_by(label, *jids):
     """applies a label to tracks liked by all specified jids"""
     import database
@@ -256,6 +268,27 @@ def cmd_mark_liked_by(label, *jids):
     print "Found %u tracks." % count
     database.Open().commit()
     return True
+
+
+def cmd_mark_long(*args):
+    """marks long tracks with the 'long' label"""
+    from ardj import database
+    database.Open().mark_long()
+    database.commit()
+
+
+def cmd_mark_orphans(*args):
+    """marks tracks that don't belong to a playlist with the 'orphan' label"""
+    from ardj import database
+    database.Open().mark_orphans()
+    database.commit()
+
+
+def cmd_mark_recent(*args):
+    """marks 100 recently added tracks with the 'recent' label"""
+    from ardj import database
+    database.Open().mark_recent_music()
+    database.commit()
 
 
 def cmd_help(*args):

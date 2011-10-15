@@ -473,52 +473,6 @@ def execute(*args, **kwargs):
     return Open().execute(*args, **kwargs)
 
 
-USAGE = """Usage: ardj db commands...
-
-Commands:
-  console           -- open SQLite console
-  mark-hitlist      -- mark best tracks with "hitlist"
-  mark-orphans      -- mark tracks that don't belong to a playlist
-  mark-recent       -- mark last 100 tracks with "recent"
-  purge             -- remove dead data
-  """
-
-
-def merge_votes(args):
-    """Collapses votes according to jabber/aliases."""
-    db = Open()
-    db.merge_aliases()
-    db.commit()
-
-
-def run_cli(args):
-    """Implements the "ardj db" command."""
-    db = Open()
-    ok = False
-    if 'console' in args or not args:
-        ardj.util.run([ 'sqlite3', '-header', db.filename ])
-        ok = True
-    if 'mark-hitlist' in args:
-        db.mark_hitlist()
-        ok = True
-    if 'mark-recent' in args:
-        db.mark_recent_music()
-        ok = True
-    if 'mark-orphans' in args:
-        db.mark_orphans()
-        ok = True
-    if 'mark-long' in args:
-        db.mark_long()
-        ok = True
-    if 'purge' in args:
-        db.purge()
-        ok = True
-    if not ok:
-        print USAGE
-    else:
-        db.commit()
-
-
 def init_sqlite(statements):
     db = Open()
     cur = db.cursor()
