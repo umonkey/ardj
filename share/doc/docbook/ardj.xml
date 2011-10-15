@@ -31,6 +31,7 @@
 			<cmdsynopsis>
 				<command>ardj</command>
 				<arg><replaceable>command</replaceable></arg>
+				<arg><replaceable>arguments...</replaceable></arg>
 			</cmdsynopsis>
 		</refsynopsisdiv>
 
@@ -83,12 +84,22 @@
 			<variablelist>
 				<varlistentry>
 					<term>Jingles</term>
+					<listitem>
+						<para>TODO</para>
+					</listitem>
 				</varlistentry>
 
 				<varlistentry>
 					<term>Rotation priority</term>
 					<listitem>
 						<para>There are two track weights: the real one and the running one.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term>User karma</term>
+					<listitem>
+						<para>TODO</para>
 					</listitem>
 				</varlistentry>
 			</variablelist>
@@ -335,16 +346,327 @@
 		</refsect1>
 
 		<refsect1>
-			<title>Jabber commands</title>
+			<title>Jabber commands for regular users</title>
 
-			<para>These commands must be sent to the jabber bot directly. Some commands require special privileges, see
-			the <option>jabber_admins</option> config parameter.</para>
+			<para>These commands must be sent to the jabber bot directly.  If sent as private messages in the chat room,
+			the bot will complain and tell the user how to communicate properly.</para>
+
+			<para>To disable any of these command for regular users, use the <option>public_jabber_commands</option>
+			config file parameter.</para>
 
 			<variablelist>
-				<varlistentry id="jabber-queue">
+				<varlistentry>
+					<term><command>bm</command></term>
+					<listitem>
+						<para>Adds the currently played track to your bookmarks. The bookmarks are searchable using the
+						<command>find -b</command> command.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term>
+						<command>download</command>
+						<replaceable>artist_name</replaceable>
+					</term>
+					<listitem>
+						<para>Looks for tracks by the specified artist on Last.fm and Jamendo. This command is for
+						discovering new artists; if there are tracks by this artist already, nothing will be
+						downloaded.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term>
+						<command>dump</command>
+						<replaceable>track_id</replaceable>
+					</term>
+					<listitem>
+						<para>Displays raw information about the specified track (JSON encoded). This command can be
+						used for debugging purposes or if you write an application which interacts with the station
+						using the XMPP protocol.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term>
+						<command>echo</command>
+						<replaceable>text</replaceable>
+					</term>
+					<listitem>
+						<para>Sends the specified text back to you. This command can be used for debugging your
+						connection with the bot.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term>
+						<command>find</command>
+						<optional><replaceable>flags</replaceable></optional>
+						<optional><replaceable>pattern</replaceable></optional>
+						<optional><replaceable>labels</replaceable></optional>
+					</term>
+					<listitem>
+						<para>Displays tracks that have the substring <option>pattern</option> in their title or in the
+						artist name. You can restrict the results by adding labels which the tracks must have, e.g.:
+						<command>find gorky @heavy</command>. The tracks are sorted by weight: best come first.</para>
+
+						<para>The flag parameter is a combination of command-line-like switches. The <option>-l</option>
+						flag changes the order to the upload date, i.e. fresh tracks come first. The <option>-f</option>
+						flag changes the order to the upload date reversed, i.e. oldest come first. The
+						<option>-r</option> flag sorts tracks in random order. With the <option>-b</option> flag only
+						bookmarked tracks will be listed.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><command>hitlist</command></term>
+					<listitem>
+						<para>Lists 10 best tracks.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><command>last</command></term>
+					<listitem>
+						<para>Displays basic information about 10 most recently played tracks.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><command>news</command></term>
+					<listitem>
+					<para>Lists10 most recently added tracks.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term>
+						<command>rocks</command>
+						<optional><replaceable>track_id</replaceable></optional>
+					</term>
+					<listitem>
+						<para>This is how you vote for the specified track (the current one if <option>track_id</option>
+						not given). When you vote, the track's running weight is increased by 0.25, but the real weight
+						is only changed the first time you vote.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><command>shitlist</command></term>
+					<listitem>
+						<para>Lists 10 worst tracks.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term>
+						<command>show</command>
+						<optional><replaceable>track_id</replaceable></optional>
+					</term>
+					<listitem>
+						<para>Displays information about a track (the current one if <option>track_id</option> wasn't
+						given). This is a human readable version of the <command>dump</command> command.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term>
+						<command>speak</command>
+						<replaceable>text</replaceable>
+					</term>
+					<listitem>
+						<para>Renders the specified text using <command>festival</command> and schedules it for playing
+						after the current track finishes. The speech will only be played once, however, you can
+						<command>queue</command> it again later.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><command>status</command></term>
+					<listitem>
+						<para>Displays basic information about the currently played track. This is exactly the same text
+						that the bot has in its status line.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term>
+						<command>sucks</command>
+						<optional><replaceable>track_id</replaceable></optional>
+					</term>
+					<listitem>
+						<para>This is how you vote against the specified track (the current one if
+						<option>track_id</option> not given). When you vote, the track's running weight is decreased by
+						0.25, but the real weight is only changed the first time you vote.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term>
+						<command>tags</command>
+						<optional><replaceable>modification</replaceable> <optional>for <replaceable>track_id</replaceable></optional></optional>
+					</term>
+					<listitem>
+						<para>If sent without arguments, shows a tag cloud. If the <option>modification</option>
+						argument was given, it is treated as a list of labels to add or remove to the specified track,
+						e.g.: <command>tags rock -pop</command>.</para>
+
+						<para>The <option>modification</option> argument is only available to privileged users (i.e.
+						admins).</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
 					<term><command>queue</command></term>
 					<listitem>
 						<para>Adds a track to the manual playlist, which have the highest priority.</para>
+					</listitem>
+				</varlistentry>
+			</variablelist>
+		</refsect1>
+
+		<refsect1>
+			<title>Jabber commands for admins</title>
+
+			<para>These commands require special privileges, see the <option>jabber_admins</option> config
+			parameter.</para>
+
+			<variablelist>
+				<varlistentry>
+					<term>
+						<command>ban</command>
+						<replaceable>artist_name</replaceable>
+					</term>
+					<listitem>
+						<para>Deletes all tracks by the specified artist (sets their weight to zero).</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term>
+						<command>delete</command>
+						<replaceable>track_id</replaceable>
+					</term>
+					<listitem>
+						<para>Deletes the specified track (sts it weight to zero).</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term>
+						<command>merge</command>
+						<replaceable>dst_id</replaceable>
+						<replaceable>src_id</replaceable>
+					</term>
+					<listitem>
+						<para>Merges two tracks together. The second track is deleted, it's labels and votes are added
+						to the first track. This is the way you deal with duplicates.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term>
+						<command>play</command>
+						<replaceable>labels...</replaceable>
+					</term>
+					<listitem>
+						<para>Creates a virtual ad-hoc playlist for next hour. The playlist has lower priority than the
+						<command>queue</command> jabber command, but higher than all configured playlists. You can use
+						multiple labels, e.g.: <command>play rock +instrumental -loud</command>.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><command>purge</command></term>
+					<listitem>
+						<para>Cleans up the database and file system. Does exactly what the <command>ardj
+						db-purge</command> command-line command does.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><command>reload</command></term>
+					<listitem>
+						<para>Tells the <application>ices</application> plugin to reload the configuration. This does
+						not really work because <application>ices</application> can't really reload Python modules,
+						which <application>ardj</application> uses, and because the real work is done by the web
+						service, which reloads the configuration automatically.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><command>restart</command></term>
+					<listitem>
+						<para>Terminates the jabber bot. It will be restarted immediately by the upstart job. The rough
+						command-line equivalent is <command>sudo restart ardj-jabber</command>. You should only need
+						to do this after you modify the jabber bot source code manually or by upgrading the installed
+						package.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term>
+						<command>say</command>
+						<replaceable>message</replaceable>
+					</term>
+					<listitem>
+						<para>Sends the specified message to the chat room (named in the
+						<option>jabber_chat_room</option> config parameter) from the bot's name. Typically used for
+						fun.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term>
+						<command>set</command>
+						<replaceable>property</replaceable> to <replaceable>value</replaceable>
+						<optional>for <replaceable>track_id</replaceable></optional>
+					</term>
+					<listitem>
+						<para>This is how you modify track properties (which can be either "artist" or "title").</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><command>skip</command></term>
+					<listitem>
+						<para>Tells ices to skip the current track. This is done by sending it the USR1 signal.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term>
+						<command>sql</command>
+						<replaceable>query</replaceable>
+					</term>
+					<listitem>
+						<para>Lets you perform low-level database queries. Use with caution.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term>
+						<command>twit</command>
+						<replaceable>message</replaceable>
+					</term>
+					<listitem>
+						<para>Sends the specified message to Twitter. Works exactly like the <command>twit</command>
+						command-line action. Only works if you have properly configured the <option>twitter</option>
+						config file parameter.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><command>voters</command></term>
+					<listitem>
+						<para>Shows voting statistics, which includes jids of active users and their karma.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><command>votes</command></term>
+					<listitem>
+						<para>Shows you who and how voted for the currently played track.</para>
 					</listitem>
 				</varlistentry>
 			</variablelist>
