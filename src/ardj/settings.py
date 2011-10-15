@@ -138,7 +138,7 @@ def getpath(key, default=None, fail=False):
 
 def getpath2(key1, key2, default=None, fail=False):
     x = load()
-    return x.getpath(key1, x.getpath(key2, default, fail)
+    return x.getpath(key1, x.getpath(key2, default, fail))
 
 
 def edit_cli(args):
