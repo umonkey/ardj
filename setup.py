@@ -13,6 +13,7 @@ data_files = [
     ('share/ardj/database', glob('share/database/*.sql')),
     ('share/ardj/failure', ['share/audio/stefano_mocini_leaving_you_failure_edit.ogg']),
     ('share/ardj/samples', ['share/audio/cubic_undead.mp3', 'share/audio/successful_install.ogg']),
+    ('share/ardj/shell-extensions/zsh', ['share/shell-extensions/zsh/_ardj']),
     ('share/doc/ardj/examples', glob('share/doc/ardj/examples/*')),
 ]
 
