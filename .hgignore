@@ -1,5 +1,2 @@
 .*\.(pyc|tar\.gz|deb|git|o|swp|log)$
 share/doc/ardj/pydoc
-share/doc/man/ardj.1
-share/doc/man/ardj.1.gz
-share/doc/man/ardj.html
