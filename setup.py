@@ -15,8 +15,8 @@ data_files = [
     ('share/ardj/samples', ['share/audio/cubic_undead.mp3', 'share/audio/successful_install.ogg']),
     ('share/ardj/shell-extensions/zsh', ['share/shell-extensions/zsh/_ardj']),
     ('share/doc/ardj/examples', glob('share/doc/examples/*')),
-    ('share/doc/ardj', ['share/doc/man/ardj.html']),
-    ('share/man/man1', ['share/doc/man/ardj.1.gz']),
+    ('share/doc/ardj', ['ardj.html']),
+    ('share/man/man1', ['ardj.1.gz']),
 ]
 
 classifiers = [
