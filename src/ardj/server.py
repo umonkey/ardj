@@ -14,6 +14,7 @@ import web
 
 import database
 import scrobbler
+import settings
 import tracks
 
 
@@ -111,8 +112,7 @@ class RocksController(Controller):
 
 def serve_http(hostname, port):
     """Starts the HTTP web server at the specified socket."""
-    del sys.argv[1:]
-    sys.argv.extend([hostname, port])
+    sys.argv.insert(1, "%s:%s" % (hostname, port))
 
     logging.info("Starting the ardj web service at http://%s:%s/" % (hostname, port))
 
@@ -126,7 +126,7 @@ def serve_http(hostname, port):
 
 def run_cli(args):
     """Starts the HTTP web server on the configured socket."""
-    serve_http("127.0.0.1", "8080")
+    serve_http(*ardj.settings.get("webapi_socket", "127.0.0.1:8080").split(":", 1))
 
 
 __all__ = ["serve_http", "run_cli"]  # hide unnecessary internals

@@ -82,3 +82,10 @@ log: /var/log/ardj/ardj.log
 #
 database:
   local: /var/lib/ardj/database.sqlite
+
+
+# The socket that the database server listens to.  On a typical installation
+# you would use a local server, so no need to change anythint.  However, if for
+# some reason you wish to move the database server outside, you can specify a
+# different location.
+#webapi_socket: 127.0.0.1:8080

@@ -10,6 +10,7 @@ client (saves SQLite)."""
 import logging
 import time
 
+from ardj import settings
 from ardj.util import fetch_json
 
 
@@ -17,7 +18,8 @@ def call_remote(method, **kwargs):
     """Performs a remote method call using a POST HTTP request."""
     _ts = time.time()
     try:
-        data = fetch_json("http://127.0.0.1:8080" + method, args=kwargs, post=True, ret=True)
+        socket = settings.get("webapi_socket", "127.0.0.1:8080")
+        data = fetch_json("http://" + socket + method, args=kwargs, post=True, ret=True)
         if data is None:
             raise Exception("Could not query the web service.")
         if "error" in data:
