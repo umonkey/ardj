@@ -115,18 +115,16 @@ def cmd_merge_votes(*args):
     database.commit()
 
 
-def cmd_rg(*args):
-    """scan ReplayGain in files
-
-    Calculates ReplayGain for all files which don't have these tags yet."""
-    import replaygain
-    return replaygain.run_cli(args)
-
-
 def cmd_say(*args):
     """renders text to voice using festival, then plays it"""
     import speech
     return speech.render_text_cli(args)
+
+
+def cmd_scan_replaygain(*args):
+    """calculate ReplayGain for tracks that don't have it"""
+    from ardj import replaygain
+    replaygain.run_cli(args)
 
 
 def cmd_serve(*args):

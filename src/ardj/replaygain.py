@@ -162,16 +162,13 @@ def purge(filename):
         pass
 
 
-USAGE = """Usage: ardj rg all|filenames..."""
-
-
 def run_cli(args):
     """Implements the "ardj rg" command."""
-    if not len(args):
-        print USAGE
-        return
+    if not args:
+        print "Files not specified (or use --all)."
+        return False
 
-    if args == ['all']:
+    if "--all" in args:
         musicdir = ardj.settings.getpath('musicdir')
         if not musicdir:
             raise Exception('musicdir not set.')

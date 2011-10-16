@@ -280,6 +280,17 @@
 				</varlistentry>
 
 				<varlistentry>
+					<term>
+						<option>scan-replaygain</option>
+						<optional><replaceable>files...</replaceable></optional>
+					</term>
+					<listitem>
+						<para>Calculates ReplayGain for files that don't have it. If <option>files</option> not
+						specified, checks all tracks.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
 					<term><option>serve</option></term>
 					<listitem>
 						<para>Starts the Web API server, which typically listens to localhost:8080. This server is used
