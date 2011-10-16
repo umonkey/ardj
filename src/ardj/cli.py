@@ -75,12 +75,9 @@ def cmd_icelog(*args):
 
 
 def cmd_jabber(*args):
-    """run the jabber bot
-
-    Controls the jabber bot.  Subcommands: run, run-child.  See the ardj.jabber
-    module for details."""
-    import jabber
-    return jabber.run_cli(args)
+    """run the jabber bot"""
+    from ardj import jabber
+    jabber.Open(debug="--debug" in args).run()
 
 
 def cmd_listeners(*args):

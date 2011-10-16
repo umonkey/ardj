@@ -20,14 +20,6 @@ import ardj.settings
 import ardj.tracks
 import ardj.util
 
-USAGE = """Usage: ardj jabber command
-
-Commands:
-  restart       -- restart the bot and ices
-  run           -- run the bot (safety wrapper)
-  run-child     -- run the jabber bot itself (unsafe)
-"""
-
 
 class MyFileReceivingBot(FileBot):
     def is_file_acceptable(self, sender, filename, filesize):
@@ -322,39 +314,6 @@ def Open(debug=False):
     Returns a new bot instance.
     """
     return ardjbot(debug=debug)
-
-
-def run_cli(args):
-    """Implements the "ardj jabber" command."""
-    if len(args) and args[0] == 'restart':
-        for param in ('jabber/pid', 'jabber/ices_pid'):
-            pidfile = ardj.settings.getpath(param, fail=True)
-            if pidfile and os.path.exists(pidfile):
-                pid = int(open(pidfile).read().strip())
-                try:
-                    os.kill(pid, signal.SIGTERM)
-                except OSError:
-                    pass
-        return True
-
-    if len(args) and args[0] == 'run-child':
-        return Open(debug='--debug' in args).run()
-
-    if len(args) and args[0] == 'run':
-        delay = 5
-        command = ['ardj', 'jabber', 'run-child']
-        if '--debug' in args:
-            command.append('--debug')
-        while True:
-            try:
-                if ardj.util.run(command):
-                    return True
-                logging.error('Unclean jabber bot shutdown, restarting in %u seconds.' % delay)
-            except KeyboardInterrupt:
-                logging.info('Jabber bot killed by ^C.')
-            time.sleep(delay)
-
-    print USAGE
 
 
 def chat_say(message, recipient=None):
