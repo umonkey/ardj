@@ -143,9 +143,17 @@ def cmd_stream(*args):
 
 
 def cmd_tags(*args):
-    """interact with track metadata"""
-    import tags
-    return tags.run_cli(args)
+    """display tags from files"""
+    if not args:
+        print "Files not specified."
+        return False
+
+    from ardj import tags
+    for fn in args:
+        if os.path.exists(fn):
+            print "Tags in %s" % fn
+            for k, v in sorted(tags.get(arg).items(), key=lambda x: x[0]):
+                print '  %s = %s' % (k, v)
 
 
 def cmd_track(*args):

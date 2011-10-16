@@ -129,10 +129,3 @@ def set(filename, tags):
         t.save(filename)
     except Exception, e:
         logging.error(u'Could not save tags to %s: %s' % (filename, e) + traceback.format_exc(e))
-
-
-def run_cli(args):
-    for arg in args:
-        print 'Tags in %s' % arg
-        for k, v in sorted(get(arg).items(), key=lambda x: x[0]):
-            print '  %s = %s' % (k, v)

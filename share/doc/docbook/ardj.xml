@@ -303,6 +303,20 @@
 
 				<varlistentry>
 					<term>
+						<option>tags</option>
+						<replaceable>files...</replaceable>
+					</term>
+					<listitem>
+						<para>Reads and displays tags from the specified files. This is primarily needed for testing
+						whether ardj sees tags from certain files or not (OGG/Vorbis should cause no problems, but MP3
+						might).</para>
+
+						<para>Tag reading only works if you have a recent version of python-mutagen installed.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term>
 						<option>twit</option>
 						<replaceable>message</replaceable>
 					</term>
