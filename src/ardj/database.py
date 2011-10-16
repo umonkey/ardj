@@ -334,7 +334,7 @@ class database:
 
     def merge_aliases(self):
         """Moves votes from similar accounts to one."""
-        for k, v in ardj.settings.get('jabber/aliases', {}).items():
+        for k, v in ardj.settings.get2("jabber_aliases", "jabber/aliases", {}).items():
             for alias in v:
                 self.execute('UPDATE votes SET email = ? WHERE email = ?', (k, alias, ))
 

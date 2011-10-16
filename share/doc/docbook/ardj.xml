@@ -278,7 +278,7 @@
 				<varlistentry>
 					<term><option>merge-votes</option></term>
 					<listitem>
-						<para>Merge votes from aliases defined in the <option>jabber/aliases</option> config parameter.
+						<para>Merge votes from aliases defined in the <option>jabber_aliases</option> config parameter.
 						This command should be used after you edit the list of aliases.</para>
 					</listitem>
 				</varlistentry>

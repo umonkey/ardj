@@ -364,7 +364,7 @@ def add_vote(track_id, email, vote, update_karma=False):
         vote = -1
 
     # Resolve aliases.
-    for k, v in ardj.settings.get('jabber/aliases', {}).items():
+    for k, v in ardj.settings.get2("jabber_aliases", "jabber/aliases", {}).items():
         if email in v:
             email = k
             break

@@ -112,7 +112,7 @@ def cmd_map_listeners(*args):
 
 
 def cmd_merge_votes(*args):
-    """merge votes according to jabber/aliases"""
+    """merge votes according to jabber aliases"""
     from ardj import database
     database.Open().merge_aliases()
     database.commit()
