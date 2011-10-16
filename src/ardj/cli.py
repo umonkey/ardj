@@ -136,12 +136,6 @@ def cmd_show_news_from_jamendo(*args):
     return jamendo.print_new_tracks(args)
 
 
-def cmd_sms(*args):
-    """send text messages (GSM)"""
-    import sms
-    return sms.run_cli(args)
-
-
 def cmd_stream(*args):
     """handles stream events"""
     import stream

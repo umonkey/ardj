@@ -13,7 +13,6 @@ import time
 
 import ardj.mail
 import ardj.replaygain
-import ardj.sms
 import ardj.tags
 import ardj.util
 import ardj.website
@@ -122,9 +121,7 @@ def process_messages(msg):
                 'text': u'Сообщение получено по %s.' % (phone and u'телефону' or u'почте'),
             })
 
-            if phone:
-                ardj.sms.send(phone, 'Your message: %s' % url)
-            elif full_sender[1]:
+            if full_sender[1]:
                 ardj.mail.send_mail([full_sender[1], 'hex@umonkey.net'], 'Your message received.', 'Thank you! Find your message here:\n%s' % url)
 
             global upload_files
