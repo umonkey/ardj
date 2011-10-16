@@ -45,12 +45,18 @@ release: clean bdist deb
 	googlecode_upload.py -s "ardj v${VERSION} (Other)" -p ardj -l Featured,Type-Source,OpSys-All ardj-${VERSION}.tar.gz
 
 clean:
+	rm -f ardj.1.gz ardj.html
 	find -regex '.*\.\(pyc\|rej\|orig\|deb\|zip\|tar\.gz\)$$' -delete
 
 bdist: test clean ardj.1.gz ardj.html
 	VERSION=$(VERSION) python setup.py bdist
 	mv dist/*.tar.gz $(TAR)
 	rm -rf build dist
+
+zsh-completion: share/shell-extensions/zsh/_ardj
+
+share/shell-extensions/zsh/_ardj: src/ardj/cli.py
+	PYTHONPATH=src python bin/ardj --zsh > $@
 
 deb: bdist
 	rm -rf packages/debian/usr
@@ -78,6 +84,7 @@ ardj.1.gz: share/doc/docbook/ardj.xml
 
 ardj.html: ardj.1.gz
 	man2html ardj.1.gz > ardj.html
+	cp ardj.html wiki/
 
 man: ardj.html
 	man ./ardj.1.gz
