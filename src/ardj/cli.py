@@ -26,6 +26,12 @@ def cmd_config(*args):
     return settings.edit_cli(args)
 
 
+def cmd_console(*args):
+    """opens a console for jabber commands"""
+    from ardj import console
+    console.run_cli(args)
+
+
 def cmd_db_purge(*args):
     """deletes dead data from the database"""
     from ardj import database

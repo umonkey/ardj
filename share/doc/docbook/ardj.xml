@@ -148,6 +148,18 @@
 				</varlistentry>
 
 				<varlistentry>
+					<term>
+						<option>console</option>
+						<optional><replaceable>jid</replaceable></optional>
+					</term>
+					<listitem>
+						<para>Opens a console which emulates a jabber connection. You can send jabber commands to the
+						bot, except that you're not using Jabber or a network connection at all. This is useful for
+						debugging, e.g. when a user says that some command he sends doesn't work as expected.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
 					<term><option>db-console</option></term>
 					<listitem>
 						<para>Opens the database console. This is useful if you need to perform some low-level
