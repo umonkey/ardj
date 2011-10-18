@@ -56,7 +56,7 @@ class ScrobbleController(Controller):
     """Sends scheduled tracks to Last.fm and Libre.fm."""
     def __init__(self):
         self.lastfm = scrobbler.LastFM()
-        self.librefm = ardj.scrobbler.LibreFM()
+        self.librefm = scrobbler.LibreFM()
 
     def POST(self):
         return
@@ -77,7 +77,7 @@ class ScrobbleController(Controller):
                 logging.error('Could not process LibreFM queue: %s' % e)
 
         if commit:
-            ardj.database.commit()
+            database.commit()
         """
 
 
@@ -126,7 +126,7 @@ def serve_http(hostname, port):
 
 def run_cli(args):
     """Starts the HTTP web server on the configured socket."""
-    serve_http(*ardj.settings.get("webapi_socket", "127.0.0.1:8080").split(":", 1))
+    serve_http(*settings.get("webapi_socket", "127.0.0.1:8080").split(":", 1))
 
 
 __all__ = ["serve_http", "run_cli"]  # hide unnecessary internals
