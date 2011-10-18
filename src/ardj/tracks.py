@@ -180,7 +180,7 @@ def identify(track_id, unknown='an unknown track'):
     track = get_track_by_id(track_id)
     if not track:
         return unknown
-    return u'«%s» by %s' % (track.get('title', 'untitled'), track.get('artist', 'unknown artist'))
+    return u'«%s» by %s [%u]' % (track.get('title', 'untitled'), track.get('artist', 'unknown artist'), track_id)
 
 
 def queue(track_id, owner=None):
