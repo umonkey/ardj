@@ -478,7 +478,7 @@ def get_track_id_from_queue():
 
 
 def get_random_track_id_from_playlist(playlist, skip_artists):
-    sql = 'SELECT id, weight, artist FROM tracks WHERE weight > 0 AND artist IS NOT NULL AND filename IS NOT NULL'
+    sql = 'SELECT id, weight, artist, count FROM tracks WHERE weight > 0 AND artist IS NOT NULL AND filename IS NOT NULL'
     params = []
 
     sql, params = add_labels_filter(sql, params, playlist.get('labels', [playlist.get('name', 'music')]))
@@ -507,7 +507,7 @@ def get_random_track_id_from_playlist(playlist, skip_artists):
         params.append(int(time.time()) - int(delay) * 60)
 
     ardj.database.Open().debug(sql, params)
-    track_id = get_random_row(ardj.database.fetch(sql, tuple(params)))
+    track_id = get_random_row(ardj.database.fetch(sql, tuple(params)), playlist.get("strategy", "default"))
 
     if playlist.get('preroll'):
         track_id = add_preroll(track_id, playlist.get('preroll'))
@@ -536,8 +536,25 @@ def add_labels_filter(sql, params, labels):
     return sql, params
 
 
-def get_random_row(rows):
-    """Picks a random row.
+def get_random_row(rows, strategy=None):
+    if not rows:
+        return None
+
+    if strategy == "fresh":
+        ID_COL, WEIGHT_COL, NAME_COL, COUNT_COL = 0, 1, 2, 3
+        rows.sort(key=lambda row: row[COUNT_COL])
+        row = random.choice(rows[:5])
+        track_id = row[ID_COL]
+
+    else:
+        track_id = get_random_row_default(rows)
+
+    logging.debug("Picked track %s using strategy '%s'." % (track_id, strategy))
+    return track_id
+
+
+def get_random_row_default(rows):
+    """Picks a random row using the default strategy.
 
     First divides track weights by the number of tracks that the artist has,
     then picks a random track based on the updated weight.
