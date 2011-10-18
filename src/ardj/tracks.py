@@ -339,9 +339,13 @@ def set_urgent(args):
     Use "all" to reset.
     """
     ardj.database.execute('DELETE FROM urgent_playlists')
-    if args != 'all':
+
+    if args == 'all':
+        ardj.jabber.chat_say(u"Returning to normal playlists.")
+    else:
         expires = time.time() + 3600
         ardj.database.execute('INSERT INTO urgent_playlists (labels, expires) VALUES (?, ?)', (args, int(expires), ))
+        ardj.jabber.chat_say(u"Playlist for next hour: %s." % args)
 
 
 def add_vote(track_id, email, vote, update_karma=False):
