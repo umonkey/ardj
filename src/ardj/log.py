@@ -39,7 +39,7 @@ def install_syslog():
     device = ardj.settings.getpath("log_device", "/dev/log")
     syslog = logging.handlers.SysLogHandler(address=device)
 
-    format_string = ardj.settings.get("log_format_string", "ardj: %(levelname)s %(message)s")
+    format_string = ardj.settings.get("log_format_string", "ardj[%(process)d]: %(levelname)s %(message)s")
     formatter = logging.Formatter(format_string)
     syslog.setFormatter(formatter)
 

@@ -81,6 +81,7 @@ use_jabber_status: yes
 # This is where the messages will be logged.
 log: syslog
 #log_level: debug
+#log_format_string: "ardj[%(process)d]: %(levelname)s %(message)s"
 
 
 # This is the database where the runtime data is stored.
