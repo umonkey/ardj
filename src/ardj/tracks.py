@@ -836,7 +836,7 @@ def update_track_lengths():
         ardj.database.execute('UPDATE tracks SET length = ? WHERE id = ?', (length, id, ))
 
 
-def find_incoming_files(delay=120, verbose=False):
+def find_incoming_files(delay=0, verbose=False):
     """Returns a list of incoming file names.  Only files modified more than 60
     seconds ago are reported.  If the database/incoming/path parameter is not
     set, an empty list is returned."""
