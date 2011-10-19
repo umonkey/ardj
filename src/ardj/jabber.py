@@ -281,12 +281,12 @@ class ardjbot(MyFileReceivingBot):
         Messages are added to the queue using the chat_say() function."""
         try:
             commit = False
-            for msg in ardj.database.Message.find_all():
-                if msg.re is None:
-                    self.say_to_chat(msg.message)
+            for _id, _re, _msg in ardj.database.fetch("SELECT id, re, message FROM jabber_messages"):
+                if _re:
+                    self.say_to_chat(_msg)
                 else:
-                    self.say_to_jid(msg.re, msg.message)
-                msg.delete()
+                    self.say_to_jid(_re, _msg)
+                ardj.database.execute("DELETE FROM jabber_messages WHERE id = ?", (_id, ))
                 commit = True
             if commit:
                 ardj.database.commit()
@@ -320,8 +320,8 @@ def chat_say(message, recipient=None):
     """Adds a message to the chat room queue.  This is the only way for command
     handlers to notify chat users.  If the recipient is not specified, the
     message is sent to the chat room."""
-    ardj.database.Message.create(re=recipient, message=message)
-    ardj.database.commit_storm()
+    ardj.database.execute("INSERT INTO jabber_messages (re, message) VALUES (?, ?)", (recipient, message, ))
+    ardj.database.commit()
 
 
 __all__ = ['Open', 'chat_say']
