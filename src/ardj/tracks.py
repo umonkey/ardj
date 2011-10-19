@@ -697,8 +697,8 @@ def get_next_track_id(debug=False, update_stats=True):
             labels = playlist.get('labels', [playlist.get('name', 'music')])
             track_id = get_random_track_id_from_playlist(playlist, skip_artists)
             if track_id is not None:
-                if debug:
-                    logging.debug('Picked track %u from playlist %s' % (track_id, playlist.get('name', 'unnamed')))
+                update_program_name(playlist.get("program"))
+                logging.debug('Picked track %u from playlist %s' % (track_id, playlist.get('name', 'unnamed')))
                 break
 
     if track_id:
@@ -716,6 +716,33 @@ def get_next_track_id(debug=False, update_stats=True):
         shift_track_weight(track_id)
 
     return track_id
+
+
+def update_program_name(name):
+    """Updates the current program name.
+
+    Only works if the playlist has a non-empty "program" property. The value is
+    written to a text file specified in the program_name_file config file
+    property."""
+    if not name:
+        return
+
+    filename = ardj.settings.get("program_name_file")
+    if not filename:
+        return
+
+    current = None
+    if os.path.exists(filename):
+        current = file(filename, "rb").read().decode("utf-8").strip()
+
+    if current != name:
+        file(filename, "wb").write(name.encode("utf-8"))
+
+        if ardj.settings.get("program_name_announce"):
+            logging.debug("Program name changed from '%s' to '%s', announcing to the chat room." % (current, name))
+            ardj.jaber.chat_say("Program %s started." % name)
+        else:
+            logging.debug("Program name changed from '%s' to '%s'." % (current, name))
 
 
 def shift_track_weight(track_id):
