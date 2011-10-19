@@ -142,8 +142,9 @@ class JabberBot(object):
             conn.sendInitPresence()
             self.conn = conn
             self.roster = self.conn.Roster.getRoster()
-            self.log.info('*** roster ***')
-            for contact in sorted(self.roster.getItems()):
+            roster_items = sorted(self.roster.getItems()):
+            self.log.info('*** roster (%u) ***' % len(roster_items))
+            for contact in roster_items:
                 self.log.info('  %s' % contact)
             self.log.info('*** roster ***')
             self.conn.RegisterHandler('message', self.callback_message)
