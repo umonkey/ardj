@@ -36,7 +36,7 @@ uninstall:
 	cat install.log | xargs sudo rm -f
 
 purge:
-	sudo rm -rf /var/lib/ardj /var/log/ardj
+	sudo rm -rf /var/lib/ardj /var/log/ardj*
 
 release: clean bdist deb
 	hg archive -t zip ardj-${VERSION}.zip

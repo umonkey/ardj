@@ -827,7 +827,7 @@
 					<listitem>
 						<para>This names the log file.</para>
 
-						<para>Defaults to <filename>/var/log/ardj/ardj.log</filename>.</para>
+						<para>Defaults to <filename>/var/log/ardj.log</filename>.</para>
 					</listitem>
 				</varlistentry>
 
@@ -937,7 +937,7 @@
 				</varlistentry>
 
 				<varlistentry>
-					<term><filename>/var/log/ardj/</filename></term>
+					<term><filename>/var/log/ardj.log</filename></term>
 					<listitem>
 						<para>This is the default location of the log files. It can be changed using the
 						<option>log</option> configuration file parameter. The file is rotated after it grows over 1MB;

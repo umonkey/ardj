@@ -79,7 +79,8 @@ use_jabber_status: yes
 
 
 # This is where the messages will be logged.
-log: /var/log/ardj/ardj.log
+log: syslog
+#log_level: debug
 
 
 # This is the database where the runtime data is stored.

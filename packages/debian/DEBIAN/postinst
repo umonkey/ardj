@@ -21,10 +21,9 @@ case "$1" in
         install -d -o ardj -g ardj -m 0775 /var/lib/ardj
         install -d -o ardj -g ardj -m 0775 /var/lib/ardj/incoming
         install -d -o ardj -g ardj -m 0775 /var/lib/ardj/music
-        install -d -o ardj -g ardj -m 0775 /var/log/ardj
 
         # Make sure files created in that folder always have the ardj group.
-        chmod +s /var/lib/ardj /var/lib/ardj/incoming /var/log/ardj
+        chmod +s /var/lib/ardj /var/lib/ardj/incoming
 
         # Support systems with older Python versions.
         for pv in 2.5 2.6; do
@@ -44,12 +43,6 @@ case "$1" in
             ardj db-init
             chmod 664 /var/lib/ardj/database.sqlite
             chown ardj:ardj /var/lib/ardj/database.sqlite
-
-            # Now fix the log permissions, since it's owned by root.
-            if [ -f /var/log/ardj/ardj.log ]; then
-                chown ardj:ardj /var/log/ardj/ardj.log
-                chmod g+w /var/log/ardj/ardj.log
-            fi
 
             echo "Installing default playlists."
             install -o ardj -g ardj -m 0664 /usr/share/doc/ardj/examples/playlists.yaml /var/lib/ardj/music/

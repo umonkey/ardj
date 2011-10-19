@@ -9,6 +9,7 @@ import os
 data_files = [
     ('/etc', ['share/doc/examples/ardj.yaml']),
     ('/etc/init', glob('share/upstart/*.conf')),
+    ('/etc/rsyslog.d', glob('share/rsyslog.d/*')),
     ('/etc/logrotate.d', glob('share/logrotate.d/*')),
     ('share/ardj/database', glob('share/database/*.sql')),
     ('share/ardj/failure', ['share/audio/stefano_mocini_leaving_you_failure_edit.ogg']),
