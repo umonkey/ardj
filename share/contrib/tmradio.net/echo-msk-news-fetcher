@@ -3,6 +3,7 @@
 import glob
 import os
 import re
+import shutil
 import subprocess
 import sys
 import urllib2
@@ -29,15 +30,24 @@ def fetch_news(folder, target):
 
     last_file = sorted(files)[-1]
 
-    # Calculate ReplayGain.
-    subprocess.Popen(["mp3gain", "-q", last_file], stdout=subprocess.PIPE).wait()
+    temp_file = last_file + ".ogg"
+    file(temp_file, "wb").write(file(last_file, "rb").read())
 
-    file(target, "wb").write(file(last_file, "rb").read())
+    subprocess.Popen(["sox", last_file, "-r", "44100", "-c", "2", temp_file]).wait()
+    subprocess.Popen(["vorbisgain", "-q", temp_file]).wait()
+
+    if os.path.exists(target):
+        os.unlink(target)
+    shutil.move(temp_file, target)
 
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
         print >> sys.stderr, "Usage: %s cache_folder target_file" % sys.argv[0]
+        exit(1)
+
+    if not sys.argv[2].endswith(".ogg"):
+        print >> sys.stderr, "Target file must be OGG/Vorbis."
         exit(1)
 
     fetch_news(sys.argv[1], sys.argv[2])
