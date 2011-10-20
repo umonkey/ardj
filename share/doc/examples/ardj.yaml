@@ -39,6 +39,19 @@ dupes: 0
 #event_schedule_weight: 1.0
 
 
+# If you want to track programs, name a file which will hold the current
+# program name.  Program name is the name of a playlist which has the non-empty
+# "program" property.  When a track is picked from such playlist, program name
+# is updated.  You can use this to display things on your web site, for example.
+#program_name_file: /tmp/current_ardj_program.txt
+
+# Uncomment this to announce program changes to the chat room.
+#program_name_announce: true
+
+# If you want to run a script when program changes, specify its name here.
+#program_name_handler: /radio/bin/on-program-change
+
+
 # If you plan to use Jabber, uncomment this block and insert the correct values.
 #jabber_id: "alice:secret@server.com"
 
