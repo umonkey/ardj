@@ -17,7 +17,7 @@ help:
 	@echo "test syntax    -- runs unit tests"
 	@echo "uninstall      -- uninstall (installs first to find installed files)"
 
-test: test-syntax
+test: test-syntax clean
 	cp -f unittests/data/src/* unittests/data/
 	rm -f tests.log tests-ardj.log
 	PYTHONPATH=src ARDJ_SETTINGS=unittests/data/settings.yaml python unittests/all.py
