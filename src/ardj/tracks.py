@@ -740,10 +740,10 @@ def update_program_name(name):
         file(filename, "wb").write(name.encode("utf-8"))
 
         if ardj.settings.get("program_name_announce"):
-            logging.debug("Program name changed from '%s' to '%s', announcing to the chat room." % (current, name))
-            ardj.jabber.chat_say("Program %s started." % name)
+            logging.debug("Program name changed from \"%s\" to \"%s\", announcing to the chat room." % (current, name))
+            ardj.jabber.chat_say("Program \"%s\" started." % name)
         else:
-            logging.debug("Program name changed from '%s' to '%s'." % (current, name))
+            logging.debug("Program name changed from \"%s\" to \"%s\"." % (current, name))
 
             command = ardj.settings.getpath("program_name_handler")
             if os.path.exists(command):
