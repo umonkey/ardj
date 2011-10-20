@@ -142,7 +142,7 @@ class JabberBot(object):
             conn.sendInitPresence()
             self.conn = conn
             self.roster = self.conn.Roster.getRoster()
-            roster_items = sorted(self.roster.getItems()):
+            roster_items = sorted(self.roster.getItems())
             self.log.info('*** roster (%u) ***' % len(roster_items))
             for contact in roster_items:
                 self.log.info('  %s' % contact)
