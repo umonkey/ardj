@@ -1,0 +1,96 @@
+# This is where the music will be stored.  You MUST NOT put the music there
+# manually, see the incoming folder below.
+musicdir: /var/lib/ardj/music
+
+
+# This is the folder where you should put music that you want to add to the
+# database (will be moved to the internal location in few minutes).  This
+# folder is typically accessible over ftp or sftp.
+incoming_path: /var/lib/ardj/incoming
+
+
+# Define labels that will be applied to all uploaded files.  This is typically
+# one label which lets you later find untagged tracks.
+incoming_labels: [music, tagme]
+
+
+# Specify how many recently played artists should be skipped when picking a
+# random track.  For example, if this is set to 5, then 5 most recently played
+# artists will be ignored.
+#
+# Caution: only enable this when you have enough music to play without
+# repeating, otherwise ardj will go into failure mode.
+dupes: 0
+
+
+# If you want to display a schedule of upcoming events on your web site,
+# specify the name of the file where the information should be written to.  The
+# file is updated when you run the 'ardj update-events' command, so you'll need
+# to add that to your crontab, too.
+#event_schedule_path: /tmp/ardj-events.json
+
+# By default event schedule contains artists that have tracks with the "music"
+# label.  You can set a different label here.
+#event_schedule_label_filter: music
+
+# By default event schedule contains artists which have tracks with weight 1.0
+# or higher.  You can change this value here, to widen or narrow the range of
+# announced artists.
+#event_schedule_weight: 1.0
+
+
+# If you plan to use Jabber, uncomment this block and insert the correct values.
+#jabber_id: "alice:secret@server.com"
+
+# Here you can specify jabber admins.
+#jabber_admins:
+#- alice@example.com
+#- bob@example.com
+
+# This adds track info to the bot's status message.
+use_jabber_status: yes
+
+# This enables sending XMPP Tunes (doesn't work with Gmail).
+#use_jabber_tunes: yes
+
+# If you want to add the bot to a chat room, specify his full jid there.
+#
+#jabber_chat_room: my_radio@conference.jabber.ru/MyBot
+
+
+# If you want to be able to send twits using ardj (using the "twit" jabber
+# command or "ardj twit" from the command line), you need to register yourself
+# an application and get an access token.  This can be done on the
+# dev.twitter.com/apps website.  Don't forget to set the read-write permission
+# for your application, otherwise you'll only be able to read replies.
+#twitter:
+#  consumer_key: XXXXXXXXXXXXXXXXXXXXX
+#  consumer_secret: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+#  access_token_key: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+#  access_token_secret: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+
+# If you want to see how many users are currently listening to the stream, enable this.
+#icecast:
+#  stats:
+#    url: "http://localhost:8180/admin/stats.xml"
+#    login: admin
+#    password: secret
+
+
+# This is where the messages will be logged.
+log: syslog
+#log_level: debug
+#log_format_string: "ardj[%(process)d]: %(levelname)s %(message)s"
+
+
+# This is the database where the runtime data is stored.
+#
+database_path: /var/lib/ardj/database.sqlite
+
+
+# The socket that the database server listens to.  On a typical installation
+# you would use a local server, so no need to change anythint.  However, if for
+# some reason you wish to move the database server outside, you can specify a
+# different location.
+#webapi_socket: 127.0.0.1:8080

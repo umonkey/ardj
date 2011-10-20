@@ -1,7 +1,13 @@
 # encoding=utf-8
 
+"""ARDJ, an artificial DJ.
+
+This module contains various utility functions.
+"""
+
 import hashlib
 import json
+import logging
 import os
 import shutil
 import subprocess
@@ -12,7 +18,6 @@ import urllib
 import urllib2
 import urlparse
 
-import ardj.log
 import ardj.replaygain
 import ardj.settings
 import ardj.util
@@ -20,6 +25,9 @@ import ardj.util
 
 def run(command, quiet=False, stdin_data=None, grab_output=False, nice=True):
     command = [str(x) for x in command]
+
+    if not os.path.exists(command[0]) and not is_command(command[0]):
+        raise Exception("Please install the %s program first." % command[0])
 
     if nice:
         command = ['nice', '-n15'] + command
@@ -30,7 +38,7 @@ def run(command, quiet=False, stdin_data=None, grab_output=False, nice=True):
         command.append('<')
         command.append(str(filename))
 
-    ardj.log.debug('> ' + ' '.join(command))
+    logging.debug('> ' + ' '.join(command))
     stdout = stderr = None
     if quiet:
         stdout = stderr = subprocess.PIPE
@@ -45,22 +53,49 @@ def run(command, quiet=False, stdin_data=None, grab_output=False, nice=True):
     return response
 
 
+def is_command(name):
+    """Checks whether the named program exists, returns True on success."""
+    for folder in os.getenv("PATH").split(os.pathsep):
+        filename = os.path.join(folder, name)
+        if os.path.exists(filename):
+            return True
+    return False
+
+
 class mktemp:
+    """This class is used to deal with temporary files which should be deleted
+    automatically.  When all references to an instance are deleted, the
+    underlying file is unlinked from the file system.
+
+    Usage is simple:
+
+    from ardj.util import mktemp
+    print str(mktemp(suffix=".log"))
+
+    Be sure to convert the value to a string, otherwise most receivers will
+    fail (got object while expected a string, or something)."""
     def __init__(self, suffix=''):
+        """Creates a new file in the temporary folder using tempfile.mkstemp().
+        Files have a fixed prefix "ardj_" and a custom suffix, none by
+        default."""
         fd, self.filename = tempfile.mkstemp(prefix='ardj_', suffix=suffix)
         os.chmod(self.filename, 0664)
         os.close(fd)
 
     def __del__(self):
+        """Deletes the temporary file if it still exists."""
         if os.path.exists(self.filename):
-            ardj.log.debug('Deleting temporary file %s' % self.filename)
+            logging.debug('Deleting temporary file %s' % self.filename)
             os.unlink(self.filename)
 
     def __str__(self):
+        """Returns the name of the file."""
         return self.filename
 
     def __unicode__(self):
+        """Returns the Unicode version of the name of the file (does not differ from str)."""
         return unicode(self.filename)
+
 
 def get_opener(url, user, password):
     """Returns an opener for the url.
@@ -93,11 +128,12 @@ def fetch(url, suffix=None, args=None, user=None, password=None, quiet=False, po
 
     opener = get_opener(url, user, password)
     try:
-        u = opener(urllib2.Request(url), post and urllib.urlencode(args) or None)
         if post:
-            ardj.log.info('Posting to %s' % url, quiet=quiet)
+            logging.info('Posting to %s' % url)
+            u = opener(urllib2.Request(url), urllib.urlencode(args))
         else:
-            ardj.log.info('Downloading %s' % url, quiet=quiet)
+            logging.info('Downloading %s' % url)
+            u = opener(urllib2.Request(url), None)
         if ret:
             return u.read()
         if suffix is None:
@@ -111,13 +147,15 @@ def fetch(url, suffix=None, args=None, user=None, password=None, quiet=False, po
         return filename
     except Exception, e:
         if retry:
-            ardj.log.error('Could not fetch %s: %s (retrying)' % (url, e))
+            logging.error('Could not fetch %s: %s (retrying)' % (url, e))
             return fetch(url, suffix, args, user, password, quiet, post, ret, retry - 1)
-        ardj.log.error('Could not fetch %s: %s' % (url, e))
+        logging.error('Could not fetch %s: %s' % (url, e))
         return None
 
 
 def fetch_json(*args, **kwargs):
+    """Fetches the data using fetch(), parses it using the json module, then
+    returns the result."""
     data = fetch(*args, **kwargs)
     if data is not None:
         return json.loads(data)
@@ -130,7 +168,7 @@ def upload(source, target):
 
     upath = urlparse.urlparse(str(target))
     if upath.scheme == 'sftp':
-        run([ 'scp', '-q', str(source), str(target)[5:].lstrip('/') ])
+        run(['scp', '-q', str(source), str(target)[5:].lstrip('/')])
     else:
         raise Excepion("Don't know how to upload to %s." % upath.scheme)
 
@@ -139,7 +177,7 @@ def upload_music(filenames):
     """Uploads music files."""
     target = ardj.settings.get('database/upload')
     if not target:
-        ardj.log.warning('Could not upload %u music files: database/upload not set.' % len(filenames))
+        logging.warning('Could not upload %u music files: database/upload not set.' % len(filenames))
         return False
 
     if type(filenames) != list:
@@ -152,21 +190,21 @@ def upload_music(filenames):
         f.write('put %s\n' % str(fn).replace(' ', '\\ '))
     f.close()
 
-    return run([ 'sftp', '-b', str(batch), str(target) ])
+    return run(['sftp', '-b', str(batch), str(target)])
 
 
 def copy_file(src, dst):
     """Copies the file to a new location.
 
     Supports cross-device copy.
-    
+
     If the target directory does not exist, it's created.
     """
     dirname = os.path.dirname(dst)
     if dirname and not os.path.exists(dirname):
         os.makedirs(dirname)
     shutil.copyfile(str(src), str(dst))
-    ardj.log.debug('Copied %s to %s' % (src, dst))
+    logging.debug('Copied %s to %s' % (src, dst))
     return True
 
 
@@ -174,14 +212,14 @@ def move_file(src, dst):
     """Moves the file to a new location.
 
     Supports cross-device copy.
-    
+
     If the target directory does not exist, it's created.
     """
     dirname = os.path.dirname(dst)
     if dirname and not os.path.exists(dirname):
         os.makedirs(dirname)
     shutil.move(str(src), str(dst))
-    ardj.log.debug('Moved %s to %s' % (src, dst))
+    logging.debug('Moved %s to %s' % (src, dst))
     return True
 
 
@@ -211,7 +249,7 @@ def format_duration(duration, age=False, now=None):
 
 def filemd5(filename):
     """Returns the file contents' MD5 sum (in hex)."""
-    ardj.log.debug('Calculating MD5 of %s' % filename)
+    logging.debug('Calculating MD5 of %s' % filename)
     m = hashlib.md5()
     f = open(filename, 'rb')
     while True:
@@ -240,8 +278,10 @@ def lower(s):
         s = s.decode('utf-8')
     return s.lower().replace(u'ё', u'е')
 
+
 def ucmp(a, b):
     return cmp(lower(a), lower(b))
+
 
 def in_list(a, lst):
     for i in lst:
@@ -263,6 +303,16 @@ def shortlist(items, limit=3, glue='and'):
 
 
 def expand(lst):
+    """Expands ranges specified in the list.  For example, this:
+
+    ["1", "3-5", "7"]
+
+    Is expanded to:
+
+    ["1", "3", "4", "5", "7"]
+
+    This function is usually actively used in the playlists.
+    """
     result = []
     for item in lst:
         if '-' in str(item):

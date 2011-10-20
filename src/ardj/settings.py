@@ -4,9 +4,14 @@
 # - reload data if file changes (all get() methods should check that).
 
 import os
+import sys
 import yaml
 
-import ardj.log
+
+CONFIG_FILES = ('~/.config/ardj/default.yaml', '/etc/ardj.yaml',
+    '/usr/local/etc/ardj.yaml', '/usr/share/doc/ardj/examples/ardj.yaml',
+    '/usr/local/share/doc/ardj/examples/ardj.yaml')
+
 
 class wrapper:
     """Wraps a dictionary for easier access."""
@@ -66,7 +71,6 @@ class wrapper:
     def get_playlists(self):
         filename = os.path.join(self.get_music_dir(), 'playlists.yaml')
         if not os.path.exists(filename):
-            ardj.log.warning(u'%s does not exist, assuming empty.' % filename)
             return []
         stat = os.stat(filename)
         if self.playlists_mtime is None or self.playlists_mtime < stat.st_mtime:
@@ -84,21 +88,25 @@ class wrapper:
         """Dumps the data for debugging purposes."""
         return '<ardj.settings.wrapper data=%s>' % self.data
 
+
 wrapper_instance = None
+
 
 def load_data():
     """Returns the raw contents of the config file.
 
-    Options: ARDJ_SETTINGS envar, ~/.config/ardj/ardj.yaml, /etc/ardj.yaml.
+    Options: ARDJ_SETTINGS envar, ~/.config/ardj/default.yaml, /etc/ardj.yaml.
     If none exist, an empty dicrionary returned.
     """
-    local_name = os.path.expanduser('~/.config/ardj/ardj.yaml')
-    for filename in (os.environ.get('ARDJ_SETTINGS'), local_name, '/etc/ardj.yaml'):
-        if filename:
-            filename = os.path.expanduser(filename)
-            if os.path.exists(filename):
-                return yaml.load(open(filename, 'rb')), filename
-    return {}, local_name
+    filenames = list(CONFIG_FILES)
+    if os.getenv("ARDJ_SETTINGS"):
+        filenames.insert(0, os.getenv("ARDJ_SETTINGS"))
+
+    for filename in filenames:
+        filename = os.path.expanduser(filename)
+        if os.path.exists(filename):
+            return yaml.load(open(filename, 'rb')), filename
+    return {}, None
 
 
 def load(refresh=False):
@@ -117,13 +125,29 @@ def get(key, default=None, fail=False):
     """get(k, v) <==> load().get(k, v)"""
     return load().get(key, default, fail=fail)
 
+
+def get2(key1, key2, default=None, fail=False):
+    x = load()
+    return x.get(key1, x.get(key2, default, fail))
+
+
 def getpath(key, default=None, fail=False):
     """getpath(k, v) <==> load().getpath(k, v)"""
     return load().getpath(key, default, fail=fail)
 
+
+def getpath2(key1, key2, default=None, fail=False):
+    x = load()
+    return x.getpath(key1, x.getpath(key2, default, fail))
+
+
 def edit_cli(args):
     editor = os.getenv('EDITOR', 'editor')
+    filename = load().filename
+    if not filename:
+        raise Exception("Config file not found, create it first.")
     os.system(editor + ' ' + load().filename)
+
 
 def get_music_dir():
     return load().get_music_dir()

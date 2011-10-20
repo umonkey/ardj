@@ -4,31 +4,37 @@
 
 Uses festival to render text."""
 
+import logging
 import os
 import sys
 
 import ardj.database
-import ardj.log
 import ardj.settings
 import ardj.tags
 import ardj.util
 
+
 def render_text_file(filename, artist=None, title=None):
     """Renders a text file to OGG/Vorbis.
-    
+
     Returns output file name and duration in seconds."""
-    voice = ardj.settings.get('speech/voice', 'voice_msu_ru_nsh_clunits')
+
+    for exe in ("text2wave", "sox", "oggenc"):
+        if not ardj.util.is_command(exe):
+            raise Exception("Speech synthesis is not available because the '%s' program is not installed." % exe)
+
+    voice = ardj.settings.get('festival_voice', 'voice_msu_ru_nsh_clunits')
 
     output_wav = ardj.util.mktemp(suffix='.wav')
-    ardj.util.run([ 'text2wave', '-f', '44100', '-eval', '(' + voice + ')', filename, '-o', output_wav ])
+    ardj.util.run(['text2wave', '-f', '44100', '-eval', '(' + voice + ')', filename, '-o', output_wav])
 
     resampled_wav = ardj.util.mktemp(suffix='.wav')
-    ardj.util.run([ 'sox', output_wav, '-r', '44100', '-c', '2', resampled_wav, 'pad', '2', '5' ])
+    ardj.util.run(['sox', output_wav, '-r', '44100', '-c', '2', resampled_wav, 'pad', '2', '5'])
 
     output_ogg = ardj.util.mktemp(suffix='.ogg')
-    ardj.util.run([ 'oggenc', '-Q', '-q', '9', '-o', output_ogg, '-a', 'artist', resampled_wav ])
+    ardj.util.run(['oggenc', '-Q', '-q', '9', '-o', output_ogg, '-a', 'artist', resampled_wav])
 
-    ardj.util.run([ 'vorbisgain', '-q', output_ogg ])
+    ardj.util.run(['vorbisgain', '-q', output_ogg])
 
     tags = ardj.tags.raw(str(output_ogg))
     if tags is None:
@@ -41,6 +47,7 @@ def render_text_file(filename, artist=None, title=None):
 
     return output_ogg, int(tags.info.length)
 
+
 def render_text(text, artist=None, title=None, play=False):
     """Renders text to OGG/Vorbis.
 
@@ -49,28 +56,27 @@ def render_text(text, artist=None, title=None, play=False):
     if type(text) == unicode:
         text = text.encode('utf-8')
     open(str(filename), 'wb').write(text.strip())
-    ardj.log.info('Rendering text: %s' % text)
+    logging.info('Rendering text: %s' % text)
     filename, length = render_text_file(filename, artist, title)
     if play and length:
-        ardj.util.run([ 'play', str(filename) ])
+        ardj.util.run(['play', str(filename)])
     return filename, length
 
 
 def render_and_queue(message):
     """Renders the text and queues it for playing.
-    
+
     Returns an error message or None.
     """
     track_id = int(ardj.settings.get('festival/speak_track_id', '0'))
     if not track_id:
-        return "Эта функция отключена." # "I'm not configured properly: festival/speak_track_id not set."
+        return "Эта функция отключена."  # "I'm not configured properly: festival/speak_track_id not set."
 
-    cur = ardj.database.Open().cursor()
-    rows = len(cur.execute('SELECT 1 FROM queue WHERE track_id = ?', (track_id, )).fetchall())
+    rows = len(ardj.database.fetch('SELECT 1 FROM queue WHERE track_id = ?', (track_id, )))
     if rows:
         return 'All the circuits are busy.  Please retry in a few minutes.'
 
-    rows = cur.execute('SELECT filename FROM tracks WHERE id = ?', (track_id, )).fetchall()
+    rows = ardj.database.fetch('SELECT filename FROM tracks WHERE id = ?', (track_id, ))
     if not len(rows):
         return 'Track %u not found.' % track_id
 
@@ -80,8 +86,8 @@ def render_and_queue(message):
 
     tmpname, duration = render_text(message)
     ardj.util.move_file(tmpname, os.path.join(ardj.settings.get_music_dir(), filename))
-    cur.execute('UPDATE tracks SET length = ? WHERE id = ?', (duration, track_id, ))
-    cur.execute('INSERT INTO queue (track_id, owner) VALUES (?, ?)', (track_id, 'ardj', ))
+    ardj.database.execute('UPDATE tracks SET length = ? WHERE id = ?', (duration, track_id, ))
+    ardj.database.execute('INSERT INTO queue (track_id, owner) VALUES (?, ?)', (track_id, 'ardj', ))
 
 
 def render_text_cli(args):

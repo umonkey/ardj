@@ -142,8 +142,9 @@ class JabberBot(object):
             conn.sendInitPresence()
             self.conn = conn
             self.roster = self.conn.Roster.getRoster()
-            self.log.info('*** roster ***')
-            for contact in self.roster.getItems():
+            roster_items = sorted(self.roster.getItems())
+            self.log.info('*** roster (%u) ***' % len(roster_items))
+            for contact in roster_items:
                 self.log.info('  %s' % contact)
             self.log.info('*** roster ***')
             self.conn.RegisterHandler('message', self.callback_message)
@@ -185,8 +186,8 @@ class JabberBot(object):
         iq = xmpp.Iq(typ='set')
         iq.setFrom(self.jid)
         iq.pubsub = iq.addChild('pubsub', namespace = xmpp.NS_PUBSUB)
-        iq.pubsub.publish = iq.pubsub.addChild('publish', attrs = { 'node' : NS_TUNE })
-        iq.pubsub.publish.item = iq.pubsub.publish.addChild('item', attrs= { 'id' : 'current' })
+        iq.pubsub.publish = iq.pubsub.addChild('publish', attrs = {'node' : NS_TUNE})
+        iq.pubsub.publish.item = iq.pubsub.publish.addChild('item', attrs={'id' : 'current'})
         tune = iq.pubsub.publish.item.addChild('tune')
         tune.setNamespace(NS_TUNE)
 
@@ -258,7 +259,7 @@ class JabberBot(object):
         return message
 
     def get_sender_username(self, mess):
-        """Extract the sender's user name from a message""" 
+        """Extract the sender's user name from a message"""
         type = mess.getType()
         jid  = mess.getFrom()
         if type == "groupchat":

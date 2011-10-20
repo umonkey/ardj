@@ -1,2 +1,0 @@
-mp3/test-loud.mp3
-mp3/test-quiet.mp3

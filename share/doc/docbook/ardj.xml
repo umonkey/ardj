@@ -1,0 +1,974 @@
+<?xml version="1.0"?>
+<!-- vim: set tw=120: -->
+<!DOCTYPE book PUBLIC '-//OASIS//DTD DocBook XML V4.4//EN' '/usr/share/xml/docbook/schema/dtd/4.4/docbookx.dtd'>
+
+<article lang="en">
+	<title>ardj</title>
+	<articleinfo>
+		<author>
+			<firstname>Justin</firstname>
+			<surname>Forest</surname>
+			<affiliation>
+				<address>
+					<email>hex@umonkey.net</email>
+				</address>
+			</affiliation>
+		</author>
+	</articleinfo>
+
+	<refentry>
+		<refmeta>
+			<refentrytitle>ardj</refentrytitle>
+			<manvolnum>1</manvolnum>
+		</refmeta>
+
+		<refnamediv>
+			<refname>ardj</refname>
+			<refpurpose>an internet radio playlist manager</refpurpose>
+		</refnamediv>
+
+		<refsynopsisdiv>
+			<cmdsynopsis>
+				<command>ardj</command>
+				<arg><replaceable>command</replaceable></arg>
+				<arg><replaceable>arguments...</replaceable></arg>
+			</cmdsynopsis>
+		</refsynopsisdiv>
+
+		<refsect1>
+			<title>Description</title>
+
+			<para><command>ardj</command> is a collection of tools that can be used to run a full featured fully
+			automated internet radio station. It is designed to stay alive even when there's nobody looking for it from
+			the administrative point of view: bad music will go away, fresh music will be found, as long as listeners
+			care.</para>
+
+			<para><command>ardj</command> uses an SQLite database to store the runtime data, a tiny web server to access
+			it, an XMPP (Jabber) bot for runtime management and to interact with the audience, and a plugin which feeds
+			<command>ices</command>.  The web server which is used as the database interface is built on
+			<application>web.py</application> and requires zero configuration; it's main purpose is to prevent
+			deadlocking the SQLite database by synchronizing multiple processes accessing it.</para>
+
+			<para>Buzzword bingo: streaming, MP3, SQLite, Jabber, robotics, Last.fm, Libre.fm, scrobbling, jingles,
+			prerolls.</para>
+
+			<para>This document is a work in progress. The complete documentation is available on the website.</para>
+		</refsect1>
+
+		<refsect1>
+			<title>Setting up a station</title>
+
+			<para>To run a streaming radio station you will need the following components: <command>icecast2</command>,
+			<command>ices</command> and <command>ardj</command>.</para>
+
+			<para><command>Icecast2</command> is the multiplexor, it has little brain. Its main job is to receive a
+			stream from a source (<command>ices</command>) and retransmits it to as many listening clients as there are.
+			It's like a proxy for multimedia streams. It is a separate product and has nothing to do with
+			<command>ardj</command>.</para>
+
+			<para><command>Ices</command> is the stream source. It reads file names from a playlist, loads and decodes
+			the files, cross-fades them nicely, encodes the result to the configured format (typically MP3) and sends
+			the result to <command>icecast</command>. This is also an independent component that has little to do with
+			<command>ardj</command>. It only uses the playlist plugin which <command>ardj</command> provides to read
+			file names from the database instead of flat files.</para>
+
+			<para><command>ardj</command> is the virtual brain of your radio station. It maintains playlists, picks the
+			music and jingles, collects feedback from the audience, adjusts track priorities and so on.</para>
+		</refsect1>
+
+		<refsect1>
+			<title>Main concepts</title>
+
+			<para>This is a sort of glossary.</para>
+
+			<variablelist>
+				<varlistentry>
+					<term>Jingles</term>
+					<listitem>
+						<para>TODO</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term>Rotation priority</term>
+					<listitem>
+						<para>There are two track weights: the real one and the running one.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term>User karma</term>
+					<listitem>
+						<para>TODO</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term>Failure mode</term>
+					<listitem>
+						<para>TODO</para>
+					</listitem>
+				</varlistentry>
+			</variablelist>
+		</refsect1>
+
+		<refsect1>
+			<title>Command line options</title>
+
+			<para>The first parameter to <command>ardj</command> is the command. Some commands require additional
+			arguments, they are described below.</para>
+
+			<variablelist>
+				<varlistentry>
+					<term><option>add-incoming-tracks</option></term>
+					<listitem>
+						<para>Looks for audio files in the <option>incoming_path</option> folder. What's found is
+						<emphasis>moved</emphasis> to the database, source files are deleted. If the source can't be
+						deleted, it's ignored (to prevent adding it multiple times).</para>
+
+						<para>Only files with extensions <filename>.mp3</filename> and <filename>.ogg</filename> are
+						added, other files are ignored.</para>
+
+						<para>When the files are imported, artist names and track titles are read from the metadata,
+						other common tags are ignored. One uncommon tag which is used is <varname>ardj</varname>: with
+						it you can preset track labels. Example format: "ardj=1;labels=music,rock" (this is the value,
+						including the "ardj=1" prefix, which designates metadata format).</para>
+
+						<para>This is similar to the jabber command <command>upload</command>.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><option>config</option></term>
+					<listitem>
+						<para>Opens the configuration file for editing with your default editor. The editor name is read
+						from the <varname>EDITOR</varname> environment variable. If there's nothing, the
+						<command>editor</command> command is used.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term>
+						<option>console</option>
+						<optional><replaceable>jid</replaceable></optional>
+					</term>
+					<listitem>
+						<para>Opens a console which emulates a jabber connection. You can send jabber commands to the
+						bot, except that you're not using Jabber or a network connection at all. This is useful for
+						debugging, e.g. when a user says that some command he sends doesn't work as expected.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><option>db-console</option></term>
+					<listitem>
+						<para>Opens the database console. This is useful if you need to perform some low-level
+						operations and don't want to type the full database path.</para>
+
+						<para>This command only works if you have <command>sqlite3</command> installed.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><option>db-init</option></term>
+					<listitem>
+						<para>Initializes the database structure by creating tables and indexes which are missing. This
+						command is normally used by the installation script only. You might only need to use it if you
+						deleted the database file and want to create a new one from scratch.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><option>db-purge</option></term>
+					<listitem>
+						<para>Removes dead data from the database. Dead data is labels that are no longer used and files
+						which correspond to deleted tracks.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><option>db-stats</option></term>
+					<listitem>
+						<para>Shows brief database statistics, e.g.: "2883 tracks, 192.0 hours".</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term>
+						<option>download-artist</option>
+						<replaceable>artist_name</replaceable>
+					</term>
+					<listitem>
+						<para>Schedules retrieving more tracks by the specified artist. This only adds a request to the
+						database, without immediately downloading anything.</para>
+
+						<para>This is similar to the jabber command <command>download</command>.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><option>find-new-tracks</option></term>
+					<listitem>
+						<para>Starts searching for new music. It first selects artists that have tracks rated above
+						average, then looks for their music on Last.fm and Jamendo. Tracks which can be downloaded and
+						which aren't in the database are downloaded and added to it.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><option>fix-artist-names</option></term>
+					<listitem>
+						<para>Looks up all artists in the Last.fm database and corrects their names when necessary. This
+						usually implies case correction, but can sometime change the name completely (which is still
+						correct unless Last.fm fails drasticly).</para>
+
+						<para>You typically run this command on a nightly basis.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><option>help</option></term>
+					<listitem>
+						<para>Shows a help screen similar to this manual.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><option>mark-hitlist</option></term>
+					<listitem>
+						<para>Marks approximately 10 best tracks which have the "music" label with the "hitlist" label.
+						The number of tracks can be higher than 10 if there are many tracks with weight equal to track
+						number 10 (i.e. they all share 10th place)..</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term>
+						<option>mark-liked-by</option>
+						<replaceable>label</replaceable>
+						<replaceable>jid1</replaceable>
+						<replaceable>jid2</replaceable>
+						<replaceable>...</replaceable>
+					</term>
+					<listitem>
+						<para>Applies label "label" to tracks that are liked by all specified users. One typical use is
+						when you have an upcoming live show with multiple hosts and you want to play music that they all
+						like, to adjust the mood of the audience.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><option>mark-long</option></term>
+					<listitem>
+						<para>Marks tracks longer than average with the "long" label. You can use it to remove those
+						tracks from daily rotation or something like that.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><option>mark-orphans</option></term>
+					<listitem>
+						<para>Marks tracks that don't belong to a playlist with the "orphan" label. This can help you
+						find blind spots in your playlists. If you want to prevent some special tracks (with special
+						labels) from being marked as orphans, just create a playlist for them (the one below the default
+						playlist, which will actually never be used).</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><option>merge-votes</option></term>
+					<listitem>
+						<para>Merge votes from aliases defined in the <option>jabber_aliases</option> config parameter.
+						This command should be used after you edit the list of aliases.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><option>queue-flush</option></term>
+					<listitem>
+						<para>Delete everything from the manual playlist (see the <command>queue</command> jabber
+						command).</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term>
+						<option>scan-replaygain</option>
+						<optional><replaceable>files...</replaceable></optional>
+					</term>
+					<listitem>
+						<para>Calculates ReplayGain for files that don't have it. If <option>files</option> not
+						specified, checks all tracks.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><option>serve</option></term>
+					<listitem>
+						<para>Starts the Web API server, which typically listens to localhost:8080. This server is used
+						by the <application>ices</application> plugin to get names of files to play and by the jabber
+						bot to perform some actions. Normally you don't start the server manually, unless you want to
+						debug it; normally it's started by the <command>ardj-server</command> upstart job, e.g.:
+						<command>sudo start ardj-server</command>.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term>
+						<option>tags</option>
+						<replaceable>files...</replaceable>
+					</term>
+					<listitem>
+						<para>Reads and displays tags from the specified files. This is primarily needed for testing
+						whether ardj sees tags from certain files or not (OGG/Vorbis should cause no problems, but MP3
+						might).</para>
+
+						<para>Tag reading only works if you have a recent version of python-mutagen installed.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term>
+						<option>twit</option>
+						<replaceable>message</replaceable>
+					</term>
+					<listitem>
+						<para>Send the specified message to Twitter. Only works if you have the <option>twitter</option>
+						config file parameter set up properly, otherwise it'll tell you how to do that.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><option>twit-replies</option></term>
+					<listitem>
+						<para>Shows recent messages which mention your Twitter account. Not really useful.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><option>update-schedule</option></term>
+					<listitem>
+						<para>Looks up Last.fm for upcoming concerts by artists which have tracks rated above average.
+						Saves the data to a JavaScript file named in the <option>event_schedule_path</option>, which can
+						be used to display a Google map on your web site. Also, all tracks by artists which have
+						upcoming concerts are marked with the "upcoming-concert" label, so that you could add some
+						prerolls or change the rotation priority.</para>
+
+						<para>Only works if you configured the Last.fm integration properly.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><option>update-track-lengths</option></term>
+					<listitem>
+						<para>Updates track lengths stored in the database with real values from the files. This is
+						useful if you change files in the <option>musicdir</option> folder manually, or if you had a
+						failure and resorted to backups.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><option>update-track-weights</option></term>
+					<listitem>
+						<para>Updates real track weights according to user votes.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term>
+						<option>xmpp-send</option>
+						<replaceable>message_text</replaceable>
+						<replaceable>[jid]</replaceable>
+					</term>
+					<listitem>
+						<para>Sends the specified message to the specified recipient. If the recipient jid was not
+						specified, the message is sent to the chat room (named in the <option>jabber_chat_room</option>
+						configuration parameter).</para>
+					</listitem>
+				</varlistentry>
+			</variablelist>
+		</refsect1>
+
+		<refsect1>
+			<title>Jabber commands for regular users</title>
+
+			<para>These commands must be sent to the jabber bot directly.  If sent as private messages in the chat room,
+			the bot will complain and tell the user how to communicate properly.</para>
+
+			<para>To disable any of these command for regular users, use the <option>public_jabber_commands</option>
+			config file parameter.</para>
+
+			<variablelist>
+				<varlistentry>
+					<term><command>bm</command></term>
+					<listitem>
+						<para>Adds the currently played track to your bookmarks. The bookmarks are searchable using the
+						<command>find -b</command> command.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term>
+						<command>download</command>
+						<replaceable>artist_name</replaceable>
+					</term>
+					<listitem>
+						<para>Looks for tracks by the specified artist on Last.fm and Jamendo. This command is for
+						discovering new artists; if there are tracks by this artist already, nothing will be
+						downloaded.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term>
+						<command>dump</command>
+						<replaceable>track_id</replaceable>
+					</term>
+					<listitem>
+						<para>Displays raw information about the specified track (JSON encoded). This command can be
+						used for debugging purposes or if you write an application which interacts with the station
+						using the XMPP protocol.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term>
+						<command>echo</command>
+						<replaceable>text</replaceable>
+					</term>
+					<listitem>
+						<para>Sends the specified text back to you. This command can be used for debugging your
+						connection with the bot.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term>
+						<command>find</command>
+						<optional><replaceable>flags</replaceable></optional>
+						<optional><replaceable>pattern</replaceable></optional>
+						<optional><replaceable>labels</replaceable></optional>
+					</term>
+					<listitem>
+						<para>Displays tracks that have the substring <option>pattern</option> in their title or in the
+						artist name. You can restrict the results by adding labels which the tracks must have, e.g.:
+						<command>find gorky @heavy</command>. The tracks are sorted by weight: best come first.</para>
+
+						<para>The flag parameter is a combination of command-line-like switches. The <option>-l</option>
+						flag changes the order to the upload date, i.e. fresh tracks come first. The <option>-f</option>
+						flag changes the order to the upload date reversed, i.e. oldest come first. The
+						<option>-r</option> flag sorts tracks in random order. With the <option>-b</option> flag only
+						bookmarked tracks will be listed.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><command>hitlist</command></term>
+					<listitem>
+						<para>Lists 10 best tracks.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><command>last</command></term>
+					<listitem>
+						<para>Displays basic information about 10 most recently played tracks.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><command>news</command></term>
+					<listitem>
+					<para>Lists10 most recently added tracks.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term>
+						<command>rocks</command>
+						<optional><replaceable>track_id</replaceable></optional>
+					</term>
+					<listitem>
+						<para>This is how you vote for the specified track (the current one if <option>track_id</option>
+						not given). When you vote, the track's running weight is increased by 0.25, but the real weight
+						is only changed the first time you vote.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><command>shitlist</command></term>
+					<listitem>
+						<para>Lists 10 worst tracks.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term>
+						<command>show</command>
+						<optional><replaceable>track_id</replaceable></optional>
+					</term>
+					<listitem>
+						<para>Displays information about a track (the current one if <option>track_id</option> wasn't
+						given). This is a human readable version of the <command>dump</command> command.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term>
+						<command>speak</command>
+						<replaceable>text</replaceable>
+					</term>
+					<listitem>
+						<para>Renders the specified text using <command>festival</command> and schedules it for playing
+						after the current track finishes. The speech will only be played once, however, you can
+						<command>queue</command> it again later.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><command>status</command></term>
+					<listitem>
+						<para>Displays basic information about the currently played track. This is exactly the same text
+						that the bot has in its status line.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term>
+						<command>sucks</command>
+						<optional><replaceable>track_id</replaceable></optional>
+					</term>
+					<listitem>
+						<para>This is how you vote against the specified track (the current one if
+						<option>track_id</option> not given). When you vote, the track's running weight is decreased by
+						0.25, but the real weight is only changed the first time you vote.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term>
+						<command>tags</command>
+						<optional><replaceable>modification</replaceable> <optional>for <replaceable>track_id</replaceable></optional></optional>
+					</term>
+					<listitem>
+						<para>If sent without arguments, shows a tag cloud. If the <option>modification</option>
+						argument was given, it is treated as a list of labels to add or remove to the specified track,
+						e.g.: <command>tags rock -pop</command>.</para>
+
+						<para>The <option>modification</option> argument is only available to privileged users (i.e.
+						admins).</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><command>queue</command></term>
+					<listitem>
+						<para>Adds a track to the manual playlist, which have the highest priority.</para>
+					</listitem>
+				</varlistentry>
+			</variablelist>
+		</refsect1>
+
+		<refsect1>
+			<title>Jabber commands for admins</title>
+
+			<para>These commands require special privileges, see the <option>jabber_admins</option> config
+			parameter.</para>
+
+			<variablelist>
+				<varlistentry>
+					<term>
+						<command>ban</command>
+						<replaceable>artist_name</replaceable>
+					</term>
+					<listitem>
+						<para>Deletes all tracks by the specified artist (sets their weight to zero).</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term>
+						<command>delete</command>
+						<replaceable>track_id</replaceable>
+					</term>
+					<listitem>
+						<para>Deletes the specified track (sts it weight to zero).</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term>
+						<command>merge</command>
+						<replaceable>dst_id</replaceable>
+						<replaceable>src_id</replaceable>
+					</term>
+					<listitem>
+						<para>Merges two tracks together. The second track is deleted, it's labels and votes are added
+						to the first track. This is the way you deal with duplicates.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term>
+						<command>play</command>
+						<replaceable>labels...</replaceable>
+					</term>
+					<listitem>
+						<para>Creates a virtual ad-hoc playlist for next hour. The playlist has lower priority than the
+						<command>queue</command> jabber command, but higher than all configured playlists. You can use
+						multiple labels, e.g.: <command>play rock +instrumental -loud</command>.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><command>purge</command></term>
+					<listitem>
+						<para>Cleans up the database and file system. Does exactly what the <command>ardj
+						db-purge</command> command-line command does.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><command>reload</command></term>
+					<listitem>
+						<para>Tells the <application>ices</application> plugin to reload the configuration. This does
+						not really work because <application>ices</application> can't really reload Python modules,
+						which <application>ardj</application> uses, and because the real work is done by the web
+						service, which reloads the configuration automatically.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><command>restart</command></term>
+					<listitem>
+						<para>Terminates the jabber bot. It will be restarted immediately by the upstart job. The rough
+						command-line equivalent is <command>sudo restart ardj-jabber</command>. You should only need
+						to do this after you modify the jabber bot source code manually or by upgrading the installed
+						package.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term>
+						<command>say</command>
+						<replaceable>message</replaceable>
+					</term>
+					<listitem>
+						<para>Sends the specified message to the chat room (named in the
+						<option>jabber_chat_room</option> config parameter) from the bot's name. Typically used for
+						fun.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term>
+						<command>set</command>
+						<replaceable>property</replaceable> to <replaceable>value</replaceable>
+						<optional>for <replaceable>track_id</replaceable></optional>
+					</term>
+					<listitem>
+						<para>This is how you modify track properties (which can be either "artist" or "title").</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><command>skip</command></term>
+					<listitem>
+						<para>Tells ices to skip the current track. This is done by sending it the USR1 signal.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term>
+						<command>sql</command>
+						<replaceable>query</replaceable>
+					</term>
+					<listitem>
+						<para>Lets you perform low-level database queries. Use with caution.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term>
+						<command>twit</command>
+						<replaceable>message</replaceable>
+					</term>
+					<listitem>
+						<para>Sends the specified message to Twitter. Works exactly like the <command>twit</command>
+						command-line action. Only works if you have properly configured the <option>twitter</option>
+						config file parameter.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><command>voters</command></term>
+					<listitem>
+						<para>Shows voting statistics, which includes jids of active users and their karma.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><command>votes</command></term>
+					<listitem>
+						<para>Shows you who and how voted for the currently played track.</para>
+					</listitem>
+				</varlistentry>
+			</variablelist>
+		</refsect1>
+
+		<refsect1>
+			<title>Configuration</title>
+
+			<para>There is one configuration wile which contains all settings.  This file is named
+			<filename>/etc/ardj.yaml</filename>, if you're installing system wide, or
+			<filename>$HOME/.config/ardj/ardj.yaml</filename> if you're testing locally.</para>
+
+			<variablelist>
+				<varlistentry>
+					<term><option>database_path</option></term>
+					<listitem>
+						<para>This names the SQLite database file.</para>
+
+						<para>This option has no default, but the installer sets it to
+						<filename>/var/lib/ardj/database.sqlite</filename>.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><option>dupes</option></term>
+					<listitem>
+						<para>This parameter defines how many recently played artists will be ignored when picking the
+						next track. This is good for ensuring that the same artist isn't played too often even if he has
+						amazingly well rated tracks.</para>
+
+						<para>Set this to a value higher than 0 only after you upload a significant amount of music,
+						because if there's not enough artists, your stream will go into the failure mode.</para>
+
+						<para>Defaults to 5.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><option>event_schedule_label_filter</option></term>
+					<listitem>
+						<para>Here you can specify the label which tracks must have to feed the schedule updater. The
+						logic is simple: first tracks with this label are picked, from those only tracks with weight
+						above 1.0 are picked (i.e., well rated), and that's the source of artist names.</para>
+
+						<para>Defaults to nothing, all tracks are used.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><option>event_schedule_path</option></term>
+					<listitem>
+						<para>Here you name a file where the information on upcoming concerts will be saved (see the
+						<command>ardj update-schedule</command> command). If not set, the function won't work.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><option>event_schedule_weight</option></term>
+					<listitem>
+						<para>Here you can set a custom weight requirement for tracks that feed the schedule updater.
+						If you set this to a value that roughly equals to your 10th top track weight, then the schedule
+						will only feature artists from your station's hitlist.</para>
+
+						<para>Defaults to 1.0, e.g. tracks that don't suck.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><option>incoming_path</option></term>
+					<listitem>
+						<para>This parameter defines the folder where you should put music that you want to add to the
+						database. This folder is typicalliy made available over ftp or sftp.  After copying files to
+						this folder, send the <command>upload</command> command to the jabber bot.</para>
+
+						<para>When files are added to the database, only two common tags are read and used: "artist" and
+						"title". One uncommon tag is "ardj", with which you can preset internal metadata, such as
+						labels. Syntax example: "ardj=1;labels=music,rock" (normally you only set the labels this way,
+						other options are currently ignored).</para>
+
+						<para>Default location is <filename>/var/lib/ardj/incoming</filename>.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><option>incoming_labels</option></term>
+					<listitem>
+						<para>With this parameter you can set default labels for new files. This typically has labels
+						which will later help you find unsorted music and label it properly. If you have a playlist for
+						incoming unsorted music, you can also specify it here.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><option>jabber_id</option></term>
+					<listitem>
+						<para>This option defines the bot's JID and password in the "user:password@server" form. If you
+						don't define this parameter, the jabber bot won't start. Look in the log file for authentication
+						error messages.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><option>jabber_admins</option></term>
+					<listitem>
+						<para>This parameter names privileged users. This is a list of jids, i.e. it must be either one
+						line of comma-separated values in square brackets (e.g., "[one, two]"), or one item per line,
+						prefixed with a dash sign. Look in the <filename>share/doc/ardj/examples</filename> folder for
+						an example.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><option>log</option></term>
+					<listitem>
+						<para>This names the log file.</para>
+
+						<para>Defaults to <filename>/var/log/ardj.log</filename>.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><option>musicdir</option></term>
+					<listitem>
+						<para>This option defines the folder where the music will be stored. Files in this folder have
+						scrambled names, related to the file contents' MD5 checksum, e.g.
+						<filename>2/4/24a141bfaaae48969901a9ab1206dc76.mp3</filename>. This is <emphasis>not</emphasis>
+						a publicly accessible folder, you should <emphasis>not</emphasis> try to do anything with the
+						files in it. To add new music, add it to the folder specified with the
+						<option>incoming_path</option> parameter.</para>
+
+						<para>This is also where the <filename>playlists.yaml</filename> file is looked for.</para>
+
+						<para>Default location is <filename>/var/lib/ardj/music</filename>.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><option>twitter</option></term>
+					<listitem>
+						<para>Having this block enables integration with Twitter. The block must contain values with
+						keys <option>consumer_key</option>, <option>consumer_secret</option>,
+						<option>access_token_key</option> and <option>access_token_secret</option>. To get these values,
+						go to the dev.twitter.com/apps website and register yourself an application.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><option>use_jabber_status</option></term>
+					<listitem>
+						<para>Set this to "yes" to add track info to the bot's status line.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><option>use_jabber_tunes</option></term>
+					<listitem>
+						<para>This enables sending track info using the XMPP Tunes extension (doesn't work with Gmail
+						servers).</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><option>webapi_socket</option></term>
+					<listitem>
+						<para>This names the socket at which the Web API server is expected to be.</para>
+
+						<para>Defaults to "127.0.0.1:8080".</para>
+					</listitem>
+				</varlistentry>
+			</variablelist>
+		</refsect1>
+
+		<refsect1>
+			<title>Files</title>
+
+			<variablelist>
+				<varlistentry>
+					<term><filename>/etc/ardj.yaml</filename></term>
+					<listitem>
+						<para>This is the default location of the configuration file.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><filename>$HOME/.config/ardj/ardj.yaml</filename></term>
+					<listitem>
+						<para>This is the location of the user's local configuration file. If it exists, the system wide
+						configuration file is ignored. Having a local configuration file is good for testing purposes,
+						but on a production system you should stick to the global one.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><filename>/var/lib/ardj/database.sqlite</filename></term>
+					<listitem>
+						<para>This is the default location of the database. It can be changed using the
+						<option>database</option> configuration file parameter.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><filename>/var/lib/ardj/music</filename></term>
+					<listitem>
+						<para>This is the default location of the music library. It can be changed using the
+						<option>musicdir</option> configuration file parameter.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><filename>/var/lig/ardj/music/playlists.yaml</filename></term>
+					<listitem>
+						<para>The default playlist description. Is always bound to the <option>musicdir</option>
+						folder.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><filename>/var/lib/ardj/incoming</filename></term>
+					<listitem>
+						<para>This is the default location of the folder where you should put files to add them to the
+						media database (using the <command>ardj add-incoming-files</command> command). You can change it
+						using the <option>incoming_path</option> configuration file parameter.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><filename>/var/log/ardj.log</filename></term>
+					<listitem>
+						<para>This is the default location of the log files. It can be changed using the
+						<option>log</option> configuration file parameter. The file is rotated after it grows over 1MB;
+						10 files are kept.</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><filename>/etc/init/ardj-*.conf</filename></term>
+					<listitem>
+						<para>These are the upstart jobs that start the jabber bot
+						(<filename>ardj-jabber.conf</filename>), the Web API server
+						(<filename>ardj-server.conf</filename>) and the source client
+						(<filename>ardj-ices.conf</filename>)</para>
+					</listitem>
+				</varlistentry>
+
+				<varlistentry>
+					<term><filename>/usr/share/ardj/failure/</filename></term>
+					<listitem>
+						<para>This folder contains OGG/Vorbis files which should be played when the Web API server
+						fails. The files are picked in random order. This is typically something with neutral mood and
+						with a short voice message for the admins to go look in the log file.</para>
+					</listitem>
+				</varlistentry>
+			</variablelist>
+		</refsect1>
+
+		<refsect1>
+			<title>Author</title>
+			<para>Justin Forest <email>hex@umonkey.net</email></para>
+		</refsect1>
+	</refentry>
+</article>

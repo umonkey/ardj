@@ -1,15 +1,23 @@
 #!/usr/bin/env python
 # vim: set fileencoding=utf-8:
 
-from glob import glob
 from distutils.core import setup
+from glob import glob
+import os
 
 # Files to install:
 data_files = [
-    ('/etc/logrotate.d', glob('share/logrotate.d/*')),
+    ('/etc', ['share/doc/examples/ardj.yaml']),
     ('/etc/init', glob('share/upstart/*.conf')),
-    ('share/doc/examples', glob('share/doc/ardj/examples/*')),
-    ('share/ardj/screen/', glob('share/ardj/screen/*')),
+    ('/etc/rsyslog.d', glob('share/rsyslog.d/*')),
+    ('/etc/logrotate.d', glob('share/logrotate.d/*')),
+    ('share/ardj/database', glob('share/database/*.sql')),
+    ('share/ardj/failure', ['share/audio/stefano_mocini_leaving_you_failure_edit.ogg']),
+    ('share/ardj/samples', ['share/audio/cubic_undead.mp3', 'share/audio/successful_install.ogg']),
+    ('share/ardj/shell-extensions/zsh', ['share/shell-extensions/zsh/_ardj']),
+    ('share/doc/ardj/examples', glob('share/doc/examples/*')),
+    ('share/doc/ardj', ['ardj.html']),
+    ('share/man/man1', ['ardj.1.gz']),
 ]
 
 classifiers = [
@@ -32,7 +40,7 @@ setup(
     package_dir = { '': 'src' },
     packages = [ 'ardj', 'ardj.xmpp' ],
     requires = [ 'yaml', 'mutagen', 'dns', 'socksipy', 'simplejson', 'oauth2' ],
-    scripts = [ 'bin/ardj', 'ices/ices.ardj' ],
+    scripts = [ 'bin/ardj' ],
     url = 'http://ardj.googlecode.com/',
-    version = '0.13'
+    version = os.environ.get("VERSION", "1.0.1")
 )

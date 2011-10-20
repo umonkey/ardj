@@ -1,6 +1,7 @@
 # vim: set fileencoding=utf-8:
 
 import csv
+import logging
 import os
 import re
 import sys
@@ -21,7 +22,7 @@ def get_count():
     """Returns the number of active listeners."""
     url = ardj.settings.get('icecast/stats/url')
     if not url:
-        ardj.log.debug('Unable to count listeners: icecast/stats/url not set.')
+        logging.debug('Unable to count listeners: icecast/stats/url not set.')
         return 0
 
     data = ardj.util.fetch(url, user=ardj.settings.get('icecast/stats/login'), password=ardj.settings.get('icecast/stats/password'), quiet=True, ret=True)
@@ -29,17 +30,19 @@ def get_count():
     stats_re = re.compile(ardj.settings.get('icecast_stats/re', '<listeners>(\d+)</listeners>'))
     m = stats_re.search(data)
     if not m:
-        ardj.log.warning('Could not find listener count in icecast2 stats.xml')
+        logging.warning('Could not find listener count in icecast2 stats.xml')
         return 0
 
-    return int(m.group(1))
+    count = int(m.group(1))
+    logging.debug("There are %u listeners." % count)
+    return count
 
 
 def format_data(sql, params, converters, setting, header=None):
     filename = ardj.settings.getpath(setting)
     if filename:
         print 'Writing to %s' % filename
-        data = ardj.database.cursor().execute(sql, params).fetchall()
+        data = ardj.database.fetch(sql, params)
         f = csv.writer(open(filename, 'w'))
         if header:
             f.writerow(header)
@@ -72,7 +75,7 @@ def dump_statistics():
         str,
         str,
         lambda w: '%.02f' % w,
-    ], 'statistics/listeners/total_csv', [ 'last_played', 'artist', 'title', 'listeners', 'track_id', 'weight' ])
+    ], 'statistics/listeners/total_csv', ['last_played', 'artist', 'title', 'listeners', 'track_id', 'weight'])
 
     sql = 'SELECT l.ts, t.id, t.artist, t.title, l.listeners FROM tracks t INNER JOIN playlog l ON l.track_id = t.id WHERE l.ts BETWEEN ? AND ? AND weight > 0 ORDER BY l.ts'
     params = get_yesterday_ts()
@@ -82,7 +85,7 @@ def dump_statistics():
         lambda x: unicode(x).encode('utf-8'),
         lambda x: unicode(x).encode('utf-8'),
         str,
-    ], 'statistics/listeners/yesterday_csv', [ 'time', 'track_id', 'artist', 'title', 'listeners' ])
+    ], 'statistics/listeners/yesterday_csv', ['time', 'track_id', 'artist', 'title', 'listeners'])
 
 
 def run_cli(args):

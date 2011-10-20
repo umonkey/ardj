@@ -1,58 +1,132 @@
-# vim: set ts=4 sts=4 sw=4 noet fileencoding=utf-8:
-# http://fragments.turtlemeat.com/pythonwebserver.php
+# encoding=utf-8
+
+"""Web API for ardj.
+
+Lets HTTP clients access the database.
+"""
 
 import logging
-from xml.sax import saxutils
-from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
+import sys
+import traceback
 
-import config
-import db
+import json
+import web
 
-def quote(values, wrap=None):
-	if type(values) != dict:
-		raise Exception('quote() expects a dictionary.')
-	xml = u''
-	for k in values:
-		if values[k] is not None:
-			xml += u' ' + unicode(k) + u'=' + saxutils.quoteattr(unicode(values[k]))
-	if wrap is not None:
-		xml = u'<%s%s/>' % (wrap, xml)
-	return xml
+import database
+import scrobbler
+import settings
+import tracks
 
-class ardj_server(BaseHTTPRequestHandler):
-	def do_GET(self):
-		if self.path == '/tracks':
-			return self.do_get_tracks()
 
-	def do_get_tracks(self):
-		xml = u'<tracks>\n'
-		for tr in db.track.get_all():
-			xml += quote({
-				'id': tr.id,
-				'artist': tr.artist,
-				'title': tr.title,
-				'filename': tr.filename,
-				'weight': tr.weight,
-				'count': tr.count,
-			}, wrap=u'track') + u'\n'
-		xml += u'</tracks>\n'
-		self.send_xml(xml)
+def send_json(f):
+    """The @send_json decorator, encodes the return value in JSON."""
+    def wrapper(*args, **kwargs):
+        web.header("Content-Type", "text/plain; charset=UTF-8")
+        return json.dumps(f(*args, **kwargs), ensure_ascii=False, indent=True)
+    return wrapper
 
-	def send_xml(self, xml, status=200, content_type='text/plain'):
-		self.send_response(status)
-		self.send_header('Content-Type', content_type + '; charset=utf-8')
-		self.end_headers()
-		self.wfile.write('<?xml version="1.0"?>\n')
-		self.wfile.write('<?xml-stylesheet type="text/xsl" href="/style.xsl"?>\n')
-		if type(xml) == unicode:
-			xml = xml.encode('utf-8')
-		self.wfile.write(xml)
 
-if __name__ == '__main__':
-	try:
-		port = config.get('server/port', 8765)
-		server = HTTPServer(('', port), ardj_server)
-		logging.info('Listening on port %u' % port)
-		server.serve_forever()
-	except KeyboardInterrupt:
-		server.socket.close()
+class Controller:
+    def __init__(self):
+        logging.debug("Request: %s" % web.ctx.path)
+
+    def __del__(self):
+        logging.debug("Request finished, closing the transaction.")
+        database.commit()
+
+
+class NextController(Controller):
+    """Handles the /track/next.json request by returning a JSON description of
+    the track that should be played next.  Only responds to POST requests to
+    prevent accidential access."""
+    @send_json
+    def POST(self):
+        try:
+            track = tracks.get_next_track()
+            if track is None:
+                raise web.internalerror("No data.")
+            logging.debug("Returning track info: %s" % track)
+            return track
+        except Exception, e:
+            logging.error("Error handling a request: %s\n%s" % (e, traceback.format_exc(e)))
+            return {"status": "error", "message": str(e)}
+
+
+class ScrobbleController(Controller):
+    """Sends scheduled tracks to Last.fm and Libre.fm."""
+    def __init__(self):
+        self.lastfm = scrobbler.LastFM()
+        self.librefm = scrobbler.LibreFM()
+
+    def POST(self):
+        return
+        """
+        commit = False
+        if self.lastfm:
+            try:
+                if self.lastfm.process():
+                    commit = True
+            except Exception, e:
+                logging.error('Could not process LastFM queue: %s' % e)
+
+        if self.librefm:
+            try:
+                if self.librefm.process():
+                    commit = True
+            except Exception, e:
+                logging.error('Could not process LibreFM queue: %s' % e)
+
+        if commit:
+            database.commit()
+        """
+
+
+class CommitController(Controller):
+    @send_json
+    def POST(self):
+        database.commit()
+        return {"status": "ok"}
+
+
+class RocksController(Controller):
+    @send_json
+    def POST(self):
+        try:
+            args = web.input(sender=None, track_id=None)
+
+            track_id = args.track_id
+            if not track_id or track_id == "None":
+                track_id = tracks.get_last_track_id()
+
+            weight = tracks.add_vote(track_id, args.sender, 1)
+            if weight is None:
+                message = 'No such track.'
+            else:
+                message = 'OK, current weight of track #%u is %.04f.' % (track_id, weight)
+
+            return {"status": "ok", "message": message}
+        except Exception, e:
+            logging.error("ERROR: %s\n%s" % (e, traceback.format_exc(e)))
+            return {"status": "error", "message": str(e)}
+
+
+def serve_http(hostname, port):
+    """Starts the HTTP web server at the specified socket."""
+    sys.argv.insert(1, "%s:%s" % (hostname, port))
+
+    logging.info("Starting the ardj web service at http://%s:%s/" % (hostname, port))
+
+    web.application((
+        "/track/next\.json", NextController,
+        "/track/rocks\.json", RocksController,
+        "/scrobble\.json", ScrobbleController,
+        "/commit\.json", CommitController,
+    )).run()
+
+
+def run_cli(args):
+    """Starts the HTTP web server on the configured socket."""
+    serve_http(*settings.get("webapi_socket", "127.0.0.1:8080").split(":", 1))
+
+
+__all__ = ["serve_http", "run_cli"]  # hide unnecessary internals

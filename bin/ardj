@@ -1,78 +1,8 @@
 #!/usr/bin/env python
-# vim: set ts=4 sts=4 sw=4 et fileencoding=utf-8:
 
-import os
 import sys
-import traceback
 
-import ardj.log
-
-COMMAND_MAP = [ # (command, module, function, description)
-    ('client', 'client', 'run_cli', 'run the client'),
-    ('config', 'settings', 'edit_cli', 'edit settings'),
-    ('console', 'console', 'run_cli', 'jabber-like CLI'),
-    ('db', 'database', 'run_cli', 'open database console'),
-    ('events', 'tout', 'run_cli', 'works with the upcoming events'),
-    ('find-new-tracks', 'tracks', 'find_new_tracks', 'fetch new songs from Last.fm'),
-    ('fix-track-lengths', 'tracks', 'cli_fix_lengths', 'updates cached track lengths'),
-    ('fix-real-track-weights', 'tracks', 'cli_update_real_weights', 'update real track weights according to karma'),
-    ('hotline', 'hotline', 'run_cli', 'work with the hotline'),
-    ('icelog', 'icelogger', 'run_cli', 'work with Icecast logs'),
-    ('jabber', 'jabber', 'run_cli', 'run the jabber bot'),
-    ('listeners', 'listeners', 'run_cli', 'summarizes listeners.csv'),
-    ('mail', 'mail', 'run_cli', 'send or receive mail'),
-    ('map-listeners', 'map', 'update_listeners', 'updates the listeners map'),
-    ('merge-votes', 'database', 'merge_votes', 'merge votes according to jabber/aliases'),
-    ('rg', 'replaygain', 'run_cli', 'scan ReplayGain in files'),
-    ('say', 'speech', 'render_text_cli', 'renders text to voice using festival, then plays it'),
-    ('show-all-playlists', 'playlist', 'cli_show_all', 'shows all playlists'),
-    ('show-active-playlists', 'playlist', 'cli_show_active', 'shows active playlists'),
-    ('show-news-from-jamendo', 'jamendo', 'print_new_tracks', 'show new tracks available at jamendo.com'),
-    ('show-next-track', 'tracks', 'cli_next_track', 'shows next track to play (JSON)'),
-    ('sms', 'sms', 'run_cli', 'send text messages (GSM)'),
-    ('stream', 'stream', 'run_cli', 'handles stream events'),
-    ('tags', 'tags', 'run_cli', 'interact with track metadata'),
-    ('tsn', 'tsn', 'run', 'prepare and process a new So-So-News episode'),
-    ('twit', 'twitter', 'run_cli', 'interacts with the twitter account'),
-]
-
-def find_command(command_name):
-    for cmd, mod, fun, doc in COMMAND_MAP:
-        if command_name == cmd:
-            try:
-                m = __import__('ardj.' + mod)
-                m = getattr(m, mod)
-                f = getattr(m, fun)
-                return f
-            except Exception, e:
-                ardj.log.error('Command "ardj %s" is broken: %s\n%s' % (cmd, e, traceback.format_exc(e)))
+import ardj.cli
 
 
-    if command_name is None:
-        print 'Usage: ardj command\nAvailable commands:'
-    else:
-        print 'Unknown command: "%s", available commands:' % command_name
-
-    maxlen = max([len(c[0]) for c in COMMAND_MAP])
-    fmt = '  %%-%us   %%s' % maxlen
-    for cmd, mod, fun, doc in sorted(COMMAND_MAP, key=lambda x: x[0]):
-        print fmt % (cmd, doc)
-    exit(1)
-
-if __name__ == '__main__':
-    if len(sys.argv) >= 2 and not sys.argv[1].startswith('-'):
-        handler = find_command(sys.argv[1])
-        if handler is not None:
-            try:
-                args = [a.decode('utf-8') for a in sys.argv[2:]]
-                exit(handler(args))
-            except KeyboardInterrupt:
-                print 'Interrupted by user.'
-                exit(1)
-            except Exception, e:
-                ardj.log.error('ERROR handling command %s: %s' % (sys.argv[1], e) + traceback.format_exc(e))
-                exit(1)
-        ardj.log.error('Unknown command: %s' % sys.argv[1])
-        exit(1)
-
-    find_command(None)
+ardj.cli.run(sys.argv)

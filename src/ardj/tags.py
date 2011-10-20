@@ -1,5 +1,6 @@
 # encoding=utf-8
 
+import logging
 import os
 import os.path
 import sys
@@ -9,17 +10,18 @@ import mutagen
 import mutagen.oggvorbis
 import mutagen.mp3 as mp3
 import mutagen.easyid3 as easyid3
-from mutagen.apev2 import APEv2 
+from mutagen.apev2 import APEv2
 
 easyid3.EasyID3.RegisterTXXXKey('ardj', 'ardj')
 easyid3.EasyID3.RegisterTXXXKey('ql:ardj', 'QuodLibet::ardj')
 
-import ardj.log
+
+class FileNotFound(RuntimeError):
+    pass
 
 
-class FileNotFound(RuntimeError): pass
-
-class UnsupportedFileType(RuntimeError): pass
+class UnsupportedFileType(RuntimeError):
+    pass
 
 
 def raw(filename):
@@ -31,7 +33,7 @@ def raw(filename):
     if not os.path.exists(filename):
         raise FileNotFound('File %s not found.' % filename)
 
-    tmap = { '.mp3': mutagen.easyid3.Open, '.ogg': mutagen.oggvorbis.Open }
+    tmap = {'.mp3': mutagen.easyid3.Open, '.ogg': mutagen.oggvorbis.Open}
 
     extension = os.path.splitext(filename)[1].lower()
     if extension not in tmap:
@@ -53,14 +55,13 @@ class Wrapper(dict):
 
     def read(self):
         self.clear()
-        if os.path.exists(self.filename):
-            ext = os.path.splitext(self.filename)[1].lower()
-            if ext in ('.oga', '.ogg'):
-                self.read_vorbis()
-            elif ext in ('.mp3'):
-                self.read_mp3()
-            else:
-                raise TypeError('File %s is of an unknown type.')
+        ext = os.path.splitext(self.filename)[1].lower()
+        if ext in ('.oga', '.ogg'):
+            self.read_vorbis()
+        elif ext in ('.mp3'):
+            self.read_mp3()
+        else:
+            raise TypeError('File %s is of an unknown type.')
         self.parse_special()
 
     def parse_special(self):
@@ -77,7 +78,7 @@ class Wrapper(dict):
         tags = mutagen.oggvorbis.Open(self.filename)
         for k, v in tags.items():
             self[k] = v[0]
-        self['length'] = tags.info.length
+        self['length'] = int(tags.info.length)
         self['sample_rate'] = tags.info.sample_rate
         self['channels'] = tags.info.channels
 
@@ -85,7 +86,8 @@ class Wrapper(dict):
         try:
             for k, v in APEv2(self.filename).items():
                 self[k.lower()] = str(v)
-        except: pass
+        except:
+            pass
 
         try:
             tags = mp3.Open(self.filename)
@@ -107,9 +109,10 @@ class Wrapper(dict):
                 if k.startswith('quodlibet::'):
                     k = k[11:]
                 self[k] = v
-            self['length'] = tags.info.length
+            self['length'] = int(tags.info.length)
             self['sample_rate'] = tags.info.sample_rate
-        except: pass
+        except:
+            pass
 
 
 def get(filename):
@@ -120,17 +123,9 @@ def set(filename, tags):
     try:
         t = raw(filename)
         for k, v in tags.items():
-            if k not in ('length'):
+            if k not in ('length', 'length', 'sample_rate', 'channels', 'mp3gain_minmax', 'replaygain_track_peak', 'replaygain_track_gain'):
                 if v is not None:
                     t[k] = v
         t.save(filename)
     except Exception, e:
-        print filename
-        ardj.log.error(u'Could not save tags to %s: %s' % (filename, e) + traceback.format_exc(e))
-
-
-def run_cli(args):
-    for arg in args:
-        print 'Tags in %s' % arg
-        for k, v in sorted(get(arg).items(), key=lambda x: x[0]):
-            print '  %s = %s' % (k, v)
+        logging.error(u'Could not save tags to %s: %s' % (filename, e) + traceback.format_exc(e))

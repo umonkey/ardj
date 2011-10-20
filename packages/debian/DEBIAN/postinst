@@ -1,0 +1,60 @@
+#!/bin/sh -e
+
+case "$1" in
+    configure)
+        if ! getent group ardj >/dev/null; then
+            addgroup --system ardj
+        fi
+
+        if ! getent passwd ardj >/dev/null; then
+            adduser --quiet \
+                --system \
+                --ingroup ardj \
+                --disabled-login \
+                --disabled-password \
+                --home /var/lib/ardj \
+                --no-create-home \
+                --gecos "ardj database" \
+                ardj
+        fi
+
+        install -d -o ardj -g ardj -m 0775 /var/lib/ardj
+        install -d -o ardj -g ardj -m 0775 /var/lib/ardj/incoming
+        install -d -o ardj -g ardj -m 0775 /var/lib/ardj/music
+
+        # Make sure files created in that folder always have the ardj group.
+        chmod +s /var/lib/ardj /var/lib/ardj/incoming
+
+        # Support systems with older Python versions.
+        for pv in 2.5 2.6; do
+            if [ -d "/usr/lib/python${pv}" ]; then
+                DST="/usr/lib/python${pv}/dist-packages/ardj"
+                if [ ! -e "$DST" ]; then
+                    echo "Installing a copy for Python ${pv}"
+                    mkdir -p "/usr/lib/python${pv}/dist-packages"
+                    ln -s "/usr/lib/python2.7/dist-packages/ardj" "$DST"
+                fi
+            fi
+        done
+
+        # Initialize the database.
+        if [ ! -f /var/lib/ardj/database.sqlite ]; then
+            echo "Initializing a new database at /var/lib/ardj/database.sqlite"
+            ardj db-init
+            chmod 664 /var/lib/ardj/database.sqlite
+            chown ardj:ardj /var/lib/ardj/database.sqlite
+
+            echo "Installing default playlists."
+            install -o ardj -g ardj -m 0664 /usr/share/doc/ardj/examples/playlists.yaml /var/lib/ardj/music/
+
+            echo "Adding sample audio files."
+            cp /usr/share/ardj/samples/* /var/lib/ardj/incoming/
+            chmod 664 /var/lib/ardj/incoming/*
+            ardj add-incoming-tracks
+        fi
+
+        echo "Starting the web service."
+        start ardj-server || true
+esac
+
+exit 0

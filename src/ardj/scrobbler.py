@@ -1,10 +1,20 @@
 import hashlib
+import logging
 import time
 
 import ardj.database
-import ardj.log
 import ardj.settings
 import ardj.util
+
+
+class Error(Exception):
+    """Scrobbling errors."""
+    pass
+
+
+class BadAuth(Error):
+    """Thrown when the configured credentials are wrong."""
+    pass
 
 
 class LastFM(object):
@@ -21,19 +31,25 @@ class LastFM(object):
     def authorize(self):
         """Authorizes for a session key as a mobile device.
         Details: http://www.last.fm/api/mobileauth"""
-        if not self.login or not self.password:
-            return False
-        data = self.call(method='auth.getMobileSession',
-            username=self.login,
-            authToken=self.get_auth_token(),
-            api_sig=True
-        )
+        if not self.login or not self.password or not self.key or not self.secret:
+            logging.debug("Last.fm disabled -- not enough configuration.")
+            return self
+
+        try:
+            data = self.call(method='auth.getMobileSession',
+                username=self.login,
+                authToken=self.get_auth_token(),
+                api_sig=True)
+        except Exception, e:
+            logging.error("Last.fm authentication failure: %s" % e)
+            data = None
         if not data:
-            ardj.log.error('Could not authenticate with last.fm: no data.')
+            logging.error('Could not authenticate with last.fm: no data.')
+            return None
         else:
             self.sk = str(data['session']['key'])
             if self.sk:
-                ardj.log.info('Successfully authenticated with Last.FM')
+                logging.info('Successfully authenticated with Last.FM')
         return self
 
     def scrobble(self, artist, title, ts):
@@ -47,7 +63,7 @@ class LastFM(object):
                 track=title.encode('utf-8'),
                 timestamp=str(ts), api_sig=True, sk=self.sk,
                 post=True)
-            ardj.log.info(u'Sent to last.fm: %s -- %s' % (artist, title))
+            logging.info(u'Sent to last.fm: %s -- %s' % (artist, title))
             return True
 
     def now_playing(self, artist, title):
@@ -67,10 +83,10 @@ class LastFM(object):
                 sk=self.sk,
                 post=True)
             if 'error' in data:
-                ardj.log.info(u'Could not love a track with last.fm: %s' % data['message'])
+                logging.info(u'Could not love a track with last.fm: %s' % data['message'])
                 return False
             else:
-                ardj.log.info(u'Sent to last.fm love for: %s -- %s' % (artist, title))
+                logging.info(u'Sent to last.fm love for: %s -- %s' % (artist, title))
                 return True
 
     def get_events_for_artist(self, artist_name):
@@ -98,7 +114,7 @@ class LastFM(object):
                     'artist': t['artist']['name'],
                     'title': t['name'],
                     'url': t['downloadurl'],
-                    'tags': tags + [ 'source:last.fm' ],
+                    'tags': tags + ['source:last.fm'],
                 })
         return result
 
@@ -107,18 +123,27 @@ class LastFM(object):
             artist=artist_name.encode('utf-8'))
         try:
             return data['corrections']['correction']['artist']['name']
-        except KeyError: pass
-        except TypeError: pass
+        except KeyError:
+            pass
+        except TypeError:
+            pass
         return None
 
-    def process(self, cur):
+    def process(self):
         """Looks for stuff to scrobble in the playlog table."""
-        db = ardj.database.Open()
-        for row in db.get_tracks_to_scrobble():
-            if not self.scrobble(row["artist"], row["title"], row["ts"]):
+        skip_labels = ardj.settings.get('last.fm/skip_labels')
+        if skip_labels:
+            in_sql = ', '.join(['?'] * len(skip_labels))
+            sql = 'SELECT t.artist, t.title, p.ts FROM tracks t INNER JOIN playlog p ON p.track_id = t.id WHERE p.lastfm = 0 AND t.weight > 0 AND t.length > 60 AND t.id NOT IN (SELECT track_id FROM labels WHERE label IN (%s)) ORDER BY p.ts' % in_sql
+            params = skip_labels
+        else:
+            sql = 'SELECT t.artist, t.title, p.ts FROM tracks t INNER JOIN playlog p ON p.track_id = t.id WHERE p.lastfm = 0 AND t.weight > 0 AND t.length > 60 ORDER BY p.ts'
+            params = []
+        rows = ardj.database.fetch(sql, params)
+        for artist, title, ts in rows:
+            if not self.scrobble(artist, title, ts):
                 return False
-            db.set_track_scrobbled(row["ts"])
-            cur.execute('UPDATE playlog SET lastfm = 1 WHERE ts = ?', (ts, ))
+            ardj.database.execute('UPDATE playlog SET lastfm = 1 WHERE ts = ?', (ts, ))
         return True
 
     def call(self, post=False, api_sig=False, **kwargs):
@@ -126,7 +151,13 @@ class LastFM(object):
         if api_sig:
             kwargs['api_sig'] = self.get_call_signature(kwargs)
         kwargs['format'] = 'json'
-        return ardj.util.fetch_json(self.ROOT, args=kwargs, post=post, quiet=True, ret=True)
+        response = ardj.util.fetch_json(self.ROOT, args=kwargs, post=post, quiet=True, ret=True)
+        if "error" in response:
+            logging.error("Last.fm error %u: %s" % (response["error"], response["message"]))
+            if response["error"] in (4, 9, 10, 13, 26):
+                raise BadAuth(response["message"])
+            raise Error(response["message"])
+        return response
 
     def get_call_signature(self, args):
         parts = sorted([''.join(x) for x in args.items()])
@@ -160,12 +191,12 @@ class LibreFM(object):
             }, quiet=True, ret=True)
             parts = data.split('\n')
             if parts[0] != 'UPTODATE':
-                ardj.log.error('Could not log to libre.fm: %s' % parts[0])
+                logging.error('Could not log to libre.fm: %s' % parts[0])
                 return False
             else:
                 self.submit_url = parts[2].strip()
                 self.session_key = self.get_session_key(parts[1].strip())
-                ardj.log.debug('Logged in to libre.fm, will submit to %s' % (self.submit_url, ))
+                logging.debug('Logged in to libre.fm, will submit to %s' % (self.submit_url, ))
                 return True
 
     def scrobble(self, artist, title, ts=None, retry=True):
@@ -183,17 +214,17 @@ class LibreFM(object):
         }
         data = ardj.util.fetch(self.submit_url, args=args, post=True, ret=True).strip()
         if data == 'OK':
-            ardj.log.debug(u'Sent to libre.fm: %s -- %s' % (artist, title))
+            logging.debug(u'Sent to libre.fm: %s -- %s' % (artist, title))
             return True
         elif data == 'BADSESSION' and retry:
-            ardj.log.debug('Bad libre.fm session, renewing.')
+            logging.debug('Bad libre.fm session, renewing.')
             self.authorize()
             return self.scrobble(artist, title, ts, False)
         else:
-            ardj.log.error('Could not submit to libre.fm: %s' % data)
+            logging.error('Could not submit to libre.fm: %s' % data)
             return False
 
-    def process(self, cur):
+    def process(self):
         """Looks for stuff to scrobble in the playlog table."""
         skip_labels = ardj.settings.get('libre.fm/skip_labels',
             ardj.settings.get('last.fm/skip_labels'))
@@ -204,11 +235,11 @@ class LibreFM(object):
         else:
             sql = 'SELECT t.artist, t.title, p.ts FROM tracks t INNER JOIN playlog p ON p.track_id = t.id WHERE p.librefm = 0 AND t.weight > 0 AND t.length > 60 ORDER BY p.ts'
             params = []
-        rows = cur.execute(sql, params).fetchall()[:10]
+        rows = ardj.database.fetch(sql, params)[:10]
         for artist, title, ts in rows:
             if not self.scrobble(artist, title, ts):
                 return False
-            cur.execute('UPDATE playlog SET librefm = 1 WHERE ts = ?', (ts, ))
+            ardj.database.execute('UPDATE playlog SET librefm = 1 WHERE ts = ?', (ts, ))
         return True
 
     def get_session_key(self, challenge):

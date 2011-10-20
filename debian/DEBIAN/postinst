@@ -1,3 +1,0 @@
-#!/bin/sh -e
-# Restart a running instance of the jabber bot.
-## ardj --restart # we don't hang anymore, the "restart" command is always available.

@@ -1,6 +1,0 @@
-mp3-mono-44.mp3
-mp3-mono-48.mp3
-mp3-stereo-44.mp3
-mp3-stereo-48.mp3
-vorbis-mono-48.ogg
-vorbis-stereo-44.ogg

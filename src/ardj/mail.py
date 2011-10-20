@@ -1,9 +1,6 @@
 # vim: set fileencoding=utf-8:
 
-"""Interface to the mailbox.
-
-
-"""
+"""Interface to the mailbox."""
 
 from email import encoders
 from email.mime.base import MIMEBase
@@ -12,6 +9,7 @@ from email.mime.text import MIMEText
 import email
 import email.header
 import email.parser
+import logging
 import os
 import poplib
 import rfc822
@@ -31,6 +29,7 @@ Commands:
   send addr [subject]   -- send message from stdin to addr
   list URL              -- show mail from that URL
 """
+
 
 def parse_url(url):
     """Returns a dictionary with URL options.
@@ -54,6 +53,7 @@ def parse_url(url):
         }
     except Exception, e:
         raise Exception('Could not parse URL: %s' % url)
+
 
 class Message:
     """Simple message wrapper.
@@ -122,6 +122,7 @@ class Message:
         value = u' '.join([decode_part(x) for x in email.header.decode_header(value)]).strip()
         return value.strip()
 
+
 def send_mail(to, subject, message, files=None, profile=None):
     """Sends a message.
 
@@ -129,7 +130,7 @@ def send_mail(to, subject, message, files=None, profile=None):
 
     Recipients are specified with the `to' parameter, `message' is the text
     part.  You can optionally attach files.
-    
+
     Profile is the name of the mailbox in mail/boxes.  It can be used to use
     different smtp servers.  If not specified, the first smtp server is
     used."""
@@ -180,7 +181,8 @@ def send_mail(to, subject, message, files=None, profile=None):
     s.sendmail(login, to, msg.as_string())
     s.quit()
 
-    ardj.log.info('Sent mail to %s' % to[0])
+    logging.info('Sent mail to %s' % to[0])
+
 
 def process_mailbox(url, callback):
     """Process messages in a mailbox using a callback.
@@ -189,9 +191,9 @@ def process_mailbox(url, callback):
     the callback, one by one.  If callback returns True, the message is deleted
     from the server.  The function itself returns True if at least one message
     was successfully processed.
-    
+
     url is of the form pop3[s]://user:pass@host[:port].
-    
+
     callback is a function which receives headers and a function which returns
     the whole message body.  To fetch attachments, use get_attachments()
     function."""
@@ -220,15 +222,16 @@ def process_mailbox(url, callback):
             if callback(Message(client, number)):
                 client.dele(number)
                 expunge = True
-                ardj.log.debug('Deleted message %s from mailbox %s' % (number, params['login']))
+                logging.debug('Deleted message %s from mailbox %s' % (number, params['login']))
             result = True
         except Exception, e:
-            ardj.log.error('Could not process message: %s' % e)
+            logging.error('Could not process message: %s' % e)
 
     if expunge:
         client.quit()
 
     return result
+
 
 def run_cli(args):
     """Implements the "ardj mail" command."""
@@ -236,6 +239,7 @@ def run_cli(args):
         args.append('no subject')
         return send_mail([args[1]], args[2], sys.stdin.read())
     if len(args) > 1 and args[0] == 'list':
+
         def callback(msg):
             print '- from: %s' % msg.get_header('from')
             print '    to: %s' % msg.get_header('to')
