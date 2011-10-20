@@ -99,7 +99,7 @@ def on_skip(args, sender):
 
         track = get_current_track()
         if track:
-            ardj.jabber.chat_say(u"%s skipped track %u: \"%s\" by %s", (sender_name, track["id"], track["title"], track["artist"]))
+            ardj.jabber.chat_say(u"%s skipped track %u: \"%s\" by %s" % (sender_name, track["id"], track["title"], track["artist"]))
         else:
             ardj.jabber.chat_say(u"%s skipped an unknown track." % sender_name)
 
