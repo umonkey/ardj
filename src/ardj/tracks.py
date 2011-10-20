@@ -12,6 +12,7 @@ import logging
 import os
 import random
 import re
+import subprocess
 import sys
 import time
 import traceback
@@ -743,6 +744,10 @@ def update_program_name(name):
             ardj.jaber.chat_say("Program %s started." % name)
         else:
             logging.debug("Program name changed from '%s' to '%s'." % (current, name))
+
+            command = ardj.settings.getpath("program_name_handler")
+            if os.path.exists(command):
+                subprocess.Popen(command.split(" "), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 
 def shift_track_weight(track_id):
