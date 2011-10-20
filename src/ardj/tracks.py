@@ -741,7 +741,7 @@ def update_program_name(name):
 
         if ardj.settings.get("program_name_announce"):
             logging.debug("Program name changed from '%s' to '%s', announcing to the chat room." % (current, name))
-            ardj.jaber.chat_say("Program %s started." % name)
+            ardj.jabber.chat_say("Program %s started." % name)
         else:
             logging.debug("Program name changed from '%s' to '%s'." % (current, name))
 
