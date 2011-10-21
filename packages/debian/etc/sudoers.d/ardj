@@ -1,0 +1,2 @@
+# Let users from the group ardj restart components without passwords.
+%ardj ALL = (ALL) NOPASSWD: /sbin/stop ardj-*, /sbin/start ardj-*, /sbin/restart ardj-*
