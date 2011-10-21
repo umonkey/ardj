@@ -45,6 +45,7 @@ release: clean bdist deb
 	googlecode_upload.py -s "ardj v${VERSION} (Other)" -p ardj -l Featured,Type-Source,OpSys-All ardj-${VERSION}.tar.gz
 
 clean:
+	test -d .hg && hg clean
 	rm -f ardj.1.gz ardj.html
 	find -regex '.*\.\(pyc\|rej\|orig\|deb\|zip\|tar\.gz\)$$' -delete
 
@@ -64,7 +65,6 @@ deb: bdist
 	mv packages/debian/usr/local/* packages/debian/usr/
 	rm -rf packages/debian/usr/local
 	fakeroot dpkg -b packages/debian $(DEB)
-	rm -rf packages/debian/usr packages/debian/etc
 
 install-deb: deb
 	sudo dpkg -i $(DEB)
