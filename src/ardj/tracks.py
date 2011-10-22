@@ -331,7 +331,7 @@ def get_urgent():
     return None
 
 
-def set_urgent(args):
+def set_urgent(args, duration=60):
     """Sets the music filter.
 
     Sets music filter to be used for picking random tracks.  If set, only
@@ -344,9 +344,9 @@ def set_urgent(args):
     if args == 'all':
         ardj.jabber.chat_say(u"Returning to normal playlists.")
     else:
-        expires = time.time() + 3600
+        expires = time.time() + duration
         ardj.database.execute('INSERT INTO urgent_playlists (labels, expires) VALUES (?, ?)', (args, int(expires), ))
-        ardj.jabber.chat_say(u"Playlist for next hour: %s." % args)
+        ardj.jabber.chat_say(u"Playlist for next %u minutes: %s." % (duration, args))
 
 
 def add_vote(track_id, email, vote, update_karma=False):

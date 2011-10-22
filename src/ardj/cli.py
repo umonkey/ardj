@@ -328,6 +328,20 @@ def cmd_mark_recent(*args):
     database.commit()
 
 
+def cmd_play(*args):
+    """sets urgent playlist for next hour"""
+    from ardj import database, tracks
+
+    duration = 60
+    args = list(args)
+    for idx, arg in enumerate(args):
+        if arg.startswith("--time="):
+            duration = int(arg[7:])
+            del args[idx]
+    tracks.set_urgent(" ".join(args).decode("utf-8"), duration)
+    database.commit()
+
+
 def cmd_help(*args):
     """shows this help screen"""
     commands = []
