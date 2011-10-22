@@ -3,6 +3,7 @@
 # TODO:
 # - reload data if file changes (all get() methods should check that).
 
+import logging
 import os
 import sys
 import yaml
@@ -74,6 +75,7 @@ class wrapper:
             return []
         stat = os.stat(filename)
         if self.playlists_mtime is None or self.playlists_mtime < stat.st_mtime:
+            logging.debug("Reloading playlists.")
             self.playlists_mtime = stat.st_mtime
             self.playlists_data = yaml.load(open(filename, 'r').read())
         return self.playlists_data
