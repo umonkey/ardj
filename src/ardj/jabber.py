@@ -91,6 +91,8 @@ class ardjbot(MyFileReceivingBot):
         self.lastfm = ardj.scrobbler.LastFM()
         self.librefm = ardj.scrobbler.LibreFM()
 
+        self.chat_users = []
+
         _conf = ardj.settings.get("jabber_id", ardj.settings.get("jabber/login", fail=True))
         self.login, password = self.split_login(_conf)
         resource = socket.gethostname() + '/' + str(os.getpid()) + '/'
@@ -234,6 +236,33 @@ class ardjbot(MyFileReceivingBot):
         if ardj.settings.get2('use_jabber_tunes', 'jabber/tunes', True):
             self.send_tune(track)
         """
+
+    def callback_presence(self, conn, presence):
+        """Tracks chat room users."""
+        jid = unicode(presence.getFrom())
+        chat_jid = self.get_chat_room_jid().split("/")[0]
+        if chat_jid == jid.split("/")[0]:
+            type_ = presence.getType()
+            if type_ == "unavailable" and jid in self.chat_users:
+                self.chat_users.remove(jid)
+                logging.debug("%s left the chat room." % jid.encode("utf-8"))
+                self._update_chat_room_stats()
+            elif type_ is None and jid not in self.chat_users:
+                self.chat_users.append(jid)
+                logging.debug("%s joined the chat room." % jid.encode("utf-8"))
+                self._update_chat_room_stats()
+        return super(ardjbot, self).callback_presence(conn, presence)
+
+    def _update_chat_room_stats(self):
+        """Saves the number of users to a file.
+
+        The file name can be specified with the jabber_chat_counter config option."""
+        count = len(self.chat_users)
+        logging.debug("Chat room has %u users." % count)
+
+        fn = ardj.settings.getpath("jabber_chat_counter")
+        if fn:
+            file(fn, "wb").write(str(count))
 
     def callback_message(self, conn, mess):
         """Extended message handler.
