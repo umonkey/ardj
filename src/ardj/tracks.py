@@ -745,10 +745,10 @@ def update_program_name(name):
         else:
             logging.debug("Program name changed from \"%s\" to \"%s\"." % (current, name))
 
-            command = ardj.settings.getpath("program_name_handler")
-            if os.path.exists(command):
-                logging.info(u"Running %s (%s)" % (command, name))
-                subprocess.Popen(command.split(" "), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        command = ardj.settings.getpath("program_name_handler")
+        if os.path.exists(command):
+            logging.info(u"Running %s (%s)" % (command, name))
+            subprocess.Popen(command.split(" "), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 
 def shift_track_weight(track_id):
