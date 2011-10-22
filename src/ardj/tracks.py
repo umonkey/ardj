@@ -999,9 +999,10 @@ def schedule_download(artist, owner=None):
     if count[0]:
         return u'Песни этого исполнителя уже есть.  Новые песни загружаются автоматически в фоновом режиме.'
 
-    ardj.database.ArtistDownloadRequest.create(artist, owner)
+    ardj.database.execute("INSERT INTO download_queue (artist, owner) VALUES (?, ?)", (artist, owner, ))
+    ardj.database.commit()
 
-    return u'Это займёт какое-то время, я сообщу о результате.'
+    return u"Это займёт какое-то время, я сообщу о результате."
 
 
 def add_label_to_tracks_liked_by(label, jids, sender):
@@ -1023,21 +1024,26 @@ def add_label_to_tracks_liked_by(label, jids, sender):
     return len(_ids)
 
 
-def do_idle_tasks(set_busy):
+def do_idle_tasks(set_busy=None):
     """Loads new tracks from external sources."""
-    req = ardj.database.ArtistDownloadRequest.get_one()
+    req = ardj.database.fetchone("SELECT artist, owner FROM download_queue LIMIT 1")
     if req is None:
-        return
+        return False
 
-    logging.info(u'Looking for tracks by "%s", requested by %s' % (req.artist, req.owner))
+    artist_name, sender = req
 
-    set_busy()
+    logging.info(u'Looking for tracks by "%s", requested by %s' % (artist_name, sender))
 
-    req.delete()
-    count = find_new_tracks([req.artist])
+    if set_busy is not None:
+        set_busy()
+
+    count = find_new_tracks([artist_name])
     if count:
-        msg = u'Added %u tracks by %s.' % (count, req.artist)
+        msg = u"Added %u tracks by %s." % (count, artist_name)
+        ardj.chat_say(msg)
     else:
-        msg = u'Could not find anything by %s on Last.fm and Jamendo.' % req.artist
-    ardj.jabber.chat_say(msg, recipient=req.owner)
+        msg = u"Could not find anything by %s on Last.fm and Jamendo." % artist_name
+    ardj.jabber.chat_say(msg, recipient=sender)
+
+    ardj.database.execute(u"DELETE FROM download_queue WHERE artist = ?", (artist_name, ))
     ardj.database.commit()

@@ -250,10 +250,13 @@ class ardjbot(MyFileReceivingBot):
                     return
                 rep = ardj.console.process_command(msg, mess.getFrom().getStripped())
             except Exception, e:
-                logging.warning(u'ERROR: %s, MESSAGE: %s\n%s' % (e, mess, traceback.format_exc(e)))
+                output = "ERROR: %s, MESSAGE: %s\n%s" % (e, mess.getBody().encode("utf-8"), traceback.format_exc(e))
+                for line in output.rstrip().split("\n"):
+                    logging.warning(line)
                 rep = unicode(e)
             ardj.database.commit()
-            self.send_simple_reply(mess, rep.strip())
+            if isinstance(rep, (str, unicode)):
+                self.send_simple_reply(mess, rep.strip())
             self.send_pending_messages()
             self.status_type = self.AVAILABLE
 
@@ -283,9 +286,9 @@ class ardjbot(MyFileReceivingBot):
             commit = False
             for _id, _re, _msg in ardj.database.fetch("SELECT id, re, message FROM jabber_messages"):
                 if _re:
-                    self.say_to_chat(_msg)
-                else:
                     self.say_to_jid(_re, _msg)
+                else:
+                    self.say_to_chat(_msg)
                 ardj.database.execute("DELETE FROM jabber_messages WHERE id = ?", (_id, ))
                 commit = True
             if commit:
