@@ -1,0 +1,30 @@
+#!/usr/bin/env python
+# encoding=utf-8
+
+"""Automated testing for tmradio.net
+
+This script is ran by cron to report anomalies (the output is emailed, if
+any)."""
+
+
+import time
+import urllib2
+
+import feedparser
+
+
+def check_last_fm(name):
+    url = "http://ws.audioscrobbler.com/1.0/user/%s/recenttracks.rss" % name
+
+    feed = feedparser.parse(url)
+
+    last_update = feed["entries"][0]["updated"]
+    last_ts = time.mktime(time.strptime(last_update, "%a, %d %b %Y %H:%M:%S +0000"))
+
+    diff = time.time() + time.altzone - last_ts
+    if diff > 3600:
+        print "WARNING: last.fm profile/%s is %u minutes old." % (name, diff / 60)
+
+
+if __name__ == "__main__":
+    check_last_fm(name="tmradiobot")
