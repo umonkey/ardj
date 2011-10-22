@@ -25,6 +25,9 @@ case "$1" in
         # Make sure files created in that folder always have the ardj group.
         chmod +s /var/lib/ardj /var/lib/ardj/incoming
 
+        # Make sure we don't break sudo.
+        test -f /etc/sudoers.d/ardj && chmod 0440 /etc/sudoers.d/ardj
+
         # Support systems with older Python versions.
         for pv in 2.5 2.6; do
             if [ -d "/usr/lib/python${pv}" ]; then
