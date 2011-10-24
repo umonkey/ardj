@@ -13,14 +13,14 @@ import ardj.util
 
 def get_count():
     """Returns the number of active listeners."""
-    url = ardj.settings.get('icecast/stats/url')
+    url = ardj.settings.get("icecast_stats_url")
     if not url:
         logging.debug('Unable to count listeners: icecast/stats/url not set.')
         return 0
 
-    data = ardj.util.fetch(url, user=ardj.settings.get('icecast/stats/login'), password=ardj.settings.get('icecast/stats/password'), quiet=True, ret=True)
+    data = ardj.util.fetch(url, quiet=True, ret=True)
 
-    stats_re = re.compile(ardj.settings.get('icecast_stats/re', '<listeners>(\d+)</listeners>'))
+    stats_re = re.compile(ardj.settings.get("icecast_stats_re", '<listeners>(\d+)</listeners>'))
     m = stats_re.search(data)
     if not m:
         logging.warning('Could not find listener count in icecast2 stats.xml')

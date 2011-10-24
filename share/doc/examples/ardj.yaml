@@ -84,11 +84,7 @@ use_jabber_status: yes
 
 
 # If you want to see how many users are currently listening to the stream, enable this.
-#icecast:
-#  stats:
-#    url: "http://localhost:8180/admin/stats.xml"
-#    login: admin
-#    password: secret
+#icecast_stats_url: "http://user:pass@localhost:8180/admin/stats.xml"
 
 
 # If you want to use speech synthesis, upload a random OGG/Vorbis track and
