@@ -4,7 +4,7 @@ DEB=ardj_${VERSION}-$(ARCH).deb
 ZIP=ardj_${VERSION}.zip
 TAR=ardj_${VERSION}.tar.gz
 
-all:
+all: doc
 
 help:
 	@echo "bdist          -- prepares a tar.gz"
@@ -14,8 +14,9 @@ help:
 	@echo "install-deb    -- install using a deb file"
 	@echo "release        -- upload a new version to Google Code"
 	@echo "test           -- runs unit tests"
-	@echo "test syntax    -- runs unit tests"
+	@echo "test-syntax    -- runs unit tests"
 	@echo "uninstall      -- uninstall (installs first to find installed files)"
+	@echo "doc            -- build the docbook"
 
 test: test-syntax clean
 	cp -f unittests/data/src/* unittests/data/
@@ -88,3 +89,8 @@ ardj.html: ardj.1.gz
 
 man: ardj.html
 	man ./ardj.1.gz
+
+doc:
+	make -C doc
+
+.PHONY: doc clean

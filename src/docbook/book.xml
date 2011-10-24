@@ -1,0 +1,350 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "/usr/share/xml/docbook/schema/dtd/4.4/docbookx.dtd">
+<book lang="ru">
+  <bookinfo>
+    <title>ardj</title>
+    <authorgroup>
+      <author>
+        <firstname>Justin</firstname>
+        <surname>Forest</surname>
+      </author>
+    </authorgroup>
+    <date>2011-01-22</date>
+    <releaseinfo>1.0.1</releaseinfo>
+    <abstract>
+      <para>Программный комплекс <application>ardj</application> предназначен для создания полностью автоматизированной
+      интернет-радиостанции, управляемой пользователями, с минимальным адмнистрированием или вообще без него.</para>
+
+      <para>Комплекс позволяет составлять умные плейлисты произвольной сложности, получать звуковые файлы из внешних
+      источников, управлять эфиром через jabber и многое другое.  В целом комплекс настроен на создание полностью
+      автономной радиостанции; если вам нужен контроль над плейлистом с точностью до секунды и полностью ручное
+      управление, вам больше подойдёт такое ПО, как SAM Broadcaster или Internet DJ Console.</para>
+
+      <para>Это руководство содержит всю информацию, необходимую для работы запуска радиостанции, основанной на ardj, и
+      работы с ней.</para>
+    </abstract>
+  </bookinfo>
+
+  <chapter id="quickstart">
+    <title>Быстрый запуск</title>
+
+    <para>В этом разделе описывается последовательность действий по запуску радиостанции на примере операционной системы
+    Ubuntu Linux.  Действия для других операционных систем аналогичны, с поправкой на использование местного менеджера
+    пакетов и названий некоторых пакетов.  Предполагается, что пользователь умеет редактировать текстовые файлы.</para>
+
+    <para>Сначала нужно установить используемые системные пакеты:</para>
+
+    <programlisting>sudo apt-get install python-yaml python-mutagen \
+  python-oauth python-feedparser python-httplib2
+  python-webpy python-dnspython python-socksipy \
+  ices icecast2 python-simplejson</programlisting>
+
+    <para>Затем нужно скачать и установить пакет ardj:</para>
+
+    <programlisting>wget http://ardj.googlecode.com/files/ardj-1.0-2011.08.12.0215.deb
+sudo dpkg -i ardj-1.0-2011.08.12.0215.deb</programlisting>
+
+    <para>Теперь нужно скопировать из примеров конфигурационные файлы для ices0 и icecast2:</para>
+
+    <programlisting>sudo cp /usr/share/doc/ardj/examples/icecast.xml /etc/icecast2/
+sudo cp /usr/share/doc/ardj/examples/ices.conf /etc/</programlisting>
+
+    <para>Теперь можно запустить все службы:</para>
+
+    <programlisting>sudo service icecast2 start
+  sudo start ardj-server
+  sudo start ardj-ices</programlisting>
+
+    <para>Готово.  Станция должна работать.  Чтобы убедиться в этом, подключитесь к основному потоку:</para>
+
+    <programlisting>mplayer http://127.0.0.1:8180/live.mp3</programlisting>
+
+    <para>После этого обычно в файлах <filename>icecast.xml</filename> и <filename>ices.conf</filename> меняют пароли
+    для подключения к вещанию, в файле <filename>/etc/ardj.yaml</filename> указать параметры доступа к джабберу и <link
+    linkend="last-fm">Last.fm</link>, и создают более сложные плейлисты.</para>
+  </chapter>
+
+  <chapter id="settings">
+    <title>Настройка</title>
+
+    <section id="last-fm">
+      <title>Взаимодействие с Last.fm</title>
+
+      <para>Взаимодействие с Last.fm двунаправленное: робот отправляет на сервер информацию о проигрываемых и «любимых»
+      композициях, а от сервера получает информацию для коррекции имён исполнителей и свежую музыку.  Чтобы всё это
+      работало, в конфигурационный файл нужно добавить такой блок:</para>
+
+      <programlisting>last.fm:
+  key: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+  secret: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+  login: alice
+  password: secret</programlisting>
+
+      <para>Параметры <option>key</option> и <option>secret</option> можно получить после <ulink
+      url="http://www.lastfm.ru/api/account">регистрации собственного приложения</ulink> (процедура бесплатна и занимает
+      несколько минут).</para>
+
+      <para>Для включения скробблинга в конфигурационный файл следует добавить такую строку:</para>
+
+      <programlisting>last_fm_scrobble: true</programlisting>
+
+      <para>Чтобы исключить из процесса скробблинга композиции с определёнными метками (например, джинглы), укажите их в
+      параметре <option>last_fm_skip_labels</option> конфигурационного файла:</para>
+
+      <programlisting>last_fm_skip_labels: [jingle, quotes, news, special]</programlisting>
+
+      <para>Наконец, чтобы знать, откуда пришла новая музыка, можно добавить к файлам, загруженным из Last.fm,
+      специальные метки.  Для этого их нужно указать в параметре <option>last_fm_add_labels</option> конфигурационного
+      файла:</para>
+
+      <programlisting>last_fm_add_labels: [tagme, source:last.fm]</programlisting>
+    </section>
+  </chapter>
+
+  <chapter id="command-line">
+    <title>Параметры командной строки</title>
+
+    <para>Интерфейс ко всем функциям предоставляет программа <command>ardj</command>.  Эта программа первым параметром
+    принимает имя команды, которое может сопровождаться дополнительными параметрами.  Все команды и возможные параметры
+    описаны в этом разделе.</para>
+
+    <para>При использовании оболочек <command>bash</command> и <command>zsh</command> работает автодополнение команд и
+    параметров, можно использовать кнопку TAB для ускоренного набора.</para>
+
+    <variablelist>
+      <varlistentry>
+        <term><option>add-incoming-tracks</option></term>
+        <listitem>
+          <para>Ищет файлы в папке, указанной в параметре <option>incoming_path</option> конфигурационного файла.  Все
+          найденные файлы с расширениями <filename>.mp3</filename> и <filename>.ogg</filename> перемещаются в медиатеку
+          и удаляются.  Если файл не может быть удалён — он игнорируется (чтобы не добавлять его повторно при каждом
+          последующем вызове).</para>
+
+          <para>При копировании в медиатеку из метаданных файлов считываются значения тэгов "artist" и "title",
+          остальные привычные тэги игнорируются.  Из непривычных поддерживается тэг "ardj", который может содержать
+          метки, пример значения: "ardj=1;labels=music,rock,loud".</para>
+
+          <para>Эта команда является эквивалентом команды <command>upload</command> джаббера.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>config</option></term>
+        <listitem>
+          <para>Запускает текстовый редактор с открытым для редактирования конфигурационным файлом.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>console [jid]</option></term>
+        <listitem>
+          <para>Открывает интерактивную консоль, эмулирующую общение через джаббер (только без джаббера и вообще без
+          использования сети).  Эта функция полезна для отладки, например, когда пользователь жалуется на неожиданное
+          поведение команды, которое не воспроизводится у других пользователей.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>db-console</option></term>
+        <listitem>
+          <para>Открывает интерактивную консоль для работы с базой данных, SQLite или MySQL.  Может использоваться в
+          скриптах (запросы надо передавать через stdin).</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>db-init</option></term>
+        <listitem>
+          <para>Инициализация недостающих таблиц и индексов базы данных.  Эта процедура обычно выполняется при установке
+          пакета и больше не нужна.  Выполнить её вручную может понадобиться, например, если вы случайно уничтожили базу
+          данных и хотите начать сначала.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>db-purge</option></term>
+        <listitem>
+          <para>Удаляет из базы данных мусор, вроде неиспользуемых меток и файлов, относящихся к дорожкам, которые были
+          удалены.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>db-stats</option></term>
+        <listitem>
+          <para>Показывает информацию о количестве композиций и их суммарной продолжительности, например: "2883 tracks,
+          192.0 hours".</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>download-artist name</option></term>
+        <listitem>
+          <para>Сохраняет запрос на загрузку песен указанного исполнителя.  Сама загрузка выполняется позже, в фоновом
+          режиме.</para>
+
+          <para>Эта команда является эквивалентом команды <command>download</command> джаббера.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>find-new-tracks</option></term>
+        <listitem>
+          <para>Запускает поиск новой музыки.  Сначала выбираются исполнители, имеющие дорожки с оценками выше средней,
+          затем в Last.fm и Jamendo ищется новая музыка этих исполнителей, которую позволено скачивать.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>fix-artist-names</option></term>
+        <listitem>
+          <para>Проверяет имя исполнителя по базе данных Last.fm и исправляет, если сервер рекомендует это.  Обычно это
+          приводит к изменению регистра, но может и полностью заменить имя, например, исправив ложную
+          транслитерацию.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>help</option></term>
+        <listitem>
+          <para>Выводит краткую сводку по поддерживаемым командам.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>mark-hitlist</option></term>
+        <listitem>
+          <para>Отмечает примерно десяток лучших песен меткой "hitlist".  Реальное количество дорожек обычно чуть
+          больше, потому что отмечаются все дорожки с рейтингом не ниже десятой по счёту (то есть на десятом месте может
+          быть несколько дорожек).</para>
+
+          <para>Если настроено взаимодействие с Last.fm, отмеченные дорожки добавляются в «любимые».</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>mark-liked-by label jid1 jid2 ...</option></term>
+        <listitem>
+          <para>Отмечает меткой "label" композиции, которые нравятся всем указанным пользователям.  Эту команду можно
+          использовать для создания специфической атмосферы перед прямыми включениями, когда известны будущие
+          участники.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>mark-long</option></term>
+        <listitem>
+          <para>Отмечает меткой "long" композиции с продолжительностью выше средней.  Можно использовать метку для
+          исключения слишком длинных песен из дневной ротации.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>mark-orphans</option></term>
+        <listitem>
+          <para>Отмечает меткой "orphan" композиции, не находящиеся ни в одном плейлисте.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>merge-votes</option></term>
+        <listitem>
+          <para>Склеивает голоса пользователей в соответствии со значением параметра <option>jabber_aliases</option>
+          конфигурационного файла.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>queue-flush</option></term>
+        <listitem>
+          <para>Очищает очередь заказов.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>scan-replaygain [files...]</option></term>
+        <listitem>
+          <para>Запускает сканирование ReplayGain для всех файлов, у которых нет нужной информации.  Если параметр
+          <option>files</option> не указан — сканирует все файлы в медиатеке.</para>
+
+          <para>Для сканирования используются программы <command>mp3gain</command> и
+          <command>vorbisgain</command>.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>serve</option></term>
+        <listitem>
+          <para>Запускает веб-сервер для доступа к Web API.  Сервер обычно доступен по адресу localhost:8080, но этот
+          адрес может быть изменён параметром <option>api_socket</option> конфигурационного файла.  Сервер используется
+          плагином для <command>ices</command> и некоторыми командами джаббера.</para>
+
+          <para>Запускать сервер вручную может понадобиться только в отладочных целях.  В повседневной работе его
+          запускает системная служба, ещё это можно сделать командой <command>sudo start ardj-server</command> (по
+          умолчанию команда доступна без пароля всем пользователям из группы "ardj").</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>tags files...</option></term>
+        <listitem>
+          <para>Выводит содержимое поддерживаемых тэгов.  Эта функция обычно используется в отладочных целях, чтобы
+          убедиться в работоспособности функции чтения тэгов и в корректности самих тэгов.  Для работы используется
+          библиотека <ulink url="http://code.google.com/p/mutagen/">python-mutagen</ulink>.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>twit "text..."</option></term>
+        <listitem>
+          <para>Отправляет указанный текст в Твиттер.  Работает только при корректном заполнении параметра
+          <option>twitter</option> конфигурационного файла, в противном случае пишет что делать.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>twit-replies</option></term>
+        <listitem>
+          <para>Выводит сообщения, отправленные на имя используемой учётной записи.  Предположительно бесполезная
+          функция.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>update-schedule</option></term>
+        <listitem>
+          <para>Собирает на Last.fm информацию о предстоящих концертах интересных исполнителей (имеющих дорожки с
+          оценками выше средней) и сохраняет её в файл типа JavaScript, указанный в параметре
+          <option>event_schedule_path</option> конфигурационного файла; этот файл можно использовать для вывода карты на
+          сайте.</para>
+
+          <para>Работает только при корректной настройке взаимодействия с Last.fm.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>update-track-lengths</option></term>
+        <listitem>
+          <para>Сверяет продолжительность файлов с информацией из базы данных и корректирует её.  Полезно запускать
+          после ручного вмешательства в медиатеку.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>update-track-weights</option></term>
+        <listitem>
+          <para>Сдвигает текущий рейтинг каждой дорожки к реальному.  Вредная функция; описанная процедура выполняется
+          автоматически при каждом проигрывании, ручной запуск только сбивает рейтинги.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>xmpp-send "message text" [jid]</option></term>
+        <listitem>
+          <para>Отправляет сообщение указанному пользователю или в чат, если пользователь не указан (название комнаты
+          указывается в параметре <option>jabber_chat_room</option> конфигурационного файла).</para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+  </chapter>
+</book>
