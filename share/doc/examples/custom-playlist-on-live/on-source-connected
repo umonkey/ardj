@@ -1,0 +1,4 @@
+#!/bin/sh
+if [ "$1" = "/live.mp3" ]; then
+	ardj play --time=600 lounge +instrumental
+fi

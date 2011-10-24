@@ -25,47 +25,92 @@
     </abstract>
   </bookinfo>
 
-  <chapter id="quickstart">
-    <title>Быстрый запуск</title>
+  <chapter id="architecture">
+    <title>Архитектура</title>
 
-    <para>В этом разделе описывается последовательность действий по запуску радиостанции на примере операционной системы
-    Ubuntu Linux.  Действия для других операционных систем аналогичны, с поправкой на использование местного менеджера
-    пакетов и названий некоторых пакетов.  Предполагается, что пользователь умеет редактировать текстовые файлы.</para>
+    <section id="media-db">
+      <title>Медиатека</title>
 
-    <para>Сначала нужно установить используемые системные пакеты:</para>
+      <para>Все звуковые файлы хранятся в специальной папке (обычно <filename>/var/lib/ardj/music</filename>) и имеют
+      имена, состоящие из 32 цифр или букв от a до f.  Выглядит это примерно так:</para>
 
-    <programlisting>sudo apt-get install python-yaml python-mutagen \
-  python-oauth python-feedparser python-httplib2
-  python-webpy python-dnspython python-socksipy \
-  ices icecast2 python-simplejson</programlisting>
+      <programlisting>/var/lib/ardj/music/7/7/7707be8b5c2bf7bd3316c9af384d78c7.ogg
+/var/lib/ardj/music/7/7/77aa258aebc67db32c7353c67c67b4ad.mp3
+/var/lib/ardj/music/7/7/774b2e4eaf3141c04d14da6d9dbc0807.mp3</programlisting>
 
-    <para>Затем нужно скачать и установить пакет ardj:</para>
+      <para>Метаданные, используемые в работе, хранятся в базе данных и в файлы не записываются.</para>
 
-    <programlisting>wget http://ardj.googlecode.com/files/ardj-1.0-2011.08.12.0215.deb
-sudo dpkg -i ardj-1.0-2011.08.12.0215.deb</programlisting>
+      <para>Для <link linkend="adding-music">добавления файлов</link> в медиатеку используется папка для входящих
+      файлов, добавлять их напрямую в медиатеку бесполезно — они не будут обнаружены.</para>
+    </section>
 
-    <para>Теперь нужно скопировать из примеров конфигурационные файлы для ices0 и icecast2:</para>
+    <section id="ratings">
+      <title>Рейтинг композиций</title>
 
-    <programlisting>sudo cp /usr/share/doc/ardj/examples/icecast.xml /etc/icecast2/
-sudo cp /usr/share/doc/ardj/examples/ices.conf /etc/</programlisting>
+      <para>У каждой композиции есть два рейтинга: реальный, зависящий от количества проголосовавших пользователей, и
+      оперативный, используемый в ротации.</para>
 
-    <para>Теперь можно запустить все службы:</para>
+      <para>Реальный рейтинг композиции по умолчанию равен 1.0 и изменяется на 0.25 с каждым <link
+      linkend="voting">голосом</link> слушателя (засчитывается только последний голос, так что каждый слушатель может
+      изменить реальный рейтинг композиции только на +0.25 или -0.25).  Голос пользователя при этом умножается на его
+      вес, который рассчитывается по формуле (T-X)/T, где T=30, а X — количество дней с последнего голосования за любую
+      композицию.  Если слушатель перестаёт голосовать, сила его голоса плавно затухает, а по истечение 30 дней его
+      голос вообще перестаёт что-либо значить.  Однако как только пользователь снова проголосует, его прежние голоса
+      снова начнут влиять не реальный рейтинг композиций.</para>
 
-    <programlisting>sudo service icecast2 start
-  sudo start ardj-server
-  sudo start ardj-ices</programlisting>
+      <para>Оперативный рейтинг изначально равен реальному, но изменяется на 0.25 при каждом голосовании после того, как
+      песня прозвучала вновь (т.е. один раз за проигрывание песни).  При повторном голосовании рейтинг изменяется снова,
+      что даёт целеустремлённому слушателю возможность вывести композицию в самый топ или загнать её в самый низ (но не
+      ниже 0.25).  Этот рейтинг непосредственно влияет на вероятность попадания песни в плейлист.  Однако при каждом
+      проигрывании песни рейтинг на 0.1 приближается к реальному значению, то есть медленно восстанавливается.</para>
 
-    <para>Готово.  Станция должна работать.  Чтобы убедиться в этом, подключитесь к основному потоку:</para>
-
-    <programlisting>mplayer http://127.0.0.1:8180/live.mp3</programlisting>
-
-    <para>После этого обычно в файлах <filename>icecast.xml</filename> и <filename>ices.conf</filename> меняют пароли
-    для подключения к вещанию, в файле <filename>/etc/ardj.yaml</filename> указать параметры доступа к джабберу и <link
-    linkend="last-fm">Last.fm</link>, и создают более сложные плейлисты.</para>
+      <para>Для голосования за песни используется jabber-бот и команды <link
+      linkend="jabber-rocks"><command>rocks</command></link> и <link
+      linkend="jabber-sucks"><command>sucks</command></link>.</para>
+    </section>
   </chapter>
 
   <chapter id="settings">
     <title>Настройка</title>
+
+    <section id="quickstart">
+      <title>Быстрый запуск</title>
+
+      <para>В этом разделе описывается последовательность действий по запуску радиостанции на примере операционной системы
+      Ubuntu Linux.  Действия для других операционных систем аналогичны, с поправкой на использование местного менеджера
+      пакетов и названий некоторых пакетов.  Предполагается, что пользователь умеет редактировать текстовые файлы.</para>
+
+      <para>Сначала нужно установить используемые системные пакеты:</para>
+
+      <programlisting>sudo apt-get install python-yaml python-mutagen \
+  python-oauth python-feedparser python-httplib2
+  python-webpy python-dnspython python-socksipy \
+  ices icecast2 python-simplejson</programlisting>
+
+      <para>Затем нужно скачать и установить пакет ardj:</para>
+
+      <programlisting>wget http://ardj.googlecode.com/files/ardj-1.0-2011.08.12.0215.deb
+sudo dpkg -i ardj-1.0-2011.08.12.0215.deb</programlisting>
+
+      <para>Теперь нужно скопировать из примеров конфигурационные файлы для ices0 и icecast2:</para>
+
+      <programlisting>sudo cp /usr/share/doc/ardj/examples/icecast.xml /etc/icecast2/
+sudo cp /usr/share/doc/ardj/examples/ices.conf /etc/</programlisting>
+
+      <para>Теперь можно запустить все службы:</para>
+
+      <programlisting>sudo service icecast2 start
+sudo start ardj-server
+sudo start ardj-ices</programlisting>
+
+      <para>Готово.  Станция должна работать.  Чтобы убедиться в этом, подключитесь к основному потоку:</para>
+
+      <programlisting>mplayer http://127.0.0.1:8180/live.mp3</programlisting>
+
+      <para>После этого обычно в файлах <filename>icecast.xml</filename> и <filename>ices.conf</filename> меняют пароли
+      для подключения к вещанию, в файле <filename>/etc/ardj.yaml</filename> указать параметры доступа к джабберу и <link
+      linkend="last-fm">Last.fm</link>, и создают более сложные плейлисты.</para>
+    </section>
 
     <section id="festival">
       <title>Настройка синтезатора речи</title>
@@ -75,12 +120,14 @@ sudo cp /usr/share/doc/ardj/examples/ices.conf /etc/</programlisting>
       url="http://www.cstr.ed.ac.uk/projects/festival/"><filename>festival</filename></ulink> (синтезатор) и
       <filename>festvox-ru</filename> (русский голос).  Затем нужно загрузить в медиатеку любой файл формата
       OGG/Vorbis — в этот файл будет записываться результат.  Идентификатор дорожки, присвоенный файлу — его можно
-      узнать командой "news" — следует указать в конфигурационном файле:</para>
+      узнать командой <link linkend="jabber-news"><command>news</command></link> — следует указать в конфигурационном
+      файле:</para>
 
       <programlisting>festival_track_id: 4656</programlisting>
 
-      <para>После этого можно отправить джаббер-боту команду "news" с текстом, который ему следует произнести. 
-      Результат будет записан в файл, соответствующий указанной дорожке.</para>
+      <para>После этого можно отправить джаббер-боту команду <link
+      linkend="jabber-speak"><command>speak</command></link> с текстом, который ему следует произнести.  Результат будет
+      записан в файл, соответствующий указанной дорожке.</para>
     </section>
 
     <section id="last-fm">
@@ -142,16 +189,43 @@ sudo cp /usr/share/doc/ardj/examples/ices.conf /etc/</programlisting>
 
       <programlisting>icecast_stats_url: "http://alice:secret@localhost:8180/admin/stats.xml"</programlisting>
     </section>
+
+    <section id="third-party">
+      <title>Настройка сторонних программ</title>
+
+      <para>В этой секции описана настройка программ, часто используемых вместе с ardj, но не имеющих к нему
+      отношения.</para>
+
+      <section id="upload-sftp">
+        <title>Загрузка музыки по протоколу SFTP</title>
+
+        <para>Протокол SFTP является безопасным аналогом протокола FTP, работающим поверх SSH.  Для того, чтобы
+        предоставить пользователям возможность безопасно (для сервера) загружать музыку, следует создать специального
+        пользователя — назовём его "ardj-uploader" — для которого домашней папкой будет
+        <filename>/var/lib/ardj/incoming</filename>, добавить его в группу "ardj", а в файл
+        <filename>/etc/ssh/sshd_config</filename> добавить такие строки:</para>
+
+        <programlisting>Match Group ardj
+ChrootDirectory %h
+ForceCommand internal-sftp
+AllowTcpForwarding no</programlisting>
+
+        <para>Теперь пользователь ardj-uploader может подключаться к серверу по протоколу SFTP и может складывать файлы
+        в папку incoming; подключаться по SSH, загружать файлы в другие папки или доставать их оттуда он не
+        может.</para>
+      </section>
+    </section>
   </chapter>
 
-  <chapter id="usage">
-    <title>Использование</title>
+  <chapter id="rotation">
+    <title>Программирование эфира</title>
 
     <section id="playlists">
-      <title>Управление плейлистами</title>
+      <title>Плейлисты</title>
 
-      <para>Плейлисты описываются в файле <filename>playlists.yaml</filename>, который находится в корне медиатеки. 
-      Описываются они в таком виде:</para>
+      <para>Плейлисты описываются в файле <filename>playlists.yaml</filename>, который находится в корне медиатеки
+      (обычно называется <filename>/var/lib/ardj/music/playlists.yaml</filename>, но имя может быть изменено с помощью
+      конфигурационного файла).  Описываются они в таком виде:</para>
 
       <programlisting>- name: jingles
   delay: 30
@@ -292,6 +366,45 @@ sudo cp /usr/share/doc/ardj/examples/ices.conf /etc/</programlisting>
       </variablelist>
     </section>
 
+    <section id="custom-playlist">
+      <title>Ручное программирование</title>
+
+      <para>Ручное управление позволяет вручную указать метки для использования в качестве виртуального плейлиста на
+      ближайшее время.  Например, если менеджер станции хочет, чтобы ближайший час играл рок с женским вокалом, он может
+      отправить jabber-боту команду <link linkend="jabber-play"><command>play</command></link>:</para>
+
+      <programlisting>play rock +female</programlisting>
+
+      <para>Эта функция доступна и в командной строке:</para>
+
+      <programlisting>ardj play rock +female</programlisting>
+
+      <para>Управление из командной строки предназначено, в основном, для использования внутри скриптов.  Пример
+      конфигурации, включающей на время прямого эфира спокойную иструментальную музыку, можно найти в папке
+      <filename>doc/examples/custom-playlist-on-live</filename>.</para>
+    </section>
+
+    <section id="queue">
+      <title>Управление очередью (заказы)</title>
+
+      <para>Любой слушатель может заказывать композиции, отправляя jabber-боту команду <link
+      linkend="jabber-queue"><command>queue</command></link>.  Эта команда принимает в качестве параметра фрагмент имени
+      исполнителя или заголовка композиции, ей идентификатор или список меток.  Найденная композиция добавляется в конец
+      очереди.  При выборе следующей композиции для проигрывания очередь имеет максимальный приоритет; за ней следует
+      <link linkend="custom-playlist">виртуальный плейлист</link>, затем <link linkend="playlists">остальные
+      плейлисты</link>.</para>
+
+      <para>Привелегированные пользователи могут добавлять композиции в любом количестве и в любое время.  Обычные
+      пользователи могут добавлять по одной композиции за раз, и к таким композициям в качестве <link
+      linkend="preroll">подмотки</link> добавляется случайная композиция с меткой "queue-jingle" (смысл этих ограничений
+      в том, чтобы резвящийся слушатель был очевиден, чтобы его нельзя было принять за дефект программного
+      обеспечения).</para>
+
+      <para>Рекомендуемый подход к заказу композиций таков: сначала нужно найти композицию командой <link
+      linkend="jabber-find"><command>find</command></link>, затем добавить её в очередь по идентификатору командой <link
+      linkend="jabber-queue"><command>queue</command></link>.</para>
+    </section>
+
     <section id="preroll">
       <title>Подмотка</title>
 
@@ -314,29 +427,69 @@ sudo cp /usr/share/doc/ardj/examples/ices.conf /etc/</programlisting>
       использованы метки: "rock-jingle", "rock-preroll", "music-preroll", "male-preroll".  Случайная из найденных
       композиций будет проиграна перед запланированной.</para>
     </section>
+  </chapter>
+
+  <chapter id="usage">
+    <title>Использование</title>
+
+    <section id="adding-music">
+      <title>Добавление музыки</title>
+
+      <para>Для добавления музыки в медиатеку её следует сложить в папку <filename>/var/lib/ardj/incoming</filename> и
+      выполнить команду <command>ardj <link linkend="cli-add-incoming">add-incoming-tracks</link></command>, или послать
+      jabber-боту команду <command>upload</command>.  После этого музыка будет обработана (посчитан ReplayGain) и
+      перемещена в медиатеку.  Добавлять файлы в медиатеку вручную не следует: в базу данных они не попадут; вручную их
+      там можно только спрятать.</para>
+
+      <para>При копировании в медиатеку из метаданных файлов считываются значения тэгов "artist" и "title", остальные
+      привычные тэги игнорируются.  Из непривычных поддерживается тэг "ardj", который может содержать метки, пример
+      значения:</para>
+
+      <programlisting>ardj=1;labels=music,rock,loud</programlisting>
+    </section>
+
+    <section id="voting">
+      <title>Оценка композиций</title>
+
+      <para>Оценивать композиции может любой слушатель, имеющий аккаунт в сети Jabber.  Для этого по мере прослушивания
+      эфира следует отправлять специальному роботу команды <link linkend="jabber-rocks"><command>rocks</command></link>,
+      если композиция нравится, или <link linkend="jabber-sucks"><command>sucks</command></link>, если не нравится.  Все
+      голоса записываются и влияют на <link linkend="ratings">рейтинг</link>.</para>
+
+      <para>Чтобы проголосовать за композицию, которая сейчас не звучит (например, если вы опоздали), можно указать её
+      идентификатор:</para>
+
+      <programlisting>rocks 1234</programlisting>
+    </section>
 
     <section id="listening-statistics">
       <title>Получение статистики</title>
 
-      <para>С помощью команды <command>ardj export-total-listeners</command> можно получить информацию о том, какая
-      композиция сколькими слушателями была прослушана за всё время работы станции.  При каждом проигрывании композиции
-      в базу данных складывается запись о времени проигрывания и количестве слушателей, которое сообщает icecast2; в
-      этом отчёте данные суммируются.  Результат выводится в формате CSV и пригоден для загрузки в любой табличный
-      процессор.  Формат файла и пример записи:</para>
+      <para>С помощью команды <link linkend="cli-export-total"><command>ardj export-total-listeners</command></link>
+      можно получить информацию о том, какая композиция сколькими слушателями была прослушана за всё время работы
+      станции.  При каждом проигрывании композиции в базу данных складывается запись о времени проигрывания и количестве
+      слушателей, которое сообщает icecast2; в этом отчёте данные суммируются.  Результат выводится в формате CSV и
+      пригоден для загрузки в любой табличный процессор.  Формат файла и пример записи:</para>
 
-      <programlisting>last_played,artist,title,listeners,track_id,weight
+      <example>
+        <title>Пример общего отчёта о прослушиваниях</title>
+        <programlisting>last_played,artist,title,listeners,track_id,weight
 2011-10-24 07:48:15,20lb Sounds,Jimmy Carter,158,5327,1.18
 2011-10-24 17:54:55,2nd Season,It's Your Time To Rise,36,5735,1.25
 2011-10-24 01:01:02,30[eks],Hate It When They Do This,157,5736,1.25</programlisting>
+      </example>
 
-      <para>Более подробную статистику за прошедшие сутки можно получить по команде <command>ardj
-      export-yesterday-listeners</command>.  В отчёте будут перечислены все проигранные композиции, без суммирования
-      данных, наример:</para>
+      <para>Более подробную статистику за прошедшие сутки можно получить по команде <link
+      linkend="cli-export-yesterday"><command>ardj export-yesterday-listeners</command></link>.  В отчёте будут
+      перечислены все проигранные композиции, без суммирования данных, наример:</para>
 
-      <programlisting>time,track_id,artist,title,listeners
+      <example>
+        <title>Пример суточного отчёта о прослушиваниях</title>
+        <programlisting>time,track_id,artist,title,listeners
 2011-10-24 00:02:39,6384,StrangeZero,Zero Land,4
 2011-10-24 00:09:20,3714,Loveshadow,The Garden (Waiting),4
 2011-10-24 00:14:13,5076,Koalips,Wurtzite,4</programlisting>
+      </example>
     </section>
   </chapter>
 
@@ -351,19 +504,13 @@ sudo cp /usr/share/doc/ardj/examples/ices.conf /etc/</programlisting>
     параметров, можно использовать кнопку TAB для ускоренного набора.</para>
 
     <variablelist>
-      <varlistentry>
+      <varlistentry id="cli-add-incoming">
         <term><option>add-incoming-tracks</option></term>
         <listitem>
           <para>Ищет файлы в папке, указанной в параметре <option>incoming_path</option> конфигурационного файла.  Все
           найденные файлы с расширениями <filename>.mp3</filename> и <filename>.ogg</filename> перемещаются в медиатеку
           и удаляются.  Если файл не может быть удалён — он игнорируется (чтобы не добавлять его повторно при каждом
           последующем вызове).</para>
-
-          <para>При копировании в медиатеку из метаданных файлов считываются значения тэгов "artist" и "title",
-          остальные привычные тэги игнорируются.  Из непривычных поддерживается тэг "ardj", который может содержать
-          метки, пример значения:</para>
-
-          <programlisting>ardj=1;labels=music,rock,loud</programlisting>
 
           <para>Эта команда является эквивалентом команды <command>upload</command> джаббера.</para>
         </listitem>
@@ -425,6 +572,21 @@ sudo cp /usr/share/doc/ardj/examples/ices.conf /etc/</programlisting>
           режиме.</para>
 
           <para>Эта команда является эквивалентом команды <command>download</command> джаббера.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry id="cli-export-total">
+        <term><option>export-total-listeners</option></term>
+        <listitem>
+          <para>Выводит в stdout общую <link linkend="listening-statistics">статистику прослушиваний</link>.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry id="cli-export-yesterday">
+        <term><option>export-yesterday-listeners</option></term>
+        <listitem>
+          <para>Выводит в stdout подробную <link linkend="listening-statistics">статистику прослушиваний</link> за
+          последние сутки.</para>
         </listitem>
       </varlistentry>
 
@@ -498,7 +660,7 @@ sudo cp /usr/share/doc/ardj/examples/ices.conf /etc/</programlisting>
       <varlistentry>
         <term><option>queue-flush</option></term>
         <listitem>
-          <para>Очищает очередь заказов.</para>
+          <para>Очищает <link linkend="queue">очередь заказов</link>.</para>
         </listitem>
       </varlistentry>
 
@@ -591,5 +753,58 @@ sudo cp /usr/share/doc/ardj/examples/ices.conf /etc/</programlisting>
 
   <appendix id="jabber-commands">
     <title>Описание команд jabber-бота</title>
+
+    <variablelist>
+      <varlistentry id="jabber-news">
+        <term><command>news</command></term>
+        <listitem>
+          <para>Выводит список последних 10 загруженных композиций, например:</para>
+
+          <programlisting>Recently added tracks:                               
+«Песня идущего домой» by Ю-Питер — #6899 ⚖1.00 ♺0    
+«Девушка по городу» by Ю-Питер — #6898 ⚖1.00 ♺0      
+«Эта музыка будет вечной» by Ю-Питер — #6897 ⚖1.00 ♺0</programlisting>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry id="jabber-play">
+        <term><command>play</command> <optional>--time=время</optional> <replaceable>метки</replaceable></term>
+        <listitem>
+          <para>Включает <link linkend="custom-playlist">виртуальный плейлист</link> из указанных меток на указанное
+          время (60 минут по умолчанию).</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry id="jabber-queue">
+        <term><command>queue</command> <optional>флаги</optional> <replaceable>поисковый_запрос</replaceable></term>
+        <listitem>
+          <para>Добавляет в <link linkend="queue">очередь</link> композиции, удовлетворяющие запросу.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry id="jabber-rocks">
+        <term><command>rocks</command> <optional><replaceable>track_id</replaceable></optional></term>
+        <listitem>
+          <para>Добавляет голос в пользу указанной (или текущей) композиции, увеличивая её <link
+          linkend="ratings">рейтинг</link>.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry id="jabber-speak">
+        <term><command>speak</command> <replaceable>текст</replaceable></term>
+        <listitem>
+          <para>Преобразует текст в голос и заряжает в <link linkend="queue">очередь проигрывания</link>.  Работает
+          только если <link linkend="festival">настроен синтезатор речи</link>.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry id="jabber-sucks">
+        <term><command>sucks</command> <optional><replaceable>track_id</replaceable></optional></term>
+        <listitem>
+          <para>Добавляет голос против указанной (или текущей) композиции, уменьшая её <link
+          linkend="ratings">рейтинг</link>.</para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
   </appendix>
 </book>

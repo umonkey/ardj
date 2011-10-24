@@ -1,0 +1,7 @@
+<icecast>
+	<mount>
+		<mount-name>/live.mp3</mount-name>
+        <on-connect>on-source-connected</on-connect>
+        <on-disconnect>on-source-disconnected</on-disconnect>
+	</mount>
+</icecast>
