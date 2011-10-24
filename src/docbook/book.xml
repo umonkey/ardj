@@ -99,6 +99,22 @@ sudo cp /usr/share/doc/ardj/examples/ices.conf /etc/</programlisting>
 
       <programlisting>last_fm_add_labels: [tagme, source:last.fm]</programlisting>
     </section>
+
+    <section id="libre-fm">
+      <title>Взаимодействие с Libre.fm</title>
+
+      <para>Libre.fm — это сервис скробблинга, аналогичный Last.fm, только полностью открытый и без дополнительных
+      функций, вроде афиши или скачивания музыки.  Подключается сервис добавлением в конфигурационный файл таких
+      строк:</para>
+
+      <programlisting>libre_fm:
+  login: alice
+  password: secret</programlisting>
+
+      <para>Для предотвращения скробблинга специфических дорожек — вроде джинглов — укажите их метки:</para>
+
+      <programlisting>libre_fm_skip_labels: [jingle, news, special]</programlisting>
+    </section>
   </chapter>
 
   <chapter id="command-line">

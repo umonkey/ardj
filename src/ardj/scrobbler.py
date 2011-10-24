@@ -55,7 +55,7 @@ class LastFM(object):
     def scrobble(self, artist, title, ts):
         """Scrobbles a track.  If there's no session key (not authenticated),
         does nothing.  Returns True on success."""
-        if not ardj.settings.get('last.fm/scrobble', True):
+        if not self.is_enabled():
             return True
         if self.sk:
             data = self.call(method='track.scrobble',
@@ -65,6 +65,9 @@ class LastFM(object):
                 post=True)
             logging.info(u'Sent to last.fm: %s -- %s' % (artist, title))
             return True
+
+    def is_enabled(self):
+        return ardj.settings.get("last_fm_scrobble", ardj.settings.get("last.fm/scrobble", True))
 
     def now_playing(self, artist, title):
         """Tells LastFM what you're listening to."""
@@ -131,7 +134,7 @@ class LastFM(object):
 
     def process(self):
         """Looks for stuff to scrobble in the playlog table."""
-        skip_labels = ardj.settings.get('last.fm/skip_labels')
+        skip_labels = ardj.settings.get('last.fm/skip_labels', ardj.settings.get("last_fm_skip_labels"))
         if skip_labels:
             in_sql = ', '.join(['?'] * len(skip_labels))
             sql = 'SELECT t.artist, t.title, p.ts FROM tracks t INNER JOIN playlog p ON p.track_id = t.id WHERE p.lastfm = 0 AND t.weight > 0 AND t.length > 60 AND t.id NOT IN (SELECT track_id FROM labels WHERE label IN (%s)) ORDER BY p.ts' % in_sql
@@ -201,7 +204,7 @@ class LibreFM(object):
 
     def scrobble(self, artist, title, ts=None, retry=True):
         """Scrobbles a track, returns True on success."""
-        if not ardj.settings.get('libre.fm/scrobble', True):
+        if not self.is_enabled():
             return True
         if ts is None:
             ts = int(time.time())
@@ -224,10 +227,12 @@ class LibreFM(object):
             logging.error('Could not submit to libre.fm: %s' % data)
             return False
 
+    def is_enabled(self):
+        return ardj.settings.get("libre_fm_scrobble", ardj.settings.get("libre.fm/scrobble", True))
+
     def process(self):
         """Looks for stuff to scrobble in the playlog table."""
-        skip_labels = ardj.settings.get('libre.fm/skip_labels',
-            ardj.settings.get('last.fm/skip_labels'))
+        skip_labels = ardj.settings.get("libre_fm_skip_labels", ardj.settings.get("last_fm_skip_labels"))
         if skip_labels:
             in_sql = ', '.join(['?'] * len(skip_labels))
             sql = 'SELECT t.artist, t.title, p.ts FROM tracks t INNER JOIN playlog p ON p.track_id = t.id WHERE p.librefm = 0 AND t.weight > 0 AND t.length > 60 AND t.id NOT IN (SELECT track_id FROM labels WHERE label IN (%s)) ORDER BY p.ts' % in_sql
