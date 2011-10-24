@@ -8,15 +8,16 @@ import os
 # Files to install:
 data_files = [
     ('/etc', ['share/doc/examples/ardj.yaml']),
+    ('/etc/cron.daily', ['share/cron.daily/ardj']),
     ('/etc/init', glob('share/upstart/*.conf')),
-    ('/etc/rsyslog.d', glob('share/rsyslog.d/*')),
     ('/etc/logrotate.d', glob('share/logrotate.d/*')),
+    ('/etc/rsyslog.d', glob('share/rsyslog.d/*')),
     ('share/ardj/database', glob('share/database/*.sql')),
     ('share/ardj/failure', ['share/audio/stefano_mocini_leaving_you_failure_edit.ogg']),
     ('share/ardj/samples', ['share/audio/cubic_undead.mp3', 'share/audio/successful_install.ogg']),
     ('share/ardj/shell-extensions/zsh', ['share/shell-extensions/zsh/_ardj']),
-    ('share/doc/ardj/examples', glob('share/doc/examples/*')),
     ('share/doc/ardj', ['ardj.html']),
+    ('share/doc/ardj/examples', glob('share/doc/examples/*')),
     ('share/man/man1', ['ardj.1.gz']),
 ]
 
