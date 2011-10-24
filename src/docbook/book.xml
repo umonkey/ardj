@@ -340,8 +340,8 @@ sudo cp /usr/share/doc/ardj/examples/ices.conf /etc/</programlisting>
     </section>
   </chapter>
 
-  <chapter id="command-line">
-    <title>Параметры командной строки</title>
+  <appendix id="command-line">
+    <title>Описание параметров командной строки</title>
 
     <para>Интерфейс ко всем функциям предоставляет программа <command>ardj</command>.  Эта программа первым параметром
     принимает имя команды, которое может сопровождаться дополнительными параметрами.  Все команды и возможные параметры
@@ -361,7 +361,9 @@ sudo cp /usr/share/doc/ardj/examples/ices.conf /etc/</programlisting>
 
           <para>При копировании в медиатеку из метаданных файлов считываются значения тэгов "artist" и "title",
           остальные привычные тэги игнорируются.  Из непривычных поддерживается тэг "ardj", который может содержать
-          метки, пример значения: "ardj=1;labels=music,rock,loud".</para>
+          метки, пример значения:</para>
+
+          <programlisting>ardj=1;labels=music,rock,loud</programlisting>
 
           <para>Эта команда является эквивалентом команды <command>upload</command> джаббера.</para>
         </listitem>
@@ -585,5 +587,9 @@ sudo cp /usr/share/doc/ardj/examples/ices.conf /etc/</programlisting>
         </listitem>
       </varlistentry>
     </variablelist>
-  </chapter>
+  </appendix>
+
+  <appendix id="jabber-commands">
+    <title>Описание команд jabber-бота</title>
+  </appendix>
 </book>
