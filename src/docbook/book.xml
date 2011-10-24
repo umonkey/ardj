@@ -67,6 +67,22 @@ sudo cp /usr/share/doc/ardj/examples/ices.conf /etc/</programlisting>
   <chapter id="settings">
     <title>Настройка</title>
 
+    <section id="festival">
+      <title>Настройка синтезатора речи</title>
+
+      <para>Синтез речи доступен пользователям через джаббер-бота в развлекательных целях.  Чтобы эта функция работала,
+      следует установить пакеты <ulink
+      url="http://www.cstr.ed.ac.uk/projects/festival/"><filename>festival</filename></ulink> (синтезатор) и
+      <filename>festvox-ru</filename> (русский голос).  Затем нужно загрузить в медиатеку любой файл формата
+      OGG/Vorbis — в этот файл будет записываться результат.  Идентификатор дорожки, присвоенный файлу — его можно
+      узнать командой "news" — следует указать в конфигурационном файле:</para>
+
+      <programlisting>festival_track_id: 4656</programlisting>
+
+      <para>После этого можно отправить джаббер-боту команду "news" с текстом, который ему следует произнести. 
+      Результат будет записан в файл, соответствующий указанной дорожке.</para>
+    </section>
+
     <section id="last-fm">
       <title>Взаимодействие с Last.fm</title>
 
@@ -103,15 +119,15 @@ sudo cp /usr/share/doc/ardj/examples/ices.conf /etc/</programlisting>
     <section id="libre-fm">
       <title>Взаимодействие с Libre.fm</title>
 
-      <para>Libre.fm — это сервис скробблинга, аналогичный Last.fm, только полностью открытый и без дополнительных
-      функций, вроде афиши или скачивания музыки.  Подключается сервис добавлением в конфигурационный файл таких
+      <para>Libre.fm — это сервис скробблинга, аналогичный Last.fm, только полностью открытый и без дополнительных
+      функций, вроде афиши или скачивания музыки.  Подключается сервис добавлением в конфигурационный файл таких
       строк:</para>
 
       <programlisting>libre_fm:
   login: alice
   password: secret</programlisting>
 
-      <para>Для предотвращения скробблинга специфических дорожек — вроде джинглов — укажите их метки:</para>
+      <para>Для предотвращения скробблинга специфических дорожек — вроде джинглов — укажите их метки:</para>
 
       <programlisting>libre_fm_skip_labels: [jingle, news, special]</programlisting>
     </section>

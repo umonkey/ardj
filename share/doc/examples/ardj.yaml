@@ -91,6 +91,12 @@ use_jabber_status: yes
 #    password: secret
 
 
+# If you want to use speech synthesis, upload a random OGG/Vorbis track and
+# specify its id here.  You can also specify a custom voice.
+#festival_track_id: 1234
+#festival_voice: voice_msu_ru_nsh_clunits
+
+
 # This is where the messages will be logged.
 log: syslog
 #log_level: debug
