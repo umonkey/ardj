@@ -94,6 +94,18 @@ def cmd_listeners(*args):
     return listeners.run_cli(args)
 
 
+def cmd_export_total_listeners(*args):
+    """prints overall listening statistics to stdout (CSV)"""
+    from ardj import listeners
+    listeners.cli_total()
+
+
+def cmd_export_yesterday_listeners(*args):
+    """prints yesterday's listening statistics to stdout (CSV)"""
+    from ardj import listeners
+    listeners.cli_yesterday()
+
+
 def cmd_mail(*args):
     """send or receive mail
 

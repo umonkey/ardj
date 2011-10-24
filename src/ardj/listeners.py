@@ -11,13 +11,6 @@ import ardj.settings
 import ardj.util
 
 
-USAGE = """Usage: ardj listeners command...
-
-Commands:
-  stats -- update totals.csv and yesterday.csv
-"""
-
-
 def get_count():
     """Returns the number of active listeners."""
     url = ardj.settings.get('icecast/stats/url')
@@ -38,17 +31,14 @@ def get_count():
     return count
 
 
-def format_data(sql, params, converters, setting, header=None):
-    filename = ardj.settings.getpath(setting)
-    if filename:
-        print 'Writing to %s' % filename
-        data = ardj.database.fetch(sql, params)
-        f = csv.writer(open(filename, 'w'))
-        if header:
-            f.writerow(header)
-        for row in data:
-            row = [converters[x](row[x]) for x in range(len(row))]
-            f.writerow(row)
+def format_data(sql, params, converters, header=None):
+    data = ardj.database.fetch(sql, params)
+    f = csv.writer(sys.stdout)
+    if header:
+        f.writerow(header)
+    for row in data:
+        row = [converters[x](row[x]) for x in range(len(row))]
+        f.writerow(row)
 
 
 def get_yesterday_ts():
@@ -63,9 +53,8 @@ def get_yesterday_ts():
     return yesterday, today
 
 
-def dump_statistics():
-    """Saves both kinds of statistics to configured files (total.csv and
-    yesterday.csv by default)."""
+def cli_total():
+    """Prints overall statistics."""
     sql = 'SELECT max(l.ts), t.artist, t.title, SUM(l.listeners) AS count, t.id, t.weight FROM tracks t INNER JOIN playlog l ON l.track_id = t.id WHERE weight > 0 GROUP BY t.artist, t.title ORDER BY artist COLLATE UNICODE, title COLLATE UNICODE'
     params = []
     format_data(sql, params, [
@@ -75,8 +64,11 @@ def dump_statistics():
         str,
         str,
         lambda w: '%.02f' % w,
-    ], 'statistics/listeners/total_csv', ['last_played', 'artist', 'title', 'listeners', 'track_id', 'weight'])
+    ], ['last_played', 'artist', 'title', 'listeners', 'track_id', 'weight'])
 
+
+def cli_yesterday():
+    """Prints yesterday's statistics."""
     sql = 'SELECT l.ts, t.id, t.artist, t.title, l.listeners FROM tracks t INNER JOIN playlog l ON l.track_id = t.id WHERE l.ts BETWEEN ? AND ? AND weight > 0 ORDER BY l.ts'
     params = get_yesterday_ts()
     format_data(sql, params, [
@@ -85,15 +77,4 @@ def dump_statistics():
         lambda x: unicode(x).encode('utf-8'),
         lambda x: unicode(x).encode('utf-8'),
         str,
-    ], 'statistics/listeners/yesterday_csv', ['time', 'track_id', 'artist', 'title', 'listeners'])
-
-
-def run_cli(args):
-    """Implements the "ardj listeners" command."""
-    command = ''.join(args[:1])
-
-    if command == 'stats':
-        return dump_statistics()
-
-    print USAGE
-    return 1
+    ], ['time', 'track_id', 'artist', 'title', 'listeners'])
