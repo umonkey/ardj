@@ -126,6 +126,8 @@ def fetch(url, suffix=None, args=None, user=None, password=None, quiet=False, po
     if args and not post:
         url += '?' + urllib.urlencode(args)
 
+    url, user, password = parse_url_auth(url, user, password)
+
     opener = get_opener(url, user, password)
     try:
         if post:
@@ -151,6 +153,15 @@ def fetch(url, suffix=None, args=None, user=None, password=None, quiet=False, po
             return fetch(url, suffix, args, user, password, quiet, post, ret, retry - 1)
         logging.error('Could not fetch %s: %s' % (url, e))
         return None
+
+
+def parse_url_auth(url, user, password):
+    """Extracts auth parameters from the url."""
+    scheme, netloc, path = list(urlparse.urlparse(url))[:3]
+    if "@" in netloc:
+        auth, netloc = netloc.split("@", 1)
+        user, password = list(auth.split(":", 1) + [password])[:2]
+    return scheme + "://" + netloc + path, user, password
 
 
 def fetch_json(*args, **kwargs):
