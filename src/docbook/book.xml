@@ -80,7 +80,11 @@
       Ubuntu Linux.  Действия для других операционных систем аналогичны, с поправкой на использование местного менеджера
       пакетов и названий некоторых пакетов.  Предполагается, что пользователь умеет редактировать текстовые файлы.</para>
 
-      <para>Сначала нужно установить используемые системные пакеты:</para>
+      <para>Сначала нужно активировать репозитории <ulink
+      url="https://help.ubuntu.com/community/Repositories/CommandLine#Adding_the_Universe_and_Multiverse_Repositories">Universe,
+      Muiltiverse</ulink> и <ulink
+      url="https://help.ubuntu.com/community/Medibuntu#Adding_the_Repository">Medibuntu</ulink>.  Затем нужно установить
+      используемые системные пакеты:</para>
 
       <programlisting>sudo apt-get install python-yaml python-mutagen \
   python-oauth python-feedparser python-httplib2
