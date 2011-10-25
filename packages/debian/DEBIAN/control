@@ -8,7 +8,7 @@ Essential: no
 Depends: python, python-yaml, python-mutagen (>= 1.19), python-oauth,
   python-storm, python-feedparser, python-httplib2, python-webpy
 Suggests: python-dnspython, python-socksipy, ices, icecast2, python-simplejson
-Recommends: sqlite3, podget, python-twitter
+Recommends: sqlite3, podget, python-twitter, mp3gain, vorbisgain
 Installed-Size: 660
 Description: An artificial DJ for your icecast2 based internet radio.
   Consists of an ices python playlist module and a jabber bot which
