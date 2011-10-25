@@ -40,10 +40,10 @@ purge:
 	sudo rm -rf /var/lib/ardj /var/log/ardj*
 
 release: clean bdist deb
-	hg archive -t zip ardj-${VERSION}.zip
-	googlecode_upload.py -s "ardj v${VERSION} (Debian)" -p ardj -l Featured,Type-Package,OpSys-Linux ardj-${VERSION}.deb
-	googlecode_upload.py -s "ardj v${VERSION} (Source)" -p ardj -l Featured,Type-Source,OpSys-All ardj-${VERSION}.zip
-	googlecode_upload.py -s "ardj v${VERSION} (Other)" -p ardj -l Featured,Type-Source,OpSys-All ardj-${VERSION}.tar.gz
+	hg archive -t zip ${ZIP}
+	googlecode_upload.py -s "ardj v${VERSION} (Debian)" -p ardj -l Featured,Type-Package,OpSys-Linux ${DEB}
+	googlecode_upload.py -s "ardj v${VERSION} (Source)" -p ardj -l Featured,Type-Source,OpSys-All ${ZIP}
+	googlecode_upload.py -s "ardj v${VERSION} (Other)" -p ardj -l Featured,Type-Source,OpSys-All ${TAR}
 
 clean:
 	test -d .hg && hg clean
