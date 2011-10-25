@@ -43,5 +43,5 @@ setup(
     requires = [ 'yaml', 'mutagen', 'dns', 'socksipy', 'simplejson', 'oauth2' ],
     scripts = [ 'bin/ardj' ],
     url = 'http://ardj.googlecode.com/',
-    version = os.environ.get("VERSION", "1.0.1")
+    version = os.environ.get("VERSION", "1.0.2")
 )

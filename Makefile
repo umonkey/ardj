@@ -1,4 +1,4 @@
-VERSION=1.0.1
+VERSION=1.0.2
 ARCH=`uname -m`
 DEB=ardj_${VERSION}-$(ARCH).deb
 ZIP=ardj_${VERSION}.zip
