@@ -101,6 +101,10 @@ sudo dpkg -i ardj-1.0-2011.08.12.0215.deb</programlisting>
       <programlisting>sudo cp /usr/share/doc/ardj/examples/icecast.xml /etc/icecast2/
 sudo cp /usr/share/doc/ardj/examples/ices.conf /etc/</programlisting>
 
+      <para>В файле <filename>/etc/default/icecast2</filename> нужно заменить "ENABLE=false" на "ENABLE=true":</para>
+
+      <programlisting>sudo editor /etc/default/icecast2</programlisting>
+
       <para>Теперь можно запустить все службы:</para>
 
       <programlisting>sudo service icecast2 start
