@@ -111,9 +111,12 @@ def read(filename, update=True):
             scanner = ['vorbisgain', '-q', '-f', str(filename)]
         elif ext in ('.flac'):
             scanner = ['metaflac', '--add-replay-gain', str(filename)]
-        # If the scan is successful, retry reading the tags but only once.
-        if scanner is not None and ardj.util.run(scanner, quiet=True):
-            peak, gain = read(str(filename), update=False)
+        try:
+            # If the scan is successful, retry reading the tags but only once.
+            if scanner is not None and ardj.util.run(scanner, quiet=True):
+                peak, gain = read(str(filename), update=False)
+        except ardj.util.ProgramNotFound, e:
+            logging.warning(e)
 
     return (peak, gain)
 

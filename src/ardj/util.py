@@ -23,11 +23,15 @@ import ardj.settings
 import ardj.util
 
 
+class ProgramNotFound(Exception):
+    pass
+
+
 def run(command, quiet=False, stdin_data=None, grab_output=False, nice=True):
     command = [str(x) for x in command]
 
     if not os.path.exists(command[0]) and not is_command(command[0]):
-        raise Exception("Please install the %s program first." % command[0])
+        raise ProgramNotFound("Please install the %s program first." % command[0])
 
     if nice:
         command = ['nice', '-n15'] + command
