@@ -2,17 +2,15 @@ VERSION=1.0.2
 ZIP=ardj-${VERSION}.zip
 TAR=ardj-${VERSION}.tar.gz
 
-all: doc
-
-help:
-	@echo "bdist          -- prepares a tar.gz"
-	@echo "clean          -- removes temporary files"
-	@echo "install        -- install using setup.py"
-	@echo "release        -- upload a new version to Google Code"
-	@echo "test           -- runs unit tests"
-	@echo "test-syntax    -- runs unit tests"
-	@echo "uninstall      -- uninstall (installs first to find installed files)"
-	@echo "doc            -- build the docbook"
+build:
+	@echo "This is a Python package, you don't need to build it.  Available commands:"
+	@echo "make clean                     -- removes temporary files"
+	@echo "make doc                       -- build the docbook"
+	@echo "make install                   -- install using setup.py"
+	@echo "make install [DESTDIR=./tmp]   -- install ardj"
+	@echo "make package-ubuntu            -- create source and binary packages"
+	@echo "make test                      -- runs unit tests"
+	@echo "make test-syntax               -- runs unit tests"
 
 test: test-syntax clean
 	cp -f unittests/data/src/* unittests/data/
