@@ -30,8 +30,9 @@ test-syntax:
 console:
 	PYTHONPATH=src ./bin/ardj console $(MAIL)
 
-install:
-	sudo VERSION=$(VERSION) python setup.py install --record install.log
+install: ardj.html ardj.1.gz
+	VERSION=$(VERSION) python setup.py install --root=$(DESTDIR)
+	rm -rf build
 
 uninstall:
 	cat install.log | xargs sudo rm -f
