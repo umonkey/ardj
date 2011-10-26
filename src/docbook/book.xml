@@ -10,7 +10,7 @@
       </author>
     </authorgroup>
     <date>2011-10-25</date>
-    <releaseinfo>1.0.2</releaseinfo>
+    <releaseinfo>VERSION_NUMBER</releaseinfo>
     <abstract>
       <para>Программный комплекс <application>ardj</application> предназначен для создания полностью автоматизированной
       интернет-радиостанции, управляемой пользователями, с минимальным адмнистрированием или вообще без него.</para>

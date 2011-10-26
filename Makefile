@@ -58,7 +58,7 @@ release: clean bdist
 
 clean:
 	test -d .hg && hg clean || true
-	rm -rf ardj.1.gz ardj.html tmp
+	rm -rf ardj.1.gz ardj.html doc/book.xml tmp
 	find -regex '.*\.\(pyc\|rej\|orig\|zip\|tar\.gz\)$$' -print -delete
 
 bdist: test clean ardj.1.gz ardj.html
@@ -74,12 +74,6 @@ share/shell-extensions/zsh/_ardj: src/ardj/cli.py
 serve:
 	PYTHONPATH=$(pwd)/src ./bin/ardj serve
 
-docs:
-	mkdir -p share/doc/ardj/pydoc
-	rm -f share/doc/ardj/pydoc/*.html
-	ls -1 src/ardj/*.py | grep -v __init__ | cut -d/ -f3 | cut -d. -f1 | sed -re 's/(.*)/ardj.\1/g' | xargs pydoc -w ardj
-	mv *.html share/doc/ardj/pydoc/
-
 ardj.1.gz: share/doc/docbook/ardj.xml
 	docbook2x-man share/doc/docbook/ardj.xml
 	gzip -f9 ardj.1
@@ -91,6 +85,6 @@ man: ardj.html
 	man ./ardj.1.gz
 
 doc:
-	make -C doc
+	make -C doc VERSION=$(VERSION)
 
 .PHONY: doc clean package
