@@ -1,7 +1,6 @@
 VERSION=1.0.2
-ARCH=`uname -m`
-ZIP=ardj_${VERSION}.zip
-TAR=ardj_${VERSION}.tar.gz
+ZIP=ardj-${VERSION}.zip
+TAR=ardj-${VERSION}.tar.gz
 
 all: doc
 
@@ -29,6 +28,8 @@ console:
 
 install: ardj.html ardj.1.gz
 	VERSION=$(VERSION) python setup.py install --root=$(DESTDIR)
+	mkdir -p $(DESTDIR)/usr/bin
+	mv $(DESTDIR)/usr/local/bin/ardj $(DESTDIR)/usr/bin/ardj
 	rm -rf build
 
 uninstall:
@@ -36,6 +37,12 @@ uninstall:
 
 purge:
 	sudo rm -rf /var/lib/ardj /var/log/ardj*
+
+tar: clean
+	mkdir ardj-$(VERSION)
+	cp -R bin doc share src unittests Makefile README.md TODO setup.py ardj-$(VERSION)
+	tar cfz $(TAR) ardj-$(VERSION)
+	rm -rf ardj-$(VERSION)
 
 release: clean bdist
 	hg archive -t zip ${ZIP}
@@ -72,7 +79,6 @@ ardj.1.gz: share/doc/docbook/ardj.xml
 
 ardj.html: ardj.1.gz
 	man2html ardj.1.gz > ardj.html
-	cp ardj.html wiki/
 
 man: ardj.html
 	man ./ardj.1.gz
@@ -80,4 +86,4 @@ man: ardj.html
 doc:
 	make -C doc
 
-.PHONY: doc clean
+.PHONY: doc clean package

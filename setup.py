@@ -16,13 +16,13 @@ data_files = [
     ('/etc/init', glob_files('share/upstart/*.conf')),
     ('/etc/logrotate.d', glob_files('share/logrotate.d/*')),
     ('/etc/rsyslog.d', glob_files('share/rsyslog.d/*')),
-    ('share/ardj/database', glob_files('share/database/*.sql')),
-    ('share/ardj/failure', ['share/audio/stefano_mocini_leaving_you_failure_edit.ogg']),
-    ('share/ardj/samples', ['share/audio/cubic_undead.mp3', 'share/audio/successful_install.ogg']),
-    ('share/ardj/shell-extensions/zsh', ['share/shell-extensions/zsh/_ardj']),
-    ('share/doc/ardj', ['ardj.html']),
-    ('share/doc/ardj/examples', glob_files('share/doc/examples/*')),
-    ('share/man/man1', ['ardj.1.gz']),
+    ('/usr/share/ardj/database', glob_files('share/database/*.sql')),
+    ('/usr/share/ardj/failure', ['share/audio/stefano_mocini_leaving_you_failure_edit.ogg']),
+    ('/usr/share/ardj/samples', ['share/audio/cubic_undead.mp3', 'share/audio/successful_install.ogg']),
+    ('/usr/share/ardj/shell-extensions/zsh', ['share/shell-extensions/zsh/_ardj']),
+    ('/usr/share/doc/ardj', ['ardj.html']),
+    ('/usr/share/doc/ardj/examples', glob_files('share/doc/examples/*')),
+    ('/usr/share/man/man1', ['ardj.1.gz']),
 ]
 
 classifiers = [
