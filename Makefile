@@ -36,13 +36,13 @@ uninstall:
 purge:
 	sudo rm -rf /var/lib/ardj /var/log/ardj*
 
-tar: clean
+tar: doc man clean
 	mkdir ardj-$(VERSION)
 	cp -R bin doc share src unittests packages/debian Makefile README.md TODO setup.py ardj-$(VERSION)/
 	tar cfz $(TAR) ardj-$(VERSION)
 	rm -rf ardj-$(VERSION)
 
-package-debian: test doc man tar
+package-debian: tar
 	mkdir -p tmp
 	cp $(TAR) tmp/ardj-$(VERSION).tar.gz
 	cp $(TAR) tmp/ardj_$(VERSION).orig.tar.gz
@@ -58,10 +58,10 @@ release: clean bdist
 
 clean:
 	test -d .hg && hg clean || true
-	rm -rf ardj.1.gz doc/book.xml tmp
-	find -regex '.*\.\(pyc\|rej\|orig\|zip\|tar\.gz\)$$' -print -delete
+	rm -rf doc/book.xml share/doc/man/ardj.1.gz tests.log tmp
+	find -regex '.*\.\(pyc\|rej\|orig\|zip\|tar\.gz\)$$' -delete
 
-bdist: test clean
+bdist: clean
 	VERSION=$(VERSION) python setup.py bdist
 	mv dist/*.tar.gz $(TAR)
 	rm -rf build dist
@@ -87,4 +87,4 @@ man: share/doc/man/ardj.1
 doc:
 	make -C doc VERSION=$(VERSION)
 
-.PHONY: doc clean package
+.PHONY: doc clean package tar
