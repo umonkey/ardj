@@ -1,6 +1,5 @@
 VERSION=1.0.2
 ARCH=`uname -m`
-DEB=ardj_${VERSION}-$(ARCH).deb
 ZIP=ardj_${VERSION}.zip
 TAR=ardj_${VERSION}.tar.gz
 
@@ -9,9 +8,7 @@ all: doc
 help:
 	@echo "bdist          -- prepares a tar.gz"
 	@echo "clean          -- removes temporary files"
-	@echo "deb            -- prepare a Debian package"
 	@echo "install        -- install using setup.py"
-	@echo "install-deb    -- install using a deb file"
 	@echo "release        -- upload a new version to Google Code"
 	@echo "test           -- runs unit tests"
 	@echo "test-syntax    -- runs unit tests"
@@ -40,16 +37,15 @@ uninstall:
 purge:
 	sudo rm -rf /var/lib/ardj /var/log/ardj*
 
-release: clean bdist deb
+release: clean bdist
 	hg archive -t zip ${ZIP}
-	googlecode_upload.py -s "ardj v${VERSION} (Debian)" -p ardj -l Featured,Type-Package,OpSys-Linux ${DEB}
 	googlecode_upload.py -s "ardj v${VERSION} (Source)" -p ardj -l Featured,Type-Source,OpSys-All ${ZIP}
 	googlecode_upload.py -s "ardj v${VERSION} (Other)" -p ardj -l Featured,Type-Source,OpSys-All ${TAR}
 
 clean:
-	test -d .hg && hg clean
+	test -d .hg && hg clean || true
 	rm -f ardj.1.gz ardj.html
-	find -regex '.*\.\(pyc\|rej\|orig\|deb\|zip\|tar\.gz\)$$' -delete
+	find -regex '.*\.\(pyc\|rej\|orig\|zip\|tar\.gz\)$$' -print -delete
 
 bdist: test clean ardj.1.gz ardj.html
 	VERSION=$(VERSION) python setup.py bdist
@@ -60,16 +56,6 @@ zsh-completion: share/shell-extensions/zsh/_ardj
 
 share/shell-extensions/zsh/_ardj: src/ardj/cli.py
 	PYTHONPATH=src python bin/ardj --zsh > $@
-
-deb: bdist
-	rm -rf packages/debian/usr
-	tar xfz $(TAR) -C packages/debian
-	mv packages/debian/usr/local/* packages/debian/usr/
-	rm -rf packages/debian/usr/local
-	fakeroot dpkg -b packages/debian $(DEB)
-
-install-deb: deb
-	sudo dpkg -i $(DEB)
 
 serve:
 	PYTHONPATH=$(pwd)/src ./bin/ardj serve
