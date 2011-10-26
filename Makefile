@@ -10,7 +10,7 @@ build:
 	@echo "make install [DESTDIR=./tmp]   -- install ardj"
 	@echo "make package-ubuntu            -- create source and binary packages"
 	@echo "make test                      -- runs unit tests"
-	@echo "make test-syntax               -- runs unit tests"
+	@echo "make test-syntax               -- runs PEP8 check"
 
 test: test-syntax clean
 	cp -f unittests/data/src/* unittests/data/
@@ -24,7 +24,7 @@ test-syntax:
 console:
 	PYTHONPATH=src ./bin/ardj console $(MAIL)
 
-install: ardj.html ardj.1.gz
+install: share/doc/man/ardj.1.gz
 	VERSION=$(VERSION) python setup.py install --root=$(DESTDIR)
 	mkdir -p $(DESTDIR)/usr/bin
 	mv $(DESTDIR)/usr/local/bin/ardj $(DESTDIR)/usr/bin/ardj
@@ -42,12 +42,14 @@ tar: clean
 	tar cfz $(TAR) ardj-$(VERSION)
 	rm -rf ardj-$(VERSION)
 
-package-debian: tar
+package-debian: test doc man tar
 	mkdir -p tmp
 	cp $(TAR) tmp/ardj-$(VERSION).tar.gz
 	cp $(TAR) tmp/ardj_$(VERSION).orig.tar.gz
 	tar xfz ardj-$(VERSION).tar.gz --directory tmp
 	cd tmp/ardj-$(VERSION) && debuild
+	mv tmp/ardj_$(VERSION)-*.debian.tar.gz tmp/ardj_$(VERSION)-*.dsc tmp/ardj_$(VERSION)-*_all.deb tmp/ardj_$(VERSION)-*.changes ./
+	rm -rf tmp
 
 release: clean bdist
 	hg archive -t zip ${ZIP}
@@ -56,10 +58,10 @@ release: clean bdist
 
 clean:
 	test -d .hg && hg clean || true
-	rm -rf ardj.1.gz ardj.html doc/book.xml tmp
+	rm -rf ardj.1.gz doc/book.xml tmp
 	find -regex '.*\.\(pyc\|rej\|orig\|zip\|tar\.gz\)$$' -print -delete
 
-bdist: test clean ardj.1.gz ardj.html
+bdist: test clean
 	VERSION=$(VERSION) python setup.py bdist
 	mv dist/*.tar.gz $(TAR)
 	rm -rf build dist
@@ -72,15 +74,15 @@ share/shell-extensions/zsh/_ardj: src/ardj/cli.py
 serve:
 	PYTHONPATH=$(pwd)/src ./bin/ardj serve
 
-ardj.1.gz: share/doc/docbook/ardj.xml
-	docbook2x-man share/doc/docbook/ardj.xml
-	gzip -f9 ardj.1
+share/doc/man/ardj.1: src/docbook/man.xml
+	docbook2x-man src/docbook/man.xml
+	mkdir -p share/doc/man
+	mv ardj.1 share/doc/man/ardj.1
 
-ardj.html: ardj.1.gz
-	man2html ardj.1.gz > ardj.html
+share/doc/man/ardj.1.gz: share/doc/man/ardj.1
+	gzip -f9 < share/doc/man/ardj.1 > share/doc/man/ardj.1.gz
 
-man: ardj.html
-	man ./ardj.1.gz
+man: share/doc/man/ardj.1
 
 doc:
 	make -C doc VERSION=$(VERSION)

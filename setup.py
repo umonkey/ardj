@@ -21,8 +21,8 @@ data_files = [
     ('/usr/share/ardj/failure', ['share/audio/stefano_mocini_leaving_you_failure_edit.ogg']),
     ('/usr/share/ardj/samples', ['share/audio/cubic_undead.mp3', 'share/audio/successful_install.ogg']),
     ('/usr/share/ardj/shell-extensions/zsh', ['share/shell-extensions/zsh/_ardj']),
-    ('/usr/share/doc/ardj', ['ardj.html']),
     ('/usr/share/doc/ardj/examples', glob_files('share/doc/examples/*')),
+    ('/usr/share/doc/ardj/html/', glob_files('docbook/chunked/*')),
     ('/usr/share/man/man1', ['ardj.1.gz']),
 ]
 

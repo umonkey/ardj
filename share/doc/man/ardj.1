@@ -1,0 +1,495 @@
+'\" -*- coding: us-ascii -*-
+.if \n(.g .ds T< \\FC
+.if \n(.g .ds T> \\F[\n[.fam]]
+.de URL
+\\$2 \(la\\$1\(ra\\$3
+..
+.if \n(.g .mso www.tmac
+.TH ardj 1 "26 October 2011" "" ardj
+.SH NAME
+ardj \- an internet radio playlist manager
+.SH SYNOPSIS
+'nh
+.fi
+.ad l
+\fBardj\fR \kx
+.if (\nx>(\n(.l/2)) .nr x (\n(.l/5)
+'in \n(.iu+\nxu
+[\fIcommand\fR] [\fIarguments...\fR]
+'in \n(.iu-\nxu
+.ad b
+'hy
+.SH DESCRIPTION
+\fBardj\fR is a collection of tools that can be used to run a full featured fully
+automated internet radio station. It is designed to stay alive even when there's nobody looking for it from
+the administrative point of view: bad music will go away, fresh music will be found, as long as listeners
+care.
+.PP
+\fBardj\fR uses an SQLite database to store the runtime data, a tiny web server to access
+it, an XMPP (Jabber) bot for runtime management and to interact with the audience, and a plugin which feeds
+\fBices\fR.\  The web server which is used as the database interface is built on
+web.py and requires zero configuration; it's main purpose is to prevent
+deadlocking the SQLite database by synchronizing multiple processes accessing it.
+.PP
+Buzzword bingo: streaming, MP3, SQLite, Jabber, robotics, Last.fm, Libre.fm, scrobbling, jingles,
+prerolls.
+.PP
+This document is a work in progress. The complete documentation is available on the website.
+.SH "SETTING UP A STATION"
+To run a streaming radio station you will need the following components: \fBicecast2\fR,
+\fBices\fR and \fBardj\fR.
+.PP
+\fBIcecast2\fR is the multiplexor, it has little brain. Its main job is to receive a
+stream from a source (\fBices\fR) and retransmits it to as many listening clients as there are.
+It's like a proxy for multimedia streams. It is a separate product and has nothing to do with
+\fBardj\fR.
+.PP
+\fBIces\fR is the stream source. It reads file names from a playlist, loads and decodes
+the files, cross-fades them nicely, encodes the result to the configured format (typically MP3) and sends
+the result to \fBicecast\fR. This is also an independent component that has little to do with
+\fBardj\fR. It only uses the playlist plugin which \fBardj\fR provides to read
+file names from the database instead of flat files.
+.PP
+\fBardj\fR is the virtual brain of your radio station. It maintains playlists, picks the
+music and jingles, collects feedback from the audience, adjusts track priorities and so on.
+.SH "MAIN CONCEPTS"
+This is a sort of glossary.
+.TP 
+Jingles
+TODO
+.TP 
+Rotation priority
+There are two track weights: the real one and the running one.
+.TP 
+User karma
+TODO
+.TP 
+Failure mode
+TODO
+.SH "COMMAND LINE OPTIONS"
+The first parameter to \fBardj\fR is the command. Some commands require additional
+arguments, they are described below.
+.TP 
+\*(T<\fBadd\-incoming\-tracks\fR\*(T>
+Looks for audio files in the \*(T<\fBincoming_path\fR\*(T> folder. What's found is
+\fImoved\fR to the database, source files are deleted. If the source can't be
+deleted, it's ignored (to prevent adding it multiple times).
+
+Only files with extensions \*(T<\fI.mp3\fR\*(T> and \*(T<\fI.ogg\fR\*(T> are
+added, other files are ignored.
+
+When the files are imported, artist names and track titles are read from the metadata,
+other common tags are ignored. One uncommon tag which is used is \*(T<ardj\*(T>: with
+it you can preset track labels. Example format: "ardj=1;labels=music,rock" (this is the value,
+including the "ardj=1" prefix, which designates metadata format).
+
+This is similar to the jabber command \fBupload\fR.
+.TP 
+\*(T<\fBconfig\fR\*(T>
+Opens the configuration file for editing with your default editor. The editor name is read
+from the \*(T<EDITOR\*(T> environment variable. If there's nothing, the
+\fBeditor\fR command is used.
+.TP 
+\*(T<\fBconsole\fR\*(T> [\fIjid\fR] 
+Opens a console which emulates a jabber connection. You can send jabber commands to the
+bot, except that you're not using Jabber or a network connection at all. This is useful for
+debugging, e.g. when a user says that some command he sends doesn't work as expected.
+.TP 
+\*(T<\fBdb\-console\fR\*(T>
+Opens the database console. This is useful if you need to perform some low-level
+operations and don't want to type the full database path.
+
+This command only works if you have \fBsqlite3\fR installed.
+.TP 
+\*(T<\fBdb\-init\fR\*(T>
+Initializes the database structure by creating tables and indexes which are missing. This
+command is normally used by the installation script only. You might only need to use it if you
+deleted the database file and want to create a new one from scratch.
+.TP 
+\*(T<\fBdb\-purge\fR\*(T>
+Removes dead data from the database. Dead data is labels that are no longer used and files
+which correspond to deleted tracks.
+.TP 
+\*(T<\fBdb\-stats\fR\*(T>
+Shows brief database statistics, e.g.: "2883 tracks, 192.0 hours".
+.TP 
+\*(T<\fBdownload\-artist\fR\*(T> \fIartist_name\fR 
+Schedules retrieving more tracks by the specified artist. This only adds a request to the
+database, without immediately downloading anything.
+
+This is similar to the jabber command \fBdownload\fR.
+.TP 
+\*(T<\fBfind\-new\-tracks\fR\*(T>
+Starts searching for new music. It first selects artists that have tracks rated above
+average, then looks for their music on Last.fm and Jamendo. Tracks which can be downloaded and
+which aren't in the database are downloaded and added to it.
+.TP 
+\*(T<\fBfix\-artist\-names\fR\*(T>
+Looks up all artists in the Last.fm database and corrects their names when necessary. This
+usually implies case correction, but can sometime change the name completely (which is still
+correct unless Last.fm fails drasticly).
+
+You typically run this command on a nightly basis.
+.TP 
+\*(T<\fBhelp\fR\*(T>
+Shows a help screen similar to this manual.
+.TP 
+\*(T<\fBmark\-hitlist\fR\*(T>
+Marks approximately 10 best tracks which have the "music" label with the "hitlist" label.
+The number of tracks can be higher than 10 if there are many tracks with weight equal to track
+number 10 (i.e. they all share 10th place)..
+.TP 
+\*(T<\fBmark\-liked\-by\fR\*(T> \fIlabel\fR \fIjid1\fR \fIjid2\fR \fI...\fR 
+Applies label "label" to tracks that are liked by all specified users. One typical use is
+when you have an upcoming live show with multiple hosts and you want to play music that they all
+like, to adjust the mood of the audience.
+.TP 
+\*(T<\fBmark\-long\fR\*(T>
+Marks tracks longer than average with the "long" label. You can use it to remove those
+tracks from daily rotation or something like that.
+.TP 
+\*(T<\fBmark\-orphans\fR\*(T>
+Marks tracks that don't belong to a playlist with the "orphan" label. This can help you
+find blind spots in your playlists. If you want to prevent some special tracks (with special
+labels) from being marked as orphans, just create a playlist for them (the one below the default
+playlist, which will actually never be used).
+.TP 
+\*(T<\fBmerge\-votes\fR\*(T>
+Merge votes from aliases defined in the \*(T<\fBjabber_aliases\fR\*(T> config parameter.
+This command should be used after you edit the list of aliases.
+.TP 
+\*(T<\fBqueue\-flush\fR\*(T>
+Delete everything from the manual playlist (see the \fBqueue\fR jabber
+command).
+.TP 
+\*(T<\fBscan\-replaygain\fR\*(T> [\fIfiles...\fR] 
+Calculates ReplayGain for files that don't have it. If \*(T<\fBfiles\fR\*(T> not
+specified, checks all tracks.
+.TP 
+\*(T<\fBserve\fR\*(T>
+Starts the Web API server, which typically listens to localhost:8080. This server is used
+by the ices plugin to get names of files to play and by the jabber
+bot to perform some actions. Normally you don't start the server manually, unless you want to
+debug it; normally it's started by the \fBardj-server\fR upstart job, e.g.:
+\fBsudo start ardj-server\fR.
+.TP 
+\*(T<\fBtags\fR\*(T> \fIfiles...\fR 
+Reads and displays tags from the specified files. This is primarily needed for testing
+whether ardj sees tags from certain files or not (OGG/Vorbis should cause no problems, but MP3
+might).
+
+Tag reading only works if you have a recent version of python-mutagen installed.
+.TP 
+\*(T<\fBtwit\fR\*(T> \fImessage\fR 
+Send the specified message to Twitter. Only works if you have the \*(T<\fBtwitter\fR\*(T>
+config file parameter set up properly, otherwise it'll tell you how to do that.
+.TP 
+\*(T<\fBtwit\-replies\fR\*(T>
+Shows recent messages which mention your Twitter account. Not really useful.
+.TP 
+\*(T<\fBupdate\-schedule\fR\*(T>
+Looks up Last.fm for upcoming concerts by artists which have tracks rated above average.
+Saves the data to a JavaScript file named in the \*(T<\fBevent_schedule_path\fR\*(T>, which can
+be used to display a Google map on your web site. Also, all tracks by artists which have
+upcoming concerts are marked with the "upcoming-concert" label, so that you could add some
+prerolls or change the rotation priority.
+
+Only works if you configured the Last.fm integration properly.
+.TP 
+\*(T<\fBupdate\-track\-lengths\fR\*(T>
+Updates track lengths stored in the database with real values from the files. This is
+useful if you change files in the \*(T<\fBmusicdir\fR\*(T> folder manually, or if you had a
+failure and resorted to backups.
+.TP 
+\*(T<\fBupdate\-track\-weights\fR\*(T>
+Updates real track weights according to user votes.
+.TP 
+\*(T<\fBxmpp\-send\fR\*(T> \fImessage_text\fR \fI[jid]\fR 
+Sends the specified message to the specified recipient. If the recipient jid was not
+specified, the message is sent to the chat room (named in the \*(T<\fBjabber_chat_room\fR\*(T>
+configuration parameter).
+.SH "JABBER COMMANDS FOR REGULAR USERS"
+These commands must be sent to the jabber bot directly. If sent as private messages in the chat room,
+the bot will complain and tell the user how to communicate properly.
+.PP
+To disable any of these command for regular users, use the \*(T<\fBpublic_jabber_commands\fR\*(T>
+config file parameter.
+.TP 
+\fBbm\fR
+Adds the currently played track to your bookmarks. The bookmarks are searchable using the
+\fBfind -b\fR command.
+.TP 
+\fBdownload\fR \fIartist_name\fR 
+Looks for tracks by the specified artist on Last.fm and Jamendo. This command is for
+discovering new artists; if there are tracks by this artist already, nothing will be
+downloaded.
+.TP 
+\fBdump\fR \fItrack_id\fR 
+Displays raw information about the specified track (JSON encoded). This command can be
+used for debugging purposes or if you write an application which interacts with the station
+using the XMPP protocol.
+.TP 
+\fBecho\fR \fItext\fR 
+Sends the specified text back to you. This command can be used for debugging your
+connection with the bot.
+.TP 
+\fBfind\fR [\fIflags\fR] [\fIpattern\fR] [\fIlabels\fR] 
+Displays tracks that have the substring \*(T<\fBpattern\fR\*(T> in their title or in the
+artist name. You can restrict the results by adding labels which the tracks must have, e.g.:
+\fBfind gorky @heavy\fR. The tracks are sorted by weight: best come first.
+
+The flag parameter is a combination of command-line-like switches. The \*(T<\fB\-l\fR\*(T>
+flag changes the order to the upload date, i.e. fresh tracks come first. The \*(T<\fB\-f\fR\*(T>
+flag changes the order to the upload date reversed, i.e. oldest come first. The
+\*(T<\fB\-r\fR\*(T> flag sorts tracks in random order. With the \*(T<\fB\-b\fR\*(T> flag only
+bookmarked tracks will be listed.
+.TP 
+\fBhitlist\fR
+Lists 10 best tracks.
+.TP 
+\fBlast\fR
+Displays basic information about 10 most recently played tracks.
+.TP 
+\fBnews\fR
+Lists10 most recently added tracks.
+.TP 
+\fBrocks\fR [\fItrack_id\fR] 
+This is how you vote for the specified track (the current one if \*(T<\fBtrack_id\fR\*(T>
+not given). When you vote, the track's running weight is increased by 0.25, but the real weight
+is only changed the first time you vote.
+.TP 
+\fBshitlist\fR
+Lists 10 worst tracks.
+.TP 
+\fBshow\fR [\fItrack_id\fR] 
+Displays information about a track (the current one if \*(T<\fBtrack_id\fR\*(T> wasn't
+given). This is a human readable version of the \fBdump\fR command.
+.TP 
+\fBspeak\fR \fItext\fR 
+Renders the specified text using \fBfestival\fR and schedules it for playing
+after the current track finishes. The speech will only be played once, however, you can
+\fBqueue\fR it again later.
+.TP 
+\fBstatus\fR
+Displays basic information about the currently played track. This is exactly the same text
+that the bot has in its status line.
+.TP 
+\fBsucks\fR [\fItrack_id\fR] 
+This is how you vote against the specified track (the current one if
+\*(T<\fBtrack_id\fR\*(T> not given). When you vote, the track's running weight is decreased by
+0.25, but the real weight is only changed the first time you vote.
+.TP 
+\fBtags\fR [\fImodification\fR [for \fItrack_id\fR]] 
+If sent without arguments, shows a tag cloud. If the \*(T<\fBmodification\fR\*(T>
+argument was given, it is treated as a list of labels to add or remove to the specified track,
+e.g.: \fBtags rock -pop\fR.
+
+The \*(T<\fBmodification\fR\*(T> argument is only available to privileged users (i.e.
+admins).
+.TP 
+\fBqueue\fR
+Adds a track to the manual playlist, which have the highest priority.
+.SH "JABBER COMMANDS FOR ADMINS"
+These commands require special privileges, see the \*(T<\fBjabber_admins\fR\*(T> config
+parameter.
+.TP 
+\fBban\fR \fIartist_name\fR 
+Deletes all tracks by the specified artist (sets their weight to zero).
+.TP 
+\fBdelete\fR \fItrack_id\fR 
+Deletes the specified track (sts it weight to zero).
+.TP 
+\fBmerge\fR \fIdst_id\fR \fIsrc_id\fR 
+Merges two tracks together. The second track is deleted, it's labels and votes are added
+to the first track. This is the way you deal with duplicates.
+.TP 
+\fBplay\fR \fIlabels...\fR 
+Creates a virtual ad-hoc playlist for next hour. The playlist has lower priority than the
+\fBqueue\fR jabber command, but higher than all configured playlists. You can use
+multiple labels, e.g.: \fBplay rock +instrumental -loud\fR.
+.TP 
+\fBpurge\fR
+Cleans up the database and file system. Does exactly what the \fBardj
+db-purge\fR command-line command does.
+.TP 
+\fBreload\fR
+Tells the ices plugin to reload the configuration. This does
+not really work because ices can't really reload Python modules,
+which ardj uses, and because the real work is done by the web
+service, which reloads the configuration automatically.
+.TP 
+\fBrestart\fR
+Terminates the jabber bot. It will be restarted immediately by the upstart job. The rough
+command-line equivalent is \fBsudo restart ardj-jabber\fR. You should only need
+to do this after you modify the jabber bot source code manually or by upgrading the installed
+package.
+.TP 
+\fBsay\fR \fImessage\fR 
+Sends the specified message to the chat room (named in the
+\*(T<\fBjabber_chat_room\fR\*(T> config parameter) from the bot's name. Typically used for
+fun.
+.TP 
+\fBset\fR \fIproperty\fR to \fIvalue\fR [for \fItrack_id\fR] 
+This is how you modify track properties (which can be either "artist" or "title").
+.TP 
+\fBskip\fR
+Tells ices to skip the current track. This is done by sending it the USR1 signal.
+.TP 
+\fBsql\fR \fIquery\fR 
+Lets you perform low-level database queries. Use with caution.
+.TP 
+\fBtwit\fR \fImessage\fR 
+Sends the specified message to Twitter. Works exactly like the \fBtwit\fR
+command-line action. Only works if you have properly configured the \*(T<\fBtwitter\fR\*(T>
+config file parameter.
+.TP 
+\fBvoters\fR
+Shows voting statistics, which includes jids of active users and their karma.
+.TP 
+\fBvotes\fR
+Shows you who and how voted for the currently played track.
+.SH CONFIGURATION
+There is one configuration wile which contains all settings.\  This file is named
+\*(T<\fI/etc/ardj.yaml\fR\*(T>, if you're installing system wide, or
+\*(T<\fI$HOME/.config/ardj/ardj.yaml\fR\*(T> if you're testing locally.
+.TP 
+\*(T<\fBdatabase_path\fR\*(T>
+This names the SQLite database file.
+
+This option has no default, but the installer sets it to
+\*(T<\fI/var/lib/ardj/database.sqlite\fR\*(T>.
+.TP 
+\*(T<\fBdupes\fR\*(T>
+This parameter defines how many recently played artists will be ignored when picking the
+next track. This is good for ensuring that the same artist isn't played too often even if he has
+amazingly well rated tracks.
+
+Set this to a value higher than 0 only after you upload a significant amount of music,
+because if there's not enough artists, your stream will go into the failure mode.
+
+Defaults to 5.
+.TP 
+\*(T<\fBevent_schedule_label_filter\fR\*(T>
+Here you can specify the label which tracks must have to feed the schedule updater. The
+logic is simple: first tracks with this label are picked, from those only tracks with weight
+above 1.0 are picked (i.e., well rated), and that's the source of artist names.
+
+Defaults to nothing, all tracks are used.
+.TP 
+\*(T<\fBevent_schedule_path\fR\*(T>
+Here you name a file where the information on upcoming concerts will be saved (see the
+\fBardj update-schedule\fR command). If not set, the function won't work.
+.TP 
+\*(T<\fBevent_schedule_weight\fR\*(T>
+Here you can set a custom weight requirement for tracks that feed the schedule updater.
+If you set this to a value that roughly equals to your 10th top track weight, then the schedule
+will only feature artists from your station's hitlist.
+
+Defaults to 1.0, e.g. tracks that don't suck.
+.TP 
+\*(T<\fBincoming_path\fR\*(T>
+This parameter defines the folder where you should put music that you want to add to the
+database. This folder is typicalliy made available over ftp or sftp.\  After copying files to
+this folder, send the \fBupload\fR command to the jabber bot.
+
+When files are added to the database, only two common tags are read and used: "artist" and
+"title". One uncommon tag is "ardj", with which you can preset internal metadata, such as
+labels. Syntax example: "ardj=1;labels=music,rock" (normally you only set the labels this way,
+other options are currently ignored).
+
+Default location is \*(T<\fI/var/lib/ardj/incoming\fR\*(T>.
+.TP 
+\*(T<\fBincoming_labels\fR\*(T>
+With this parameter you can set default labels for new files. This typically has labels
+which will later help you find unsorted music and label it properly. If you have a playlist for
+incoming unsorted music, you can also specify it here.
+.TP 
+\*(T<\fBjabber_id\fR\*(T>
+This option defines the bot's JID and password in the "user:password@server" form. If you
+don't define this parameter, the jabber bot won't start. Look in the log file for authentication
+error messages.
+.TP 
+\*(T<\fBjabber_admins\fR\*(T>
+This parameter names privileged users. This is a list of jids, i.e. it must be either one
+line of comma-separated values in square brackets (e.g., "[one, two]"), or one item per line,
+prefixed with a dash sign. Look in the \*(T<\fIshare/doc/ardj/examples\fR\*(T> folder for
+an example.
+.TP 
+\*(T<\fBlog\fR\*(T>
+This names the log file.
+
+Defaults to \*(T<\fI/var/log/ardj.log\fR\*(T>.
+.TP 
+\*(T<\fBmusicdir\fR\*(T>
+This option defines the folder where the music will be stored. Files in this folder have
+scrambled names, related to the file contents' MD5 checksum, e.g.
+\*(T<\fI2/4/24a141bfaaae48969901a9ab1206dc76.mp3\fR\*(T>. This is \fInot\fR
+a publicly accessible folder, you should \fInot\fR try to do anything with the
+files in it. To add new music, add it to the folder specified with the
+\*(T<\fBincoming_path\fR\*(T> parameter.
+
+This is also where the \*(T<\fIplaylists.yaml\fR\*(T> file is looked for.
+
+Default location is \*(T<\fI/var/lib/ardj/music\fR\*(T>.
+.TP 
+\*(T<\fBtwitter\fR\*(T>
+Having this block enables integration with Twitter. The block must contain values with
+keys \*(T<\fBconsumer_key\fR\*(T>, \*(T<\fBconsumer_secret\fR\*(T>,
+\*(T<\fBaccess_token_key\fR\*(T> and \*(T<\fBaccess_token_secret\fR\*(T>. To get these values,
+go to the dev.twitter.com/apps website and register yourself an application.
+.TP 
+\*(T<\fBuse_jabber_status\fR\*(T>
+Set this to "yes" to add track info to the bot's status line.
+.TP 
+\*(T<\fBuse_jabber_tunes\fR\*(T>
+This enables sending track info using the XMPP Tunes extension (doesn't work with Gmail
+servers).
+.TP 
+\*(T<\fBwebapi_socket\fR\*(T>
+This names the socket at which the Web API server is expected to be.
+
+Defaults to "127.0.0.1:8080".
+.SH FILES
+.TP 
+\*(T<\fI/etc/ardj.yaml\fR\*(T>
+This is the default location of the configuration file.
+.TP 
+\*(T<\fI$HOME/.config/ardj/ardj.yaml\fR\*(T>
+This is the location of the user's local configuration file. If it exists, the system wide
+configuration file is ignored. Having a local configuration file is good for testing purposes,
+but on a production system you should stick to the global one.
+.TP 
+\*(T<\fI/var/lib/ardj/database.sqlite\fR\*(T>
+This is the default location of the database. It can be changed using the
+\*(T<\fBdatabase\fR\*(T> configuration file parameter.
+.TP 
+\*(T<\fI/var/lib/ardj/music\fR\*(T>
+This is the default location of the music library. It can be changed using the
+\*(T<\fBmusicdir\fR\*(T> configuration file parameter.
+.TP 
+\*(T<\fI/var/lig/ardj/music/playlists.yaml\fR\*(T>
+The default playlist description. Is always bound to the \*(T<\fBmusicdir\fR\*(T>
+folder.
+.TP 
+\*(T<\fI/var/lib/ardj/incoming\fR\*(T>
+This is the default location of the folder where you should put files to add them to the
+media database (using the \fBardj add-incoming-files\fR command). You can change it
+using the \*(T<\fBincoming_path\fR\*(T> configuration file parameter.
+.TP 
+\*(T<\fI/var/log/ardj.log\fR\*(T>
+This is the default location of the log files. It can be changed using the
+\*(T<\fBlog\fR\*(T> configuration file parameter. The file is rotated after it grows over 1MB;
+10 files are kept.
+.TP 
+\*(T<\fI/etc/init/ardj\-*.conf\fR\*(T>
+These are the upstart jobs that start the jabber bot
+(\*(T<\fIardj\-jabber.conf\fR\*(T>), the Web API server
+(\*(T<\fIardj\-server.conf\fR\*(T>) and the source client
+(\*(T<\fIardj\-ices.conf\fR\*(T>)
+.TP 
+\*(T<\fI/usr/share/ardj/failure/\fR\*(T>
+This folder contains OGG/Vorbis files which should be played when the Web API server
+fails. The files are picked in random order. This is typically something with neutral mood and
+with a short voice message for the admins to go look in the log file.
+.SH AUTHOR
+Justin Forest <\*(T<hex@umonkey.net\*(T>>
