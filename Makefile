@@ -1,6 +1,6 @@
 VERSION=1.0.2
-ZIP=ardj-${VERSION}.zip
 TAR=ardj-${VERSION}.tar.gz
+DEB=ardj_${VERSION}-1_all.deb
 
 build:
 	@echo "This is a Python package, you don't need to build it.  Available commands:"
@@ -51,10 +51,9 @@ package-debian: tar
 	mv tmp/ardj_$(VERSION)-*.debian.tar.gz tmp/ardj_$(VERSION)-*.dsc tmp/ardj_$(VERSION)-*_all.deb tmp/ardj_$(VERSION)-*.changes ./
 	rm -rf tmp
 
-release: clean bdist
-	hg archive -t zip ${ZIP}
-	googlecode_upload.py -s "ardj v${VERSION} (Source)" -p ardj -l Featured,Type-Source,OpSys-All ${ZIP}
-	googlecode_upload.py -s "ardj v${VERSION} (Other)" -p ardj -l Featured,Type-Source,OpSys-All ${TAR}
+release: package-debian
+	googlecode_upload.py -s "ardj v${VERSION} (Source)" -p ardj -l Featured,Type-Source,OpSys-All ${TAR}
+	googlecode_upload.py -s "ardj v${VERSION} (Debian)" -p ardj -l Featured,Type-Source,OpSys-Debian ${DEB}
 
 clean:
 	test -d .hg && hg clean || true
