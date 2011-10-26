@@ -40,9 +40,16 @@ purge:
 
 tar: clean
 	mkdir ardj-$(VERSION)
-	cp -R bin doc share src unittests Makefile README.md TODO setup.py ardj-$(VERSION)
+	cp -R bin doc share src unittests packages/debian Makefile README.md TODO setup.py ardj-$(VERSION)/
 	tar cfz $(TAR) ardj-$(VERSION)
 	rm -rf ardj-$(VERSION)
+
+package-debian: tar
+	mkdir -p tmp
+	cp $(TAR) tmp/ardj-$(VERSION).tar.gz
+	cp $(TAR) tmp/ardj_$(VERSION).orig.tar.gz
+	tar xfz ardj-$(VERSION).tar.gz --directory tmp
+	cd tmp/ardj-$(VERSION) && debuild
 
 release: clean bdist
 	hg archive -t zip ${ZIP}
@@ -51,7 +58,7 @@ release: clean bdist
 
 clean:
 	test -d .hg && hg clean || true
-	rm -f ardj.1.gz ardj.html
+	rm -rf ardj.1.gz ardj.html tmp
 	find -regex '.*\.\(pyc\|rej\|orig\|zip\|tar\.gz\)$$' -print -delete
 
 bdist: test clean ardj.1.gz ardj.html

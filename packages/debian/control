@@ -10,12 +10,13 @@ Homepage: http://code.google.com/p/ardj/
 
 Package: ardj
 Architecture: all
-Depends: python, python-support (>= 0.90), python-yaml,
-  python-mutagen (>= 1.19), python-oauth,
+Depends: python, python-support (>= 0.90), adduser,
+  ${misc:Depends},
+  python-yaml, python-mutagen (>= 1.19), python-oauth,
   python-storm, python-feedparser, python-httplib2, python-webpy
 Suggests: python-dnspython, python-socksipy, ices, icecast2, python-simplejson
-Recommends: sqlite3, podget, python-twitter, mp3gain, vorbisgain
-Description: An artificial DJ for your icecast2 based internet radio.
+Recommends: sqlite3, podget, python-twitter, mp3gain, vorbisgain, logrotate
+Description: drives an internet radio station
  Consists of an ices python playlist module and a jabber bot which
  lets you control that radio.  Supports sending messages to twitter
  and other unnecessary stuff.
