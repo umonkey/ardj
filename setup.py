@@ -34,6 +34,10 @@ classifiers = [
     'Topic :: Internet',
     ]
 
+if not os.getenv("VERSION"):
+    print >> sys.stderr, "Version number not set, use VERSION=x.y.z python setup.py"
+    exit(1)
+
 setup(
     author = 'Justin Forest',
     author_email = 'hex@umonkey.net',
@@ -48,5 +52,5 @@ setup(
     requires = [ 'yaml', 'mutagen', 'dns', 'socksipy', 'simplejson', 'oauth2' ],
     scripts = [ 'bin/ardj' ],
     url = 'http://ardj.googlecode.com/',
-    version = os.environ.get("VERSION", "1.0.2")
+    version = os.getenv("VERSION")
 )

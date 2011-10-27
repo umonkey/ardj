@@ -1,4 +1,4 @@
-VERSION=1.0.2
+VERSION=1.0.3
 TAR=ardj-${VERSION}.tar.gz
 DEB=ardj_${VERSION}-1_all.deb
 
@@ -47,9 +47,12 @@ package-debian: tar
 	cp $(TAR) tmp/ardj-$(VERSION).tar.gz
 	cp $(TAR) tmp/ardj_$(VERSION).orig.tar.gz
 	tar xfz ardj-$(VERSION).tar.gz --directory tmp
-	cd tmp/ardj-$(VERSION) && debuild
-	mv tmp/ardj_$(VERSION)-*.debian.tar.gz tmp/ardj_$(VERSION)-*.dsc tmp/ardj_$(VERSION)-*_all.deb tmp/ardj_$(VERSION)-*.changes ./
+	cd tmp/ardj-$(VERSION) && debuild -S
+	mv tmp/ardj_$(VERSION)-*.debian.tar.gz tmp/ardj_$(VERSION)-*.dsc tmp/ardj_$(VERSION)-*_all.deb tmp/ardj_$(VERSION)*.orig.tar.gz tmp/ardj_$(VERSION)-*.changes ./
 	rm -rf tmp
+
+upload-ppa:
+	dput ardj ardj_$(VERSION)-*.changes
 
 release: package-debian
 	googlecode_upload.py -s "ardj v${VERSION} (Source)" -p ardj -l Featured,Type-Source,OpSys-All ${TAR}
@@ -86,4 +89,4 @@ man: share/doc/man/ardj.1
 doc:
 	make -C doc VERSION=$(VERSION)
 
-.PHONY: doc clean package tar
+.PHONY: doc clean tar
