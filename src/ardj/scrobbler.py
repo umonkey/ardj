@@ -155,6 +155,8 @@ class LastFM(object):
             kwargs['api_sig'] = self.get_call_signature(kwargs)
         kwargs['format'] = 'json'
         response = ardj.util.fetch_json(self.ROOT, args=kwargs, post=post, quiet=True, ret=True)
+        if response is None:
+            raise Error("Empty response")
         if "error" in response:
             logging.error("Last.fm error %u: %s" % (response["error"], response["message"]))
             if response["error"] in (4, 9, 10, 13, 26):
@@ -192,6 +194,9 @@ class LibreFM(object):
                 'v': '1.0',
                 'u': self.login,
             }, quiet=True, ret=True)
+            if data is None:
+                logging.error("Empty response from libre.fm")
+                return False
             parts = data.split('\n')
             if parts[0] != 'UPTODATE':
                 logging.error('Could not log to libre.fm: %s' % parts[0])
@@ -216,6 +221,9 @@ class LibreFM(object):
             'i[0]': time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(ts)),
         }
         data = ardj.util.fetch(self.submit_url, args=args, post=True, ret=True).strip()
+        if data is None:
+            logging.error("Empty response from libre.fm")
+            return False
         if data == 'OK':
             logging.debug(u'Sent to libre.fm: %s -- %s' % (artist, title))
             return True
