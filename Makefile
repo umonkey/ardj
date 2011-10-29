@@ -48,7 +48,7 @@ package-debian: tar
 	cp $(TAR) tmp/ardj_$(VERSION).orig.tar.gz
 	tar xfz ardj-$(VERSION).tar.gz --directory tmp
 	cd tmp/ardj-$(VERSION) && debuild -S
-	mv tmp/ardj_$(VERSION)-*.debian.tar.gz tmp/ardj_$(VERSION)-*.dsc tmp/ardj_$(VERSION)-*_all.deb tmp/ardj_$(VERSION)*.orig.tar.gz tmp/ardj_$(VERSION)-*.changes ./
+	mv tmp/ardj_$(VERSION)[_-]* ./
 	rm -rf tmp
 
 upload-ppa:
