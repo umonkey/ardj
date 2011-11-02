@@ -44,16 +44,36 @@ def config_get(key, default=None):
 def install_syslog():
     """Makes use of the syslog."""
     logger = logging.getLogger()
-    logger.setLevel("DEBUG")
+    logger.setLevel(logging.DEBUG)
 
-    device = "/dev/log"
-    syslog = logging.handlers.SysLogHandler(address=device)
+    syslog = logging.handlers.SysLogHandler(address="/dev/log")
+    syslog.setLevel(logging.DEBUG)
 
-    format_string = os.path.basename(sys.argv[0]) + "[%(process)d]: %(levelname)s %(message)s"
+    format_string = "hotline[%(process)d]: %(levelname)s %(message)s"
     formatter = logging.Formatter(format_string)
     syslog.setFormatter(formatter)
 
     logger.addHandler(syslog)
+
+
+def install_file_logger(filename):
+    """Adds a custom formatter and a rotating file handler to the default
+    logger."""
+    folder = os.path.dirname(filename)
+    if not os.path.exists(folder) or not os.access(folder, os.W_OK):
+        raise Exception("Can't log to %s: no write permissions." % filename)
+
+    max_size = 1000000
+    max_count = 5
+
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)
+
+    h = logging.handlers.RotatingFileHandler(filename, maxBytes=max_size, backupCount=max_count)
+
+    h.setFormatter(logging.Formatter('%(asctime)s - %(process)6d - %(levelname)s - %(message)s'))
+    h.setLevel(logging.DEBUG)
+    logger.addHandler(h)
 
 
 def message_has_audio(num, headers):
@@ -197,6 +217,7 @@ def download_message(mail, data):
     sender_phone = msg["X-Asterisk-CallerID"]
     date = rfc822.parsedate(msg["Date"])
 
+    status = False
     for part in msg.walk():
         if part.get_content_maintype() == "multipart":
             continue
@@ -207,7 +228,10 @@ def download_message(mail, data):
             logging.debug("Message part has no name, skipped.")
             continue
         data = part.get_payload(decode=True)
-        process_file(name, data, sender_name, sender_addr, sender_phone, date)
+        if process_file(name, data, sender_name, sender_addr, sender_phone, date):
+            status = True
+
+    return status
 
 
 def check_one_message(mail, num):
@@ -232,6 +256,8 @@ def check_one_message(mail, num):
 def search_messages(mail):
     have_new_messages = False
 
+    logging.debug("Searching for new messages.")
+
     debug_num = config_get("imap_debug_message")
     if debug_num:
         message_ids = [str(debug_num)]
@@ -251,9 +277,12 @@ def search_messages(mail):
     if have_new_messages:
         fn = config_get("postprocessor", "/bin/true")
         run(fn.split(" "), wait=False)
+    else:
+        logging.info("No new messages were found.")
 
 
 install_syslog()
+install_file_logger("/radio/logs/hotline.log")
 
 mail = imaplib.IMAP4_SSL(config_get("imap_server"))
 mail.login(config_get("imap_user"), config_get("imap_password"))
