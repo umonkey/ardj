@@ -14,8 +14,12 @@ import sys
 import tempfile
 import time
 
-import imaplib
-#import imaplib2 as imaplib
+try:
+    import imaplib2 as imaplib
+    HAVE_IDLE = True
+except ImportError:
+    import imaplib
+    HAVE_IDLE = False
 
 import mad
 import mutagen.easyid3
@@ -281,11 +285,22 @@ def search_messages(mail):
         logging.info("No new messages were found.")
 
 
+def run():
+    mail = imaplib.IMAP4_SSL(config_get("imap_server"))
+    mail.login(config_get("imap_user"), config_get("imap_password"))
+    mail.select(config_get("imap_folder", "INBOX"))
+
+    # Maybe there's something already.
+    search_messages(mail)
+
+    while True:
+        if HAVE_IDLE:
+            mail.idle()
+        else:
+            time.sleep(60)
+        search_messages(mail)
+
+
 install_syslog()
 install_file_logger("/radio/logs/hotline.log")
-
-mail = imaplib.IMAP4_SSL(config_get("imap_server"))
-mail.login(config_get("imap_user"), config_get("imap_password"))
-mail.select(config_get("imap_folder", "INBOX"))
-
-search_messages(mail)
+run()
