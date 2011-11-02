@@ -285,7 +285,7 @@ def search_messages(mail):
         logging.debug("No new messages were found.")
 
 
-def run():
+def connect_and_wait():
     mail = imaplib.IMAP4_SSL(config_get("imap_server"))
     mail.login(config_get("imap_user"), config_get("imap_password"))
     mail.select(config_get("imap_folder", "INBOX"))
@@ -303,6 +303,15 @@ def run():
         search_messages(mail)
 
 
+def run():
+    while True:
+        try:
+            connect_and_wait()
+        except Exception, e:
+            logging.error("ERROR: %s, restarting." % e)
+
+
 install_syslog()
 install_file_logger("/radio/logs/hotline.log")
+
 run()
