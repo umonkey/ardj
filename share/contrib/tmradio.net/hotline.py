@@ -250,7 +250,7 @@ def search_messages(mail):
 
     if have_new_messages:
         fn = config_get("postprocessor", "/bin/true")
-        run(fn, wait=False)
+        run(fn.split(" "), wait=False)
 
 
 install_syslog()
