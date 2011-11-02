@@ -295,8 +295,10 @@ def run():
 
     while True:
         if HAVE_IDLE:
+            logging.debug("Idling.")
             mail.idle()
         else:
+            logging.debug("Sleeping for 60 seconds.")
             time.sleep(60)
         search_messages(mail)
 
