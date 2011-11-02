@@ -180,11 +180,12 @@ def process_file(name, body, sender_name, sender_addr, sender_phone, date):
 
     page_name = time.strftime(config_get("page_name", "/tmp/%Y-%m-%d-hotline-%H%M.md"), date)
     if page_name:
-        page = u"title: Voice Mail from %(sender)s\ndate: %(date)s\nlabels: podcast, hotline\nfile: %(url)s\nfilesize: %(size)s\n---\nNo description." % {
+        page = u"title: Voice Mail from %(sender)s\ndate: %(date)s\nlabels: podcast, hotline\nfile: %(url)s\nfilesize: %(size)s\nduration: %(duration)u\n---\nNo description." % {
             "sender": sender,
             "date": time.strftime("%Y-%m-%d %H:%M:%S", date),
             "url": time.strftime(config_get("mp3_file_url", "http://example.com/files/%Y-%m-%d-hotline-%H%M.mp3"), date),
             "size": os.stat(name).st_size,
+            "duration": int(mad.MadFile(name).total_time() / 1000),
         }
 
         page_dir = os.path.dirname(page_name)
