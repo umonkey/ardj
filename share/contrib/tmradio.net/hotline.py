@@ -1,0 +1,262 @@
+#!/usr/bin/env python
+# vim: set fileencoding=utf-8 tw=0:
+
+import email
+import email.header
+import email.parser
+import logging
+import logging.handlers
+import os
+import re
+import rfc822
+import subprocess
+import sys
+import tempfile
+import time
+
+import imaplib
+#import imaplib2 as imaplib
+
+import mad
+import mutagen.easyid3
+import yaml
+
+
+CONFIG_NAMES = ["~/.config/hotline.yaml", "/etc/hotline.yaml"]
+
+fn_filter = re.compile('wav|mp3|ogg', re.I)
+
+mutagen.easyid3.EasyID3.RegisterTXXXKey('ardj', 'ardj')
+
+
+def config_get(key, default=None):
+    """Returns a value from the config file.  The file is read on every call,
+    which is OK because the traffic is unlikely that heavy, and you get instand
+    updates without reloading the daemon."""
+    for fn in CONFIG_NAMES:
+        fn = os.path.expanduser(fn)
+        if os.path.exists(fn):
+            data = yaml.load(file(fn, "rb").read())
+            return data.get(key, default)
+    return default
+
+
+def install_syslog():
+    """Makes use of the syslog."""
+    logger = logging.getLogger()
+    logger.setLevel("DEBUG")
+
+    device = "/dev/log"
+    syslog = logging.handlers.SysLogHandler(address=device)
+
+    format_string = os.path.basename(sys.argv[0]) + "[%(process)d]: %(levelname)s %(message)s"
+    formatter = logging.Formatter(format_string)
+    syslog.setFormatter(formatter)
+
+    logger.addHandler(syslog)
+
+
+def message_has_audio(num, headers):
+    match = fn_filter.search(headers)
+    if match is None:
+        logging.debug("Message does not match: %s" % headers)
+        return False
+
+    logging.debug("Message %s has an audio file." % num)
+    return True
+
+
+def run(cmd, wait=True):
+    cmd.insert(0, "nice")
+    cmd.insert(1, "-n15")
+    logging.debug("Running a command: %s" % " ".join(cmd))
+    tmp = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if wait:
+        tmp.wait()
+
+
+def transcode(filename, body):
+    logging.debug("Transcoding %s to MP3." % filename)
+
+    tmp_name = wav_name = mp3_name = None
+
+    try:
+        tmp_name = tempfile.mktemp(suffix=os.path.splitext(filename)[1].lower())
+        file(tmp_name, "wb").write(body)
+        logging.debug("Wrote data to %s" % tmp_name)
+
+        if tmp_name.endswith(".mp3"):
+            mf = mad.MadFile(tmp_name)
+            if mf.mode() != mad.MODE_SINGLE_CHANNEL and mf.samplerate() == 44100:
+                logging.debug("File %s does not need transcoding." % filename)
+                os.unlink(tmp_name)
+                return body
+
+        wav_name = tempfile.mktemp(suffix=".wav")
+        run(["sox", "-q", tmp_name, "-r", "44100", "-c", "2", "-s", wav_name])
+        logging.debug("Transcoded %s to %s" % (tmp_name, wav_name))
+
+        mp3_name = tempfile.mktemp(suffix=".mp3")
+        run(["lame", "--quiet", "--preset", "extreme", wav_name, mp3_name])
+        run(["mp3gain", "-q", mp3_name])
+        logging.debug("Transcoded %s to %s" % (wav_name, mp3_name))
+
+        body = file(mp3_name, "rb").read()
+
+        return body
+    finally:
+        if tmp_name:
+            os.unlink(tmp_name)
+        if wav_name:
+            os.unlink(wav_name)
+        if mp3_name:
+            os.unlink(mp3_name)
+
+
+def set_tags(filename, artist, date):
+    tags = mutagen.easyid3.EasyID3()
+    tags["artist"] = artist
+    tags["title"] = time.strftime("%d.%m.%y %H:%M", date)
+    tags["ardj"] = "ardj=1;labels=hotline"
+    tags.save(filename)
+
+    logging.debug("Wrote ID3 tags to %s" % filename)
+
+
+def mask_sender(name, addr, phone):
+    if phone:
+        phone_map = config_get("phone_map", {})
+        return phone_map.get(phone, phone[:-7] + "XXX" + phone[-4:])
+
+    addr_map = config_get("email_map", {})
+    if addr in addr_map:
+        return addr_map[addr]
+
+    return name
+
+
+def process_file(name, body, sender_name, sender_addr, sender_phone, date):
+    logging.debug("Incoming file: sender_name=%s sender_addr=%s sender_phone=%s" % (sender_name.encode("utf-8"), sender_addr.encode("utf-8"), sender_phone))
+
+    sender = mask_sender(sender_name, sender_addr, sender_phone)
+
+    logging.debug("%s (%s) sent a file: %s (%u bytes)" % (sender.encode("utf-8"), sender_addr.encode("utf-8"), name, len(body)))
+
+    body = transcode(name, body)
+
+    name = time.strftime(config_get("mp3_file_name", "/tmp/%Y-%m-%d-hotline-%H%M.mp3"), date)
+    if os.path.exists(name):
+        logging.warning("File %s already exists, skipping." % name)
+        return False
+
+    file(name, "wb").write(body)
+    logging.info("Message from %s saved as %s" % (sender.encode("utf-8"), name))
+
+    set_tags(name, sender, date)
+
+    page_name = time.strftime(config_get("page_name", "/tmp/%Y-%m-%d-hotline-%H%M.md"), date)
+    if page_name:
+        page = u"title: Voice Mail from %(sender)s\ndate: %(date)s\nlabels: podcast, hotline\nfile: %(url)s\nfilesize: %(size)s\n---\nNo description." % {
+            "sender": sender,
+            "date": time.strftime("%Y-%m-%d %H:%M:%S", date),
+            "url": time.strftime(config_get("mp3_file_url", "http://example.com/files/%Y-%m-%d-hotline-%H%M.mp3"), date),
+            "size": os.stat(name).st_size,
+        }
+
+        page_dir = os.path.dirname(page_name)
+        if not os.path.exists(page_dir):
+            os.makedirs(page_dir)
+
+        file(page_name, "wb").write(page.encode("utf-8"))
+        logging.info("Wrote %s" % page_name)
+
+    return True
+
+
+def decode_sender(sender):
+    """Decode UTF-8 base64 etc headers.  decode_header() must be able to do
+    this on its own, but due to a bug it fails to process multiline values."""
+    for part in re.findall("(=(?:\?[^?]+){3}\?=)", sender):
+        repl = u""
+        for _t, _e in email.header.decode_header(part):
+            if _e is None:
+                repl += unicode(_e)
+            else:
+                repl += _t.decode(_e)
+        sender = sender.replace(part, repl)
+
+    return rfc822.parseaddr(sender.replace("\r\n", ""))
+
+
+def download_message(mail, data):
+    msg = email.message_from_string(data)
+
+    logging.debug("Message-ID is %s" % msg["Message-ID"])
+
+    sender_name, sender_addr = decode_sender(msg.get_all("From")[0])
+    sender_phone = msg["X-Asterisk-CallerID"]
+    date = rfc822.parsedate(msg["Date"])
+
+    for part in msg.walk():
+        if part.get_content_maintype() == "multipart":
+            continue
+        if part.get("Content-Disposition") is None:
+            continue
+        name = part.get_filename()
+        if name is None:
+            logging.debug("Message part has no name, skipped.")
+            continue
+        data = part.get_payload(decode=True)
+        process_file(name, data, sender_name, sender_addr, sender_phone, date)
+
+
+def check_one_message(mail, num):
+    status = False
+
+    logging.debug("Checking message %s." % num)
+
+    result, data = mail.uid("fetch", num, "(BODY)")
+    if result != "OK":
+        return False
+
+    if message_has_audio(num, data[0]):
+        logging.debug("Fetching message %s" % num)
+        result, data = mail.uid("fetch", num, "(RFC822)")
+        if result == "OK":
+            if download_message(mail, data[0][1]):
+                status = True
+
+    return status
+
+
+def search_messages(mail):
+    have_new_messages = False
+
+    debug_num = config_get("imap_debug_message")
+    if debug_num:
+        message_ids = [str(debug_num)]
+    else:
+        result, data = mail.uid("search", "(UNSEEN)")
+        if result != "OK":
+            return False
+        message_ids = data[0].split()
+
+    for num in message_ids:
+        try:
+            if check_one_message(mail, num):
+                have_new_messages = True
+        except Exception, e:
+            logging.error("Error checking message %s: %s" % (num, e))
+
+    if have_new_messages:
+        fn = config_get("postprocessor", "/bin/true")
+        run(fn, wait=False)
+
+
+install_syslog()
+
+mail = imaplib.IMAP4_SSL(config_get("imap_server"))
+mail.login(config_get("imap_user"), config_get("imap_password"))
+mail.select(config_get("imap_folder", "INBOX"))
+
+search_messages(mail)
