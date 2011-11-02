@@ -282,7 +282,7 @@ def search_messages(mail):
         fn = config_get("postprocessor", "/bin/true")
         run(fn.split(" "), wait=False)
     else:
-        logging.info("No new messages were found.")
+        logging.debug("No new messages were found.")
 
 
 def run():
