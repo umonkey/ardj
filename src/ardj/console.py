@@ -354,6 +354,7 @@ def on_play(args, sender):
             return 'Playing everything.'
         return u'Current filter: %s' % u' '.join(current)
     ardj.tracks.set_urgent(args)
+    ardj.database.commit()
     return 'OK.'
 
 
