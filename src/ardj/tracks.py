@@ -780,8 +780,7 @@ def log(track_id, listener_count=None, ts=None):
     Only logs tracks with more than zero listeners."""
     if listener_count is None:
         listener_count = ardj.listeners.get_count()
-    if listener_count > 0:
-        ardj.database.execute('INSERT INTO playlog (ts, track_id, listeners) VALUES (?, ?, ?)', (int(ts or time.time()), int(track_id), listener_count, ))
+    ardj.database.execute('INSERT INTO playlog (ts, track_id, listeners) VALUES (?, ?, ?)', (int(ts or time.time()), int(track_id), listener_count, ))
 
 
 def get_average_length():
