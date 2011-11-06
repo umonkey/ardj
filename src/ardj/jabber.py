@@ -93,7 +93,7 @@ class ardjbot(MyFileReceivingBot):
 
         self.chat_users = []
 
-        _conf = ardj.settings.get("jabber_id", ardj.settings.get("jabber/login"), fail=True)
+        _conf = ardj.settings.get("jabber_id", ardj.settings.get("jabber/login"))
         self.login, password = self.split_login(_conf)
         resource = socket.gethostname() + '/' + str(os.getpid()) + '/'
         super(ardjbot, self).__init__(self.login, password, res=resource, debug=debug)
