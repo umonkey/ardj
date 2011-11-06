@@ -89,35 +89,6 @@ class NextController(Controller):
             return {"status": "error", "message": str(e)}
 
 
-class ScrobbleController(Controller):
-    """Sends scheduled tracks to Last.fm and Libre.fm."""
-    def __init__(self):
-        self.lastfm = scrobbler.LastFM()
-        self.librefm = scrobbler.LibreFM()
-
-    def POST(self):
-        return
-        """
-        commit = False
-        if self.lastfm:
-            try:
-                if self.lastfm.process():
-                    commit = True
-            except Exception, e:
-                logging.error('Could not process LastFM queue: %s' % e)
-
-        if self.librefm:
-            try:
-                if self.librefm.process():
-                    commit = True
-            except Exception, e:
-                logging.error('Could not process LibreFM queue: %s' % e)
-
-        if commit:
-            database.commit()
-        """
-
-
 class CommitController(Controller):
     @send_json
     def POST(self):
@@ -158,7 +129,6 @@ def serve_http(hostname, port):
     web.application((
         "/track/next\.json", NextController,
         "/track/rocks\.json", RocksController,
-        "/scrobble\.json", ScrobbleController,
         "/commit\.json", CommitController,
     )).run()
 

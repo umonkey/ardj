@@ -34,10 +34,5 @@ def get_next_track():
     return call_remote("/track/next.json")
 
 
-def scrobble():
-    """Sends recently played tracks to Last.fm and Libre.fm."""
-    return call_remote("/track/scrobble.json")
-
-
 def rocks(sender, track_id=None):
     return call_remote("/track/rocks.json", sender=sender, track_id=track_id)
