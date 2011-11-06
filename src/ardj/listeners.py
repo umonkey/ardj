@@ -19,6 +19,9 @@ def get_count():
         return 0
 
     data = ardj.util.fetch(url, quiet=True, ret=True)
+    if data is None:
+        logging.error("Could not fetch listener count.")
+        return 0
 
     stats_re = re.compile(ardj.settings.get("icecast_stats_re", '<listeners>(\d+)</listeners>'))
     m = stats_re.search(data)
