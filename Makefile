@@ -8,6 +8,7 @@ build:
 	@echo "make doc                       -- build the docbook"
 	@echo "make install                   -- install using setup.py"
 	@echo "make install [DESTDIR=./tmp]   -- install ardj"
+	@echo "make install-hooks             -- prepare the development environment"
 	@echo "make package-ubuntu            -- create source and binary packages"
 	@echo "make test                      -- runs unit tests"
 	@echo "make test-syntax               -- runs PEP8 check"
@@ -29,6 +30,10 @@ install: share/doc/man/ardj.1.gz
 	mkdir -p $(DESTDIR)/usr/bin
 	mv $(DESTDIR)/usr/local/bin/ardj $(DESTDIR)/usr/bin/ardj
 	rm -rf build
+
+install-hooks:
+	fgrep -q '[hooks]' .hg/hgrc || echo "\n[hooks]" >> .hg/hgrc
+	fgrep -q 'pretxncommit' .hg/hgrc || echo "pretxncommit = python:src/hooks/hooks.py:check_commit_message" >> .hg/hgrc
 
 uninstall:
 	cat install.log | xargs sudo rm -f
