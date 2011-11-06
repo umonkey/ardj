@@ -198,7 +198,7 @@ class ardjbot(MyFileReceivingBot):
         """Sends a message to the chat room, if it's configured."""
         jid = self.get_chat_room_jid()
         if jid:
-            self.say_to_jid(jid, message)
+            self.say_to_jid(jid, message, group=True)
 
     def get_chat_room_jid(self):
         """Returns the JID of the chat room.  The reason for not reading this
@@ -206,10 +206,13 @@ class ardjbot(MyFileReceivingBot):
         change any time."""
         return ardj.settings.get("jabber_chat_room", ardj.settings.get("jabber/chat_room"))
 
-    def say_to_jid(self, jid, message):
+    def say_to_jid(self, jid, message, group=False):
         msg = self.build_message(message)
         msg.setTo(jid.split('/')[0])
-        msg.setType('groupchat')
+        if group:
+            msg.setType('groupchat')
+        else:
+            msg.setType('chat')
         self.send_message(msg)
 
     def shutdown(self):
