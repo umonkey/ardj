@@ -213,13 +213,31 @@ def decode_sender(sender):
     return rfc822.parseaddr(sender.replace("\r\n", ""))
 
 
+def get_phone_number(msg):
+    """Extracts caller's phone number from the headers."""
+    tmp = re.search("(\d+)", msg["X-WUM-FROM"] or "")
+    if tmp:
+        number = tmp.group(1)
+        if number.startswith("8"):
+            number = number[1:]
+        if not number.startswith("+"):
+            number = "+7" + number
+        return number
+
+    tmp = msg["X-Asterisk-CallerID"]
+    if tmp:
+        return tmp
+
+    return None
+
+
 def download_message(mail, data):
     msg = email.message_from_string(data)
 
     logging.debug("Message-ID is %s" % msg["Message-ID"])
 
     sender_name, sender_addr = decode_sender(msg.get_all("From")[0])
-    sender_phone = msg["X-Asterisk-CallerID"]
+    sender_phone = get_phone_number(msg)
     date = rfc822.parsedate(msg["Date"])
 
     status = False
