@@ -1054,7 +1054,7 @@ def do_idle_tasks(set_busy=None):
     count = find_new_tracks([artist_name])
     if count:
         msg = u"Added %u tracks by %s." % (count, artist_name)
-        ardj.chat_say(msg)
+        ardj.jabber.chat_say(msg)
     else:
         msg = u"Could not find anything by %s on Last.fm and Jamendo." % artist_name
     ardj.jabber.chat_say(msg, recipient=sender)
