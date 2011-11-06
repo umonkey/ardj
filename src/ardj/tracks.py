@@ -968,8 +968,9 @@ def get_new_tracks(artist_names=None, label='music', weight=1.5):
     tracklist += ardj.podcast.find_new_tracks(artist_names)
 
     cli = ardj.scrobbler.LastFM().authorize()
-    for artist_name in artist_names:
-        tracklist += cli.get_tracks_by_artist(artist_name)
+    if cli is not None:
+        for artist_name in artist_names:
+            tracklist += cli.get_tracks_by_artist(artist_name)
 
     print 'Total tracks: %u.' % len(tracklist)
     return get_missing_tracks(tracklist, limit=ardj.settings.get('fresh_music/tracks_per_artist', 2))
