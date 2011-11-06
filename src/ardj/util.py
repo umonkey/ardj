@@ -161,11 +161,15 @@ def fetch(url, suffix=None, args=None, user=None, password=None, quiet=False, po
 
 def parse_url_auth(url, user, password):
     """Extracts auth parameters from the url."""
-    scheme, netloc, path = list(urlparse.urlparse(url))[:3]
-    if "@" in netloc:
-        auth, netloc = netloc.split("@", 1)
+    up = urlparse.urlparse(url)
+    if "@" in up.netloc:
+        auth, netloc = up.netloc.split("@", 1)
         user, password = list(auth.split(":", 1) + [password])[:2]
-    return scheme + "://" + netloc + path, user, password
+
+    result = "%s://%s%s" % (up.scheme, up.netloc, up.path)
+    if up.query:
+        result += "?" + up.query
+    return result, user, password
 
 
 def fetch_json(*args, **kwargs):
