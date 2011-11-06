@@ -15,7 +15,6 @@ from ardj import xmpp
 
 import ardj.console
 import ardj.database
-import ardj.scrobbler
 import ardj.settings
 import ardj.tracks
 import ardj.util
@@ -88,9 +87,6 @@ class ardjbot(MyFileReceivingBot):
         self.pidfile = '/tmp/ardj-jabber.pid'
         self.database_mtime = None
 
-        self.lastfm = ardj.scrobbler.LastFM()
-        self.librefm = ardj.scrobbler.LibreFM()
-
         self.chat_users = []
 
         _conf = ardj.settings.get("jabber_id", ardj.settings.get("jabber/login"))
@@ -110,7 +106,6 @@ class ardjbot(MyFileReceivingBot):
         try:
             self.__idle_status()
             self.__idle_ping()
-            self.__idle_lastfm()
             self.send_pending_messages()
             ardj.tracks.do_idle_tasks(self.set_busy)
         except Exception, e:
@@ -125,19 +120,6 @@ class ardjbot(MyFileReceivingBot):
 
     def set_busy(self):
         self.status = self.DND
-
-    def __idle_lastfm(self):
-        if self.lastfm:
-            try:
-                self.lastfm.process()
-            except Exception, e:
-                logging.error('Could not process LastFM queue: %s' % e)
-
-        if self.librefm:
-            try:
-                self.librefm.process()
-            except Exception, e:
-                logging.error('Could not process LibreFM queue: %s' % e)
 
     def __idle_status(self):
         """
@@ -177,11 +159,6 @@ class ardjbot(MyFileReceivingBot):
                 logging.error(u'Could not write to %s: %s' % (self.pidfile, e))
         self.update_status()
         self.join_chat_room()
-
-        if not self.lastfm.authorize():
-            self.lastfm = None
-        if not self.librefm.authorize():
-            self.librefm = None
 
     def join_chat_room(self):
         """Joins the chat room if configured."""

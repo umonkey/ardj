@@ -12,6 +12,7 @@ module explicitly if you're importing parts of ardj into your existing code.
 import logging
 import logging.handlers
 import os
+import traceback
 
 import ardj.settings
 
@@ -76,4 +77,11 @@ def install():
         return install_file(target)
 
 
-__all__ = ["install"]
+def log_error(msg, e):
+    """Logs an error message line by line (syslog friendly)."""
+    msg = msg.strip() + "\n" + traceback.format_exc(e)
+    for line in msg.strip().split("\n"):
+        logging.error(line)
+
+
+__all__ = ["install", "log_error"]

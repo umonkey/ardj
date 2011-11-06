@@ -57,6 +57,8 @@ class LastFM(object):
         does nothing.  Returns True on success."""
         if not self.is_enabled():
             return True
+        if self.sk is None and not self.authorize():
+            return False
         if self.sk:
             data = self.call(method='track.scrobble',
                 artist=artist.encode('utf-8'),
@@ -147,6 +149,7 @@ class LastFM(object):
             if not self.scrobble(artist, title, ts):
                 return False
             ardj.database.execute('UPDATE playlog SET lastfm = 1 WHERE ts = ?', (ts, ))
+            ardj.database.commit()  # prevent hanging transactions
         return True
 
     def call(self, post=False, api_sig=False, **kwargs):
@@ -211,6 +214,8 @@ class LibreFM(object):
         """Scrobbles a track, returns True on success."""
         if not self.is_enabled():
             return True
+        if self.submit_url is None and not self.authorize():
+            return False
         if ts is None:
             ts = int(time.time())
         args = {
@@ -253,6 +258,7 @@ class LibreFM(object):
             if not self.scrobble(artist, title, ts):
                 return False
             ardj.database.execute('UPDATE playlog SET librefm = 1 WHERE ts = ?', (ts, ))
+            ardj.database.commit()  # prevent hanging transactions
         return True
 
     def get_session_key(self, challenge):

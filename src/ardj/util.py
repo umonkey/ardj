@@ -127,6 +127,9 @@ def fetch(url, suffix=None, args=None, user=None, password=None, quiet=False, po
     user, password -- enable HTTP basic auth
     ret -- True to return file contents instead of a temporary file
     """
+    if type(url) != str:
+        raise TypeError("URL must be a string.")
+
     if args and not post:
         url += '?' + urllib.urlencode(args)
 
@@ -135,10 +138,10 @@ def fetch(url, suffix=None, args=None, user=None, password=None, quiet=False, po
     opener = get_opener(url, user, password)
     try:
         if post:
-            logging.info('Posting to %s' % url)
+            logging.debug('Posting to %s' % url)
             u = opener(urllib2.Request(url), urllib.urlencode(args))
         else:
-            logging.info('Downloading %s' % url)
+            logging.debug('Downloading %s' % url)
             u = opener(urllib2.Request(url), None)
         if ret:
             return u.read()
