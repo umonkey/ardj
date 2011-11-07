@@ -137,7 +137,11 @@ def on_sql(args, sender):
 
 
 def on_twit(args, sender):
-    return ardj.twitter.send_message(args)
+    try:
+        from ardj import twitter
+        return twitter.send_message(args)
+    except Exception, e:
+        return "Could not twit: %s" % e
 
 
 def on_upload(args, sender):

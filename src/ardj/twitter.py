@@ -63,8 +63,9 @@ except ImportError:
 
 try:
     import oauth2 as oauth
+    HAVE_OAUTH = True
 except ImportError:
-    raise ImportError, "Please install python-oauth2"
+    HAVE_OAUTH = False
 
 import ardj.database
 import ardj.settings
@@ -3209,5 +3210,7 @@ def speak_message(author, message, play=False, queue=True):
 
 def send_message(message):
     """Sends a message to Twitter."""
+    if not HAVE_OAUTH:
+        raise Exception("Please install python-oauth2.")
     posting = get_client().PostUpdate(message)
     return 'http://twitter.com/' + posting.GetUser().GetScreenName() + '/status/' + str(posting.GetId())
