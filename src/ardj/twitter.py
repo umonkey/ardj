@@ -24,6 +24,7 @@ import base64
 import calendar
 import datetime
 import httplib
+import logging
 import os
 import rfc822
 import sys
@@ -3208,8 +3209,29 @@ def speak_message(author, message, play=False, queue=True):
     return 'OK'
 
 
+def send_status_net(message):
+    """Sends a message to status.net if configured."""
+    url = ardj.settings.get("status_net_url")
+    if not url:
+        return None
+
+    response = ardj.util.fetch_json(url=url, args={"status": message.encode("utf-8")}, post=True, ret=True)
+    if response is None:
+        logging.error("Could not send a message using status.net API.")
+        return None
+
+    response_url = ardj.settings.get("status_net_response_url", "http://identi.ca/notice/%s")
+    return response_url % response["id"]
+
+
 def send_message(message):
     """Sends a message to Twitter."""
+    message = ardj.util.shorten_urls(message)
+
+    tmp = send_status_net(message)
+    if tmp is not None:
+        return tmp
+
     if not HAVE_OAUTH:
         raise Exception("Please install python-oauth2.")
     posting = get_client().PostUpdate(message)

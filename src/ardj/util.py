@@ -9,6 +9,7 @@ import hashlib
 import json
 import logging
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -345,3 +346,27 @@ def expand(lst):
         else:
             result.append(item)
     return result
+
+
+def shorten_url(url):
+    """Returns a shortened version of an URL."""
+    try:
+        new_url = fetch("http://clck.ru/--", args={"url": url}, ret=True)
+        if len(new_url) >= len(url):
+            new_url = url
+        else:
+            logging.debug("URL %s shortened to %s" % (url, new_url))
+        return new_url
+    except Exception, e:
+        logging.error("Could not shorten an URL: %s" % e)
+        return url
+
+
+def shorten_urls(message):
+    """Returns the message with all urls shortened."""
+    output = []
+    for word in re.split("\s+", message):
+        if word.startswith("http://"):
+            word = shorten_url(word)
+        output.append(word)
+    return u" ".join(output)
