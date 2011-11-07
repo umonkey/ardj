@@ -243,7 +243,12 @@ def move_file(src, dst):
     dirname = os.path.dirname(dst)
     if dirname and not os.path.exists(dirname):
         os.makedirs(dirname)
-    shutil.move(str(src), str(dst))
+    try:
+        shutil.move(str(src), str(dst))
+    except OSError, e:
+        if "Operation not permitted" not in str(e):
+            raise e
+
     logging.debug('Moved %s to %s' % (src, dst))
     return True
 
