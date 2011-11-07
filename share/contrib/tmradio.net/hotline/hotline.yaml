@@ -1,0 +1,26 @@
+# Define server credentials.  Only IMAP for now.
+imap_server: imap.gmail.com
+imap_user: alice@gmail.com
+imap_password: secret
+imap_folder: INBOX
+
+# Define file and page names.
+mp3_file_name: "/var/www/files/hotline/%Y-%m-%d-hotline-%H%M%S.mp3"
+mp3_file_url: "http://files.example.com/hotline/%Y-%m-%d-hotline-%H%M%S.mp3"
+page_name: "/var/www/src/hotline/%Y%m%d/%H%M%S/index.md"
+page_url: "http://example.com/hotline/%Y%m%d/%H%M%S/"
+
+# Define a command to run after processing the inbox if there were new messages.
+#postprocessor: make -C /radio process-hotline
+
+# Limit message duration.  Messages outside the limits will be ignored.
+#min_duration: 5
+#max_duration: 300
+
+# Map phone numbers to artist names.
+#phone_map:
+#  "+79112223344": "Alice"
+
+# Map email addresses to artist names.
+#email_map:
+#  "alice@gmail.com": "Alice"

@@ -176,6 +176,14 @@ def process_file(name, body, sender_name, sender_addr, sender_phone, date):
     file(name, "wb").write(body)
     logging.info("Message from %s saved as %s" % (sender.encode("utf-8"), name))
 
+    duration = int(mad.MadFile(name).total_time() / 1000)
+    if duration < int(config_get("min_duration", 0)):
+        logging.warning("Message is too short, skipped.")
+        return False
+    if duration > int(config_get("max_duration", 3600)):
+        logging.warning("Message is too long, skipped.")
+        return False
+
     set_tags(name, sender, date)
 
     page_name = time.strftime(config_get("page_name", "/tmp/%Y-%m-%d-hotline-%H%M.md"), date)
@@ -185,7 +193,7 @@ def process_file(name, body, sender_name, sender_addr, sender_phone, date):
             "date": time.strftime("%Y-%m-%d %H:%M:%S", date),
             "url": time.strftime(config_get("mp3_file_url", "http://example.com/files/%Y-%m-%d-hotline-%H%M.mp3"), date),
             "size": os.stat(name).st_size,
-            "duration": int(mad.MadFile(name).total_time() / 1000),
+            "duration": duration,
         }
 
         page_dir = os.path.dirname(page_name)
