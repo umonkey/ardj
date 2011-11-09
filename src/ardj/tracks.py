@@ -1086,13 +1086,13 @@ def find_new_tracks(args, label='music', weight=1.5):
         try:
             if track['artist'] not in artist_names:
                 artist_names.append(track['artist'])
-            filename = ardj.util.fetch(track['url'], suffix=track.get('suffix'))
+            filename = ardj.util.fetch(str(track['url']), suffix=track.get('suffix'))
             add_file(str(filename), add_labels=track.get('tags', ['tagme', 'music']))
             added += 1
         except KeyboardInterrupt:
             raise
-        except:
-            pass
+        except Exception, e:
+            logging.error(u"Could not download \"%s\" by %s: %s" % (track['title'], track['artist'], e))
 
     if added:
         logging.info('Total catch: %u tracks.' % added)
