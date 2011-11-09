@@ -30,6 +30,9 @@ import ardj.util
 
 KARMA_TTL = 30.0
 
+last_playlist = None
+last_sticky_label = None
+
 
 class Playlist(dict):
     def add_ts(self, stats):
@@ -130,6 +133,28 @@ class Playlist(dict):
                 rowcount = ardj.database.execute('UPDATE playlists SET last_played = ? WHERE name = ?', (ts, name, ))
                 if rowcount == 0:
                     ardj.database.execute('INSERT INTO playlists (name, last_played) VALUES (?, ?)', (name, ts, ))
+
+
+class Track(dict):
+    # TODO: move to ardj.database after sawing down StORM.
+
+    table_name = "tracks"
+    fields = ("id", "owner", "filename", "artist", "title", "length", "weight", "count", "last_played", "real_weight")
+    key_name = "id"
+
+    def get_labels(self):
+        rows = ardj.database.fetch("SELECT label FROM labels WHERE track_id = ?", (self["id"], ))
+        return [row[0] for row in rows]
+
+    @classmethod
+    def get_by_id(cls, track_id):
+        if not track_id:
+            return None
+        sql = "SELECT %s FROM %s WHERE %s = ?" % (", ".join(cls.fields), cls.table_name, cls.key_name)
+        row = ardj.database.fetchone(sql, (int(track_id), ))
+        if not row:
+            return None
+        return Track([(cls.fields[k], v) for k, v in enumerate(row)])
 
 
 def get_real_track_path(filename):
@@ -233,9 +258,8 @@ def find_ids(pattern, sender=None, limit=None):
     params = []
     where = []
 
-    for label in search_labels:
-        where.append('id IN (SELECT track_id FROM labels WHERE label = ?)')
-        params.append(label)
+    if search_labels:
+        _add_label_filter(search_labels, where, params)
 
     if search_args:
         like = u' '.join(search_args)
@@ -251,6 +275,26 @@ def find_ids(pattern, sender=None, limit=None):
         sql += ' LIMIT %u' % limit
     rows = ardj.database.fetch(sql, params)
     return [row[0] for row in rows]
+
+
+def _add_label_filter(labels, where, params):
+    """Adds condition for filtering tracks by labels."""
+    other_labels = []
+
+    for label in labels:
+        if label.startswith("+"):
+            where.append('id IN (SELECT track_id FROM labels WHERE label = ?)')
+            params.append(label[1:])
+        elif label.startswith("-"):
+            where.append('id NOT IN (SELECT track_id FROM labels WHERE label = ?)')
+            params.append(label[1:])
+        else:
+            other_labels.append(label)
+
+    if other_labels:
+        sql = "id IN (SELECT track_id FROM labels WHERE label IN (%s))" % ", ".join(['?'] * len(other_labels))
+        where.append(sql)
+        params.extend(other_labels)
 
 
 def add_labels(track_id, labels, owner=None):
@@ -495,7 +539,10 @@ def get_random_track_id_from_playlist(playlist, skip_artists):
     sql = 'SELECT id, weight, artist, count FROM tracks WHERE weight > 0 AND artist IS NOT NULL AND filename IS NOT NULL'
     params = []
 
-    sql, params = add_labels_filter(sql, params, playlist.get('labels', [playlist.get('name', 'music')]))
+    labels = list(playlist.get('labels', [playlist.get('name', 'music')]))
+    labels.extend(get_sticky_label(playlist))
+
+    sql, params = add_labels_filter(sql, params, labels)
 
     repeat_count = playlist.get('repeat')
     if repeat_count:
@@ -523,10 +570,62 @@ def get_random_track_id_from_playlist(playlist, skip_artists):
     ardj.database.Open().debug(sql, params)
     track_id = get_random_row(ardj.database.fetch(sql, tuple(params)), playlist.get("strategy", "default"))
 
+    update_sticky_label(track_id, playlist)
+
     if playlist.get('preroll'):
         track_id = add_preroll(track_id, playlist.get('preroll'))
 
     return track_id
+
+
+def update_sticky_label(track_id, playlist):
+    """Updates active sticky labels.  If the playlist has no sticky labels,
+    they are reset.  If track has none, they are reset.  If track has some, a
+    random one is stored."""
+    global last_playlist, last_sticky_label
+
+    # Save the new playlist name.  If it changed -- remove previous label.
+    if last_playlist != playlist.get("name", "unnamed"):
+        if last_sticky_label is not None:
+            logging.debug("Removing sticky label %s" % last_sticky_label.encode("utf-8"))
+            last_sticky_label = None
+    last_playlist = playlist.get("name", "unnamed")
+
+    # There is a sticky label already, nothing to do.
+    if last_sticky_label is not None:
+        return
+
+    # This playlist has no sticky labels, nothing to do.
+    if not playlist.get("sticky_labels"):
+        return
+
+    # Find intersecting labels.
+    track = Track.get_by_id(track_id)
+    if track is None:
+        return
+
+    # No intersection, nothing to do.
+    labels = list(set(track.get_labels()) & set(playlist["sticky_labels"]))
+    if not labels:
+        return
+
+    # Store the new sticky label.
+    last_sticky_label = random.choice(labels)
+    logging.debug("New sticky label: %s" % last_sticky_label.encode("utf-8"))
+
+
+def get_sticky_label(playlist):
+    """Returns sticky labels that apply to this playlist."""
+    global last_playlist, last_sticky_label
+
+    # Playlist changed, no labels.
+    if playlist.get("name", "unnamed") != last_playlist:
+        return []
+
+    if not last_sticky_label:
+        return []
+
+    return [u"+" + last_sticky_label]
 
 
 def add_labels_filter(sql, params, labels):

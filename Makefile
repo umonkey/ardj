@@ -13,7 +13,7 @@ build:
 	@echo "make test                      -- runs unit tests"
 	@echo "make test-syntax               -- runs PEP8 check"
 
-test: test-syntax clean
+test-units:
 	cp -f unittests/data/src/* unittests/data/
 	rm -f tests.log tests-ardj.log
 	PYTHONPATH=src ARDJ_SETTINGS=unittests/data/settings.yaml python unittests/all.py
@@ -21,6 +21,8 @@ test: test-syntax clean
 
 test-syntax:
 	pep8 -r --ignore=E501 --exclude=twitter.py,socks.py,jabberbot.py src/ardj/*.py unittests/*.py
+
+test: test-syntax test-units clean
 
 console:
 	PYTHONPATH=src ./bin/ardj console $(MAIL)

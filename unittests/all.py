@@ -5,6 +5,8 @@ import sys
 
 import unittest
 
+from ardj import log
+
 
 def run_all_tests():
     loader = unittest.defaultTestLoader
@@ -13,6 +15,7 @@ def run_all_tests():
 
     print 'Logging to tests.log'
     sys.stdout = sys.stderr = open('tests.log', 'wb')
+    log.install()
 
     runner = unittest.TextTestRunner().run(suite)
     if runner.errors or runner.failures:

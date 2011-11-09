@@ -50,7 +50,7 @@ def install_syslog():
 def install_file(filename):
     """Adds a custom formatter and a rotating file handler to the default
     logger."""
-    folder = os.path.dirname(filename)
+    folder = os.path.dirname(filename) or "."
     if not os.path.exists(folder) or not os.access(folder, os.W_OK):
         raise Exception("Can't log to %s: no write permissions." % filename)
 

@@ -267,7 +267,7 @@ class database:
     def cursor(self):
         """Returns a new SQLite cursor, for internal use."""
         stack = "".join(traceback.format_stack()[-5:-1])
-        logging.debug("Starting a transaction (returning a cursor)\n%s" % stack)
+        #logging.debug("Starting a transaction (returning a cursor)\n%s" % stack)
         return self.db.cursor()
 
     def commit(self):
@@ -487,7 +487,7 @@ def init_storm(statements):
     store.commit()
 
 
-def cli_init(args):
+def cli_init(args=None):
     """Initializes the database."""
     statements = get_init_statements("sqlite")
     init_sqlite(statements)
