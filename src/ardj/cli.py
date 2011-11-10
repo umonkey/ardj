@@ -186,7 +186,7 @@ def cmd_twit(msg, *args):
     """sends a message to twitter"""
     from ardj import twitter
     try:
-        print twitter.send_message(msg)
+        print twitter.send_message(msg.decode("utf-8"))
     except twitter.ConfigError, e:
         print >> sys.stderr, e
         return False
