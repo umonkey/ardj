@@ -418,8 +418,8 @@ def on_set(args, sender):
 
 
 def on_last(args, sender):
-    rows = ardj.database.fetch('SELECT t.id, t.artist, t.title, t.weight FROM tracks t INNER JOIN playlog l ON l.track_id = t.id ORDER BY l.ts DESC LIMIT 10')
-    tracks = [{'id': row[0], 'artist': row[1], 'title': row[2], 'weight': row[3]} for row in rows]
+    rows = ardj.database.fetch('SELECT t.id, t.artist, t.title, t.weight, t.count FROM tracks t INNER JOIN playlog l ON l.track_id = t.id ORDER BY l.ts DESC LIMIT 10')
+    tracks = [{'id': row[0], 'artist': row[1], 'title': row[2], 'weight': row[3], 'count': row[4]} for row in rows]
     return format_track_list(tracks, 'Last played tracks:')
 
 
