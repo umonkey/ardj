@@ -346,7 +346,7 @@ class database:
         analyzed all tables (to optimize indexes) and vacuums the database.
         """
         old_size = os.stat(self.filename).st_size
-        self.merge_aliases(cur)
+        self.merge_aliases()
         self.execute('DELETE FROM queue WHERE track_id NOT IN (SELECT id FROM tracks)')
         self.execute('DELETE FROM labels WHERE track_id NOT IN (SELECT id FROM tracks)')
         self.execute('DELETE FROM votes WHERE track_id NOT IN (SELECT id FROM tracks)')
