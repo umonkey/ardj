@@ -13,6 +13,8 @@ import subprocess
 import sys
 import tempfile
 import time
+import traceback
+import urllib
 
 try:
     import imaplib2 as imaplib
@@ -31,6 +33,12 @@ CONFIG_NAMES = ["~/.config/hotline.yaml", "/etc/hotline.yaml"]
 fn_filter = re.compile('wav|mp3|ogg', re.I)
 
 mutagen.easyid3.EasyID3.RegisterTXXXKey('ardj', 'ardj')
+
+
+def log_error(e, message):
+    message += "\n" + traceback.format_exc(e)
+    for line in message.strip().split("\n"):
+        logging.error(line)
 
 
 def config_get(key, default=None):
@@ -81,12 +89,14 @@ def install_file_logger(filename):
 
 
 def message_has_audio(num, headers):
+    """
     match = fn_filter.search(headers)
     if match is None:
         logging.debug("Message does not match: %s" % headers)
         return False
+    """
 
-    logging.debug("Message %s has an audio file." % num)
+    #logging.debug("Message %s has an audio file." % num)
     return True
 
 
@@ -129,7 +139,7 @@ def transcode(filename, body):
 
         return body
     finally:
-        if tmp_name:
+        if tmp_name and os.path.exists(tmp_name):
             os.unlink(tmp_name)
         if wav_name:
             os.unlink(wav_name)
@@ -188,7 +198,7 @@ def process_file(name, body, sender_name, sender_addr, sender_phone, date):
 
     page_name = time.strftime(config_get("page_name", "/tmp/%Y-%m-%d-hotline-%H%M.md"), date)
     if page_name:
-        page = u"title: Voice Mail from %(sender)s\ndate: %(date)s\nlabels: podcast, hotline\nfile: %(url)s\nfilesize: %(size)s\nduration: %(duration)u\n---\nNo description." % {
+        page = u"title: Горячая линия: %(sender)s\ndate: %(date)s\nlabels: podcast, hotline\nfile: %(url)s\nfilesize: %(size)s\nduration: %(duration)u\n---\nNo description." % {
             "sender": sender,
             "date": time.strftime("%Y-%m-%d %H:%M:%S", date),
             "url": time.strftime(config_get("mp3_file_url", "http://example.com/files/%Y-%m-%d-hotline-%H%M.mp3"), date),
@@ -206,18 +216,30 @@ def process_file(name, body, sender_name, sender_addr, sender_phone, date):
     return True
 
 
-def decode_sender(sender):
-    """Decode UTF-8 base64 etc headers.  decode_header() must be able to do
-    this on its own, but due to a bug it fails to process multiline values."""
-    for part in re.findall("(=(?:\?[^?]+){3}\?=)", sender):
+def decode_value(value):
+    for part in re.findall("(=(?:\?[^?]+){3}\?=)", value):
         repl = u""
         for _t, _e in email.header.decode_header(part):
             if _e is None:
                 repl += unicode(_e)
             else:
                 repl += _t.decode(_e)
-        sender = sender.replace(part, repl)
+        value = value.replace(part, repl)
+    return value
 
+
+def decode_file_name(encoded):
+    """File names can contain all sorts of garbage, so we decode it, but only
+    use the extension."""
+    if encoded is not None:
+        ext = decode_value(encoded).split(".")[-1]
+        return "tmp." + ext
+
+
+def decode_sender(sender):
+    """Decode UTF-8 base64 etc headers.  decode_header() must be able to do
+    this on its own, but due to a bug it fails to process multiline values."""
+    sender = decode_value(sender)
     return rfc822.parseaddr(sender.replace("\r\n", ""))
 
 
@@ -254,7 +276,7 @@ def download_message(mail, data):
             continue
         if part.get("Content-Disposition") is None:
             continue
-        name = part.get_filename()
+        name = decode_file_name(part.get_filename())
         if name is None:
             logging.debug("Message part has no name, skipped.")
             continue
@@ -303,7 +325,7 @@ def search_messages(mail):
             if check_one_message(mail, num):
                 have_new_messages = True
         except Exception, e:
-            logging.error("Error checking message %s: %s" % (num, e))
+            log_error(e, "Error checking message %s: %s" % (num, e))
 
     if have_new_messages:
         fn = config_get("postprocessor", "/bin/true")
@@ -313,12 +335,18 @@ def search_messages(mail):
 
 
 def connect_and_wait():
-    mail = imaplib.IMAP4_SSL(config_get("imap_server"))
+    server = config_get("imap_server")
+    logging.info("Connecting to %s" % server)
+    mail = imaplib.IMAP4_SSL(server)
     mail.login(config_get("imap_user"), config_get("imap_password"))
     mail.select(config_get("imap_folder", "INBOX"))
 
     # Maybe there's something already.
     search_messages(mail)
+
+    if config_get("imap_debug_message"):
+        mail.logout()
+        exit(0)
 
     while True:
         if HAVE_IDLE:
@@ -330,15 +358,18 @@ def connect_and_wait():
         search_messages(mail)
 
 
-def run():
+def loop():
     while True:
         try:
             connect_and_wait()
+        except KeyboardInterrupt:
+            logging.info("Interrupted by user.")
+            return
         except Exception, e:
-            logging.error("ERROR: %s, restarting." % e)
+            log_error(e, "ERROR: %s, restarting." % e)
 
 
 install_syslog()
 install_file_logger("/radio/logs/hotline.log")
 
-run()
+loop()
