@@ -1,0 +1,10 @@
+/var/log/ardj.log {
+     daily
+     missingok
+     rotate 7
+     compress
+     notifempty
+	postrotate
+		invoke-rc.d rsyslog rotate >/dev/null 2>&1 || true
+	endscript
+}
