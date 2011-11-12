@@ -96,27 +96,6 @@ class Model(object):
         return self._get_store().remove(self)
 
 
-class Message(Model):
-    """Used for storing outgoing XMPP messages.  When you need to send an XMPP
-    message, create a Message instance and save it.
-
-    Data:
-    re -- recipient JID
-    text -- message text
-    """
-
-    __storm_table__ = "jabber_messages"
-    id = Int(primary=True)
-    re = Unicode()
-    message = Unicode()
-
-    def __init__(self, message, re=None):
-        if re is not None:
-            re = unicode(re)
-        self.re = re
-        self.message = unicode(message)
-
-
 class ArtistDownloadRequest(Model):
     """Stores a request to download more tracks by the specified artist.
 
