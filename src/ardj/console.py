@@ -7,6 +7,7 @@ the jabber bot, a CLI is available."""
 
 import logging
 import os
+import re
 import readline
 import signal
 import sys
@@ -380,7 +381,7 @@ def on_tags(args, sender):
     if not is_user_admin(sender):
         return 'Only admins can edit tags.'
 
-    parts = args.split(' ')
+    parts = re.split("\s+", args)
     if len(parts) > 2 and parts[-2] == 'for':
         if not parts[-1].isdigit():
             return 'The last argument (track_id) must be an integer.'
