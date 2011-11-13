@@ -1,0 +1,5 @@
+#!/bin/sh
+rm ardj.sqlite
+wget http://files.tmradio.net/ardj.sqlite
+cp ardj.sqlite ardj-`date '+%Y-%m-%d'`.sqlite 
+

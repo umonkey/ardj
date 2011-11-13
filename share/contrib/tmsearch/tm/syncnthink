@@ -1,0 +1,5 @@
+#!/bin/sh
+cd /home/ekis/tornado/tm/
+./tmsync
+./think.py
+cp ../text/think.txt ../text/think-`date '+%Y-%m-%d'`.txt

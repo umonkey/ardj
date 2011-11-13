@@ -1,0 +1,262 @@
+<html>
+	<head>
+	  	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>Поиск по базе ТМРадио</title>
+		<script type="text/javascript" src="/static/jquery.js"></script>
+		<link rel="stylesheet" type="text/css" href="/static/ekis.css" />
+<style type="text/css">
+	td {
+		max-width: 300px;
+		vertical-align: middle;
+		padding-top: 2px; 
+		padding-bottom: 2px;
+	}
+	th {
+		max-width: 300px;
+		vertical-align: middle;
+	}
+	select, input {
+		width: 130px;
+	}
+	table {
+		margin-bottom: 15px;
+	}
+	.tail {
+		margin-top: 50px;
+		color: #555;
+	}
+</style>
+	</head>
+<body style="padding: 18px;">
+	<h1><a href="http://www.ikito.ru:8080/tm/">Поиск по базе ТМРадио</a></h1>
+	<p>Дата синхронизации базы {{DBDate}}. Всего в базе {{tracksCount}} записей.</p>
+<div style="vertical-align: middle;">
+<table style="text-align: center;" >
+	<tr>
+		<td><a href="#" onclick="sendRequest('popularArtists'); return false;">Лучшие исполнители</a></td>
+		<td><a href="#" onclick="sendRequest('hitList'); return false;">Лучшие песни</a></td>
+		<td><a href="#" onclick="sendRequest('newTracksPlayed'); return false;">Новые песни за сутки</a></td>
+		<td><a href="#" onclick="sendRequest('bestNewTracks'); return false;">Лучшие новинки</a></td>
+		<td><a href="#" onclick="sendRequest('bestNewTracks2'); return false;">Лучшие новинки2</a></td>
+		<td><a href="#" onclick="sendRequest('bestCovers'); return false;">Лучшие каверы</a></td>
+		<td><a href="#" onclick="sendRequest('preshowMusic'); return false;">Вечерне-четверговые</a></td>
+
+	</tr>
+	<tr>
+		<td><a href="#" onclick="sendRequest('bestCalmTracks'); return false;">Лучшие вечерние песни</a></td>
+		<td><a href="#" onclick="sendRequest('bestLoungeTracks'); return false;">Лучшие ночные песни</a></td>
+		<td><a href="#" onclick="sendRequest('mostBookmarked'); return false;">Популярные закладки</a></td>
+		<td><a href="#" onclick="sendRequest('forgottenTracks'); return false;">Забытые</a></td>
+		<td><a href="#" onclick="sendRequest('neverPlayedArtists'); return false;">Неизвестные исполнители</a></td>
+		<td><a href="#" onclick="sendRequest('neverPlayedTracks'); return false;">Неизвестные песни</a></td>
+	</tr>
+</table>
+
+<table>
+<form id="searchForm" action="" method="GET">
+	<tr>
+		<td><label for="name">Простой поиск:</label></td><td><input type="text" name="name" id="id_name"></td>
+		<td>
+			<select name="labelFilter1" id="id_labelFilter1" multi>
+				<option value="">Фильтр по тегам</option> 
+				{% for label in labels %}
+				<option value="{{label}}">{{label}}</option>
+				{% endfor %}
+			</select>
+		</td>
+		<td><label for="id_vocals">Поиск по закладкам (JID):</label></td>
+		<td><input name="bookmarkId" id="id_bookmarkId" value=""></td>
+
+		<td rowspan=3>
+			<input type="submit" value="Отправить" onclick="sendRequest('form'); return false;" style="height: 70px;">
+		</td>
+	</tr>
+	<tr>
+		<td><label for="id_vocals">Фильтр по вокалу:</label></td>
+		<td>
+			<select name="vocals" id="id_vocals">
+				<option value=""></option> 
+				<option value="instrumental">Инструментал</option>
+				<option value="volals">Со словами</option>
+				<option value="male">Мужской вокал</option>
+				<option value="female">Женский вокал</option>
+				<option value="both">Дуэт</option>
+			</select>
+		</td>
+
+		<td>
+			<select name="labelFilter2" id="id_labelFilter2" multi>
+				<option value="">Фильтр по тегам</option> 
+				{% for label in labels %}
+				<option value="{{label}}">{{label}}</option>
+				{% endfor %}
+			</select>
+		</td>
+		<td><label for="order">Сортировать по:</label></td>
+		<td>
+			<select name="order" id="id_order">
+				{% for sortkey, option in sortList.iteritems() %}
+					<option value="{{sortkey}}" {% if option['selected']%}selected{%endif%}>{{option['title']}}</option>
+				{% endfor %}
+			</select>
+		</td>
+
+		
+	</tr>
+	<tr>
+		<td><label for="id_lang">Фильтр по языку:</label></td>
+		<td>
+			<select name="lang" id="id_lang">
+				<option value="">Любой язык</option> 
+				<option value="ru">По русски</option>
+				<option value="en">По английски</option>
+				<option value="other">Другой язык</option>
+			</select>
+		</td>
+
+		<td>
+			<select name="labelFilter3" id="id_labelFilter3" multi>
+				<option value=""></option> 
+				{% for label in allLabels %}
+				<option value="{{label}}" {% if label=='music'%}selected{% endif %}>{{label}}</option>
+				{% endfor %}
+			</select><br>
+		</td>
+
+		<td><label for="id_orderDir">Направление сортировки:</label></td>
+		<td>
+			<select name="orderDir" id="id_orderDir">
+				<option value="asc">По возрастанию</option>
+				<option value="desc" selected>По убыванию</option>
+			</select>
+		</td>
+
+
+	</tr>
+</form>
+</table>
+
+</div>
+<div id="permalinkDiv" style="display: none;">
+<label for="permalink"><b>Постоянная ссылка на результаты поиска: </b></label><input type="text" id="permalink" value="" size=50 style="width: 400px;">&nbsp;
+<a href="" id="shortenClck" target=blank>Укоротить?</a>
+<br>
+</div>
+
+<div id="infoTable">Для вывода результатов поиска введите в строку поиска часть названия песни или выберите один или несколько из фильтров.
+</div>
+<script type="text/javascript">
+$('#searchForm').submit(function(){return false;});
+var fieldsDict = {'id': 'Номер', 'artist': 'Исполнитель', 'title': 'Название', 'weight': 'Рейтинг', 'avWeight': 'Средний рейтинг', 'count': 'Кол-во проигрываний', 'tracks': 'Кол-во песен', 'bmcount': 'Закладок', 'tagslist': 'Список тегов'};
+function getRequestBody(requestType) {
+	var requestBody = {};
+	if (requestType == 'form') {
+		var labelFilter="";
+		if ( $('#id_labelFilter1').val() ) {labelFilter+=" "+$('#id_labelFilter1').val();}
+		if ( $('#id_labelFilter2').val() ) {labelFilter+=" "+$('#id_labelFilter2').val();}
+		if ( $('#id_labelFilter3').val() ) {labelFilter+=" "+$('#id_labelFilter3').val();}
+
+		if ( $('#id_name').val().length<3 && labelFilter=="" && $('#id_bookmarkId').val()=='') {
+			alert('Не менее трех символов для поиска или выберите фильтр по тегам!'); breakQuery = true;
+		};
+
+		var requestBody = {
+				name: $('#id_name').val(), 
+				order: $('#id_order').val(), 
+				orderDir: $('#id_orderDir').val()
+			};
+
+		if (labelFilter!="") requestBody['labelFilter'] = labelFilter;
+		if ( $('#id_vocals').val() ) requestBody['vocals'] = $('#id_vocals').val();
+		if ( $('#id_lang').val() ) requestBody['lang'] = $('#id_lang').val();
+		if ( $('#id_bookmarkId').val() ) requestBody['bookmarkId'] = $('#id_bookmarkId').val();
+	}
+	else {
+		var specRequests = "popularArtists, newTracksPlayed, forgottenTracks, bestCalmTracks, bestCovers, neverPlayedArtists, neverPlayedTracks";
+		if (specRequests.indexOf(requestType)!==false) {
+			requestBody = {spec: requestType};
+		};
+	};
+	return requestBody;
+};
+function getPermalink(requestBody) {
+	var link = "http://www.ikito.ru:8080/tm/?"
+	for (key in requestBody) {
+		var value = $.trim(requestBody[key]);
+		if (key!='ajax' && value!="" && value!=" ") {
+			link+=key+'='+value+'&';
+		};
+	};
+	//link+="permalink=1";
+	return link;
+};
+function sendRequest(requestType) {
+	var breakQuery = false;
+	var requestBody = getRequestBody(requestType);
+	requestBody['ajax'] = 1;
+	if (!breakQuery) {
+		$.ajax({
+			url: '/tm/',
+			type: "GET",
+			//beforeSend: function(){loaderShow();},
+			//complete: function(){loaderHide();},
+			data: (requestBody),
+			dataType: "json",
+			success: function(data){
+			    showInfo(data);
+				    $('#permalinkDiv').show();
+				    var link = getPermalink(requestBody);
+				    $('#permalink').attr('value', link);
+				    $('#shortenClck').attr('href', 'http://clck.ru/--?url='+link);
+			    }
+			});
+	};
+}
+function showInfo(data) {
+	var fields = data['fields'];
+	var data = data['data'];
+	var tableHtml = "<table border=1 style='max-width: 1000px;'>";
+	tableHtml+="<tr><th></th>";
+	for (num in fields) {
+		if (fieldsDict[fields[num]]) {field = fieldsDict[fields[num]];} else {field = fields[num]}
+		tableHtml+="<th>"+field+"</th>";
+	};
+	tableHtml+="</tr>";
+	n = 1
+	if (data.length>0) {
+		for (num in data) {
+			var row = data[num]
+			tableHtml+="<tr>";
+			tableHtml+="<th>"+n+"</th>";
+			for (num in fields) {
+				field = fields[num];
+				if (field == 'tagslist') {
+					row[field] = row[field].replace(new RegExp(',', 'g'),', ');};
+				if (field == 'artist') {
+					func = 'filterAuthor("'+row[field]+'"); return false;'
+					row[field] = "<a href='#' onclick='"+func+"'>"+row[field]+"</a>"
+				};
+				tableHtml+="<td>"+row[field]+"</td>";
+			};
+			tableHtml+="</tr>"
+			n+=1;
+		};
+		tableHtml+="</table>";
+		$("#infoTable").html(tableHtml)
+	} else {$("#infoTable").html('<table width=400><tr><th>Ничего не найдено...</th></tr><tr><th>Или на самом деле нет результатов, или кто-то занял базу, попробуйте через пару секунд еще раз.</th></tr></table>');};
+}
+function filterAuthor(author) {
+	$('#id_name').attr('value', author);
+	sendRequest('form');
+}
+// data from permalink
+{{ setSearchData }}
+// end
+</script>
+<p class="tail">
+<hr>
+Сделано для <a href="http://tmradio.net">Тоже Мне Радио</a>, 2011. Спасибо umonkey, Хасан Атаман за советы и тестирование.
+</p>
+</body>
+
+</html>
