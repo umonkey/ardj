@@ -237,16 +237,16 @@ def cmd_update_track_lengths(*args):
 
 def cmd_xmpp_send(*args):
     """send a Jabber message"""
-    if len(args) < 2:
+    if len(args) < 1:
         print "Usage: ardj xmpp-send \"message text\" [recipient_jid]"
         exit(1)
 
     recipient = None
-    if len(args) >= 3:
-        recipient = args[2]
+    if len(args) > 1:
+        recipient = args[1]
 
     from database import Message, commit
-    Message.create(args[1], recipient)
+    Message.create(args[0], recipient)
     commit()
 
 
