@@ -100,6 +100,12 @@ class LastFM(object):
             artist=artist_name.encode('utf-8'),
             autocorrect='1')
 
+    def get_track_tags(self, artist_name, track_title):
+        return self.call_signed(method="track.getTags",
+            artist=artist_name.encode("utf-8"),
+            track=track_title.encode("utf-8"),
+            autocorrect="1")
+
     def get_tracks_by_artist(self, artist_name):
         tags = ardj.settings.get('fresh_music/tags', [])
 
@@ -167,8 +173,15 @@ class LastFM(object):
             raise Error(response["message"])
         return response
 
+    def call_signed(self, post=False, **kwargs):
+        if self.sk is None:
+            self.authorize()
+        kwargs["sk"] = self.sk
+        return self.call(post=post, api_sig=True, **kwargs)
+
     def get_call_signature(self, args):
-        parts = sorted([''.join(x) for x in args.items()])
+        skip_fields = "format", "callback"
+        parts = sorted([''.join(x) for x in args.items() if x[0] not in skip_fields])
         return hashlib.md5(''.join(parts) + self.secret).hexdigest()
 
     def get_auth_token(self):

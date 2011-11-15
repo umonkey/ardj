@@ -298,6 +298,17 @@ def cmd_fix_artist_names(*args):
     commit()
 
 
+def cmd_lastfm_track_tags(artist_name, track_title):
+    """show track tags from last.fm
+
+    Usage: lastfm-track-tags "artist name" "track title"
+    """
+    from ardj.scrobbler import LastFM
+
+    cli = LastFM()
+    print cli.get_track_tags(artist_name.decode("utf-8"), track_title.decode("utf-8"))
+
+
 def cmd_mark_hitlist(*args):
     """marks best tracks with the \"hitlist\" tag"""
     from ardj import database
