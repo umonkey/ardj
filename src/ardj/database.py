@@ -40,7 +40,7 @@ import ardj.tracks
 import ardj.util
 
 
-class Model2(dict):
+class Model(dict):
     table_name = None
     fields = ()
     key_name = None
@@ -109,14 +109,14 @@ class Model2(dict):
         return execute(sql, params)
 
 
-class Message(Model2):
+class Message(Model):
     """Represents an outgoing XMPP message."""
     table_name = "jabber_messages"
     fields = "id", "text", "re"
     key_name = "id"
 
 
-class DownloadRequest(Model2):
+class DownloadRequest(Model):
     table_name = "download_queue"
     fields = "artist", "owner"
 
@@ -134,7 +134,7 @@ class DownloadRequest(Model2):
             return rows[0]
 
 
-class Track(Model2):
+class Track(Model):
     """Stores information about a track."""
     table_name = "tracks"
     fields = "id", "artist", "title", "filename", "length", "weight", "real_weight", "count", "last_playd", "owner"
