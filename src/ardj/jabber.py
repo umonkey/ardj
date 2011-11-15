@@ -293,12 +293,12 @@ class ardjbot(MyFileReceivingBot):
         Messages are added to the queue using the chat_say() function."""
         try:
             commit = False
-            for _id, _re, _msg in ardj.database.fetch("SELECT id, re, message FROM jabber_messages"):
-                if _re:
-                    self.say_to_jid(_re, _msg)
+            for msg in ardj.database.Message.find_all():
+                if msg.get("re"):
+                    self.say_to_jid(msg["re"], msg["text"])
                 else:
-                    self.say_to_chat(_msg)
-                ardj.database.execute("DELETE FROM jabber_messages WHERE id = ?", (_id, ))
+                    self.say_to_chat(msg["text"])
+                msg.delete()
                 commit = True
             if commit:
                 ardj.database.commit()
