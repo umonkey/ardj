@@ -100,11 +100,20 @@ class LastFM(object):
             artist=artist_name.encode('utf-8'),
             autocorrect='1')
 
-    def get_track_tags(self, artist_name, track_title):
-        return self.call_signed(method="track.getTags",
+    def get_track_info(self, artist_name, track_title):
+        return self.call_signed(method="track.getInfo",
             artist=artist_name.encode("utf-8"),
             track=track_title.encode("utf-8"),
             autocorrect="1")
+
+    def get_track_tags(self, artist_name, track_title):
+        """Returns top tags for the specified track."""
+        data = self.get_track_info(artist_name, track_title)
+        try:
+            tags = data["track"]["toptags"]["tag"]
+            return [t["name"] for t in tags]
+        except KeyError:
+            return []
 
     def get_tracks_by_artist(self, artist_name):
         tags = ardj.settings.get('fresh_music/tags', [])
