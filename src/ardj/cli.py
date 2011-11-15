@@ -246,16 +246,16 @@ def cmd_xmpp_send(*args):
         recipient = args[1]
 
     from database import Message, commit
-    Message.create(args[0], recipient)
+    Message(text=args[0], re=recipient).put()
     commit()
 
 
 def cmd_download_artist(*args):
     """queues retrieving more tracks by the specified artists"""
-    from ardj.database import ArtistDownloadRequest, commit
+    from ardj.database import DownloadRequest, commit
     for arg in args[1:]:
-        if ArtistDownloadRequest.find_by_artist(arg) is None:
-            ArtistDownloadRequest.create(arg, "nobody")
+        if DownloadRequest.find_by_artist(arg) is None:
+            DownloadRequest(artist=arg, owner="console").put()
     commit()
 
 
@@ -263,20 +263,16 @@ def cmd_db_stats(*args):
     """shows database statistics"""
     from ardj.database import Track
 
-    count, length = 0, 0
-    for track in Track.find_all():
-        count += 1
-        if track.length:
-            length += track.length
-
+    tracks = Track.find_all()
+    count = len(tracks)
+    length = sum([t.get("length", 0) for t in tracks])
     print "%u tracks, %.1f hours." % (count, length / 60 / 60)
 
 
 def cmd_queue_flush(*args):
     """delete everything from the queue"""
     from ardj.database import Queue, commit
-    for item in Queue.find_all():
-        item.delete()
+    Queue.delete_all()
     commit()
 
 

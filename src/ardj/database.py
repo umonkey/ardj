@@ -17,9 +17,7 @@
 
 """ARDJ, an artificial DJ.
 
-This module contains the database related code.  It currently is a mixture of
-hand-made SQLite code and some new StORM based parts.  Later everything will be
-moved to StORM.
+This module contains the database related code.
 """
 
 import logging
@@ -36,156 +34,135 @@ except ImportError:
     print >> sys.stderr, 'Please install pysqlite2.'
     sys.exit(13)
 
-from storm.locals import *  # https://storm.canonical.com
-
 import ardj.settings
 import ardj.scrobbler
 import ardj.tracks
 import ardj.util
 
 
-class _store:
-    _db = None
-    _store = None
+class Model2(dict):
+    table_name = None
+    fields = ()
+    key_name = None
 
     @classmethod
-    def init(cls):
-        if cls._store is None:
-            cls._db = create_database(ardj.settings.get("database_uri"))
-            cls._store = Store(cls._db)
-
-    @classmethod
-    def get(cls):
-        """Contains an instance of a store, to access the databse.
-
-        This is a read-only property."""
-        cls.init()
-        return cls._store
-
-    @classmethod
-    def get_db(cls):
-        cls.init()
-        return cls._db
-
-
-class Model(object):
-    _db = None
-    _store = None
-
-    @classmethod
-    def _get_store(cls):
-        if Model._store is None:
-            uri = ardj.settings.get("database_uri")
-            if uri is None:
-                uri = "sqlite:" + ardj.settings.get2("database_path", "database/local")
-            Model._db = create_database(uri)
-            Model._store = Store(Model._db)
-        return Model._store
-
-    @classmethod
-    def create(cls, *args, **kwargs):
-        _tmp = cls(*args, **kwargs)
-        cls._get_store().add(_tmp)
-        return _tmp
+    def get_by_id(cls, id):
+        fields_sql = ", ".join(cls.fields)
+        sql = "SELECT %s FROM %s WHERE %s = ?" % (fields_sql, cls.table_name, cls.key_name)
+        row = fetchone(sql, (id, ))
+        if row is not None:
+            return cls._from_row(row)
 
     @classmethod
     def find_all(cls):
-        return cls._get_store().find(cls)
+        fields_sql = ", ".join(cls.fields)
+        sql = "SELECT %s FROM %s" % (fields_sql, cls.table_name)
+        return cls._fetch_rows(sql, ())
+
+    @classmethod
+    def _fetch_rows(cls, sql, params):
+        rows = fetch(sql, params)
+        return [cls._from_row(row) for row in rows]
+
+    @classmethod
+    def _from_row(cls, row):
+        pairs = [(name, row[idx]) for idx, name in enumerate(cls.fields)]
+        return cls(dict(pairs))
+
+    @classmethod
+    def _fields_sql(cls):
+        return ", ".join(cls.fields)
+
+    @classmethod
+    def delete_all(cls):
+        """Deletes all records from the table."""
+        return execute("DELETE FROM %s" % cls.table_name, ())
 
     def delete(self):
-        return self._get_store().remove(self)
+        sql = "DELETE FROM %s WHERE %s = ?" % (self.table_name, self.key_name)
+        execute(sql, (self[self.key_name], ))
+        self[self.key_name] = None
+
+    def put(self):
+        if self.get(self.key_name) is None:
+            return self._insert()
+        return self._update()
+
+    def _insert(self):
+        fields = [f for f in self.fields if f != self.key_name]
+        fields_sql = ", ".join(fields)
+        params_sql = ", ".join(["?"] * len(fields))
+
+        sql = "INSERT INTO %s (%s) VALUES (%s)" % (cls.table_name, fields_sql, params_sql)
+        params = [self.get(field) for field in fields]
+
+        self[self.key_name] = execute(sql, params)
+        return self[self.key_name]
+
+    def _update(self):
+        fields = [f for f in self.fields if f != self.key_name]
+        fields_sql = ", ".join(["%s = ?" for field in fields])
+
+        sql = "UPDATE %s SET %s WHERE %s = ?" % (self.table_name, fields_sql, self.key_name)
+        params = [self.get(field) for field in fields] + [self[self.key_name]]
+
+        return execute(sql, params)
 
 
-class ArtistDownloadRequest(Model):
-    """Stores a request to download more tracks by the specified artist.
+class Message(Model2):
+    """Represents an outgoing XMPP message."""
+    table_name = "jabber_messages"
+    fields = "id", "text", "re"
+    key_name = "id"
 
-    Data:
-    artist -- artist name
-    """
 
-    __storm_table__ = "download_queue"
-    artist = Unicode(primary=True)
-    owner = Unicode()
-
-    def __init__(self, artist, owner=None):
-        if owner is not None:
-            owner = unicode(owner)
-        self.artist = unicode(artist)
-        self.owner = owner
+class DownloadRequest(Model2):
+    table_name = "download_queue"
+    fields = "artist", "owner"
 
     @classmethod
     def find_by_artist(cls, artist):
-        """Returns a request for artist with the specified name.  If there's no
-        such request, returns None."""
-        return cls._get_store().find(cls, cls.artist == unicode(artist)).one()
+        sql = "SELECT %s FROM %s WHERE artist = ?" % (cls._fields_sql(), cls.table_name)
+        return cls._fetch_rows(sql, (artist, ))
 
     @classmethod
     def get_one(cls):
         """Returns one random download ticket."""
-        return cls._get_store().find(cls)[:1].one()
+        sql = "SELECT %s FROM %s LIMIT 1" % (cls._fields_sql(), cls.table_name)
+        rows = cls._fetch_rows(sql, ())
+        if rows:
+            return rows[0]
 
 
-class Track(Model):
+class Track(Model2):
     """Stores information about a track."""
-    __storm_table__ = "tracks"
-
-    id = Int(primary=True)
-    artist = Unicode()
-    title = Unicode()
-    filename = Unicode()
-    length = Int()
-    weight = Float()
-    real_weight = Float()
-    count = Int()
-    last_played = Int()
-    owner = Unicode()
-
-    def __init__(self, artist, title, filename, length=0, weight=1.0, real_weight=1.0, count=0, last_played=None, owner=None):
-        """Initializes a track.  String values are converted to Unicode."""
-        self.artist = unicode(artist)
-        self.title = unicode(title)
-        self.filename = unicode(filename)
-        self.length = length
-        self.weight = weight
-        self.real_weight = real_weight
-        self.count = count
-        self.last_played = last_played
-        if owner is not None:
-            self.owner = unicode(owner)
+    table_name = "tracks"
+    fields = "id", "artist", "title", "filename", "length", "weight", "real_weight", "count", "last_playd", "owner"
+    key_name = "id"
 
     @classmethod
     def find_all(cls):
         """Returns all tracks with positive weight."""
-        return cls._get_store().find(cls, cls.weight > 0)
+        sql = "SELECT %s FROM %s WHERE weight > 0" % (self._fields_sql(), self.table_name)
+        return self._fetch_rows(sql, ())
 
     @classmethod
     def get_artist_names(cls):
         """Returns all artist names."""
-        names = []
-        for track in cls.find_all():
-            if track.artist not in names:
-                names.append(track.artist)
-        return names
+        return fetchcol("SELECT DISTINCT artist FROM %s" % self.table_name)
 
     @classmethod
     def rename_artist(cls, old_name, new_name):
         """Renames an artist."""
-        tracks = cls._get_store().find(cls, cls.artist == unicode(old_name))
-        for track in tracks:
-            track.artist = unicode(new_name)
+        sql = "UPDATE %s SET artist = ? WHERE artist = ?" % (self.table_name, new_name, old_name)
+        execute(sql, ())
 
 
 class Queue(Model):
     """Stores information about a track to play out of regular order."""
-    __storm_table__ = "queue"
-    id = Int(primary=True)
-    track_id = Int()
-    owner = Unicode()
-
-    def __init__(self, track_id, owner):
-        """Adds a track with the specified id to the end of the queue.  Owner is a JID."""
-        self.track_id = int(track_id)
-        self.owner = unicode(owner)
+    table_name = "queue"
+    fields = "id", "track_id", "owner"
+    key_name = "id"
 
 
 def get_init_statements(dbtype):
@@ -414,14 +391,9 @@ def Open(filename=None):
     return database.get_instance()
 
 
-def commit_storm():
-    Model._get_store().commit()
-
-
 def commit():
     # ts = time.time()
     # logging.debug("Commit.")
-    commit_storm()
     Open().commit()
     # logging.debug("Commit took %s seconds." % (time.time() - ts))
 
@@ -457,13 +429,6 @@ def init_sqlite(statements):
     for statement in statements:
         cur.execute(statement)
     db.commit()
-
-
-def init_storm(statements):
-    store = _store.get()
-    for statement in statements:
-        store.execute(statement)
-    store.commit()
 
 
 def cli_init(args=None):

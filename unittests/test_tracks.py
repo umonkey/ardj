@@ -4,6 +4,7 @@ import unittest
 from ardj import database
 from ardj import tracks
 
+
 class TrackSelectionTests(unittest.TestCase):
     def setUp(self):
         database.cli_init()
