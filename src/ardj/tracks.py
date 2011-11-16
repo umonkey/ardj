@@ -21,8 +21,10 @@ import ardj.database
 import ardj.jabber
 import ardj.jamendo
 import ardj.listeners
+import ardj.log
 import ardj.podcast
 import ardj.replaygain
+import ardj.settings
 import ardj.scrobbler
 import ardj.tags
 import ardj.util
@@ -1135,6 +1137,32 @@ def add_label_to_tracks_liked_by(label, jids, sender):
         ardj.database.execute("INSERT INTO labels (track_id, label, email) VALUES (?, ?, ?)", (_id, label, sender, ))
 
     return len(_ids)
+
+
+def add_missing_lastfm_tags():
+    cli = ardj.scrobbler.LastFM()
+
+    skip_labels = set(ardj.settings.get_scrobbler_skip_labels())
+
+    for track in ardj.database.Track.find_without_lastfm_tags():
+        labels = track.get_labels()
+
+        if skip_labels and set(labels) & skip_labels:
+            continue
+
+        try:
+            lastfm_tags = cli.get_track_tags(track["artist"], track["title"])
+            if not lastfm_tags:
+                continue
+        except ardj.scrobbler.Error, e:
+            ardj.log.log_error(str(e), e)
+            continue
+
+        for tag in lastfm_tags:
+            labels.append("lastfm:" + tag.replace(" ", "_"))
+
+        track.set_labels(labels)
+        ardj.database.commit()
 
 
 def do_idle_tasks(set_busy=None):

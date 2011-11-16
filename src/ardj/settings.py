@@ -153,3 +153,8 @@ def edit_cli(args):
 
 def get_music_dir():
     return load().get_music_dir()
+
+
+def get_scrobbler_skip_labels():
+    conf = load()
+    return conf.get("scrobbler_skip_labels", conf.get("last.fm/skip_labels", []))

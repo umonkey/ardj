@@ -309,6 +309,12 @@ def cmd_lastfm_track_tags(artist_name, track_title):
     print u", ".join(cli.get_track_tags(artist_name.decode("utf-8"), track_title.decode("utf-8")))
 
 
+def cmd_lastfm_find_tags(*args):
+    """Adds lastfm:* tags to tracks that don't have them."""
+    from ardj.tracks import add_missing_lastfm_tags
+    add_missing_lastfm_tags()
+
+
 def cmd_mark_hitlist(*args):
     """marks best tracks with the \"hitlist\" tag"""
     from ardj import database
@@ -428,7 +434,7 @@ def run(args):
             except KeyboardInterrupt:
                 pass
             except Exception, e:
-                logging.error('ERROR handling command %s: %s' % (args[1], e) + traceback.format_exc(e))
+                ardj.log.log_error('ERROR handling command %s: %s' % (args[1], e) + traceback.format_exc(e), e)
                 print "ERROR: %s\n%s" % (e, traceback.format_exc(e))
             exit(1)
 

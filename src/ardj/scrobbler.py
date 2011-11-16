@@ -101,6 +101,7 @@ class LastFM(object):
             autocorrect='1')
 
     def get_track_info(self, artist_name, track_title):
+        logging.debug("Retrieving last.fm info for \"%s\" by %s" % (track_title, artist_name))
         return self.call_signed(method="track.getInfo",
             artist=artist_name.encode("utf-8"),
             track=track_title.encode("utf-8"),
@@ -109,11 +110,16 @@ class LastFM(object):
     def get_track_tags(self, artist_name, track_title):
         """Returns top tags for the specified track."""
         data = self.get_track_info(artist_name, track_title)
-        try:
-            tags = data["track"]["toptags"]["tag"]
-            return [t["name"] for t in tags]
-        except KeyError:
-            return []
+
+        for k in "track", "toptags", "tag":
+            if k not in data or not isinstance(data[k], (dict, list)):
+                return []
+            data = data[k]
+
+        if type(data) == dict:
+            data = [data]
+
+        return [t["name"] for t in data]
 
     def get_tracks_by_artist(self, artist_name):
         tags = ardj.settings.get('fresh_music/tags', [])
