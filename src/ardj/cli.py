@@ -246,7 +246,7 @@ def cmd_xmpp_send(*args):
         recipient = args[1]
 
     from database import Message, commit
-    Message(text=args[0], re=recipient).put()
+    Message(message=args[0], re=recipient).put()
     commit()
 
 

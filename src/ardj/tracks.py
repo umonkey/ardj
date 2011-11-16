@@ -1158,6 +1158,8 @@ def add_missing_lastfm_tags():
             continue
 
         lastfm_tags = set(list(track_tags + artist_tags))
+        if not lastfm_tags:
+            continue
 
         for tag in lastfm_tags:
             labels.append("lastfm:" + tag.replace(" ", "_"))

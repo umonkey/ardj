@@ -295,9 +295,9 @@ class ardjbot(MyFileReceivingBot):
             commit = False
             for msg in ardj.database.Message.find_all():
                 if msg.get("re"):
-                    self.say_to_jid(msg["re"], msg["text"])
+                    self.say_to_jid(msg["re"], msg["message"])
                 else:
-                    self.say_to_chat(msg["text"])
+                    self.say_to_chat(msg["message"])
                 msg.delete()
                 commit = True
             if commit:

@@ -112,7 +112,7 @@ class Model(dict):
 class Message(Model):
     """Represents an outgoing XMPP message."""
     table_name = "jabber_messages"
-    fields = "id", "text", "re"
+    fields = "id", "message", "re"
     key_name = "id"
 
 
