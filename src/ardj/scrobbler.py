@@ -100,8 +100,31 @@ class LastFM(object):
             artist=artist_name.encode('utf-8'),
             autocorrect='1')
 
+    def get_artist_info(self, artist_name):
+        logging.debug("Retrieving last.fm info for %s" % (artist_name.encode("utf-8")))
+        return self.call_signed(method="artist.getInfo",
+            artist=artist_name.encode("utf-8"))
+
+    def get_artist_tags(self, artist_name):
+        """Returns top tags for the specified artist."""
+        data = self.get_artist_info(artist_name)
+
+        if "artist" not in data or type(data["artist"]) != dict:
+            return []
+        data = data["artist"]
+
+        if "tags" not in data or type(data["tags"]) != dict:
+            return []
+        data = data["tags"]
+
+        if "tag" not in data or type(data["tag"]) != list:
+            return []
+        data = data["tag"]
+
+        return [t["name"] for t in data]
+
     def get_track_info(self, artist_name, track_title):
-        logging.debug("Retrieving last.fm info for \"%s\" by %s" % (track_title, artist_name))
+        logging.debug("Retrieving last.fm info for \"%s\" by %s" % (track_title.encode("utf-8"), artist_name.encode("utf-8")))
         return self.call_signed(method="track.getInfo",
             artist=artist_name.encode("utf-8"),
             track=track_title.encode("utf-8"),

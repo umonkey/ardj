@@ -1151,12 +1151,13 @@ def add_missing_lastfm_tags():
             continue
 
         try:
-            lastfm_tags = cli.get_track_tags(track["artist"], track["title"])
-            if not lastfm_tags:
-                continue
+            track_tags = cli.get_track_tags(track["artist"], track["title"])
+            artist_tags = cli.get_artist_tags(track["artist"])
         except ardj.scrobbler.Error, e:
             ardj.log.log_error(str(e), e)
             continue
+
+        lastfm_tags = set(list(track_tags + artist_tags))
 
         for tag in lastfm_tags:
             labels.append("lastfm:" + tag.replace(" ", "_"))
