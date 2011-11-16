@@ -1013,9 +1013,9 @@ def add_incoming_files(filenames):
     add_labels = ardj.settings.get("incoming_labels", ardj.settings.get("database/incoming/labels", ["tagme", "music"]))
     for filename in filenames:
         add_file(filename, add_labels)
+        ardj.database.commit()
         os.unlink(filename)
         success.append(os.path.basename(filename))
-    ardj.database.commit()
     return success
 
 
