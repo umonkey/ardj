@@ -243,10 +243,10 @@ def cmd_xmpp_send(*args):
 
     recipient = None
     if len(args) > 1:
-        recipient = args[1]
+        recipient = args[1].decode("utf-8")
 
     from database import Message, commit
-    Message(message=args[0], re=recipient).put()
+    Message(message=args[0].decode("utf-8"), re=recipient).put()
     commit()
 
 
