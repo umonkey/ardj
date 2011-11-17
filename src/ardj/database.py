@@ -93,7 +93,7 @@ class Model(dict):
         fields_sql = ", ".join(fields)
         params_sql = ", ".join(["?"] * len(fields))
 
-        sql = "INSERT INTO %s (%s) VALUES (%s)" % (cls.table_name, fields_sql, params_sql)
+        sql = "INSERT INTO %s (%s) VALUES (%s)" % (self.table_name, fields_sql, params_sql)
         params = [self.get(field) for field in fields]
 
         self[self.key_name] = execute(sql, params)
