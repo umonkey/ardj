@@ -3,7 +3,7 @@ import imp
 import os
 import sys
 
-import unittest
+import unittest2 as unittest
 
 from ardj import log
 
