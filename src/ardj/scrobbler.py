@@ -17,6 +17,10 @@ class BadAuth(Error):
     pass
 
 
+class InvalidParameters(Error):
+    pass
+
+
 class LastFM(object):
     """The LastFM client."""
     ROOT = 'http://ws.audioscrobbler.com/2.0/'
@@ -147,9 +151,12 @@ class LastFM(object):
     def get_tracks_by_artist(self, artist_name):
         tags = ardj.settings.get('fresh_music/tags', [])
 
-        data = self.call(method='artist.getTopTracks',
-            artist=artist_name.encode('utf-8'),
-            limit=1000)
+        try:
+            data = self.call(method='artist.getTopTracks',
+                artist=artist_name.encode('utf-8'),
+                limit=1000)
+        except InvalidParameters:
+            return []
 
         if 'toptracks' not in data:
             return []
@@ -208,6 +215,8 @@ class LastFM(object):
             logging.error("Last.fm error %u: %s" % (response["error"], response["message"]))
             if response["error"] in (4, 9, 10, 13, 26):
                 raise BadAuth(response["message"])
+            if response["error"] == 6:
+                raise InvalidParameters(response["message"])
             raise Error(response["message"])
         return response
 
