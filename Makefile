@@ -53,6 +53,7 @@ package-debian: tar
 	mkdir -p tmp
 	cp $(TAR) tmp/ardj-$(VERSION).tar.gz
 	cp $(TAR) tmp/ardj_$(VERSION).orig.tar.gz
+	cp $(TAR) ardj_$(VERSION).orig.tar.gz
 	tar xfz ardj-$(VERSION).tar.gz --directory tmp
 	cd tmp/ardj-$(VERSION) && debuild -S
 	mv tmp/ardj_$(VERSION)[_-]* ./

@@ -21,6 +21,8 @@ ardj (1.0.6-1) natty; urgency=low
  * Fixed double logging of some messages to syslog.
  * Fixed the scrobbler locking the database.
 
+ -- Justin Forest <hex@umonkey.net>  Wed, 19 Nov 2011 04:50:00 +0400
+
 ardj (1.0.5-1) natty; urgency=low
 
   * Handle empty responses from libre.fm
