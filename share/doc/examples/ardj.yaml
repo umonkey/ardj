@@ -84,7 +84,7 @@ use_jabber_status: yes
 
 
 # If you want to see how many users are currently listening to the stream, enable this.
-#icecast_stats_url: "http://user:pass@localhost:8180/admin/stats.xml"
+#icecast_stats_url: "http://admin:hackme@localhost:8000/admin/stats.xml"
 
 
 # Uncomment this if you are using ices as the source client, otherwise the skip
