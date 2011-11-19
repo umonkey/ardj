@@ -1,3 +1,26 @@
+ardj (1.0.6-1) natty; urgency=low
+
+ * Added a script to post news to the chat room.
+ * Added limits on hotline messages.
+ * Added a way to twit using identi.ca.
+ * Added support for MTS voicemail to hotline.
+ * Added a way to track chat room visitor count.
+ * Removed Storm.
+ * Fixed the upstart script for ardj-ices.
+ * Fixed unit testing under Python 2.6.
+ * Fixed downloading new tracks.
+ * Fixed sending messages to the chat room.
+ * Fixed empty tags.
+ * Fixed the log file growing too big.
+ * Fixed the purge command.
+ * Fixed sending messages to Twitter.
+ * Fixed jabber command "last" not showing play count.
+ * Fixed the hotline script failing on non-latin file names.
+ * Fixed downloading tracks from Jamendo.
+ * Fixed jabber command "speak".
+ * Fixed double logging of some messages to syslog.
+ * Fixed the scrobbler locking the database.
+
 ardj (1.0.5-1) natty; urgency=low
 
   * Handle empty responses from libre.fm

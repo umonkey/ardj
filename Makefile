@@ -1,4 +1,4 @@
-VERSION=1.0.5
+VERSION=1.0.6
 TAR=ardj-${VERSION}.tar.gz
 DEB=ardj_${VERSION}-1_all.deb
 
