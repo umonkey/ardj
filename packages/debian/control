@@ -12,7 +12,7 @@ Homepage: http://code.google.com/p/ardj/
 Package: ardj
 Architecture: all
 Depends: python, python-support (>= 0.90), adduser,
-  ${misc:Depends},
+  ${misc:Depends}, ${python:Depends},
   python-yaml, python-mutagen (>= 1.19), python-oauth,
   python-feedparser, python-httplib2, python-webpy
 Suggests: python-dnspython, python-socksipy, ices, icecast2, python-simplejson
