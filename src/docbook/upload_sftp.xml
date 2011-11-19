@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<section id="upload-sftp">
+	<title>Загрузка музыки по протоколу SFTP</title>
+
+	<para>Протокол SFTP является безопасным аналогом протокола FTP, работающим
+	поверх SSH.  Для того, чтобы предоставить пользователям возможность
+	безопасно (для сервера) загружать музыку, следует создать специального
+	пользователя — назовём его "ardj-uploader" — для которого домашней папкой
+	будет <filename>/var/lib/ardj/incoming</filename>, добавить его в группу
+	"ardj", а в файл <filename>/etc/ssh/sshd_config</filename> добавить такие
+	строки:</para>
+
+	<programlisting>Match Group ardj
+ChrootDirectory %h
+ForceCommand internal-sftp
+AllowTcpForwarding no</programlisting>
+
+	<para>Теперь пользователь ardj-uploader может подключаться к серверу по протоколу SFTP и может складывать файлы
+	в папку incoming; подключаться по SSH, загружать файлы в другие папки или доставать их оттуда он не
+	может.</para>
+</section>
