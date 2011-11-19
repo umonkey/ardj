@@ -49,14 +49,15 @@ def format_track_list(tracks, header=None):
 
 
 def get_ices_pid():
-    pidfile = ardj.settings.get('jabber/ices_pid')
+    pidfile = ardj.settings.get('ices_pid_file')
     if not pidfile:
-        logging.warning('The jabber/ices_pid file not set.')
         return None
+
     if not os.path.exists(pidfile):
         logging.warning('%s does not exist.' % pidfile)
         return None
-    return int(open(pidfile, 'rb').read().strip())
+
+    return int(file(pidfile, 'rb').read().strip())
 
 
 def signal_ices(sig):
@@ -71,6 +72,33 @@ def signal_ices(sig):
         return True
     except Exception, e:
         logging.warning('could not kill(%u) ices: %s' % (sig, e))
+        return False
+
+
+def get_ezstream_pid():
+    pidfile = ardj.settings.get('ezstream_pid_file')
+    if not pidfile:
+        return None
+
+    if not os.path.exists(pidfile):
+        logging.warning('%s does not exist.' % pidfile)
+        return None
+
+    return int(file(pidfile, 'rb').read().strip())
+
+
+def signal_ezstream(sig):
+    ezstream_pid = get_ezstream_pid()
+    try:
+        if ezstream_pid:
+            os.kill(ezstream_pid, sig)
+            logging.debug('sent signal %s to process %s.' % (sig, ezstream_pid))
+        else:
+            ardj.util.run(['pkill', '-' + str(sig), 'ezstream'])
+            logging.debug('sent signal %s to ezstream using pkill (unsafe).' % sig)
+        return True
+    except Exception, e:
+        logging.warning('could not kill(%u) ezstream: %s' % (sig, e))
         return False
 
 
@@ -95,16 +123,24 @@ def on_skip(args, sender):
             track = ardj.tracks.get_track_by_id(track_id)
             return track
 
-    if signal_ices(signal.SIGUSR1):
-        sender_name = sender.split("@")[0]
+    sender_name = sender.split("@")[0]
 
-        track = get_current_track()
-        if track:
-            ardj.jabber.chat_say(u"%s skipped track %u: \"%s\" by %s" % (sender_name, track["id"], track["title"], track["artist"]))
-        else:
-            ardj.jabber.chat_say(u"%s skipped an unknown track." % sender_name)
+    track = get_current_track()
+    if track:
+        message = u"%s skipped track %u: \"%s\" by %s" % (sender_name, track["id"], track["title"], track["artist"])
+    else:
+        message = u"%s skipped an unknown track." % sender_name
 
+    tmp = ardj.settings.get("ices_pid_file")
+    if tmp is not None and signal_ices(signal.SIGUSR1):
+        ardj.jabber.chat_say(message)
         return 'Request sent.'
+
+    tmp = ardj.settings.get("ezstream_pid_file")
+    if tmp is not None and signal_ezstream(signal.SIGUSR1):
+        ardj.jabber.chat_say(message)
+        return 'Request sent.'
+
     return 'Could not send the request for some reason.'
 
 
@@ -114,11 +150,6 @@ def on_say(args, sender):
 
 
 def on_restart(args, sender):
-    if args == 'ices':
-        if signal_ices(signal.SIGTERM):
-            ardj.util.run(['ices', '-B'])
-            return 'Done.'
-        return 'Could not kill ices for some reason.'
     sys.exit(1)
 
 
@@ -174,8 +205,6 @@ def on_purge(args, sender):
 
 
 def on_reload(args, sender):
-    if not signal_ices(signal.SIGHUP):
-        return 'Failed.'
     ardj.settings.load(True)
     return 'Ices will be reinitialized when track changes.'
 

@@ -87,6 +87,15 @@ use_jabber_status: yes
 #icecast_stats_url: "http://user:pass@localhost:8180/admin/stats.xml"
 
 
+# Uncomment this if you are using ices as the source client, otherwise the skip
+# command won't work.
+#ices_pid_file: /var/run/ices.pid
+
+# Uncomment this if you are using ezstream as the source client, otherwise the
+# skip command won't work.
+#ezstream_pid_file: /var/run/ezstream.pid
+
+
 # If you want to use speech synthesis, upload a random OGG/Vorbis track and
 # specify its id here.  You can also specify a custom voice.
 #festival_track_id: 1234
