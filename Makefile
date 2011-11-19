@@ -67,6 +67,9 @@ deb: tar
 	mv tmp/ardj_$(VERSION)[_-]* ./
 	rm -rf tmp
 
+depends-debian:
+	sudo apt-get install xsltproc docbook-xsl docbook2x devscripts
+
 upload-ppa:
 	dput ardj ardj_$(VERSION)-*.changes
 
