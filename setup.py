@@ -17,6 +17,7 @@ data_files = [
     ('/etc/logrotate.d', glob_files('share/logrotate.d/*')),
     ('/etc/rsyslog.d', glob_files('share/rsyslog.d/*')),
     ('/etc/sudoers.d', glob_files('share/sudoers.d/*')),
+    ('/etc/ardj/ezstream.xml', ['share/ezstream.xml']),
     ('/usr/share/ardj/database', glob_files('share/database/*.sql')),
     ('/usr/share/ardj/failure', ['share/audio/stefano_mocini_leaving_you_failure_edit.ogg']),
     ('/usr/share/ardj/samples', ['share/audio/cubic_undead.mp3', 'share/audio/successful_install.ogg']),
