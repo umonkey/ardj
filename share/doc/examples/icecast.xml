@@ -13,25 +13,25 @@
 
     <authentication>
         <!-- Sources log in with username 'source' -->
-        <source-password>SOURCE_PASSWORD</source-password>
+        <source-password>hackme</source-password>
 
         <!-- Admin logs in with the username given below -->
         <admin-user>admin</admin-user>
-        <admin-password>ADMIN_PASSWORD</admin-password>
+        <admin-password>hackme</admin-password>
     </authentication>
 
     <listen-socket>
-        <port>8180</port>
+        <port>8000</port>
     </listen-socket>
 
 	<mount>
 		<mount-name>/music.mp3</mount-name>
-		<password>SOURCE_PASSWORD</password>
+		<password>hackme</password>
 	</mount>
 
 	<mount>
 		<mount-name>/live.mp3</mount-name>
-		<password>LIVE_PASSWORD</password>
+		<password>hackme</password>
 		<fallback-mount>/music.mp3</fallback-mount>
 		<fallback-override>1</fallback-override>
 		<!--

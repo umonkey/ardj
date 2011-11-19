@@ -1,5 +1,5 @@
 <ezstream>
-    <url>http://localhost:8180/stream</url>
+    <url>http://localhost:8000/stream</url>
     <sourcepassword>hackme</sourcepassword>
     <format>MP3</format>
     <filename>/usr/lib/ardj/ardj-next-track</filename>
