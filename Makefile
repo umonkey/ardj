@@ -1,4 +1,4 @@
-VERSION=1.0.10
+VERSION=1.0.11
 TAR=ardj-${VERSION}.tar.gz
 DEB=ardj_${VERSION}-1_all.deb
 
@@ -79,9 +79,11 @@ release: package-debian
 	googlecode_upload.py -s "ardj v${VERSION} (Debian)" -p ardj -l Featured,Type-Source,OpSys-Debian ${DEB}
 
 clean:
-	test -d .hg && hg clean || true
 	rm -rf doc/book.xml share/doc/man/ardj.1.gz tests.log tmp
-	find -regex '.*\.\(pyc\|rej\|orig\|zip\|tar\.gz\)$$' -delete
+	find -regex '.*\.\(pyc\|rej\|orig\|zip\)$$' -delete
+
+cleandist: clean
+	rm -f ardj-* ardj_*
 
 bdist: clean
 	VERSION=$(VERSION) python setup.py bdist
