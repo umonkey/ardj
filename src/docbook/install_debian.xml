@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- vim: set ft=docbk: -->
+<section id="install-debian">
+  <title>Установка в Debian (Ubuntu)</title>
+
+  <para>Для начала нужно установить используемые пакеты сторонних производителей.  Делается это в терминале
+  командой:</para>
+
+  <programlisting><![CDATA[sudo apt-get install -y python-yaml python-mutagen \
+python-feedparser python-httplib2 python-webpy python-dnspython \
+sox libsox-fmt-mp3 mp3gain vorbisgain icecast2 python-simplejson sqlite3 logrotate]]></programlisting>
+
+  <para>После этого можно скачать и установить последнюю версию пакета ardj для Debian.  Найти её можно на сайте
+  ardj.googlecode.com:</para>
+
+  <programlisting>http://code.google.com/p/ardj/downloads/list?q=label:OpSys-Debian</programlisting>
+
+  <para>Если вы используете графическую оболочку — монжо открыть пакет файловым менеджером и следовать инструкциям.  В
+  терминале пакет устанавливается так:</para>
+
+  <programlisting>sudo dpkg -i ardj_*.deb</programlisting>
+</section>

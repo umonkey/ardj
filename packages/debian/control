@@ -3,7 +3,7 @@ Section: sound
 Priority: optional
 Maintainer: Justin Forest <hex@umonkey.net>
 Build-Depends: debhelper (>= 8.0.0), pep8, python-mutagen, python-unittest2,
- python-yaml, python-feedparser
+ python-yaml, python-feedparser, python-httplib2
 Standards-Version: 3.9.2
 Homepage: http://code.google.com/p/ardj/
 #Vcs-Mercurial: http://code.google.com/p/ardj/

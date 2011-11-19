@@ -2,6 +2,8 @@
 <!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "/usr/share/xml/docbook/schema/dtd/4.4/docbookx.dtd" [
   <!ENTITY ezstream_sox SYSTEM "../src/docbook/ezstream_sox.xml">
   <!ENTITY upload_sftp SYSTEM "../src/docbook/upload_sftp.xml">
+  <!ENTITY install_prereq SYSTEM "../src/docbook/install_prereq.xml">
+  <!ENTITY install_debian SYSTEM "../src/docbook/install_debian.xml">
 ]>
 <book lang="ru">
   <bookinfo>
@@ -71,6 +73,16 @@
       linkend="jabber-rocks"><command>rocks</command></link> и <link
       linkend="jabber-sucks"><command>sucks</command></link>.</para>
     </section>
+  </chapter>
+
+  <chapter id="installing">
+    <title>Установка</title>
+
+    <para>В этом разделе описана установка и запуск радиостанции в типичной конфигурации.  Настройка дополнительных
+    функций описана в следующем разделе.</para>
+
+    &install_prereq;
+    &install_debian;
   </chapter>
 
   <chapter id="settings">
