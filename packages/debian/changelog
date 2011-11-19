@@ -1,4 +1,4 @@
-ardj (1.0.9-1) natty; urgency=low
+ardj (1.0.10-1) natty; urgency=low
 
  * Build-depend on python-yaml.
  * Removed tests that fetch data over http.

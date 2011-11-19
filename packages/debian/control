@@ -3,7 +3,7 @@ Section: sound
 Priority: optional
 Maintainer: Justin Forest <hex@umonkey.net>
 Build-Depends: debhelper (>= 8.0.0), pep8, python-mutagen, python-unittest2,
- python-yaml
+ python-yaml, python-feedparser
 Standards-Version: 3.9.2
 Homepage: http://code.google.com/p/ardj/
 #Vcs-Mercurial: http://code.google.com/p/ardj/
@@ -14,7 +14,7 @@ Architecture: all
 Depends: python, python-support (>= 0.90), adduser,
   ${misc:Depends},
   python-yaml, python-mutagen (>= 1.19), python-oauth,
-  python-storm, python-feedparser, python-httplib2, python-webpy
+  python-feedparser, python-httplib2, python-webpy
 Suggests: python-dnspython, python-socksipy, ices, icecast2, python-simplejson
 Recommends: sqlite3, podget, python-twitter, mp3gain, vorbisgain, logrotate
 Description: drives an internet radio station
