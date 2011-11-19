@@ -206,7 +206,7 @@ def on_purge(args, sender):
 
 def on_reload(args, sender):
     ardj.settings.load(True)
-    return 'Ices will be reinitialized when track changes.'
+    return 'Reloaded the configuration file.'
 
 
 def on_rocks(args, sender):
