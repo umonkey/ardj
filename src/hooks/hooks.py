@@ -5,6 +5,7 @@ with the `make install-hooks' command.
 """
 
 import re
+import subprocess
 import sys
 
 
@@ -14,3 +15,6 @@ def check_commit_message(repo, *args, **kwargs):
     if not re.search("issue \d+", message, re.I):
         print >> sys.stderr, "You MUST refer to an issue, e.g.: Fixes issue 123."
         return True
+
+    print >> sys.stderr, "Rebuilding zsh-completion."
+    subprocess.Popen(["make", "zsh-completion"]).wait()

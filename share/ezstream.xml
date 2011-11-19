@@ -2,7 +2,7 @@
     <url>http://localhost:8180/stream</url>
     <sourcepassword>hackme</sourcepassword>
     <format>MP3</format>
-    <filename>playlist.pl</filename>
+    <filename>ardj print-next-track</filename>
     <playlist_program>1</playlist_program>
 
     <svrinfoname>My Stream</svrinfoname>

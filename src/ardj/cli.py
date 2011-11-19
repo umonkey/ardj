@@ -10,8 +10,10 @@ underscores.  For example, command "merge-votes" is handled by the
 cmd_merge_votes function.
 """
 
+import glob
 import logging
 import os
+import random
 import sys
 import traceback
 
@@ -168,18 +170,26 @@ def cmd_tags(*args):
                 print '  %s = %s' % (k, v)
 
 
-def cmd_track(*args):
-    """works with individual tracks"""
-    import tracks
-    return tracks.run_cli(args)
-
-
 def cmd_add_incoming_tracks(*args):
     """moves tracks from the incoming folder to the database"""
     from ardj import tracks
     files = tracks.find_incoming_files(delay=0, verbose=True)
     success = tracks.add_incoming_files(files)
     print "Added %u files to the database." % len(success)
+
+
+def cmd_print_next_track(*args):
+    """names a file to play next"""
+    from ardj.webapi import get_next_track
+    try:
+        track = get_next_track()
+        if track is not None:
+            print track["filepath"]
+            return
+    except:
+        files = glob.glob("/usr/share/ardj/failure/*.ogg")
+        if files:
+            print random.choice(files)
 
 
 def cmd_twit(msg, *args):
