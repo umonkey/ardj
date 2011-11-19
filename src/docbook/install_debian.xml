@@ -8,7 +8,7 @@
 
   <programlisting><![CDATA[sudo apt-get install -y python-yaml python-mutagen \
 python-feedparser python-httplib2 python-webpy python-dnspython \
-sox libsox-fmt-mp3 mp3gain vorbisgain icecast2 python-simplejson sqlite3 logrotate]]></programlisting>
+sox libsox-fmt-mp3 lame mp3gain vorbisgain icecast2 python-simplejson sqlite3 logrotate]]></programlisting>
 
   <para>После этого можно скачать и установить последнюю версию пакета ardj для Debian.  Найти её можно на сайте
   ardj.googlecode.com:</para>
