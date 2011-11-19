@@ -1,3 +1,9 @@
+ardj (1.0.7-1) natty; urgency=low
+
+ * Fixed last.fm scrobbling being enabled by default.
+
+ -- Justin Forest <hex@umonkey.net>  Wed, 19 Nov 2011 04:50:00 +0400
+
 ardj (1.0.6-1) natty; urgency=low
 
  * Added a script to post news to the chat room.

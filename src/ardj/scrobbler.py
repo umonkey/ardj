@@ -73,7 +73,7 @@ class LastFM(object):
             return True
 
     def is_enabled(self):
-        return ardj.settings.get("last_fm_scrobble", ardj.settings.get("last.fm/scrobble", True))
+        return ardj.settings.get("last_fm_scrobble", ardj.settings.get("last.fm/scrobble", False))
 
     def now_playing(self, artist, title):
         """Tells LastFM what you're listening to."""
