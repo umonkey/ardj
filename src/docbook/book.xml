@@ -786,6 +786,13 @@ sticky_labels: [rock, jazz, 8bit]</programlisting>
     <title>Описание команд jabber-бота</title>
 
     <variablelist>
+      <varlistentry id="jabber-find">
+        <term><command>find</command> <replaceable>поисковый_запрос</replaceable></term>
+        <listitem>
+          <para>Выводит список композиций, содержащих указанную строку.</para>
+        </listitem>
+      </varlistentry>
+
       <varlistentry id="jabber-news">
         <term><command>news</command></term>
         <listitem>
