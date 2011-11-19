@@ -1,4 +1,4 @@
-VERSION=1.0.6
+VERSION=1.0.7
 TAR=ardj-${VERSION}.tar.gz
 DEB=ardj_${VERSION}-1_all.deb
 
@@ -43,7 +43,7 @@ uninstall:
 purge:
 	sudo rm -rf /var/lib/ardj /var/log/ardj*
 
-tar: doc man clean
+tar: clean
 	mkdir ardj-$(VERSION)
 	cp -R bin doc share src unittests packages/debian Makefile README.md TODO setup.py ardj-$(VERSION)/
 	tar cfz $(TAR) ardj-$(VERSION)
@@ -69,7 +69,7 @@ deb: tar
 	rm -rf tmp
 
 depends-debian:
-	sudo apt-get install xsltproc docbook-xsl docbook2x devscripts
+	sudo apt-get install devscripts
 
 upload-ppa:
 	dput ardj ardj_$(VERSION)-*.changes
@@ -107,6 +107,8 @@ share/doc/man/ardj.1.gz: share/doc/man/ardj.1
 man: share/doc/man/ardj.1
 
 doc:
-	make -C doc VERSION=$(VERSION)
+	$(MAKE) -C doc VERSION=$(VERSION)
+
+pre-commit: zsh-completion
 
 .PHONY: doc clean tar

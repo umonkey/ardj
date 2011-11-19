@@ -16,5 +16,5 @@ def check_commit_message(repo, *args, **kwargs):
         print >> sys.stderr, "You MUST refer to an issue, e.g.: Fixes issue 123."
         return True
 
-    print >> sys.stderr, "Rebuilding zsh-completion."
-    subprocess.Popen(["make", "zsh-completion"]).wait()
+    print >> sys.stderr, "Running other hooks."
+    subprocess.Popen(["make", "pre-commit"]).wait()

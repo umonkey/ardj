@@ -1,3 +1,9 @@
+ardj (1.0.7-2) natty; urgency=low
+
+ * Build-depend on python-yaml.
+
+ -- Justin Forest <hex@umonkey.net>  Wed, 19 Nov 2011 12:46:00 +0400
+
 ardj (1.0.7-1) natty; urgency=low
 
  * Fixed last.fm scrobbling being enabled by default.
