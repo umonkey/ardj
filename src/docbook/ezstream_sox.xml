@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<section id="ezstream-sox">
+  <title>Настройка ezstream и sox</title>
+
+  <para>В базовой конфигурации ezstream <ulink
+  url="http://svn.xiph.org/trunk/ezstream/examples/ezstream_reencode_mp3.xml">рекомендуется</ulink>
+  для декодирования файлов использовать специализированные утилиты для каждого
+  формата: oggdec, madplay, flac.  Этот вариант плох по двум причинам.
+  Во-первых, эти утилиты не поддерживают <ulink
+  url="http://ru.wikipedia.org/wiki/Replay_Gain">ReplayGain</ulink>, что для
+  радиостанции критично.  Во-вторых, не все их них поддерживают ресэмплинг, от
+  чего монофонические файлы, если они попадаются в плейлисте, звучат ввое
+  быстрее.</para>
+
+  <para>Эту проблему можно решить использованием в качестве декодера утилиты
+  <ulink url="http://sox.sourceforge.net/">sox</ulink>.  Дополнительным
+  преимуществом является простота: sox — это одна утилита, поддерживающая все
+  форматы.</para>
+
+  <para>Для использования sox замените все описания декодеров в файле
+  <filename>/etc/ezstream.xml</filename> на следующее:</para>
+
+  <programlisting><![CDATA[<decode>sox --replay-gain track "@T@" -r 44100 -c 2 -t raw -e signed-integer -</decode>]]></programlisting>
+</section>

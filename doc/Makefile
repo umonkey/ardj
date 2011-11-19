@@ -3,7 +3,7 @@ DATE=`date +'%Y-%m-%d'`
 
 all: single/index.html chunked/index.html
 
-book.xml: ../src/docbook/book.xml Makefile ../Makefile
+book.xml: Makefile ../Makefile ../src/docbook/*.xml
 	cat ../src/docbook/book.xml \
 	| sed -e "s/VERSION_NUMBER/$(VERSION)/g" \
 	| sed -e "s/RELEASE_DATE/$(DATE)/g" \
