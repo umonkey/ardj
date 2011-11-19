@@ -44,13 +44,14 @@ purge:
 	sudo rm -rf /var/lib/ardj /var/log/ardj*
 
 tar: clean
+	rm -rf ardj-$(VERSION)
 	mkdir ardj-$(VERSION)
 	cp -R bin doc share src unittests packages/debian Makefile README.md TODO setup.py ardj-$(VERSION)/
 	tar cfz $(TAR) ardj-$(VERSION)
 	rm -rf ardj-$(VERSION)
 
 package-debian: tar
-	mkdir -p tmp
+	rm -rf tmp; mkdir -p tmp
 	cp $(TAR) tmp/ardj-$(VERSION).tar.gz
 	cp $(TAR) tmp/ardj_$(VERSION).orig.tar.gz
 	cp $(TAR) ardj_$(VERSION).orig.tar.gz
@@ -60,7 +61,7 @@ package-debian: tar
 	rm -rf tmp
 
 deb: tar
-	mkdir -p tmp
+	rm -rf tmp; mkdir -p tmp
 	cp $(TAR) tmp/ardj-$(VERSION).tar.gz
 	cp $(TAR) tmp/ardj_$(VERSION).orig.tar.gz
 	tar xfz ardj-$(VERSION).tar.gz --directory tmp
