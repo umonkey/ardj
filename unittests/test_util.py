@@ -22,10 +22,6 @@ class Run(unittest.TestCase):
         del f
         self.assertFalse(os.path.exists(str(fn)))
 
-    def test_fetch(self):
-        tmp = ardj.util.fetch('http://www.tmradio.net/favicon.ico')
-        self.assertTrue(str(tmp).endswith('.ico'))
-
     def test_copy_file(self):
         tmp = ardj.util.mktemp()
         dst = 'temp.file'
