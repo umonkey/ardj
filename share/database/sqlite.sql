@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS karma (email TEXT, weight REAL)
 CREATE INDEX IF NOT EXISTS idx_karma_email ON karma (email)
 
 -- лог проигрываний
-CREATE TABLE IF NOT EXISTS playlog (ts INTEGER NOT NULL, track_id INTEGER NOT NULL, listeners INTEGER NOT NULL, lastfm INTEGER NOT NULL DEFAULT 0)
+CREATE TABLE IF NOT EXISTS playlog (ts INTEGER NOT NULL, track_id INTEGER NOT NULL, listeners INTEGER NOT NULL, lastfm INTEGER NOT NULL DEFAULT 0, librefm INTEGER NOT NULL DEFAULT 0)
 CREATE INDEX IF NOT EXISTS idx_playlog_ts ON playlog (ts)
 CREATE INDEX IF NOT EXISTS idx_playlog_track_id ON playlog (track_id)
 

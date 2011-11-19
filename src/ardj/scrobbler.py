@@ -305,6 +305,9 @@ class LibreFM(object):
 
     def process(self):
         """Looks for stuff to scrobble in the playlog table."""
+        if not ardj.settings.get("libre_fm_scrobble"):
+            return
+
         skip_labels = ardj.settings.get("libre_fm_skip_labels", ardj.settings.get("last_fm_skip_labels"))
         if skip_labels:
             in_sql = ', '.join(['?'] * len(skip_labels))
