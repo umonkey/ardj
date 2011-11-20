@@ -28,6 +28,9 @@ Found only these tracks:
 
   <programlisting>festival_track_id: 4656</programlisting>
 
+  <para>После этого перезапустите jabber-бота командой <link
+  linkend="jabber-restart"><command>restart</command></link>, чтобы изменения вступили в силу.</para>
+
   <para>Теперь можно отправить джаббер-боту команду <link linkend="jabber-speak"><command>speak</command></link> с
   текстом, который ему следует произнести.  Результат будет записан в файл, соответствующий указанной дорожке.  Выглядит
   это так:</para>
@@ -38,6 +41,5 @@ OK, please wait until the current song finishes playing.
 Current queue:                                               
 «Экстренное сообщение» by Микроша — #4656 ⚖2.21 ♺325 @special]]></programlisting>
 
-  <para>После этого не забудьте перезапустить jabber-бота командой <link
-  linkend="jabber-restart"><command>restart</command></link>.</para>
+  <para>Запрошенная фраза прозвучит по окончании проигрываемой композиции.</para>
 </section>
