@@ -76,7 +76,7 @@ def signal_ices(sig):
 
 
 def get_ezstream_pid():
-    pidfile = ardj.settings.get('ezstream_pid_file')
+    pidfile = ardj.settings.get("ezstream_pid_file", "/var/run/ezstream-ardj.pid")
     if not pidfile:
         return None
 

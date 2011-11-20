@@ -91,9 +91,8 @@ use_jabber_status: yes
 # command won't work.
 #ices_pid_file: /var/run/ices.pid
 
-# Uncomment this if you are using ezstream as the source client, otherwise the
-# skip command won't work.
-#ezstream_pid_file: /var/run/ezstream.pid
+# Uncomment this if you are using ezstream as the source client.
+#ezstream_config: /etc/ardj/ezstream.xml
 
 
 # If you want to use speech synthesis, upload a random OGG/Vorbis track and
