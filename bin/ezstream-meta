@@ -1,0 +1,22 @@
+#!/usr/bin/env python
+# encoding=utf-8
+
+"""ardj metadata source for ezstream.
+
+To let ezstream retrieve track metadata, install this script as follows:
+
+    <metadata_progname>/this/script</metadata_progname>
+    <metadata_format>@t@</metadata_format>
+"""
+
+import sys
+
+from ardj.tracks import get_last_track
+
+
+if __name__ == "__main__":
+    track = get_last_track()
+    if track is None:
+        print "unknown track"
+    else:
+        print "\"%s\" by %s" % (track["title"].encode("utf-8"), track["artist"].encode("utf-8"))

@@ -2,8 +2,11 @@
     <url>http://localhost:8000/stream</url>
     <sourcepassword>hackme</sourcepassword>
     <format>MP3</format>
-    <filename>/usr/lib/ardj/ardj-next-track</filename>
     <playlist_program>1</playlist_program>
+    <filename>/usr/lib/ardj/ardj-next-track</filename>
+
+    <metadata_progname>/usr/lib/ardj/ezstream-meta</metadata_progname>
+    <metadata_format>"@t@" by @a@</metadata_format>
 
     <svrinfoname>My Stream</svrinfoname>
     <svrinfourl>http://www.oddsock.org</svrinfourl>

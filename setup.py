@@ -24,7 +24,7 @@ data_files = [
     ('/usr/share/doc/ardj/examples', glob_files('share/doc/examples/*')),
     ('/usr/share/doc/ardj/html/', glob_files('docbook/chunked/*')),
     ('/usr/share/man/man1', ['share/doc/man/ardj.1.gz']),
-    ('/usr/lib/ardj', ['bin/ardj-next-track']),
+    ('/usr/lib/ardj', ['bin/ardj-next-track', 'bin/ezstream-meta']),
 ]
 
 classifiers = [
