@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- vim: set ft=docbk: -->
+<section id="festival">
+  <title>Настройка синтезатора речи</title>
+
+  <para>Синтез речи может использоваться в скриптах для анонсирования каких-то событий, и может быть доступен
+  пользователям через джаббер-бота в развлекательных целях.  Работает это так: вы загружаете в <link
+  linkend="media-db">медиатеку</link> файл формата OGG/Vorbis (с расширением <filename>.ogg</filename>), затем ardj
+  преобразует текст в речь, записывает в этот файл и ставит его в <link linkend="queue">очередь
+  проигрывания</link>.</para>
+
+  <para>Единственным свободным синтезатором речи, прилично говорящим по-русски, является <ulink
+  url="http://www.cstr.ed.ac.uk/projects/festival/">festival</ulink>.  Установить его в системе Debian (Ubuntu) можно
+  такой командой:</para>
+
+  <programlisting>sudo apt-get install festival festvox</programlisting>
+
+  <para>После этого определите идентификатор загруженного в медиатеку файла — это делается командой <link
+  linkend="jabber-news"><command>news</command></link> или <link
+  linkend="jabber-find"><command>find</command></link>:</para>
+
+  <programlisting><![CDATA[> find экстренное
+< Found only these tracks:
+< «Экстренное сообщение» by Микроша — #4656 ⚖1.96 ♺323 @special]]></programlisting>
+
+  <para>Укажите найденный идентификатор ("4656" в примере) в конфигурационном файле (обычно
+  <filename>/etc/ardj.yaml</filename>):</para>
+
+  <programlisting>festival_track_id: 4656</programlisting>
+
+  <para>Теперь можно отправить джаббер-боту команду <link linkend="jabber-speak"><command>speak</command></link> с
+  текстом, который ему следует произнести.  Результат будет записан в файл, соответствующий указанной дорожке.  Выглядит
+  это так:</para>
+
+  <programlisting><![CDATA[> speak привет, меня зовут микроша. гамбургеры заворачивать теперь буду я
+OK, please wait until the current song finishes playing.]]></programlisting>
+</section>
