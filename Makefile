@@ -112,6 +112,12 @@ man: share/doc/man/ardj.1
 doc:
 	$(MAKE) -C doc VERSION=$(VERSION)
 
+commit-doc: doc
+	rm doc/book.xml
+	hg add src/docbook
+	hg commit src/docbook doc -l src/docbook/commit.txt
+	hg push
+
 pre-commit: zsh-completion
 
 .PHONY: doc clean tar
