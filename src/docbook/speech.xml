@@ -20,8 +20,8 @@
   linkend="jabber-find"><command>find</command></link>:</para>
 
   <programlisting><![CDATA[> find экстренное
-< Found only these tracks:
-< «Экстренное сообщение» by Микроша — #4656 ⚖1.96 ♺323 @special]]></programlisting>
+Found only these tracks:
+«Экстренное сообщение» by Микроша — #4656 ⚖1.96 ♺323 @special]]></programlisting>
 
   <para>Укажите найденный идентификатор ("4656" в примере) в конфигурационном файле (обычно
   <filename>/etc/ardj.yaml</filename>):</para>
@@ -33,5 +33,8 @@
   это так:</para>
 
   <programlisting><![CDATA[> speak привет, меня зовут микроша. гамбургеры заворачивать теперь буду я
-OK, please wait until the current song finishes playing.]]></programlisting>
+OK, please wait until the current song finishes playing.
+> queue
+Current queue:                                               
+«Экстренное сообщение» by Микроша — #4656 ⚖2.21 ♺325 @special]]></programlisting>
 </section>
