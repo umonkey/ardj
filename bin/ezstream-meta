@@ -14,9 +14,21 @@ import sys
 from ardj.tracks import get_last_track
 
 
-if __name__ == "__main__":
+try:
+    if len(sys.argv) != 2:
+        print "ardj is playing"
+        exit(0)
+
     track = get_last_track()
     if track is None:
         print "unknown track"
+        exit(0)
+
+    if sys.argv[1] == "artist":
+        print track["artist"].encode("utf-8")
+    elif sys.argv[1] == "title":
+        print track["title"].encode("utf-8")
     else:
-        print "\"%s\" by %s" % (track["title"].encode("utf-8"), track["artist"].encode("utf-8"))
+        print "unknown"
+except:
+    print "error"
