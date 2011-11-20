@@ -4,10 +4,10 @@
   <title>Настройка синтезатора речи</title>
 
   <para>Синтез речи может использоваться в скриптах для анонсирования каких-то событий, и может быть доступен
-  пользователям через джаббер-бота в развлекательных целях.  Работает это так: вы <link
-  linkend="adding-music">загружаете</link> в <link linkend="media-db">медиатеку</link> файл формата OGG/Vorbis (с
-  расширением <filename>.ogg</filename>), затем ardj преобразует текст в речь, записывает в этот файл и ставит его в
-  <link linkend="queue">очередь проигрывания</link>.</para>
+  пользователям через джаббер-бота в развлекательных целях.  Работает это так: вы загружаете в <link
+  linkend="media-db">медиатеку</link> файл формата OGG/Vorbis (с расширением <filename>.ogg</filename>), затем ardj
+  преобразует текст в речь, записывает в этот файл и ставит его в <link linkend="queue">очередь
+  проигрывания</link>.</para>
 
   <para>Единственным свободным синтезатором речи, прилично говорящим по-русски, является <ulink
   url="http://www.cstr.ed.ac.uk/projects/festival/">festival</ulink>.  Установить его в системе Debian (Ubuntu) можно
@@ -15,8 +15,8 @@
 
   <programlisting>sudo apt-get install festival festvox-ru</programlisting>
 
-  <para>После этого определите идентификатор загруженного в медиатеку файла — это делается командой <link
-  linkend="jabber-news"><command>news</command></link> или <link
+  <para>После этого <link linkend="adding-music">загрузите</link> в медиатеку любой файл формата OGG/Vorbis и определите
+  его идентификатор — это делается командой <link linkend="jabber-news"><command>news</command></link> или <link
   linkend="jabber-find"><command>find</command></link>:</para>
 
   <programlisting><![CDATA[> find экстренное
