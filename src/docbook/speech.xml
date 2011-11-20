@@ -36,10 +36,12 @@ Found only these tracks:
   это так:</para>
 
   <programlisting><![CDATA[> speak привет, меня зовут микроша. гамбургеры заворачивать теперь буду я
-OK, please wait until the current song finishes playing.
-> queue
+OK, please wait until the current song finishes playing.]]></programlisting>
+
+  <para>Запрошенная фраза прозвучит по окончании проигрываемой композиции.  Убедиться, что она встала в очередь, можно
+  командой <link linkend="jabber-queue"><command>queue</command></link>:</para>
+
+  <programlisting><![CDATA[> queue
 Current queue:                                               
 «Экстренное сообщение» by Микроша — #4656 ⚖2.21 ♺325 @special]]></programlisting>
-
-  <para>Запрошенная фраза прозвучит по окончании проигрываемой композиции.</para>
 </section>
