@@ -37,4 +37,7 @@ OK, please wait until the current song finishes playing.
 > queue
 Current queue:                                               
 «Экстренное сообщение» by Микроша — #4656 ⚖2.21 ♺325 @special]]></programlisting>
+
+  <para>После этого не забудьте перезапустить jabber-бота командой <link
+  linkend="jabber-restart"><command>restart</command></link>.</para>
 </section>

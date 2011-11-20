@@ -5,6 +5,7 @@
   <!ENTITY install_prereq SYSTEM "../src/docbook/install_prereq.xml">
   <!ENTITY install_debian SYSTEM "../src/docbook/install_debian.xml">
   <!ENTITY speech SYSTEM "../src/docbook/speech.xml">
+  <!ENTITY jabber_restart SYSTEM "../src/docbook/jabber_restart.xml">
 ]>
 <book lang="ru">
   <bookinfo>
@@ -803,6 +804,8 @@ sticky_labels: [rock, jazz, 8bit]</programlisting>
           <para>Добавляет в <link linkend="queue">очередь</link> композиции, удовлетворяющие запросу.</para>
         </listitem>
       </varlistentry>
+
+      &jabber_restart;
 
       <varlistentry id="jabber-rocks">
         <term><command>rocks</command> <optional><replaceable>track_id</replaceable></optional></term>

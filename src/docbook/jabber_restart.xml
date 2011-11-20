@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<varlistentry id="jabber-restart">
+  <term><command>restart</command></term>
+  <listitem>
+    <para>Перезапускает робота.  Обычно эта команда используется после внесения изменений в конфигурационный файл.  Если
+    доступа к роботу нет, в системе Debian/Ubuntu это можно сделать командой:</para>
+
+    <programlisting>sudo restart ardj-jabber</programlisting>
+  </listitem>
+</varlistentry>
