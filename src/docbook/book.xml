@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "/usr/share/xml/docbook/schema/dtd/4.4/docbookx.dtd" [
   <!ENTITY ezstream_sox SYSTEM "../src/docbook/ezstream_sox.xml">
-  <!ENTITY upload_sftp SYSTEM "../src/docbook/upload_sftp.xml">
-  <!ENTITY install_prereq SYSTEM "../src/docbook/install_prereq.xml">
   <!ENTITY install_debian SYSTEM "../src/docbook/install_debian.xml">
-  <!ENTITY speech SYSTEM "../src/docbook/speech.xml">
+  <!ENTITY install_prereq SYSTEM "../src/docbook/install_prereq.xml">
   <!ENTITY jabber_restart SYSTEM "../src/docbook/jabber_restart.xml">
+  <!ENTITY preroll_labels SYSTEM "../src/docbook/preroll_labels.xml">
+  <!ENTITY preroll_playlist SYSTEM "../src/docbook/preroll_playlist.xml">
+  <!ENTITY speech SYSTEM "../src/docbook/speech.xml">
+  <!ENTITY upload_sftp SYSTEM "../src/docbook/upload_sftp.xml">
 ]>
 <book lang="ru">
   <bookinfo>
@@ -427,20 +429,13 @@ sticky_labels: [rock, jazz, 8bit]</programlisting>
       была выбрана в соответствие с его настройками.  Подмотка используется для акцентирования внимания на конкретных
       композициях (например, если у исполнителя скоро концерт).</para>
 
-      <para>Есть два варианта использования подмотки.  Самый простой — подмотка для плейлиста: в <link
-      linkend="preroll-playlist-option">свойстве preroll</link> можно указать список меток, по которым будет выбираться
-      подмотка для всех композиций плейлиста.</para>
+      <para>Есть два способа настройки подмотки.  Они сводятся к определению меток, по которым выбирается случайный
+      файл, который и является подмоткой (подробности описаны в подразделах).  Оба метода используются всегда: сначала
+      собираются метки для плейлиста, затем
+      - метки для текущей композиции, по ним выбирается случайная композиция, которая и является подмоткой.</para>
 
-      <para>Второй вариант — подмотка на уровне меток, минуя плейлисты.  В этом режиме для каждой метки проигрываемой
-      композиции разыскиываются композиции с меткой "метка-preroll".  На практике эти два метода всегда комбинируются. 
-      Пример конфигурации плейлиста:</para>
-
-      <programlisting>- name: rock
-  preroll: [rock-jingle]</programlisting>
-
-      <para>Если из этого плейлиста выбрана композиция с метками "rock", "music" и "male", для выбора подмотки будут
-      использованы метки: "rock-jingle", "rock-preroll", "music-preroll", "male-preroll".  Случайная из найденных
-      композиций будет проиграна перед запланированной.</para>
+      &preroll_playlist;
+      &preroll_labels;
     </section>
   </chapter>
 

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- vim: set ft=docbk: -->
+<section id="preroll-playlist">
+  <title>Подмотка для плейлиста</title>
+
+  <para>Подмотка на уровне плейлиста создаётся с помощью <link linkend="preroll-playlist-option">свойстве preroll</link>
+  плейлиста.  В этом свойстве указывается список меток, по которым выбирается подмотка.  Пример настройки
+  плейлиста:</para>
+
+  <programlisting>- name: heavy_music
+  labels: [music, +heavy]
+  preroll: [heavy-preroll]
+  delay: 30</programlisting>
+
+  <para>В такой конфигурации в плейлист попадут композиции с метками "music" и "heavy", а перед ними будет каждый раз
+  звучать случайная композиция с меткой "heavy-preroll".</para>
+</section>
