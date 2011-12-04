@@ -1,3 +1,4 @@
 1.0.12
 
  - Added history for contrib/twitter-fetcher.
+ - Fixed connection spinning in contrib/hotline.
