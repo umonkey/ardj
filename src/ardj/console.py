@@ -602,7 +602,7 @@ command_aliases = {
 
 def get_public_commands():
     """Returns the list of commands available to anonymous users."""
-    public = ardj.settings.get('jabber/public_commands', None)
+    public = ardj.settings.get2('jabber/public_commands', "public_jabber_commands", None)
     if not public:
         public = [c[0] for c in command_map if not c[1]]
     return public
