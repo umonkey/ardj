@@ -21,12 +21,13 @@ import ardj.listeners
 import ardj.settings
 import ardj.speech
 import ardj.tracks
+import ardj.users
 import ardj.util
 
 
-def is_user_admin(sender):
-    admins = ardj.settings.get("jabber_admins", ardj.settings.get("jabber/access", []))
-    return sender in admins
+def is_user_admin(sender, safe=False):
+    """Checks whether the user has special privileges."""
+    return sender in ardj.users.get_admins()
 
 
 def filter_labels(labels):
@@ -371,12 +372,8 @@ def on_votes(args, sender):
 
 
 def on_voters(args, sender):
-    rows = ardj.database.fetch('SELECT v.email, COUNT(*) AS c, k.weight '
-        'FROM votes v INNER JOIN karma k ON k.email = v.email '
-        'GROUP BY v.email ORDER BY c DESC, k.weight DESC, v.email')
-
     output = u'Top voters:'
-    for email, count, weight in rows:
+    for email, count, weight in ardj.users.get_voters():
         output += u'\n%s (%u, %.02f)' % (email, count, weight)
     return output
 
@@ -523,6 +520,12 @@ def on_download(args, sender):
     return ardj.tracks.schedule_download(args, sender)
 
 
+def on_admins(*args):
+    """Lists current admins."""
+    admins = sorted(list(set(ardj.users.get_admins())))
+    return u"Current admins: %s." % u", ".join(admins)
+
+
 def on_bookmark(args, sender):
     """Adds a track to bookmarks.  If track id is not specified, the currently
     played track is bookmarked.  Latest bookmarks are shown afterwards."""
@@ -555,6 +558,7 @@ def on_help(args, sender):
 
 
 command_map = (
+    ('admins', False, on_admins, 'lists current admins'),
     ('ban', True, on_ban, 'deletes all tracks by the specified artist'),
     ('bm', False, on_bookmark, 'bookmark tracks (accepts optional id)'),
     ('delete', True, on_delete, 'deletes the specified track'),
