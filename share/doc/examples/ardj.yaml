@@ -101,6 +101,9 @@ use_jabber_status: yes
 #festival_voice: voice_msu_ru_nsh_clunits
 
 
+# Uncomment this to disable voting (e.g., for database maintenance).
+#enable_voting: no
+
 # This is where the messages will be logged.
 log: syslog
 #log_level: debug

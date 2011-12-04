@@ -36,6 +36,10 @@ last_playlist = None
 last_sticky_label = None
 
 
+class Forbidden(Exception):
+    pass
+
+
 class Playlist(dict):
     def add_ts(self, stats):
         self['last_played'] = 0
@@ -420,6 +424,9 @@ def add_vote(track_id, email, vote, update_karma=False):
     Returns track's current weight.
     """
     email = email.lower()
+
+    if not settings.get("enable_voting", True):
+        raise Forbidden("Voting disabled by the admins.")
 
     # Normalize the vote.
     if vote > 0:

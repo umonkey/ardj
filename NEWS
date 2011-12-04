@@ -1,4 +1,5 @@
 1.0.12
 
  - Added history for contrib/twitter-fetcher.
+ - Added an option to disable voting.
  - Fixed connection spinning in contrib/hotline.
