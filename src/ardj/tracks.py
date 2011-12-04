@@ -30,6 +30,7 @@ import ardj.tags
 import ardj.util
 
 from ardj.database import Track
+from ardj.users import resolve_alias
 
 
 KARMA_TTL = 30.0
@@ -437,10 +438,7 @@ def add_vote(track_id, email, vote, update_karma=False):
         vote = -1
 
     # Resolve aliases.
-    for k, v in ardj.settings.get2("jabber_aliases", "jabber/aliases", {}).items():
-        if email in v:
-            email = k
-            break
+    email = resolve_alias(email)
 
     row = ardj.database.fetchone("SELECT last_played, weight FROM tracks WHERE id = ?", (track_id, ))
     if row is None:

@@ -315,12 +315,6 @@ class database:
         logging.debug(u'SQL: ' + sql)
         return sql
 
-    def merge_aliases(self):
-        """Moves votes from similar accounts to one."""
-        for k, v in ardj.settings.get2("jabber_aliases", "jabber/aliases", {}).items():
-            for alias in v:
-                self.execute('UPDATE votes SET email = ? WHERE email = ?', (k, alias, ))
-
     def purge(self):
         """Removes stale data.
 
@@ -329,7 +323,6 @@ class database:
         analyzed all tables (to optimize indexes) and vacuums the database.
         """
         old_size = os.stat(self.filename).st_size
-        self.merge_aliases()
         self.execute('DELETE FROM queue WHERE track_id NOT IN (SELECT id FROM tracks)')
         self.execute('DELETE FROM labels WHERE track_id NOT IN (SELECT id FROM tracks)')
         self.execute('DELETE FROM votes WHERE track_id NOT IN (SELECT id FROM tracks)')

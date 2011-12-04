@@ -2,8 +2,8 @@
 
 import time
 
+from ardj import database
 from ardj import settings
-from ardj.database import fetch, fetchcol
 
 
 def get_voters():
@@ -33,3 +33,24 @@ def get_admins(safe=False):
         days = settings.get("promote_voters_days", 14)
         admins += get_top_recent_voters(count, days)
     return admins
+
+
+def get_aliases():
+    """Returns user aliases."""
+    return settings.get2("jabber_aliases", "jabber/aliases", {})
+
+
+def resolve_alias(jid):
+    """Resolves an addres according to configured aliases."""
+    for main, other in get_aliases().items():
+        if jid in other:
+            return main
+    return jid
+
+
+def merge_aliased_votes():
+    """Moves votes from aliases to real jids."""
+    for k, v in get_aliases():
+        for alias in v:
+            database.execute("UPDATE votes SET email = ? WHERE email = ?", (k, alias, ))
+    database.commit()

@@ -522,7 +522,8 @@ def on_download(args, sender):
 
 def on_admins(args, sender):
     """Lists current admins."""
-    admins = sorted(list(set(ardj.users.get_admins())))
+    admins = [ardj.users.resolve_alias(u) for u in ardj.users.get_admins()]
+    admins = sorted(list(set(admins)))
     return u"Current admins: %s." % u", ".join(admins)
 
 
