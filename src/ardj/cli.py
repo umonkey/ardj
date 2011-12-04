@@ -344,9 +344,8 @@ def cmd_mark_liked_by(label, *jids):
 
 def cmd_mark_long(*args):
     """marks long tracks with the "long" label"""
-    from ardj import database
-    database.Open().mark_long()
-    database.commit()
+    from ardj.tracks import mark_long
+    print "Average length: %s, total long tracks: %u." % mark_long()
 
 
 def cmd_mark_orphans(*args):

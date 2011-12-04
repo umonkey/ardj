@@ -36,7 +36,6 @@ except ImportError:
 
 import ardj.settings
 import ardj.scrobbler
-import ardj.tracks
 import ardj.util
 
 
@@ -176,6 +175,14 @@ class Track(Model):
             execute("INSERT INTO labels (track_id, label, email) VALUES (?, ?, ?)", (self["id"], tag, "unknown", ))
 
         logging.debug("New labels for track %u: %s" % (self["id"], labels))
+
+    def get_average_length(self):
+        """Returns average track length in minutes."""
+        s_prc = s_qty = 0.0
+        for prc, qty in self.fetch("SELECT ROUND(length / 60) AS r, COUNT(*) FROM tracks GROUP BY r"):
+            s_prc += prc * qty
+            s_qty += qty
+        return int(s_prc / s_qty * 60 * 1.5)
 
 
 class Queue(Model):
@@ -389,14 +396,6 @@ class database:
                     print '%8u; %s -- %s' % (row[0], (row[1] or 'unknown').encode('utf-8'), (row[2] or 'unknown').encode('utf-8'))
                 self.execute('INSERT INTO labels (track_id, email, label) VALUES (?, ?, ?)', (int(row[0]), 'ardj', set_label))
             return True
-
-    def mark_long(self):
-        """Marks unusuall long tracks."""
-        length = ardj.tracks.get_average_length()
-        self.execute('DELETE FROM labels WHERE label = \'long\'')
-        self.execute('INSERT INTO labels (track_id, email, label) SELECT id, \'ardj\', \'long\' FROM tracks WHERE length > ?', (length, ))
-        count = self.fetch('SELECT COUNT(*) FROM labels WHERE label = \'long\'')[0][0]
-        print 'Average length is %u seconds, %u tracks match.' % (length, count)
 
     def get_artist_names(self, label=None, weight=0):
         if label is None:

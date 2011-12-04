@@ -520,7 +520,7 @@ def on_download(args, sender):
     return ardj.tracks.schedule_download(args, sender)
 
 
-def on_admins(*args):
+def on_admins(args, sender):
     """Lists current admins."""
     admins = sorted(list(set(ardj.users.get_admins())))
     return u"Current admins: %s." % u", ".join(admins)
