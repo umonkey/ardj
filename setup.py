@@ -13,8 +13,6 @@ def glob_files(pattern):
 data_files = [
     ('/etc', ['share/doc/examples/ardj.yaml', 'share/ezstream.xml']),
     ('/etc/cron.d', ['share/cron.d/ardj']),
-    ('/etc/init', glob_files('share/upstart/*.conf')),
-    ('/etc/init.d', glob_files('share/init.d/*')),
     ('/etc/logrotate.d', glob_files('share/logrotate.d/*')),
     ('/etc/rsyslog.d', glob_files('share/rsyslog.d/*')),
     ('/etc/sudoers.d', glob_files('share/sudoers.d/*')),
@@ -23,6 +21,8 @@ data_files = [
     ('/usr/share/ardj/samples', ['share/audio/cubic_undead.mp3', 'share/audio/successful_install.ogg']),
     ('/usr/share/ardj/shell-extensions/zsh', ['share/shell-extensions/zsh/_ardj']),
     ('/usr/share/doc/ardj/examples', glob_files('share/doc/examples/*')),
+    ('/usr/share/doc/ardj/examples/sysvinit', glob_files('share/init.d/*')),
+    ('/usr/share/doc/ardj/examples/upstart', glob_files('share/upstart/*.conf')),
     ('/usr/share/doc/ardj/html/', glob_files('docbook/chunked/*')),
     ('/usr/share/man/man1', ['share/doc/man/ardj.1.gz']),
     ('/usr/lib/ardj', ['bin/ardj-next-track', 'bin/ezstream-meta', 'bin/config']),

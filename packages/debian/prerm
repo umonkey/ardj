@@ -1,0 +1,8 @@
+#!/bin/sh -e
+
+#DEBHELPER#
+
+service ardj-jabber stop
+service ardj-ices stop
+service ardj-ezstream stop
+service ardj-server stop

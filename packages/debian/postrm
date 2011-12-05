@@ -7,4 +7,8 @@ if [ "$1" = "purge" ]; then
     update-rc.d ardj-ices remove
     update-rc.d ardj-jabber remove
     update-rc.d ardj-server remove
+
+    rm -f /etc/init.d/ardj-* /etc/init/ardj-*
+
+    initctl reload-configuration
 fi
