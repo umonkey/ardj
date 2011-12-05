@@ -428,7 +428,7 @@ def add_vote(track_id, email, vote, update_karma=False):
     """
     email = email.lower()
 
-    if not settings.get("enable_voting", True):
+    if not ardj.settings.get("enable_voting", True):
         raise Forbidden("Voting disabled by the admins.")
 
     # Normalize the vote.
