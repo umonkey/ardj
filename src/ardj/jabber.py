@@ -89,7 +89,7 @@ class ardjbot(MyFileReceivingBot):
 
         self.chat_users = []
 
-        _conf = ardj.settings.get("jabber_id", ardj.settings.get("jabber/login"))
+        _conf = ardj.settings.get2("jabber_id", "jabber/login")
         self.login, password = self.split_login(_conf)
         resource = socket.gethostname() + '/' + str(os.getpid()) + '/'
         super(ardjbot, self).__init__(self.login, password, res=resource, debug=debug)
@@ -322,10 +322,9 @@ class ardjbot(MyFileReceivingBot):
 
 
 def Open(debug=False):
-    """
-    Returns a new bot instance.
-    """
-    return ardjbot(debug=debug)
+    """Returns a new bot instance."""
+    if ardj.settings.get2("jabber_id", "jabber/login") is not None:
+        return ardjbot(debug=debug)
 
 
 def chat_say(message, recipient=None):

@@ -85,7 +85,11 @@ def cmd_icelog(*args):
 def cmd_jabber(*args):
     """run the jabber bot"""
     from ardj import jabber
-    jabber.Open(debug="--debug" in args).run()
+    bot = jabber.Open(debug="--debug" in args)
+    if bot is None:
+        print "Not configured, try `ardj config'."
+        return False
+    bot.run()
 
 
 def cmd_listeners(*args):
@@ -175,6 +179,7 @@ def cmd_add_incoming_tracks(*args):
     files = tracks.find_incoming_files(delay=0, verbose=True)
     success = tracks.add_incoming_files(files)
     print "Added %u files to the database." % len(success)
+    return True
 
 
 def cmd_print_next_track(*args):

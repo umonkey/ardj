@@ -1,5 +1,9 @@
 #!/bin/sh -e
 
+#DEBHELPER#
+
+echo "postinst: $1"
+
 case "$1" in
     configure)
         if ! getent group ardj >/dev/null; then
@@ -44,10 +48,13 @@ case "$1" in
             ardj add-incoming-tracks
         fi
 
+        update-rc.d ardj-ezstream defaults
+        update-rc.d ardj-ices defaults
+        update-rc.d ardj-jabber defaults
+        update-rc.d ardj-server defaults
+
         echo "Starting the web service."
-        start ardj-server || true
+        service ardj-server start || true
 esac
 
 exit 0
-
-#DEBHELPER#

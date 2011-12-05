@@ -14,6 +14,7 @@ data_files = [
     ('/etc', ['share/doc/examples/ardj.yaml', 'share/ezstream.xml']),
     ('/etc/cron.d', ['share/cron.d/ardj']),
     ('/etc/init', glob_files('share/upstart/*.conf')),
+    ('/etc/init.d', glob_files('share/init.d/*')),
     ('/etc/logrotate.d', glob_files('share/logrotate.d/*')),
     ('/etc/rsyslog.d', glob_files('share/rsyslog.d/*')),
     ('/etc/sudoers.d', glob_files('share/sudoers.d/*')),
