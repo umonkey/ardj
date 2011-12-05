@@ -13,6 +13,7 @@ Package: ardj
 Architecture: all
 Depends: python, python-support (>= 0.90), adduser,
   ${misc:Depends}, ${python:Depends},
+  upstart,
   python-yaml, python-mutagen (>= 1.19),
   python-feedparser, python-httplib2, python-webpy
 Suggests: python-dnspython, python-socksipy, icecast2, python-simplejson,
