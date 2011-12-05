@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- vim: set ft=docbk: -->
+<varlistentry id="jabber-tags">
+  <term><command>tags</command> <replaceable>-old +new</replaceable> <optional>for <replaceable>track_id</replaceable></optional></term>
+  <listitem>
+    <para>Изменяет метки композиции.  Метки используются для привязки композиций к <link
+    linkend="playlists">плейлистам</link>.  Изменения вступают в силу незамедлительно.</para>
+
+    <example id="jabber-tags-example">
+      <title>Изменение меток композиции</title>
+      <programlisting><![CDATA[> find @tagme
+Found 63 tracks, showing 10:  
+«Neon» by Denergized — #4935 ⚖1.20 ♺4 @tagme
+> tags -tagme industrial vocals for 4935
+New labels: industrial, vocals.
+]]></programlisting>
+    </example>
+  </listitem>
+</varlistentry>

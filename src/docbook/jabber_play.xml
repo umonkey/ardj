@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- vim: set ft=docbk: -->
+<varlistentry id="jabber-play">
+  <term><command>play</command> <optional>--time=время</optional> <replaceable>метки</replaceable></term>
+  <listitem>
+    <para>Включает <link linkend="custom-playlist">виртуальный плейлист</link> из указанных меток на указанное
+    время (60 минут по умолчанию).</para>
+
+    <example id="jabber-play-example">
+      <title>Создание плейлиста на ходу</title>
+      <programlisting><![CDATA[> play @lounge @+instrumental @-ambient
+OK.]]></programlisting>
+
+      <para>При этом в чат отправляется такое сообщение:</para>
+
+      <programlisting>Playlist for next 60 minutes: @lounge.</programlisting>
+
+      <para>Отмена созданного плейлиста:</para>
+
+      <programlisting><![CDATA[> play all
+OK.]]></programlisting>
+    </example>
+  </listitem>
+</varlistentry>

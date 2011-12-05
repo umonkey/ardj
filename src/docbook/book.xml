@@ -4,7 +4,10 @@
   <!ENTITY ezstream_sox SYSTEM "../src/docbook/ezstream_sox.xml">
   <!ENTITY install_debian SYSTEM "../src/docbook/install_debian.xml">
   <!ENTITY install_prereq SYSTEM "../src/docbook/install_prereq.xml">
+  <!ENTITY jabber_download SYSTEM "../src/docbook/jabber_download.xml">
+  <!ENTITY jabber_play SYSTEM "../src/docbook/jabber_play.xml">
   <!ENTITY jabber_restart SYSTEM "../src/docbook/jabber_restart.xml">
+  <!ENTITY jabber_tags SYSTEM "../src/docbook/jabber_tags.xml">
   <!ENTITY preroll_labels SYSTEM "../src/docbook/preroll_labels.xml">
   <!ENTITY preroll_playlist SYSTEM "../src/docbook/preroll_playlist.xml">
   <!ENTITY speech SYSTEM "../src/docbook/speech.xml">
@@ -777,6 +780,8 @@ sticky_labels: [rock, jazz, 8bit]</programlisting>
         </listitem>
       </varlistentry>
 
+      &jabber_download;
+
       <varlistentry id="jabber-find">
         <term><command>find</command> <replaceable>поисковый_запрос</replaceable></term>
         <listitem>
@@ -796,13 +801,7 @@ sticky_labels: [rock, jazz, 8bit]</programlisting>
         </listitem>
       </varlistentry>
 
-      <varlistentry id="jabber-play">
-        <term><command>play</command> <optional>--time=время</optional> <replaceable>метки</replaceable></term>
-        <listitem>
-          <para>Включает <link linkend="custom-playlist">виртуальный плейлист</link> из указанных меток на указанное
-          время (60 минут по умолчанию).</para>
-        </listitem>
-      </varlistentry>
+      &jabber_play;
 
       <varlistentry id="jabber-queue">
         <term><command>queue</command> <optional>флаги</optional> <replaceable>поисковый_запрос</replaceable></term>
@@ -836,6 +835,8 @@ sticky_labels: [rock, jazz, 8bit]</programlisting>
           linkend="ratings">рейтинг</link>.</para>
         </listitem>
       </varlistentry>
+
+      &jabber_tags;
     </variablelist>
   </appendix>
 </book>
