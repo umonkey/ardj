@@ -4,6 +4,7 @@
   <!ENTITY ezstream_sox SYSTEM "../src/docbook/ezstream_sox.xml">
   <!ENTITY install_debian SYSTEM "../src/docbook/install_debian.xml">
   <!ENTITY install_prereq SYSTEM "../src/docbook/install_prereq.xml">
+  <!ENTITY install_ubuntu SYSTEM "../src/docbook/install_ubuntu.xml">
   <!ENTITY jabber_download SYSTEM "../src/docbook/jabber_download.xml">
   <!ENTITY jabber_play SYSTEM "../src/docbook/jabber_play.xml">
   <!ENTITY jabber_restart SYSTEM "../src/docbook/jabber_restart.xml">
@@ -90,6 +91,7 @@
     функций описана в следующем разделе.</para>
 
     &install_prereq;
+    &install_ubuntu;
     &install_debian;
   </chapter>
 
