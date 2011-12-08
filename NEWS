@@ -8,7 +8,7 @@
  - Added an option to disable voting (config).
  - Added automatic promotion of most active voters to admins.
  - Added support for sysvinit (Debian).
- - Added a default response for commands echo and sql (Jabber).
+ - Added a default response for commands echo, sql and show-news-from-jamendo (Jabber).
  - Added better logging for the skip command (Jabber).
  - Removed old commands: hotline, icelog, listeners (CLI).
  - Changed tags order in tags/show: subtags go last.
