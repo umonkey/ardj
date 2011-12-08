@@ -98,15 +98,6 @@ def cmd_export_yesterday_listeners(*args):
     listeners.cli_yesterday()
 
 
-def cmd_mail(*args):
-    """send or receive mail
-
-    Can be used to send mail or list incoming messages.  Subcommands: list,
-    send.  See the ardj.mail module for details."""
-    import mail
-    return mail.run_cli(args)
-
-
 def cmd_map_listeners(*args):
     """updates the listeners map
 

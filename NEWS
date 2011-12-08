@@ -10,5 +10,5 @@
  - Added support for sysvinit (Debian).
  - Added a default response for commands echo, sql and show-news-from-jamendo (Jabber).
  - Added better logging for the skip command (Jabber).
- - Removed old commands: hotline, icelog, listeners (CLI).
+ - Removed old commands: hotline, icelog, listeners, mail (CLI).
  - Changed tags order in tags/show: subtags go last.
