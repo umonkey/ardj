@@ -159,6 +159,11 @@ def on_restart(args, sender):
 
 
 def on_sql(args, sender):
+    """performs an SQL query, prints the result"""
+
+    if not args.strip():
+        return u"This command lets you perform a low-level SQL query and see the results, e.g.: sql SELECT COUNT(*) FROM tracks;"
+
     if not args.endswith(';'):
         return 'SQL statements must end with a ;, for your own safety.'
 
