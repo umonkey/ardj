@@ -8,5 +8,6 @@
  - Added automatic promotion of most active voters to admins.
  - Added support for sysvinit (Debian).
  - Added a default response for commands echo and sql (Jabber).
+ - Added better logging for the skip command (Jabber).
  - Removed old hotline code (CLI).
  - Changed tags order in tags/show: subtags go last.

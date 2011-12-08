@@ -10,6 +10,7 @@ import json
 import logging
 import os
 import re
+import signal
 import shutil
 import subprocess
 import sys
@@ -20,7 +21,7 @@ import urllib2
 import urlparse
 
 import ardj.replaygain
-import ardj.settings
+from ardj import settings
 import ardj.util
 
 
@@ -200,7 +201,7 @@ def upload(source, target):
 
 def upload_music(filenames):
     """Uploads music files."""
-    target = ardj.settings.get('database/upload')
+    target = settings.get('database/upload')
     if not target:
         logging.warning('Could not upload %u music files: database/upload not set.' % len(filenames))
         return False
@@ -375,3 +376,42 @@ def shorten_urls(message):
             word = shorten_url(word)
         output.append(word)
     return u" ".join(output)
+
+
+def _send_skip(confkey, default, sig):
+    pidfile = settings.get(confkey, default)
+    if not pidfile:
+        logging.info("%s not set, can't send a skip request." % confkey)
+        return False
+
+    if not os.path.exists(pidfile):
+        logging.warning("File %s does not exist -- can't send a skip request." % pidfile)
+        return False
+
+    pid = file(pidfile, "rb").read().strip()
+    if not pid.isdigit():
+        raise Exception("File %s does not contain a process id." % pidfile)
+
+    try:
+        os.kill(int(pid), signal.SIGURS1)
+        return True
+    except Exception, e:
+        logging.exception("Could not send a signal to ezstream: %s" % e)
+        raise Exception("Could not send a skip request.  Details can be found in the log file.")
+
+
+def skip_ices():
+    """Sends a signal to ices0."""
+    return _send_skip("ices_pid_file", "/var/run/ardj-ices.pid", signal.SIGUSR1)
+
+
+def skip_ezstream():
+    """Sends a signal to ezstream."""
+    return _send_skip("ezstream_pid_file", "/var/run/ezstream-ardj.pid", signal.SIGUSR1)
+
+
+def skip_current_track():
+    """Sends a skip request to the appropriate source client."""
+    for fn in skip_ices, skip_ezstream:
+        if fn():
+            return True

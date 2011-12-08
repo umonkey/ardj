@@ -80,33 +80,6 @@ def signal_ices(sig):
         return False
 
 
-def get_ezstream_pid():
-    pidfile = ardj.settings.get("ezstream_pid_file", "/var/run/ezstream-ardj.pid")
-    if not pidfile:
-        return None
-
-    if not os.path.exists(pidfile):
-        logging.warning('%s does not exist.' % pidfile)
-        return None
-
-    return int(file(pidfile, 'rb').read().strip())
-
-
-def signal_ezstream(sig):
-    ezstream_pid = get_ezstream_pid()
-    try:
-        if ezstream_pid:
-            os.kill(ezstream_pid, sig)
-            logging.debug('sent signal %s to process %s.' % (sig, ezstream_pid))
-        else:
-            ardj.util.run(['pkill', '-' + str(sig), 'ezstream'])
-            logging.debug('sent signal %s to ezstream using pkill (unsafe).' % sig)
-        return True
-    except Exception, e:
-        logging.warning('could not kill(%u) ezstream: %s' % (sig, e))
-        return False
-
-
 def on_delete(args, sender):
     if not args.isdigit():
         return 'Must specify a single numeric track id.'
@@ -136,17 +109,11 @@ def on_skip(args, sender):
     else:
         message = u"%s skipped an unknown track." % sender_name
 
-    tmp = ardj.settings.get("ices_pid_file")
-    if tmp is not None and signal_ices(signal.SIGUSR1):
+    if ardj.util.skip_current_track():
         ardj.jabber.chat_say(message)
         return 'Request sent.'
 
-    tmp = ardj.settings.get("ezstream_pid_file")
-    if tmp is not None and signal_ezstream(signal.SIGUSR1):
-        ardj.jabber.chat_say(message)
-        return 'Request sent.'
-
-    return 'Could not send the request for some reason.'
+    return 'Could not send a skip request.  Details can be found in the log file.'
 
 
 def on_say(args, sender):
