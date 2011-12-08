@@ -73,7 +73,7 @@ def cmd_icelog(*args):
     return icelogger.run_cli(args)
 
 
-def cmd_jabber(*args):
+def cmd_jabber_child(*args):
     """run the jabber bot"""
     from ardj import jabber
     bot = jabber.Open(debug="--debug" in args)
@@ -81,6 +81,17 @@ def cmd_jabber(*args):
         print "Not configured, try `ardj config'."
         return False
     bot.run()
+
+
+def cmd_jabber(*args):
+    """run the jabber bot with a process monitor"""
+    import subprocess
+    import time
+
+    while True:
+        subprocess.Popen([sys.argv[0], "jabber-child"]).wait()
+        print "Restarting in 5 seconds."
+        time.sleep(5)  # prevend spinlocking
 
 
 def cmd_listeners(*args):
