@@ -86,14 +86,6 @@ def cmd_jabber(*args):
         time.sleep(5)  # prevend spinlocking
 
 
-def cmd_listeners(*args):
-    """summarizes listeners.csv
-
-    Subcommands: stats."""
-    import listeners
-    return listeners.run_cli(args)
-
-
 def cmd_export_total_listeners(*args):
     """prints overall listening statistics to stdout (CSV)"""
     from ardj import listeners

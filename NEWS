@@ -10,6 +10,5 @@
  - Added support for sysvinit (Debian).
  - Added a default response for commands echo and sql (Jabber).
  - Added better logging for the skip command (Jabber).
- - Removed old hotline code (CLI).
- - Removed the icelogger command (CLI).
+ - Removed old commands: hotline, icelog, listeners (CLI).
  - Changed tags order in tags/show: subtags go last.
