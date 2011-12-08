@@ -65,15 +65,6 @@ def cmd_find_new_tracks(*args):
     return tracks.find_new_tracks(args)
 
 
-def cmd_hotline(*args):
-    """work with the hotline
-
-    Interacts with the hotline mailbox.  Subcommands: list, process.  See
-    ardj.hotline.run_cli() for details."""
-    import hotline
-    return hotline.run_cli(args)
-
-
 def cmd_icelog(*args):
     """work with icecast2 logs
 

@@ -1,7 +1,9 @@
 1.0.12
 
+ - Fixed connection spinning in contrib/hotline.
  - Added history for contrib/twitter-fetcher.
  - Added an option to disable voting.
  - Added automatic promotion of most active voters to admins.
  - Added support for sysvinit (Debian).
- - Fixed connection spinning in contrib/hotline.
+ - Removed old hotline code.
+ - Changed tags order in tags/show: subtags go last.

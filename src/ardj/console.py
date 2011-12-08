@@ -49,6 +49,10 @@ def format_track_list(tracks, header=None):
     return message
 
 
+def sorted_tags(tags):
+    return sorted(tags, key=lambda l: (":" in l, l.lower()))
+
+
 def get_ices_pid():
     pidfile = ardj.settings.get('ices_pid_file')
     if not pidfile:
@@ -418,7 +422,7 @@ def on_tags(args, sender):
 
     labels = [l.strip(' ,@') for l in parts]
     current = ardj.tracks.add_labels(track_id, labels, owner=sender) or ['none']
-    return u'New labels: %s.' % (u', '.join(sorted(current)))
+    return u'New labels: %s.' % (u', '.join(sorted_tags(current)))
 
 
 def on_set(args, sender):
@@ -481,7 +485,7 @@ def on_show(args, sender):
     result = u'«%s» by %s' % (track['title'], track['artist'])
     result += u'; id=%u weight=%.2f playcount=%u length=%s vote=%u last_played=%s. ' % (track['id'], track['weight'] or 0, track['count'] or 0, ardj.util.format_duration(int(track.get('length', 0))), ardj.tracks.get_vote(track['id'], sender), ardj.util.format_duration(track.get('last_played', 0), age=True))
     if track['labels']:
-        result += u'Labels: ' + u', '.join(track['labels']) + u'. '
+        result += u'Labels: ' + u', '.join(sorted_tags(track['labels'])) + u'. '
     return result.strip()
 
 
