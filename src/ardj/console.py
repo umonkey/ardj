@@ -201,6 +201,8 @@ def on_speak(args, sender):
 
 
 def on_echo(args, sender):
+    if not args.strip():
+        args = "I'm here.  This command can be used for testing the connection.  I'll send back whatever arguments you pass with it, e.g.: echo hello."
     return args
 
 

@@ -5,5 +5,6 @@
  - Added an option to disable voting.
  - Added automatic promotion of most active voters to admins.
  - Added support for sysvinit (Debian).
+ - Added a default response for the echo command (Jabber).
  - Removed old hotline code.
  - Changed tags order in tags/show: subtags go last.
