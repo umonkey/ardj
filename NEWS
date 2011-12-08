@@ -3,6 +3,7 @@
  - Fixed connection spinning in contrib/hotline.
  - Fixed Unicode problems in ardj console (CLI).
  - Fixed the voters command in fresh install (Jabber).
+ - Fixed a bug in the MySQL database driver.
  - Added history for twitter-fetcher (contrib).
  - Added an option to disable voting (config).
  - Added automatic promotion of most active voters to admins.

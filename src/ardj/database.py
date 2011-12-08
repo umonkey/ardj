@@ -142,8 +142,8 @@ class Track(Model):
     @classmethod
     def find_all(cls):
         """Returns all tracks with positive weight."""
-        sql = "SELECT %s FROM %s WHERE weight > 0" % (self._fields_sql(), self.table_name)
-        return self._fetch_rows(sql, ())
+        sql = "SELECT %s FROM %s WHERE weight > 0" % (cls._fields_sql(), cls.table_name)
+        return cls._fetch_rows(sql, ())
 
     @classmethod
     def get_artist_names(cls):
