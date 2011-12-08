@@ -65,14 +65,6 @@ def cmd_find_new_tracks(*args):
     return tracks.find_new_tracks(args)
 
 
-def cmd_icelog(*args):
-    """work with icecast2 logs
-
-    Subcommands: show-agents, add.  See the ardj.icelogger module for details."""
-    import icelogger
-    return icelogger.run_cli(args)
-
-
 def cmd_jabber_child(*args):
     """run the jabber bot"""
     from ardj import jabber
