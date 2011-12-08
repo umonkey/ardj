@@ -378,9 +378,13 @@ def on_votes(args, sender):
 
 
 def on_voters(args, sender):
+    voters = ardj.users.get_voters()
+    if not voters:
+        return u"There are no votes yet."
+
     output = u'Top voters:'
-    for email, count, weight in ardj.users.get_voters():
-        output += u'\n%s (%u, %.02f)' % (email, count, weight)
+    for email, count, weight in voters:
+        output += u'\n%s (%u, %.02f)' % (email, count, weight or 0)
     return output
 
 

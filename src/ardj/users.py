@@ -9,7 +9,7 @@ from ardj import settings
 def get_voters():
     """Returns information on voters in tuples (email, count, weight)."""
     rows = database.fetch('SELECT v.email, COUNT(*) AS c, k.weight '
-        'FROM votes v INNER JOIN karma k ON k.email = v.email '
+        'FROM votes v LEFT JOIN karma k ON k.email = v.email '
         'GROUP BY v.email ORDER BY c DESC, k.weight DESC, v.email')
     return rows
 
