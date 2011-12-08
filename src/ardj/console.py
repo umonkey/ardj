@@ -682,7 +682,8 @@ def run_cli(args):
         try:
             text = raw_input('command: ')
             if text:
-                print process_command(text.decode('utf-8'), sender, quiet=True)
+                response = process_command(text.decode('utf-8'), sender, quiet=True)
+                print response.encode("utf-8")
                 ardj.database.Open().commit()
         except EOFError:
             readline.write_history_file(histfile)

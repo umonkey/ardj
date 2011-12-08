@@ -1,10 +1,11 @@
 1.0.12
 
  - Fixed connection spinning in contrib/hotline.
- - Added history for contrib/twitter-fetcher.
- - Added an option to disable voting.
+ - Fixed Unicode problems in ardj console (CLI).
+ - Added history for twitter-fetcher (contrib).
+ - Added an option to disable voting (config).
  - Added automatic promotion of most active voters to admins.
  - Added support for sysvinit (Debian).
  - Added a default response for the echo command (Jabber).
- - Removed old hotline code.
+ - Removed old hotline code (CLI).
  - Changed tags order in tags/show: subtags go last.
