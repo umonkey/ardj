@@ -1,3 +1,10 @@
+ardj (1.0.12-1) natty; urgency=low
+
+ * Added support for sysvinit.
+ * Removed dependency on python-oauth.
+
+ -- Justin Forest <hex@umonkey.net>  Wed, 05 Dec 2011 12:46:00 +0400
+
 ardj (1.0.11-1) natty; urgency=low
 
  * Build-depend on python-yaml.

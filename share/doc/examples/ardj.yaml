@@ -60,6 +60,11 @@ dupes: 0
 #- alice@example.com
 #- bob@example.com
 
+# Pomote most active users to admins.  You can define how many users from the
+# top voters are promoted and how many days count.
+#promote_voters: 10
+#promote_voters_days: 14
+
 # This adds track info to the bot's status message.
 use_jabber_status: yes
 
@@ -100,6 +105,9 @@ use_jabber_status: yes
 #festival_track_id: 1234
 #festival_voice: voice_msu_ru_nsh_clunits
 
+
+# Uncomment this to disable voting (e.g., for database maintenance).
+#enable_voting: no
 
 # This is where the messages will be logged.
 log: syslog

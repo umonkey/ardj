@@ -1,0 +1,14 @@
+1.0.12
+
+ - Fixed connection spinning in contrib/hotline.
+ - Fixed Unicode problems in ardj console (CLI).
+ - Fixed the voters command in fresh install (Jabber).
+ - Fixed a bug in the MySQL database driver.
+ - Added history for twitter-fetcher (contrib).
+ - Added an option to disable voting (config).
+ - Added automatic promotion of most active voters to admins.
+ - Added support for sysvinit (Debian).
+ - Added a default response for commands echo, sql and show-news-from-jamendo (Jabber).
+ - Added better logging for the skip command (Jabber).
+ - Removed old commands: hotline, icelog, listeners, mail (CLI).
+ - Changed tags order in tags/show: subtags go last.

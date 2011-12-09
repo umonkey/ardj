@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- vim: set ft=docbk: -->
+<varlistentry id="jabber-download">
+  <term><command>download</command> <replaceable>имя исполнителя</replaceable></term>
+  <listitem>
+    <para>Ищет свободно распространяемые композиции указанного исполнителя в Last.fm и Jamendo и загружает 3 штуки.
+    Если в медиатеке уже есть композиции указанного исполнителя — сообщает об этом и ничего не загружает.</para>
+
+    <example id="jabber-download-example">
+      <title>Загрузка музыки из открытых источников</title>
+      <programlisting><![CDATA[> download cool music
+Это займёт какое-то время, я сообщу о результате.
+Could not find anything by "cool music" on Last.fm and Jamendo.]]></programlisting>
+    </example>
+  </listitem>
+</varlistentry>

@@ -65,35 +65,25 @@ def cmd_find_new_tracks(*args):
     return tracks.find_new_tracks(args)
 
 
-def cmd_hotline(*args):
-    """work with the hotline
-
-    Interacts with the hotline mailbox.  Subcommands: list, process.  See
-    ardj.hotline.run_cli() for details."""
-    import hotline
-    return hotline.run_cli(args)
-
-
-def cmd_icelog(*args):
-    """work with icecast2 logs
-
-    Subcommands: show-agents, add.  See the ardj.icelogger module for details."""
-    import icelogger
-    return icelogger.run_cli(args)
+def cmd_jabber_child(*args):
+    """run the jabber bot"""
+    from ardj import jabber
+    bot = jabber.Open(debug="--debug" in args)
+    if bot is None:
+        print "Not configured, try `ardj config'."
+        return False
+    bot.run()
 
 
 def cmd_jabber(*args):
-    """run the jabber bot"""
-    from ardj import jabber
-    jabber.Open(debug="--debug" in args).run()
+    """run the jabber bot with a process monitor"""
+    import subprocess
+    import time
 
-
-def cmd_listeners(*args):
-    """summarizes listeners.csv
-
-    Subcommands: stats."""
-    import listeners
-    return listeners.run_cli(args)
+    while True:
+        subprocess.Popen([sys.argv[0], "jabber-child"]).wait()
+        print "Restarting in 5 seconds."
+        time.sleep(5)  # prevend spinlocking
 
 
 def cmd_export_total_listeners(*args):
@@ -108,15 +98,6 @@ def cmd_export_yesterday_listeners(*args):
     listeners.cli_yesterday()
 
 
-def cmd_mail(*args):
-    """send or receive mail
-
-    Can be used to send mail or list incoming messages.  Subcommands: list,
-    send.  See the ardj.mail module for details."""
-    import mail
-    return mail.run_cli(args)
-
-
 def cmd_map_listeners(*args):
     """updates the listeners map
 
@@ -127,9 +108,8 @@ def cmd_map_listeners(*args):
 
 def cmd_merge_votes(*args):
     """merge votes according to jabber aliases"""
-    from ardj import database
-    database.Open().merge_aliases()
-    database.commit()
+    from ardj import users
+    users.merge_aliased_votes()
 
 
 def cmd_say(*args):
@@ -176,6 +156,7 @@ def cmd_add_incoming_tracks(*args):
     files = tracks.find_incoming_files(delay=0, verbose=True)
     success = tracks.add_incoming_files(files)
     print "Added %u files to the database." % len(success)
+    return True
 
 
 def cmd_print_next_track(*args):
@@ -344,9 +325,8 @@ def cmd_mark_liked_by(label, *jids):
 
 def cmd_mark_long(*args):
     """marks long tracks with the "long" label"""
-    from ardj import database
-    database.Open().mark_long()
-    database.commit()
+    from ardj.tracks import mark_long
+    print "Average length: %s, total long tracks: %u." % mark_long()
 
 
 def cmd_mark_orphans(*args):

@@ -1,5 +1,7 @@
 #!/bin/sh -e
 
+#DEBHELPER#
+
 case "$1" in
     configure)
         if ! getent group ardj >/dev/null; then
@@ -41,13 +43,23 @@ case "$1" in
             echo "Adding sample audio files."
             cp /usr/share/ardj/samples/* /var/lib/ardj/incoming/
             chmod 664 /var/lib/ardj/incoming/*
-            ardj add-incoming-tracks
+            ardj add-incoming-tracks || true
+        fi
+
+        if [ -x /sbin/initctl ]; then
+            cp -n /usr/share/doc/ardj/examples/upstart/* /etc/init/
+            initctl reload-configuration
+        else
+            cp -n /usr/share/doc/ardj/examples/sysvinit/* /etc/init.d/
+            chmod 0755 /etc/init.d/ardj-*
+            update-rc.d ardj-ezstream defaults
+            update-rc.d ardj-ices defaults
+            update-rc.d ardj-jabber defaults
+            update-rc.d ardj-server defaults
         fi
 
         echo "Starting the web service."
-        start ardj-server || true
+        service ardj-server start || true
 esac
 
 exit 0
-
-#DEBHELPER#

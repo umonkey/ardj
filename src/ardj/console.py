@@ -21,12 +21,13 @@ import ardj.listeners
 import ardj.settings
 import ardj.speech
 import ardj.tracks
+import ardj.users
 import ardj.util
 
 
-def is_user_admin(sender):
-    admins = ardj.settings.get("jabber_admins", ardj.settings.get("jabber/access", []))
-    return sender in admins
+def is_user_admin(sender, safe=False):
+    """Checks whether the user has special privileges."""
+    return sender in ardj.users.get_admins()
 
 
 def filter_labels(labels):
@@ -46,6 +47,10 @@ def format_track_list(tracks, header=None):
                 message += u' @' + u' @'.join(filter_labels(track['labels']))
             message += u'\n'
     return message
+
+
+def sorted_tags(tags):
+    return sorted(tags, key=lambda l: (":" in l, l.lower()))
 
 
 def get_ices_pid():
@@ -72,33 +77,6 @@ def signal_ices(sig):
         return True
     except Exception, e:
         logging.warning('could not kill(%u) ices: %s' % (sig, e))
-        return False
-
-
-def get_ezstream_pid():
-    pidfile = ardj.settings.get("ezstream_pid_file", "/var/run/ezstream-ardj.pid")
-    if not pidfile:
-        return None
-
-    if not os.path.exists(pidfile):
-        logging.warning('%s does not exist.' % pidfile)
-        return None
-
-    return int(file(pidfile, 'rb').read().strip())
-
-
-def signal_ezstream(sig):
-    ezstream_pid = get_ezstream_pid()
-    try:
-        if ezstream_pid:
-            os.kill(ezstream_pid, sig)
-            logging.debug('sent signal %s to process %s.' % (sig, ezstream_pid))
-        else:
-            ardj.util.run(['pkill', '-' + str(sig), 'ezstream'])
-            logging.debug('sent signal %s to ezstream using pkill (unsafe).' % sig)
-        return True
-    except Exception, e:
-        logging.warning('could not kill(%u) ezstream: %s' % (sig, e))
         return False
 
 
@@ -131,17 +109,11 @@ def on_skip(args, sender):
     else:
         message = u"%s skipped an unknown track." % sender_name
 
-    tmp = ardj.settings.get("ices_pid_file")
-    if tmp is not None and signal_ices(signal.SIGUSR1):
+    if ardj.util.skip_current_track():
         ardj.jabber.chat_say(message)
         return 'Request sent.'
 
-    tmp = ardj.settings.get("ezstream_pid_file")
-    if tmp is not None and signal_ezstream(signal.SIGUSR1):
-        ardj.jabber.chat_say(message)
-        return 'Request sent.'
-
-    return 'Could not send the request for some reason.'
+    return 'Could not send a skip request.  Details can be found in the log file.'
 
 
 def on_say(args, sender):
@@ -154,6 +126,11 @@ def on_restart(args, sender):
 
 
 def on_sql(args, sender):
+    """performs an SQL query, prints the result"""
+
+    if not args.strip():
+        return u"This command lets you perform a low-level SQL query and see the results, e.g.: sql SELECT COUNT(*) FROM tracks;"
+
     if not args.endswith(';'):
         return 'SQL statements must end with a ;, for your own safety.'
 
@@ -196,6 +173,8 @@ def on_speak(args, sender):
 
 
 def on_echo(args, sender):
+    if not args.strip():
+        args = "I'm here.  This command can be used for testing the connection.  I'll send back whatever arguments you pass with it, e.g.: echo hello."
     return args
 
 
@@ -371,13 +350,13 @@ def on_votes(args, sender):
 
 
 def on_voters(args, sender):
-    rows = ardj.database.fetch('SELECT v.email, COUNT(*) AS c, k.weight '
-        'FROM votes v INNER JOIN karma k ON k.email = v.email '
-        'GROUP BY v.email ORDER BY c DESC, k.weight DESC, v.email')
+    voters = ardj.users.get_voters()
+    if not voters:
+        return u"There are no votes yet."
 
     output = u'Top voters:'
-    for email, count, weight in rows:
-        output += u'\n%s (%u, %.02f)' % (email, count, weight)
+    for email, count, weight in voters:
+        output += u'\n%s (%u, %.02f)' % (email, count, weight or 0)
     return output
 
 
@@ -421,7 +400,7 @@ def on_tags(args, sender):
 
     labels = [l.strip(' ,@') for l in parts]
     current = ardj.tracks.add_labels(track_id, labels, owner=sender) or ['none']
-    return u'New labels: %s.' % (u', '.join(sorted(current)))
+    return u'New labels: %s.' % (u', '.join(sorted_tags(current)))
 
 
 def on_set(args, sender):
@@ -484,7 +463,7 @@ def on_show(args, sender):
     result = u'«%s» by %s' % (track['title'], track['artist'])
     result += u'; id=%u weight=%.2f playcount=%u length=%s vote=%u last_played=%s. ' % (track['id'], track['weight'] or 0, track['count'] or 0, ardj.util.format_duration(int(track.get('length', 0))), ardj.tracks.get_vote(track['id'], sender), ardj.util.format_duration(track.get('last_played', 0), age=True))
     if track['labels']:
-        result += u'Labels: ' + u', '.join(track['labels']) + u'. '
+        result += u'Labels: ' + u', '.join(sorted_tags(track['labels'])) + u'. '
     return result.strip()
 
 
@@ -523,6 +502,13 @@ def on_download(args, sender):
     return ardj.tracks.schedule_download(args, sender)
 
 
+def on_admins(args, sender):
+    """Lists current admins."""
+    admins = [ardj.users.resolve_alias(u) for u in ardj.users.get_admins()]
+    admins = sorted(list(set(admins)))
+    return u"Current admins: %s." % u", ".join(admins)
+
+
 def on_bookmark(args, sender):
     """Adds a track to bookmarks.  If track id is not specified, the currently
     played track is bookmarked.  Latest bookmarks are shown afterwards."""
@@ -555,6 +541,7 @@ def on_help(args, sender):
 
 
 command_map = (
+    ('admins', False, on_admins, 'lists current admins'),
     ('ban', True, on_ban, 'deletes all tracks by the specified artist'),
     ('bm', False, on_bookmark, 'bookmark tracks (accepts optional id)'),
     ('delete', True, on_delete, 'deletes the specified track'),
@@ -597,7 +584,7 @@ command_aliases = {
 
 def get_public_commands():
     """Returns the list of commands available to anonymous users."""
-    public = ardj.settings.get('jabber/public_commands', None)
+    public = ardj.settings.get2('jabber/public_commands', "public_jabber_commands", None)
     if not public:
         public = [c[0] for c in command_map if not c[1]]
     return public
@@ -671,7 +658,8 @@ def run_cli(args):
         try:
             text = raw_input('command: ')
             if text:
-                print process_command(text.decode('utf-8'), sender, quiet=True)
+                response = process_command(text.decode('utf-8'), sender, quiet=True)
+                print response.encode("utf-8")
                 ardj.database.Open().commit()
         except EOFError:
             readline.write_history_file(histfile)

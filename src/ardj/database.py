@@ -36,7 +36,6 @@ except ImportError:
 
 import ardj.settings
 import ardj.scrobbler
-import ardj.tracks
 import ardj.util
 
 
@@ -143,8 +142,8 @@ class Track(Model):
     @classmethod
     def find_all(cls):
         """Returns all tracks with positive weight."""
-        sql = "SELECT %s FROM %s WHERE weight > 0" % (self._fields_sql(), self.table_name)
-        return self._fetch_rows(sql, ())
+        sql = "SELECT %s FROM %s WHERE weight > 0" % (cls._fields_sql(), cls.table_name)
+        return cls._fetch_rows(sql, ())
 
     @classmethod
     def get_artist_names(cls):
@@ -176,6 +175,14 @@ class Track(Model):
             execute("INSERT INTO labels (track_id, label, email) VALUES (?, ?, ?)", (self["id"], tag, "unknown", ))
 
         logging.debug("New labels for track %u: %s" % (self["id"], labels))
+
+    def get_average_length(self):
+        """Returns average track length in minutes."""
+        s_prc = s_qty = 0.0
+        for prc, qty in self.fetch("SELECT ROUND(length / 60) AS r, COUNT(*) FROM tracks GROUP BY r"):
+            s_prc += prc * qty
+            s_qty += qty
+        return int(s_prc / s_qty * 60 * 1.5)
 
 
 class Queue(Model):
@@ -308,12 +315,6 @@ class database:
         logging.debug(u'SQL: ' + sql)
         return sql
 
-    def merge_aliases(self):
-        """Moves votes from similar accounts to one."""
-        for k, v in ardj.settings.get2("jabber_aliases", "jabber/aliases", {}).items():
-            for alias in v:
-                self.execute('UPDATE votes SET email = ? WHERE email = ?', (k, alias, ))
-
     def purge(self):
         """Removes stale data.
 
@@ -322,7 +323,6 @@ class database:
         analyzed all tables (to optimize indexes) and vacuums the database.
         """
         old_size = os.stat(self.filename).st_size
-        self.merge_aliases()
         self.execute('DELETE FROM queue WHERE track_id NOT IN (SELECT id FROM tracks)')
         self.execute('DELETE FROM labels WHERE track_id NOT IN (SELECT id FROM tracks)')
         self.execute('DELETE FROM votes WHERE track_id NOT IN (SELECT id FROM tracks)')
@@ -389,14 +389,6 @@ class database:
                     print '%8u; %s -- %s' % (row[0], (row[1] or 'unknown').encode('utf-8'), (row[2] or 'unknown').encode('utf-8'))
                 self.execute('INSERT INTO labels (track_id, email, label) VALUES (?, ?, ?)', (int(row[0]), 'ardj', set_label))
             return True
-
-    def mark_long(self):
-        """Marks unusuall long tracks."""
-        length = ardj.tracks.get_average_length()
-        self.execute('DELETE FROM labels WHERE label = \'long\'')
-        self.execute('INSERT INTO labels (track_id, email, label) SELECT id, \'ardj\', \'long\' FROM tracks WHERE length > ?', (length, ))
-        count = self.fetch('SELECT COUNT(*) FROM labels WHERE label = \'long\'')[0][0]
-        print 'Average length is %u seconds, %u tracks match.' % (length, count)
 
     def get_artist_names(self, label=None, weight=0):
         if label is None:

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- vim: set ft=docbk: -->
+<section id="admins">
+  <title>Управление доступом ко специальным командам</title>
+
+  <para>Большая часть <link linkend="jabber-commands">команд jabber-бота</link>, модифицирующих сведения о композициях,
+  или управляющих самим ботом, доступна только администраторам.  По умолчанию обычным пользователям доступны команды
+  получения информации и <link linkend="voting">голосования</link>.</para>
+
+  <para>Для предоставления публичного доступа к закрытым командам используется параметр public_jabber_commands
+  конфигурационного файла.  По умолчанию он не установлен, что эквивалентно такому определению:</para>
+
+  <example id="public-commands-example">
+    <title>Настройка доступа к командам jabber-бота</title>
+    <programlisting>public_jabber_commands: [admins, bm, dump, download, echo, find,
+  help, hitlist, last, news, queue, rocks, shitlist, show,
+  speak, status, sucks, tags, upload]</programlisting>
+  </example>
+
+  <para>Демократические радиостанции могут автоматически выдавать пользователям доступ к администрированию.  Для этого
+  нужно указать количество наиболее активно голосующих пользователей, которым выдаются привилегии, и количество дней, за
+  которые учитываются голоса.  По умолчанию функция отключена.  Список текущих администраторов можно получить командой
+  <link linkend="jabber-admins"><command>admin</command></link>.</para>
+
+  <example id="democratic-admins-example">
+    <title>Автоматическое присвоение статуса администратора</title>
+
+    <programlisting>promote_voters: 10
+promote_voters_days: 14</programlisting>
+
+    <para>В этом примере статус администратора выдаётся 10 пользователям, наиболее активно голосовавшим за последние две
+    недели.</para>
+  </example>
+</section>

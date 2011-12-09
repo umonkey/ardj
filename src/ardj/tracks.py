@@ -29,11 +29,18 @@ import ardj.scrobbler
 import ardj.tags
 import ardj.util
 
+from ardj.database import Track
+from ardj.users import resolve_alias
+
 
 KARMA_TTL = 30.0
 
 last_playlist = None
 last_sticky_label = None
+
+
+class Forbidden(Exception):
+    pass
 
 
 class Playlist(dict):
@@ -421,6 +428,9 @@ def add_vote(track_id, email, vote, update_karma=False):
     """
     email = email.lower()
 
+    if not ardj.settings.get("enable_voting", True):
+        raise Forbidden("Voting disabled by the admins.")
+
     # Normalize the vote.
     if vote > 0:
         vote = 1
@@ -428,10 +438,7 @@ def add_vote(track_id, email, vote, update_karma=False):
         vote = -1
 
     # Resolve aliases.
-    for k, v in ardj.settings.get2("jabber_aliases", "jabber/aliases", {}).items():
-        if email in v:
-            email = k
-            break
+    email = resolve_alias(email)
 
     row = ardj.database.fetchone("SELECT last_played, weight FROM tracks WHERE id = ?", (track_id, ))
     if row is None:
@@ -884,15 +891,6 @@ def log(track_id, listener_count=None, ts=None):
     ardj.database.execute('INSERT INTO playlog (ts, track_id, listeners) VALUES (?, ?, ?)', (int(ts or time.time()), int(track_id), listener_count, ))
 
 
-def get_average_length():
-    """Returns the weighed average track length in seconds."""
-    s_prc = s_qty = 0.0
-    for prc, qty in ardj.database.fetch('SELECT ROUND(length / 60) AS r, COUNT(*) FROM tracks GROUP BY r'):
-        s_prc += prc * qty
-        s_qty += qty
-    return int(s_prc / s_qty * 60 * 1.5)
-
-
 def update_real_track_weight(track_id):
     """Returns the real track weight, using the last vote for each user."""
     rows = ardj.database.fetch('SELECT v.email, v.vote * k.weight FROM votes v '
@@ -1076,6 +1074,17 @@ def get_new_tracks(artist_names=None, label='music', weight=1.5):
     return get_missing_tracks(tracklist, limit=ardj.settings.get('fresh_music/tracks_per_artist', 2))
 
 
+def mark_long():
+    """Marks long tracks with the @long tag."""
+    tag = "long"
+    length = Track.get_average_length()
+    ardj.database.execute("DELETE FROM `labels` WHERE `label` = ?", (tag, ))
+    ardj.database.execute("INSERT INTO `labels` (`track_id`, `email`, `label`) SELECT id, \'ardj\', ? FROM tracks WHERE length > ?", (tag, length, ))
+    count = self.fetch('SELECT COUNT(*) FROM labels WHERE label = ?', (tag, ))[0][0]
+    ardj.database.commit()
+    return length, count
+
+
 def find_new_tracks(args, label='music', weight=1.5):
     """Finds new tracks by known artists, downloads and adds them."""
     tracks = get_new_tracks(args, label=label, weight=weight)
@@ -1103,7 +1112,7 @@ def find_new_tracks(args, label='music', weight=1.5):
         db = ardj.database.Open()
         db.mark_recent_music()
         db.mark_orphans()
-        db.mark_long()
+        mark_long()
 
     return added
 

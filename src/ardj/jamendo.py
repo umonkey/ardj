@@ -49,4 +49,11 @@ def find_new_tracks(artist_names=None, verbose=False):
 
 def print_new_tracks(args):
     """Prints a sorted list of new tracks available at Jamendo."""
-    find_new_tracks(args, verbose=True)
+    todo = find_new_tracks(args, verbose=True)
+    if todo:
+        return
+
+    if args:
+        print "Could not find anything new in Jamendo.  This probably means that Jamendo has no new music for %s." % args
+    else:
+        print "Could not find anything new in Jamendo.  This probably means that Jamendo has no new music for the artists from your database."

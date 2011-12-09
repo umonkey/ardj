@@ -361,7 +361,8 @@ def loop():
             logging.info("Interrupted by user.")
             return
         except Exception, e:
-            log_error(e, "ERROR: %s, restarting." % e)
+            log_error(e, "ERROR: %s, restarting in 5 seconds." % e)
+            time.sleep(5)
 
         logging.debug("Sleeping for 60 seconds.")
         time.sleep(60)
