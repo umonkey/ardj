@@ -9,12 +9,15 @@ news widget which doesn't need scripting."""
 
 
 import json
+import os
 import re
 import rfc822
 import sys
 import time
 import urllib2
 
+
+CACHE_FILE = "/radio/data/twits.json"
 
 ITEM_TEMPLATE = u"<li><a href='https://twitter.com/%(author)s' title='%(author)s' target='_blank'><img src='%(picture)s' alt='avatar'/></a><p class='text'>%(text)s</p><p class='date'><a href='https://twitter.com/%(author)s/status/%(id)s' class='twit' target='_blank'>%(date)s</a></p></li>"
 
@@ -86,14 +89,28 @@ def format_twits(twits):
     return PAGE_TEMPLATE % body
 
 
+def load_old_twits():
+    if not os.path.exists(CACHE_FILE):
+        return {}
+    items = json.loads(file(CACHE_FILE, "rb").read())
+    return dict((i["id"], i) for i in items)
+
+
+def save_new_twits(twits):
+    dump = sorted(twits.values(), key=lambda t: t["id"], reverse=True)
+    file(CACHE_FILE, "wb").write(json.dumps(dump, indent=True))
+
+
 if __name__ == "__main__":
     if len(sys.argv) <= 1:
         print >>sys.stderr, "Usage: python %s \"#search1\" @search2 ... > page.html" % sys.argv[0]
         exit(1)
 
-    twits = {}
+    twits = load_old_twits()
     for term in sys.argv[1:]:
         twits.update(search_twitter(term))
+
+    save_new_twits(twits)
 
     html = format_twits(twits)
     print html.encode("utf-8")
