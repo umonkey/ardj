@@ -348,13 +348,8 @@ def connect_and_wait():
         mail.logout()
         exit(0)
 
-    while True:
-        if HAVE_IDLE:
-            logging.debug("Idling.")
-            mail.idle()
-        else:
-            logging.debug("Sleeping for 60 seconds.")
-            time.sleep(60)
+    while HAVE_IDLE:
+        mail.idle()
         search_messages(mail)
 
 
@@ -368,6 +363,9 @@ def loop():
         except Exception, e:
             log_error(e, "ERROR: %s, restarting in 5 seconds." % e)
             time.sleep(5)
+
+        logging.debug("Sleeping for 60 seconds.")
+        time.sleep(60)
 
 
 install_syslog()
