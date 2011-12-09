@@ -29,7 +29,7 @@ import ardj.scrobbler
 import ardj.tags
 import ardj.util
 
-from ardj.database import Track
+from ardj.database import Track as Track2
 from ardj.users import resolve_alias
 
 
@@ -1077,10 +1077,10 @@ def get_new_tracks(artist_names=None, label='music', weight=1.5):
 def mark_long():
     """Marks long tracks with the @long tag."""
     tag = "long"
-    length = Track.get_average_length()
+    length = Track2.get_average_length()
     ardj.database.execute("DELETE FROM `labels` WHERE `label` = ?", (tag, ))
     ardj.database.execute("INSERT INTO `labels` (`track_id`, `email`, `label`) SELECT id, \'ardj\', ? FROM tracks WHERE length > ?", (tag, length, ))
-    count = self.fetch('SELECT COUNT(*) FROM labels WHERE label = ?', (tag, ))[0][0]
+    count = ardj.database.fetch('SELECT COUNT(*) FROM labels WHERE label = ?', (tag, ))[0][0]
     ardj.database.commit()
     return length, count
 

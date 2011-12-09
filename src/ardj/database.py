@@ -176,10 +176,11 @@ class Track(Model):
 
         logging.debug("New labels for track %u: %s" % (self["id"], labels))
 
-    def get_average_length(self):
+    @classmethod
+    def get_average_length(cls):
         """Returns average track length in minutes."""
         s_prc = s_qty = 0.0
-        for prc, qty in self.fetch("SELECT ROUND(length / 60) AS r, COUNT(*) FROM tracks GROUP BY r"):
+        for prc, qty in fetch("SELECT ROUND(length / 60) AS r, COUNT(*) FROM tracks GROUP BY r"):
             s_prc += prc * qty
             s_qty += qty
         return int(s_prc / s_qty * 60 * 1.5)
