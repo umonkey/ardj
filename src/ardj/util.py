@@ -393,7 +393,7 @@ def _send_skip(confkey, default, sig):
         raise Exception("File %s does not contain a process id." % pidfile)
 
     try:
-        os.kill(int(pid), signal.SIGURS1)
+        os.kill(int(pid), sig)
         return True
     except Exception, e:
         logging.exception("Could not send a signal to ezstream: %s" % e)
