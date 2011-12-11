@@ -5,4 +5,4 @@ import sys
 import ardj.cli
 
 
-ardj.cli.run(sys.argv)
+ardj.cli.run(list(sys.argv))

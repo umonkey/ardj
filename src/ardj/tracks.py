@@ -29,6 +29,7 @@ import ardj.scrobbler
 import ardj.tags
 import ardj.util
 
+from ardj import is_dry_run, is_verbose
 from ardj.database import Track as Track2
 from ardj.users import resolve_alias
 
@@ -497,7 +498,7 @@ def gen_filename(suffix):
             return abs_filename, rel_filename
 
 
-def add_file(filename, add_labels=None, owner=None, quiet=False):
+def add_file(filename, add_labels=None, owner=None, quiet=False, artist=None, title=None):
     """Adds the file to the database.
 
     Returns track id.
@@ -510,10 +511,13 @@ def add_file(filename, add_labels=None, owner=None, quiet=False):
     ardj.replaygain.update(filename)
 
     tags = ardj.tags.get(str(filename)) or {}
-    artist = tags.get('artist', 'Unknown Artist')
-    title = tags.get('title', 'Untitled')
     duration = tags.get('length', 0)
     labels = tags.get('labels', [])
+
+    if artist is None:
+        artist = tags.get('artist', 'Unknown Artist')
+    if title is None:
+        title = tags.get('title', 'Untitled')
 
     if add_labels and not labels:
         labels = add_labels
@@ -1070,7 +1074,9 @@ def get_new_tracks(artist_names=None, label='music', weight=1.5):
         for artist_name in artist_names:
             tracklist += cli.get_tracks_by_artist(artist_name)
 
-    print 'Total tracks: %u.' % len(tracklist)
+    if is_verbose():
+        print 'Total tracks: %u.' % len(tracklist)
+
     return get_missing_tracks(tracklist, limit=ardj.settings.get('fresh_music/tracks_per_artist', 2))
 
 
@@ -1088,17 +1094,23 @@ def mark_long():
 def find_new_tracks(args, label='music', weight=1.5):
     """Finds new tracks by known artists, downloads and adds them."""
     tracks = get_new_tracks(args, label=label, weight=weight)
-    print 'New tracks: %u.' % len(tracks)
+
+    if is_verbose():
+        print 'New tracks: %u.' % len(tracks)
 
     added = 0
     artist_names = []
     for track in tracks:
+        if is_verbose():
+            print "Track:", track
         logging.info(u'[%u/%u] fetching "%s" by %s' % (added + 1, len(tracks), track['title'], track['artist']))
         try:
             if track['artist'] not in artist_names:
                 artist_names.append(track['artist'])
             filename = ardj.util.fetch(str(track['url']), suffix=track.get('suffix'))
-            add_file(str(filename), add_labels=track.get('tags', ['tagme', 'music']))
+            if not is_dry_run():
+                add_file(str(filename), add_labels=track.get('tags', ['tagme', 'music']),
+                    artist=track["artist"], title=track["title"])
             added += 1
         except KeyboardInterrupt:
             raise
@@ -1107,19 +1119,20 @@ def find_new_tracks(args, label='music', weight=1.5):
 
     if added:
         logging.info('Total catch: %u tracks.' % added)
-        ardj.jabber.chat_say('Downloaded %u new tracks by %s.' % (added, ardj.util.shortlist(sorted(artist_names))))
+        if not is_dry_run():
+            ardj.jabber.chat_say('Downloaded %u new tracks by %s.' % (added, ardj.util.shortlist(sorted(artist_names))))
 
-        db = ardj.database.Open()
-        db.mark_recent_music()
-        db.mark_orphans()
-        mark_long()
+            db = ardj.database.Open()
+            db.mark_recent_music()
+            db.mark_orphans()
+            mark_long()
 
     return added
 
 
 def schedule_download(artist, owner=None):
     """Schedules an artist for downloading from Last.fm or Jamendo."""
-    count = ardj.database.fetchone('SELECT COUNT (*) FROM tracks WHERE artist = ? COLLATE unicode', (artist, ))
+    count = ardj.database.fetchone('SELECT COUNT (*) FROM tracks WHERE weight > 0 AND artist = ? COLLATE unicode', (artist, ))
     if count[0]:
         return u'Песни этого исполнителя уже есть.  Новые песни загружаются автоматически в фоновом режиме.'
 

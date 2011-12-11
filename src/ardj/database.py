@@ -357,7 +357,9 @@ class database:
         self.execute('INSERT INTO labels (track_id, label, email) SELECT id, ?, ? FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?) ORDER BY id DESC LIMIT 100', ('recent', 'ardj', 'music', ))
 
         self.execute('DELETE FROM labels WHERE label = ?', ('fresh', ))
-        count = self.execute('INSERT INTO labels (track_id, label, email) SELECT id, ?, ? FROM tracks WHERE count < 10 AND weight > 0 AND id IN (SELECT track_id FROM labels WHERE label = ?)', ('fresh', 'ardj', 'music', ))
+        self.execute('INSERT INTO labels (track_id, label, email) SELECT id, ?, ? FROM tracks WHERE count < 10 AND weight > 0 AND id IN (SELECT track_id FROM labels WHERE label = ?)', ('fresh', 'ardj', 'music', ))
+
+        count = self.execute("SELECT COUNT(*) FROM labels WHERE label = ?", ('fresh', ))
         print 'Found %u fresh songs.' % count
 
     def mark_orphans(self, set_label='orphan', quiet=False):

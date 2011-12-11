@@ -30,6 +30,10 @@ def is_user_admin(sender, safe=False):
     return sender in ardj.users.get_admins()
 
 
+def shortname(sender):
+    return sender.split("@")[0]
+
+
 def filter_labels(labels):
     return [l for l in labels if ':' not in l]
 
@@ -213,10 +217,11 @@ def on_sucks(args, sender):
 def on_ban(args, sender):
     if not args:
         return 'Usage: ban artist_name'
-    count = ardj.database.fetchone('SELECT COUNT(*) FROM tracks WHERE artist = ?', (args, ))[0]
+    count = ardj.database.fetchone('SELECT COUNT(*) FROM tracks WHERE artist = ? AND weight > 0', (args, ))[0]
     if not count:
         return 'No tracks by this artist.'
     ardj.database.execute('UPDATE tracks SET weight = 0 WHERE artist = ?', (args, ))
+    ardj.jabber.chat_say(u"%s deleted all %u tracks by %s." % (shortname(sender), count, args))
     return 'Deleted %u tracks.' % count
 
 
