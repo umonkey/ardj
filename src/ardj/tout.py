@@ -31,7 +31,7 @@ def fetch_artist_events(lastfm, artist_name):
         print 'Updating %s' % artist_name.encode('utf-8')
         data = lastfm.get_events_for_artist(artist_name)
         if not data:
-            logging.warning(u'Could not fetch events for %s.' % artist_name)
+            logging.warning('Could not fetch events for %s.' % artist_name.encode("utf-8"))
 
         if 'events' not in data:
             logging.debug('Oops: %s had no "events" block -- no such artist?' % artist_name.encode('utf-8'))
@@ -62,7 +62,7 @@ def fetch_artist_events(lastfm, artist_name):
     except ardj.scrobbler.BadAuth:
         raise
     except ardj.scrobbler.Error, e:
-        logging.warning(u"Could not fetch events for %s: %s" % (artist_name, e))
+        logging.warning("Could not fetch events for %s: %s" % (artist_name.encode("utf-8"), e))
         return []
     except Exception, e:
         logging.error('%s error fetching events for %s: %s' % (type(e).__name__, artist_name.encode('utf-8'), e))

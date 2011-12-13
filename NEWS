@@ -5,6 +5,7 @@
  - Fixed the voters command in fresh install (Jabber).
  - Fixed a bug in the MySQL database driver.
  - Fixed missing tags when downloading from Jamendo.
+ - Fixed missing schedule update (cron).
  - Added history for twitter-fetcher (contrib).
  - Added an option to disable voting (config).
  - Added automatic promotion of most active voters to admins.
