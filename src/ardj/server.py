@@ -118,6 +118,20 @@ class RocksController(Controller):
             return {"status": "error", "message": str(e)}
 
 
+class StatusController(Controller):
+    @send_json
+    def GET(self):
+        track_id = tracks.get_last_track_id()
+        if track_id is None:
+            return None
+
+        track = tracks.get_track_by_id(track_id)
+        if track is None:
+            return None
+
+        return track
+
+
 def serve_http(hostname, port):
     """Starts the HTTP web server at the specified socket."""
     sys.argv.insert(1, "%s:%s" % (hostname, port))
@@ -127,6 +141,7 @@ def serve_http(hostname, port):
     ScrobblerThread().start()
 
     web.application((
+        "/api/status\.json", StatusController,
         "/track/next\.json", NextController,
         "/track/rocks\.json", RocksController,
         "/commit\.json", CommitController,
