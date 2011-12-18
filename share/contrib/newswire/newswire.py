@@ -54,9 +54,12 @@ def fetch_news(feed_url):
 def short_url(url):
     """Returns the URL shortened with clck.ru"""
     try:
-        return urllib.urlopen("http://clck.ru/--?url=" + url).read()
+        req = urllib.urlopen("http://clck.ru/--?url=" + url)
+        if req.getcode() == 200:
+            return req.read()
     except:
-        return url
+        pass
+    return url
 
 
 def send_news(url, text):
