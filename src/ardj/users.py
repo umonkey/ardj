@@ -50,7 +50,7 @@ def resolve_alias(jid):
 
 def merge_aliased_votes():
     """Moves votes from aliases to real jids."""
-    for k, v in get_aliases():
+    for k, v in get_aliases().items():
         for alias in v:
             database.execute("UPDATE votes SET email = ? WHERE email = ?", (k, alias, ))
     database.commit()
