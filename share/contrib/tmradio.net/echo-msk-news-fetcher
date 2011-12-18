@@ -44,8 +44,8 @@ def fetch_news(folder, target):
     temp_file = last_file + ".ogg"
     file(temp_file, "wb").write(file(last_file, "rb").read())
 
-    subprocess.Popen(["sox", last_file, "-r", "44100", "-c", "2", temp_file]).wait()
-    subprocess.Popen(["vorbisgain", "-q", temp_file]).wait()
+    subprocess.Popen(["nice", "-n15", "sox", last_file, "-r", "44100", "-c", "2", temp_file]).wait()
+    subprocess.Popen(["nice", "-n15", "vorbisgain", "-q", temp_file]).wait()
 
     if os.path.exists(target):
         os.unlink(target)
