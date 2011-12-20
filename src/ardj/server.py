@@ -71,6 +71,31 @@ class Controller:
         logging.debug("Request finished, closing the transaction.")
         database.commit()
 
+    def check_auth(self):
+        """Makes sure the sender is allowed to use this privileged call."""
+        remote_addr = web.ctx.env["REMOTE_ADDR"]
+
+        trusted = settings.get("webapi_trusted_ips", ["127.0.0.1"])
+        if remote_addr in trusted:
+            return True
+
+        tokens = settings.get("webapi_tokens", {})
+        if remote_addr not in tokens:
+            raise web.notfound("You don't have access to this call.")
+
+        required_token = tokens.get(remote_addr)
+        if required_token is None:
+            return True
+
+        current_token = web.ctx.env.get("HTTP_X_ARDJ_KEY", None)
+        if current_token is None:
+            raise web.forbidden("Your IP address is not in the trusted list, you must provide a valid auth token with the X-ARDJ-Key header.")
+
+        if current_token != required_token:
+            raise web.forbidden("Wrong auth token.")
+
+        return True
+
 
 class NextController(Controller):
     """Handles the /track/next.json request by returning a JSON description of
@@ -97,25 +122,35 @@ class CommitController(Controller):
 
 
 class RocksController(Controller):
+    vote_value = 1
+
     @send_json
     def POST(self):
         try:
-            args = web.input(sender=None, track_id=None)
+            self.check_auth()
 
+            args = web.input(sender=None, track_id=None)
             track_id = args.track_id
+
             if not track_id or track_id == "None":
                 track_id = tracks.get_last_track_id()
 
-            weight = tracks.add_vote(track_id, args.sender, 1)
+            weight = tracks.add_vote(track_id, args.sender, self.vote_value)
             if weight is None:
                 message = 'No such track.'
             else:
                 message = 'OK, current weight of track #%u is %.04f.' % (track_id, weight)
 
             return {"status": "ok", "message": message}
+        except web.Forbidden:
+            raise
         except Exception, e:
             logging.error("ERROR: %s\n%s" % (e, traceback.format_exc(e)))
             return {"status": "error", "message": str(e)}
+
+
+class SucksController(RocksController):
+    vote_value = -1
 
 
 class StatusController(Controller):
@@ -142,9 +177,10 @@ def serve_http(hostname, port):
 
     web.application((
         "/api/status\.json", StatusController,
-        "/track/next\.json", NextController,
-        "/track/rocks\.json", RocksController,
+        "/api/track/rocks\.json", RocksController,
+        "/api/track/sucks\.json", SucksController,
         "/commit\.json", CommitController,
+        "/track/next\.json", NextController,
     )).run()
 
 

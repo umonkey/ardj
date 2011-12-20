@@ -35,4 +35,8 @@ def get_next_track():
 
 
 def rocks(sender, track_id=None):
-    return call_remote("/track/rocks.json", sender=sender, track_id=track_id)
+    return call_remote("/api/track/rocks.json", sender=sender, track_id=track_id)
+
+
+def sucks(sender, track_id=None):
+    return call_remote("/api/track/sucks.json", sender=sender, track_id=track_id)
