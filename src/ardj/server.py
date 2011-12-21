@@ -87,7 +87,7 @@ class Controller:
         logging.debug("Request finished, closing the transaction.")
         database.commit()
 
-    def check_auth(self):
+    def check_auth(self, token=None):
         """Makes sure the sender is allowed to use this privileged call."""
         remote_addr = web.ctx.env["REMOTE_ADDR"]
 
@@ -95,19 +95,13 @@ class Controller:
         if remote_addr in trusted:
             return True
 
-        tokens = settings.get("webapi_tokens", {})
-        if remote_addr not in tokens:
-            raise web.notfound("You don't have access to this call.")
+        if token is None:
+            token = web.ctx.env.get("HTTP_X_ARDJ_KEY", None)
+            if token is None:
+                raise web.forbidden("Your IP address is not in the trusted list, you must provide a valid auth token with the X-ARDJ-Key header.")
 
-        required_token = tokens.get(remote_addr)
-        if required_token is None:
-            return True
-
-        current_token = web.ctx.env.get("HTTP_X_ARDJ_KEY", None)
-        if current_token is None:
-            raise web.forbidden("Your IP address is not in the trusted list, you must provide a valid auth token with the X-ARDJ-Key header.")
-
-        if current_token != required_token:
+        tokens = settings.get("webapi_tokens", [])
+        if token not in tokens:
             raise web.forbidden("Wrong auth token.")
 
         return True
@@ -140,23 +134,29 @@ class CommitController(Controller):
 class RocksController(Controller):
     vote_value = 1
 
+    def GET(self):
+        url = "http://%s%s" % (web.ctx.env["HTTP_HOST"], web.ctx.env["PATH_INFO"])
+
+        return "This call requires a POST request and an auth token.  Example CLI use:\n\n" \
+            "curl -X POST -d \"sender=alice@example.com&track_id=123&token=hello\" " \
+            + url
+
     @send_json
     def POST(self):
         try:
-            self.check_auth()
+            args = web.input(sender=None, track_id=None, token=None)
 
-            args = web.input(sender=None, track_id=None)
+            self.check_auth(token=args.token)
+
             track_id = args.track_id
-
             if not track_id or track_id == "None":
                 track_id = tracks.get_last_track_id()
 
             weight = tracks.add_vote(track_id, args.sender, self.vote_value)
             if weight is None:
-                message = 'No such track.'
-            else:
-                message = 'OK, current weight of track #%u is %.04f.' % (track_id, weight)
+                return {"status": "error", "message": "No such track."}
 
+            message = 'OK, current weight of track #%u is %.04f.' % (track_id, weight)
             return {"status": "ok", "message": message}
         except web.Forbidden:
             raise
