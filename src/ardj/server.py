@@ -29,9 +29,16 @@ def send_json(f):
 
         if web.ctx.env["PATH_INFO"].endswith(".js"):
             var_name = "response"
+            callback_name = None
+
             for part in web.ctx.env["QUERY_STRING"].split("&"):
                 if part.startswith("var="):
                     var_name = part[4:]
+                elif part.startswith("callback="):
+                    callback_name = part[9:]
+
+            if callback_name is not None:
+                return "var %s = %s; %s(%s);" % (var_name, json.dumps(data), callback_name, var_name)
             return "var %s = %s;" % (var_name, json.dumps(data))
         else:
             return json.dumps(data, ensure_ascii=False, indent=True)
