@@ -25,7 +25,16 @@ def send_json(f):
     """The @send_json decorator, encodes the return value in JSON."""
     def wrapper(*args, **kwargs):
         web.header("Content-Type", "text/plain; charset=UTF-8")
-        return json.dumps(f(*args, **kwargs), ensure_ascii=False, indent=True)
+        data = f(*args, **kwargs)
+
+        if web.ctx.env["PATH_INFO"].endswith(".js"):
+            var_name = "response"
+            for part in web.ctx.env["QUERY_STRING"].split("&"):
+                if part.startswith("var="):
+                    var_name = part[4:]
+            return "var %s = %s;" % (var_name, json.dumps(data))
+        else:
+            return json.dumps(data, ensure_ascii=False, indent=True)
     return wrapper
 
 
@@ -176,7 +185,7 @@ def serve_http(hostname, port):
     ScrobblerThread().start()
 
     web.application((
-        "/api/status\.json", StatusController,
+        "/api/status\.js(?:on)?", StatusController,
         "/api/track/rocks\.json", RocksController,
         "/api/track/sucks\.json", SucksController,
         "/commit\.json", CommitController,
