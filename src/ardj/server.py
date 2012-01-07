@@ -144,12 +144,13 @@ class RocksController(Controller):
     @send_json
     def POST(self):
         try:
-            args = web.input(sender=None, track_id=None, token=None)
+            args = web.input(sender=None, track_id="", token=None)
 
             self.check_auth(token=args.token)
 
-            track_id = args.track_id
-            if not track_id or track_id == "None":
+            if args.track_id.isdigit():
+                track_id = int(args.track_id)
+            else:
                 track_id = tracks.get_last_track_id()
 
             weight = tracks.add_vote(track_id, args.sender, self.vote_value)
@@ -183,6 +184,20 @@ class StatusController(Controller):
         return track
 
 
+class InfoController(Controller):
+    @send_json
+    def GET(self):
+        track_id = web.input(id=None).id
+        if track_id is None:
+            return None
+
+        track = tracks.get_track_by_id(track_id)
+        if track is None:
+            return None
+
+        return track
+
+
 def serve_http(hostname, port):
     """Starts the HTTP web server at the specified socket."""
     sys.argv.insert(1, "%s:%s" % (hostname, port))
@@ -197,6 +212,7 @@ def serve_http(hostname, port):
         "/api/track/sucks\.json", SucksController,
         "/commit\.json", CommitController,
         "/track/next\.json", NextController,
+        "/track/info\.json", InfoController,
     )).run()
 
 

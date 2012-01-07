@@ -158,7 +158,7 @@ class Track(Model):
 
     @classmethod
     def find_without_lastfm_tags(cls):
-        sql = "SELECT %s FROM %s WHERE weight > 0 AND id NOT IN (SELECT track_id FROM labels WHERE label LIKE 'lastfm:%%') ORDER BY id" % (cls._fields_sql(), cls.table_name)
+        sql = "SELECT %s FROM %s WHERE weight > 0 AND (id NOT IN (SELECT track_id FROM labels WHERE label LIKE 'lastfm:%%') OR `image` IS NULL OR `download` IS NULL) ORDER BY id" % (cls._fields_sql(), cls.table_name)
         return cls._fetch_rows(sql, ())
 
     def get_labels(self):
@@ -175,6 +175,12 @@ class Track(Model):
             execute("INSERT INTO labels (track_id, label, email) VALUES (?, ?, ?)", (self["id"], tag, "unknown", ))
 
         logging.debug("New labels for track %u: %s" % (self["id"], labels))
+
+    def set_image(self, url):
+        execute("UPDATE tracks SET image = ? WHERE id = ?", (url, self["id"], ))
+
+    def set_download(self, url):
+        execute("UPDATE tracks SET download = ? WHERE id = ?", (url, self["id"], ))
 
     @classmethod
     def get_average_length(cls):

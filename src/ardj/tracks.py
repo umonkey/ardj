@@ -181,10 +181,10 @@ def get_track_by_id(track_id):
     track_id -- identified the track to return.
     cur -- unused.
     """
-    rows = ardj.database.fetch("SELECT id, filename, artist, title, length, NULL, weight, count, last_played, real_weight FROM tracks WHERE id = ?", (track_id, ))
+    rows = ardj.database.fetch("SELECT id, filename, artist, title, length, NULL, weight, count, last_played, real_weight, image, download FROM tracks WHERE id = ?", (track_id, ))
     if rows:
         row = rows[0]
-        result = {'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'length': row[4], 'weight': row[6], 'count': row[7], 'last_played': row[8], 'real_weight': row[9]}
+        result = {'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'length': row[4], 'weight': row[6], 'count': row[7], 'last_played': row[8], 'real_weight': row[9], 'image': row[10], 'download': row[11]}
         result['labels'] = [row[0] for row in ardj.database.fetch('SELECT DISTINCT label FROM labels WHERE track_id = ? ORDER BY label', (track_id, ))]
         if result.get('filename'):
             result['filepath'] = get_real_track_path(result['filename'])
@@ -1173,13 +1173,12 @@ def add_missing_lastfm_tags():
             continue
 
         try:
-            track_tags = cli.get_track_tags(track["artist"], track["title"])
-            artist_tags = cli.get_artist_tags(track["artist"])
+            info = cli.get_track_info_ex(track["artist"], track["title"])
         except ardj.scrobbler.Error, e:
             ardj.log.log_error(str(e), e)
             continue
 
-        lastfm_tags = set(list(track_tags + artist_tags))
+        lastfm_tags = info["tags"]
         if not lastfm_tags:
             continue
 
@@ -1187,6 +1186,13 @@ def add_missing_lastfm_tags():
             labels.append("lastfm:" + tag.replace(" ", "_"))
 
         track.set_labels(labels)
+        if info["image"]:
+            track.set_image(info["image"])
+        if info["download"]:
+            track.set_download(info["download"])
+
+        logging.debug("Updated track %u with: %s" % (track["id"], info))
+
         ardj.database.commit()
 
 

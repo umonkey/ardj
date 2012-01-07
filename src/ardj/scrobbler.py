@@ -134,6 +134,44 @@ class LastFM(object):
             track=track_title.encode("utf-8"),
             autocorrect="1")
 
+    def get_track_info_ex(self, artist_name, track_title):
+        info = {"artist": artist_name, "title": track_title, "tags": [], "image": None, "download": None}
+
+        data = self.get_track_info(artist_name, track_title)
+        if "track" not in data:
+            return info
+        data = data["track"]
+
+        def listify(x):
+            if not isinstance(x, list):
+                x = [x]
+            return x
+
+        if "artist" in data:
+            info["artist"] = data["artist"]
+
+        if "name" in data:
+            info["title"] = data["name"]
+
+        if "album" in data and "image" in data["album"]:
+            image = listify(data["album"]["image"])
+            for img in image:
+                if img["size"] == "small":
+                    info["image"] = img["#text"]
+                    break
+
+        if "freedownload" in data:
+            info["download"] = data["freedownload"]
+
+        if "toptags" in data and "tag" in data["toptags"]:
+            for tag in listify(data["toptags"]["tag"]):
+                info["tags"].append(tag["name"])
+
+        info["tags"] += self.get_artist_tags(artist_name)
+        info["tags"] = list(set(info["tags"]))
+
+        return info
+
     def get_track_tags(self, artist_name, track_title):
         """Returns top tags for the specified track."""
         data = self.get_track_info(artist_name, track_title)

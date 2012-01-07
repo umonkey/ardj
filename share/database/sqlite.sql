@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS playlists (id INTEGER PRIMARY KEY, name TEXT, last_played INTEGER)
-CREATE TABLE IF NOT EXISTS tracks (id INTEGER PRIMARY KEY, owner TEXT, filename TEXT, artist TEXT, title TEXT, length INTEGER, weight REAL, real_weight REAL, count INTEGER, last_played INTEGER)
+CREATE TABLE IF NOT EXISTS tracks (id INTEGER PRIMARY KEY, owner TEXT, filename TEXT, artist TEXT, title TEXT, length INTEGER, weight REAL, real_weight REAL, count INTEGER, last_played INTEGER, image TEXT, download TEXT)
 CREATE INDEX IF NOT EXISTS idx_tracks_owner ON tracks (owner)
 CREATE INDEX IF NOT EXISTS idx_tracks_last ON tracks (last_played)
 CREATE INDEX IF NOT EXISTS idx_tracks_count ON tracks (count)
