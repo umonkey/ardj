@@ -10,6 +10,18 @@ import ardj.settings
 import ardj.util
 
 
+def get_track_info(artist_name, track_title):
+    data = ardj.util.fetch_json(url='http://api.jamendo.com/get2/id+name+artist_name+stream/track/json/track_album+album_artist/', args={
+        'n': 'all',
+        'artist_name': artist_name.encode('utf-8'),
+        'track_name': track_title.encode('utf-8'),
+        'streamencoding': 'ogg2',
+    }, ret=True, quiet=True)
+
+    if data:
+        return data[0]
+
+
 def find_new_tracks(artist_names=None, verbose=False):
     """Returns tracks to fetch.  Result is a list of dictionaries with keys:
     artist, title, url, tags."""

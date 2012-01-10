@@ -1161,6 +1161,18 @@ def add_label_to_tracks_liked_by(label, jids, sender):
     return len(_ids)
 
 
+def _add_jamendo_meta(track):
+    """Updates metadata from Jamendo.  Currently only adds a download link
+    (when necessary), because other metadata that Jamendo provides is crappy
+    and unreliable."""
+    info = ardj.jamendo.get_track_info(track["artist"], track["title"])
+    if info is None:
+        return
+
+    if info.get("stream") and not track.get("download"):
+        track.set_download(info["stream"])
+
+
 def add_missing_lastfm_tags():
     cli = ardj.scrobbler.LastFM()
 
@@ -1171,6 +1183,8 @@ def add_missing_lastfm_tags():
 
         if skip_labels and set(labels) & skip_labels:
             continue
+
+        _add_jamendo_meta(track)
 
         try:
             info = cli.get_track_info_ex(track["artist"], track["title"])
