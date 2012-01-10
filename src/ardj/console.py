@@ -27,7 +27,7 @@ import ardj.util
 
 def is_user_admin(sender, safe=False):
     """Checks whether the user has special privileges."""
-    return sender in ardj.users.get_admins()
+    return ardj.users.resolve_alias(sender) in ardj.users.get_admins()
 
 
 def shortname(sender):
