@@ -498,7 +498,7 @@ def gen_filename(suffix):
             return abs_filename, rel_filename
 
 
-def add_file(filename, add_labels=None, owner=None, quiet=False, artist=None, title=None):
+def add_file(filename, add_labels=None, owner=None, quiet=False, artist=None, title=None, dlink=None):
     """Adds the file to the database.
 
     Returns track id.
@@ -526,7 +526,7 @@ def add_file(filename, add_labels=None, owner=None, quiet=False, artist=None, ti
     if not ardj.util.copy_file(filename, abs_filename):
         raise Exception('Could not copy %s to %s' % (filename, abs_filename))
 
-    track_id = ardj.database.execute('INSERT INTO tracks (artist, title, filename, length, last_played, owner, weight, real_weight, count) VALUES (?, ?, ?, ?, ?, ?, 1, 1, 0)', (artist, title, rel_filename, duration, 0, owner or 'ardj', ))
+    track_id = ardj.database.execute('INSERT INTO tracks (artist, title, filename, length, last_played, owner, weight, real_weight, count, download) VALUES (?, ?, ?, ?, ?, ?, 1, 1, 0, ?)', (artist, title, rel_filename, duration, 0, owner or 'ardj', dlink, ))
     for label in labels:
         ardj.database.execute('INSERT INTO labels (track_id, label, email) VALUES (?, ?, ?)', (track_id, label, (owner or 'ardj').lower(), ))
     return track_id
@@ -1110,7 +1110,7 @@ def find_new_tracks(args, label='music', weight=1.5):
             filename = ardj.util.fetch(str(track['url']), suffix=track.get('suffix'))
             if not is_dry_run():
                 add_file(str(filename), add_labels=track.get('tags', ['tagme', 'music']),
-                    artist=track["artist"], title=track["title"])
+                    artist=track["artist"], title=track["title"], dlink=track['url'])
             added += 1
         except KeyboardInterrupt:
             raise
