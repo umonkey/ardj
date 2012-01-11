@@ -174,7 +174,7 @@ class Track(Model):
         for tag in list(set(labels)):
             execute("INSERT INTO labels (track_id, label, email) VALUES (?, ?, ?)", (self["id"], tag, "unknown", ))
 
-        logging.debug("New labels for track %u: %s" % (self["id"], labels))
+        logging.debug(("New labels for track %u: %s" % (self["id"], labels)).encode("utf-8"))
 
     def set_image(self, url):
         execute("UPDATE tracks SET image = ? WHERE id = ?", (url, self["id"], ))
@@ -236,7 +236,7 @@ class database:
 
     def __del__(self):
         self.commit()
-        logging.debug(u'Database closed.')
+        logging.debug('Database closed.')
 
     @classmethod
     def get_instance(cls):
@@ -286,7 +286,7 @@ class database:
             else:
                 return cur.rowcount
         except Exception, e:
-            logging.error("Failed SQL statement: %s, params: %s" % (sql, params))
+            logging.error("Failed SQL statement: %s, params: %s" % (sql.encode("utf-8"), params))
             raise e
         finally:
             cur.close()
@@ -319,7 +319,7 @@ class database:
                 sql = sql.replace(u'?', param, 1)
             else:
                 sql = sql.replace(u'?', u"'" + param + u"'", 1)
-        logging.debug(u'SQL: ' + sql)
+        logging.debug("SQL: " + sql.encode("utf-8"))
         return sql
 
     def purge(self):

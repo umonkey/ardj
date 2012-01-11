@@ -69,7 +69,7 @@ class LastFM(object):
                 track=title.encode('utf-8'),
                 timestamp=str(ts), api_sig=True, sk=self.sk,
                 post=True)
-            logging.info(u'Sent to last.fm: %s -- %s' % (artist, title))
+            logging.info((u'Sent to last.fm: %s -- %s' % (artist, title)).encode("utf-8"))
             return True
 
     def is_enabled(self):
@@ -92,10 +92,10 @@ class LastFM(object):
                 sk=self.sk,
                 post=True)
             if 'error' in data:
-                logging.info(u'Could not love a track with last.fm: %s' % data['message'])
+                logging.info("Could not love a track with last.fm: %s" % data["message"].encode("utf-8"))
                 return False
             else:
-                logging.info(u'Sent to last.fm love for: %s -- %s' % (artist, title))
+                logging.info(("Sent to last.fm love for: %s -- %s" % (artist, title)).encode("utf-8"))
                 return True
 
     def get_events_for_artist(self, artist_name):
@@ -128,7 +128,7 @@ class LastFM(object):
         return [t["name"] for t in data]
 
     def get_track_info(self, artist_name, track_title):
-        logging.debug("Retrieving last.fm info for \"%s\" by %s" % (track_title.encode("utf-8"), artist_name.encode("utf-8")))
+        logging.debug((u"Retrieving last.fm info for \"%s\" by %s" % (track_title, artist_name)).encode("utf-8"))
         return self.call_signed(method="track.getInfo",
             artist=artist_name.encode("utf-8"),
             track=track_title.encode("utf-8"),
@@ -328,7 +328,7 @@ class LibreFM(object):
             logging.error("Empty response from libre.fm")
             return False
         if data == 'OK':
-            logging.debug(u'Sent to libre.fm: %s -- %s' % (artist, title))
+            logging.debug((u'Sent to libre.fm: %s -- %s' % (artist, title)).encode("utf-8"))
             return True
         elif data == 'BADSESSION' and retry:
             logging.debug('Bad libre.fm session, renewing.')

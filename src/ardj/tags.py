@@ -128,4 +128,4 @@ def set(filename, tags):
                     t[k] = v
         t.save(filename)
     except Exception, e:
-        logging.error(u'Could not save tags to %s: %s' % (filename, e) + traceback.format_exc(e))
+        logging.error((u'Could not save tags to %s: %s' % (filename, e) + traceback.format_exc(e)).encode("utf-8"))

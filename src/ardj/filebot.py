@@ -68,7 +68,7 @@ class FileBot(DiscoBot):
         If anything is returned, it's sent back to file sender as a message,
         e.g.: "Thank you for this file."
         """
-        logging.info('Received file %s from %s.' % (filename, sender))
+        logging.info((u'Received file %s from %s.' % (filename, sender)).encode("utf-8"))
 
     #### You don't want to mess with the following code. ####
 

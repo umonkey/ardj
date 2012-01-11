@@ -139,7 +139,7 @@ class Playlist(dict):
         for playlist in cls.get_all():
             name = playlist.get('name')
             if name and playlist.match_track(track):
-                logging.debug('Track %u touches playlist "%s".' % (track_id, name))
+                logging.debug('Track %u touches playlist "%s".' % (track_id, name.encode("utf-8")))
                 rowcount = ardj.database.execute('UPDATE playlists SET last_played = ? WHERE name = ?', (ts, name, ))
                 if rowcount == 0:
                     ardj.database.execute('INSERT INTO playlists (name, last_played) VALUES (?, ?)', (name, ts, ))
@@ -774,7 +774,7 @@ def get_next_track():
 
         return track
     except Exception, e:
-        logging.error("Could not get a track to play: %s\n%s" % (e, traceback.format_exc(e)))
+        logging.exception("Could not get a track to play: %s\n%s" % e, e)
         return None
 
 
@@ -801,7 +801,8 @@ def get_next_track_id(debug=False, update_stats=True):
 
     skip_artists = list(set([row[0] for row in ardj.database.fetch('SELECT artist FROM tracks WHERE artist IS NOT NULL AND last_played IS NOT NULL ORDER BY last_played DESC LIMIT ' + str(ardj.settings.get('dupes', 5)))]))
     if debug:
-        logging.debug(u'Artists to skip: %s' % u', '.join(skip_artists or ['none']) + u'.')
+        msg = u'Artists to skip: %s' % u', '.join(skip_artists or ['none']) + u'.'
+        logging.debug(msg.encode("utf-8"))
 
     track_id = get_track_id_from_queue()
     if track_id:
@@ -819,12 +820,12 @@ def get_next_track_id(debug=False, update_stats=True):
     if not track_id:
         for playlist in Playlist.get_active():
             if debug:
-                logging.debug('Looking for tracks in playlist "%s"' % playlist.get('name', 'unnamed'))
+                logging.debug('Looking for tracks in playlist "%s"' % playlist.get('name', 'unnamed').encode("utf-8"))
             labels = playlist.get('labels', [playlist.get('name', 'music')])
             track_id = get_random_track_id_from_playlist(playlist, skip_artists)
             if track_id is not None:
                 update_program_name(playlist.get("program"))
-                logging.debug('Picked track %u from playlist %s' % (track_id, playlist.get('name', 'unnamed')))
+                logging.debug('Picked track %u from playlist %s' % (track_id, playlist.get('name', 'unnamed').encode("utf-8")))
                 break
 
     if track_id:
@@ -865,14 +866,14 @@ def update_program_name(name):
         file(filename, "wb").write(name.encode("utf-8"))
 
         if ardj.settings.get("program_name_announce"):
-            logging.debug("Program name changed from \"%s\" to \"%s\", announcing to the chat room." % (current, name))
+            logging.debug("Program name changed from \"%s\" to \"%s\", announcing to the chat room." % (current.encode("utf-8"), name.encode("utf-8")))
             ardj.jabber.chat_say("Program \"%s\" started." % name)
         else:
-            logging.debug("Program name changed from \"%s\" to \"%s\"." % (current, name))
+            logging.debug("Program name changed from \"%s\" to \"%s\"." % (current.encode("utf-8"), name.encode("utf-8")))
 
         command = ardj.settings.getpath("program_name_handler")
         if os.path.exists(command):
-            logging.info(u"Running %s (%s)" % (command, name))
+            logging.info("Running %s (%s)" % (command.encode("utf-8"), name.encode("utf-8")))
             subprocess.Popen(command.split(" "), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 
@@ -1103,7 +1104,7 @@ def find_new_tracks(args, label='music', weight=1.5):
     for track in tracks:
         if is_verbose():
             print "Track:", track
-        logging.info(u'[%u/%u] fetching "%s" by %s' % (added + 1, len(tracks), track['title'], track['artist']))
+        logging.info((u'[%u/%u] fetching "%s" by %s' % (added + 1, len(tracks), track['title'], track['artist'])).encode("utf-8"))
         try:
             if track['artist'] not in artist_names:
                 artist_names.append(track['artist'])
@@ -1115,7 +1116,7 @@ def find_new_tracks(args, label='music', weight=1.5):
         except KeyboardInterrupt:
             raise
         except Exception, e:
-            logging.error(u"Could not download \"%s\" by %s: %s" % (track['title'], track['artist'], e))
+            logging.error((u"Could not download \"%s\" by %s: %s" % (track['title'], track['artist'], e)).encode("utf-8"))
 
     if added:
         logging.info('Total catch: %u tracks.' % added)
@@ -1218,7 +1219,7 @@ def do_idle_tasks(set_busy=None):
 
     artist_name, sender = req
 
-    logging.info(u'Looking for tracks by "%s", requested by %s' % (artist_name, sender))
+    logging.info((u'Looking for tracks by "%s", requested by %s' % (artist_name, sender)).encode("utf-8"))
 
     if set_busy is not None:
         set_busy()
