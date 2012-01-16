@@ -511,8 +511,9 @@ sticky_labels: [rock, jazz, 8bit]</programlisting>
 2011-10-24 00:14:13,5076,Koalips,Wurtzite,4</programlisting>
       </example>
     </section>
-    &webapi;
   </chapter>
+
+  &webapi;
 
   <appendix id="command-line">
     <title>Описание параметров командной строки</title>
