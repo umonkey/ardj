@@ -18,6 +18,23 @@
 var foo = {...}; bar(foo);</programlisting>
   </example>
 
+  <section id="auth-json">
+    <title>api/auth.json</title>
+
+    <para>Используется для получения токена.  Запрос следует отправлять методом POST, идентификатор пользователя и его
+    тип (jid или email) указываются параметрами <varname>id</varname> и <varname>type</varname>.  Возвращает серверное
+    сообщение, пользователь получает дальнейшие инструкции через jabber или email.  Пример:</para>
+
+    <programlisting>$ curl -X POST -d 'id=alice@example.com&amp;type=email' 'http://music.tmradio.net/api/auth.json'
+{
+  "status": "ok", 
+  "message": "You'll soon receive a message with a confirmation link."
+}</programlisting>
+
+    <para>После этого пользователь получает ссылку для подтверждения токена, который сообщает программе.  С помощью
+    токена можно <link linkend="track-rocks-json">голосовать</link>.</para>
+  </section>
+
   <section id="status-json">
     <title>api/status.json</title>
 

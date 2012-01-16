@@ -82,13 +82,16 @@ class Model(dict):
         execute(sql, (self[self.key_name], ))
         self[self.key_name] = None
 
-    def put(self):
-        if self.get(self.key_name) is None:
-            return self._insert()
+    def put(self, force_insert=False):
+        if self.get(self.key_name) is None or force_insert:
+            return self._insert(force_insert)
         return self._update()
 
-    def _insert(self):
-        fields = [f for f in self.fields if f != self.key_name]
+    def _insert(self, with_key=False):
+        if with_key:
+            fields = self.fields
+        else:
+            fields = [f for f in self.fields if f != self.key_name]
         fields_sql = ", ".join(fields)
         params_sql = ", ".join(["?"] * len(fields))
 
@@ -100,7 +103,7 @@ class Model(dict):
 
     def _update(self):
         fields = [f for f in self.fields if f != self.key_name]
-        fields_sql = ", ".join(["%s = ?" for field in fields])
+        fields_sql = ", ".join(["%s = ?" % field for field in fields])
 
         sql = "UPDATE %s SET %s WHERE %s = ?" % (self.table_name, fields_sql, self.key_name)
         params = [self.get(field) for field in fields] + [self[self.key_name]]
@@ -199,6 +202,12 @@ class Queue(Model):
     key_name = "id"
 
 
+class Token(Model):
+    table_name = "tokens"
+    fields = "token", "login", "login_type", "active"
+    key_name = "token"
+
+
 def get_init_statements(dbtype):
     """Returns a list of SQL statements to initialize the database."""
     paths = []
@@ -285,9 +294,9 @@ class database:
                 return cur.lastrowid
             else:
                 return cur.rowcount
-        except Exception, e:
-            logging.error("Failed SQL statement: %s, params: %s" % (sql.encode("utf-8"), params))
-            raise e
+        except:
+            logging.exception("Failed SQL statement: %s, params: %s" % (sql.encode("utf-8"), params))
+            raise
         finally:
             cur.close()
 

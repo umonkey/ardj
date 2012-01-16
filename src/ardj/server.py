@@ -6,6 +6,7 @@ Lets HTTP clients access the database.
 """
 
 import logging
+import os
 import sys
 import threading
 import time
@@ -14,6 +15,7 @@ import traceback
 import json
 import web
 
+import auth
 import database
 import scrobbler
 import settings
@@ -87,25 +89,6 @@ class Controller:
         logging.debug("Request finished, closing the transaction.")
         database.commit()
 
-    def check_auth(self, token=None):
-        """Makes sure the sender is allowed to use this privileged call."""
-        remote_addr = web.ctx.env["REMOTE_ADDR"]
-
-        trusted = settings.get("webapi_trusted_ips", ["127.0.0.1"])
-        if remote_addr in trusted:
-            return True
-
-        if token is None:
-            token = web.ctx.env.get("HTTP_X_ARDJ_KEY", None)
-            if token is None:
-                raise web.forbidden("Your IP address is not in the trusted list, you must provide a valid auth token with the X-ARDJ-Key header.")
-
-        tokens = settings.get("webapi_tokens", [])
-        if token not in tokens:
-            raise web.forbidden("Wrong auth token.")
-
-        return True
-
 
 class NextController(Controller):
     """Handles the /track/next.json request by returning a JSON description of
@@ -138,22 +121,24 @@ class RocksController(Controller):
         url = "http://%s%s" % (web.ctx.env["HTTP_HOST"], web.ctx.env["PATH_INFO"])
 
         return "This call requires a POST request and an auth token.  Example CLI use:\n\n" \
-            "curl -X POST -d \"sender=alice@example.com&track_id=123&token=hello\" " \
+            "curl -X POST -d \"track_id=123&token=hello\" " \
             + url
 
     @send_json
     def POST(self):
         try:
-            args = web.input(sender=None, track_id="", token=None)
+            args = web.input(track_id="", token=None)
 
-            self.check_auth(token=args.token)
+            sender = auth.get_id_by_token(args.token)
+            if sender is None:
+                raise web.forbidden("Bad token.")
 
             if args.track_id.isdigit():
                 track_id = int(args.track_id)
             else:
                 track_id = tracks.get_last_track_id()
 
-            weight = tracks.add_vote(track_id, args.sender, self.vote_value)
+            weight = tracks.add_vote(track_id, sender, self.vote_value)
             if weight is None:
                 return {"status": "error", "message": "No such track."}
 
@@ -198,6 +183,32 @@ class InfoController(Controller):
         return track
 
 
+class AuthController(Controller):
+    def GET(self):
+        args = web.input(token=None)
+        if args.token is None:
+            return "Please specify a token or POST."
+        token = auth.confirm_token(args.token)
+        if token:
+            return "OK, tell this to your program: %s" % args.token
+        else:
+            return "Wrong token."
+
+    @send_json
+    def POST(self):
+        args = web.input(id=None, type=None)
+        token = auth.create_token(args.id, args.type)
+        return {"status": "ok", "message": "You'll soon receive a message with a confirmation link."}
+
+
+class IndexController(Controller):
+    def GET(self):
+        if not os.path.exists("static/index.html"):
+            raise web.forbidden("Forbidden.")
+        web.header("Content-Type", "text/html; charset=UTF-8")
+        return file("static/index.html", "rb").read()
+
+
 def serve_http(hostname, port):
     """Starts the HTTP web server at the specified socket."""
     sys.argv.insert(1, "%s:%s" % (hostname, port))
@@ -207,6 +218,8 @@ def serve_http(hostname, port):
     ScrobblerThread().start()
 
     web.application((
+        "/", IndexController,
+        "/api/auth(?:\.json)?", AuthController,
         "/api/status\.js(?:on)?", StatusController,
         "/api/track/info\.json", InfoController,
         "/api/track/rocks\.json", RocksController,
@@ -219,6 +232,8 @@ def serve_http(hostname, port):
 
 def run_cli(args):
     """Starts the HTTP web server on the configured socket."""
+    root = settings.get("webapi_root", "share/web")
+    os.chdir(root)
     serve_http(*settings.get("webapi_socket", "127.0.0.1:8080").split(":", 1))
 
 
