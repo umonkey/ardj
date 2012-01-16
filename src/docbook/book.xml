@@ -13,6 +13,7 @@
   <!ENTITY preroll_playlist SYSTEM "../src/docbook/preroll_playlist.xml">
   <!ENTITY speech SYSTEM "../src/docbook/speech.xml">
   <!ENTITY upload_sftp SYSTEM "../src/docbook/upload_sftp.xml">
+  <!ENTITY webapi SYSTEM "../src/docbook/webapi.xml">
 ]>
 <book lang="ru">
   <bookinfo>
@@ -510,6 +511,7 @@ sticky_labels: [rock, jazz, 8bit]</programlisting>
 2011-10-24 00:14:13,5076,Koalips,Wurtzite,4</programlisting>
       </example>
     </section>
+    &webapi;
   </chapter>
 
   <appendix id="command-line">

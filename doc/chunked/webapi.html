@@ -1,0 +1,22 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset="><title>Глава 6. Web API</title><link rel="stylesheet" href="screen.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.75.2"><link rel="home" href="index.html" title="ardj"><link rel="up" href="usage.html" title="Глава 5. Использование"><link rel="prev" href="listening-statistics.html" title="Получение статистики"><link rel="next" href="track-rocks-json.html" title="api/track/rocks.json"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Глава 6. Web API</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="listening-statistics.html">Пред.</a> </td><th width="60%" align="center">Глава 5. Использование</th><td width="20%" align="right"> <a accesskey="n" href="track-rocks-json.html">След.</a></td></tr></table><hr></div><div class="chapter" title="Глава 6. Web API"><div class="titlepage"><div><div><h2 class="title"><a name="webapi"></a>Глава 6. Web API</h2></div></div></div><div class="toc"><p><b>Содержание</b></p><dl><dt><span class="section"><a href="webapi.html#status-json">api/status.json</a></span></dt><dt><span class="section"><a href="track-rocks-json.html">api/track/rocks.json</a></span></dt><dt><span class="section"><a href="track-sucks-json.html">api/track/sucks.json</a></span></dt><dt><span class="section"><a href="track-info-json.html">api/track/info.json</a></span></dt></dl></div><p>WebAPI позволяет сторонним приложениям общаться со станцией используя протоколы HTTP и JSON.  Результат всегда
+  возвращается в виде отформатированного JSON объекта, с отступами и юникодными символами.</p><p>При использовании расширения <code class="filename">.js</code> результат возвращается в виде готового фрагмента скрипта,
+  пригодного для включения в HTML-страницу.  По умолчанию значение записывается в переменную
+  <code class="varname">response</code>, другое название можно указать с помощью параметра <code class="varname">var</code>, а с помощью
+  параметра <code class="varname">callback</code> можно указать имя функции, которая должна быть выполнена после присвоения
+  переменной значения.  Пример:</p><div class="example"><a name="web-api-js"></a><p class="title"><b>Пример 6.1. Использование JS-интерфейса WebAPI</b></p><div class="example-contents"><pre class="programlisting">$ curl 'http://music.tmradio.net/api/status.js?var=foo&amp;callback=bar'
+var foo = {...}; bar(foo);</pre></div></div><br class="example-break"><div class="section" title="api/status.json"><div class="titlepage"><div><div><h3 class="title"><a name="status-json"></a>api/status.json</h3></div></div></div><p>Возвращает информацию о проигрываемой на данный момент композиции.  Формат результата аналогичен <a class="link" href="track-info-json.html" title="api/track/info.json">api/track/info.json</a>.  Пример:</p><pre class="programlisting">$ curl http://music.tmradio.net/api/track/info.json
+{
+  "real_weight": 1.8666666666666667, 
+  "last_played": 1326743103, 
+  "weight": 1.8666666666666667, 
+  "image": null, 
+  "labels": [ "news", "preroll-not-wanted", "special" ], 
+  "download": null, 
+  "id": 4598, 
+  "count": 5955, 
+  "filepath": "/radio/music/c/f/cf4970391cb99e64a3b317423d592562.ogg", 
+  "artist": "Эхо Москвы", 
+  "title": "Новости", 
+  "filename": "c/f/cf4970391cb99e64a3b317423d592562.ogg", 
+  "length": 97
+}</pre></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="listening-statistics.html">Пред.</a> </td><td width="20%" align="center"><a accesskey="u" href="usage.html">Уровень выше</a></td><td width="40%" align="right"> <a accesskey="n" href="track-rocks-json.html">След.</a></td></tr><tr><td width="40%" align="left" valign="top">Получение статистики </td><td width="20%" align="center"><a accesskey="h" href="index.html">Начало</a></td><td width="40%" align="right" valign="top"> api/track/rocks.json</td></tr></table></div></body></html>

@@ -208,6 +208,7 @@ def serve_http(hostname, port):
 
     web.application((
         "/api/status\.js(?:on)?", StatusController,
+        "/api/track/info\.json", InfoController,
         "/api/track/rocks\.json", RocksController,
         "/api/track/sucks\.json", SucksController,
         "/commit\.json", CommitController,
