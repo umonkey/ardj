@@ -83,7 +83,7 @@ class ScrobblerThread(threading.Thread):
 
 class Controller:
     def __init__(self):
-        logging.debug("Request: %s" % web.ctx.path)
+        logging.debug("Request from %s: %s" % (web.ctx.environ["REMOTE_ADDR"], web.ctx.path))
 
     def __del__(self):
         logging.debug("Request finished, closing the transaction.")
@@ -128,6 +128,7 @@ class RocksController(Controller):
     def POST(self):
         try:
             args = web.input(track_id="", token=None)
+            logging.debug("Vote request: %s" % args)
 
             sender = auth.get_id_by_token(args.token)
             if sender is None:

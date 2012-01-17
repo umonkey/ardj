@@ -549,7 +549,7 @@ def get_track_id_from_queue():
 
 
 def get_random_track_id_from_playlist(playlist, skip_artists):
-    sql = 'SELECT id, weight, artist, count FROM tracks WHERE weight > 0 AND artist IS NOT NULL AND filename IS NOT NULL'
+    sql = 'SELECT id, weight, artist, count, last_played FROM tracks WHERE weight > 0 AND artist IS NOT NULL AND filename IS NOT NULL'
     params = []
 
     labels = list(playlist.get('labels', [playlist.get('name', 'music')]))
@@ -667,10 +667,14 @@ def get_random_row(rows, strategy=None):
         return None
 
     if strategy == "fresh":
-        ID_COL, WEIGHT_COL, NAME_COL, COUNT_COL = 0, 1, 2, 3
-        rows.sort(key=lambda row: row[COUNT_COL])
+        rows.sort(key=lambda row: row[3])
         row = random.choice(rows[:5])
-        track_id = row[ID_COL]
+        track_id = row[0]
+
+    elif strategy == "oldest":
+        rows.sort(key=lambda row: row[4])
+        row = rows[0]
+        track_id = row[0]
 
     else:
         track_id = get_random_row_default(rows)
