@@ -429,7 +429,7 @@ def run(args):
         handler = find_handler(args[1])
         if handler is not None:
             try:
-                if handler(*args[2:]):
+                if handler(*args[2:]) in (None, True):
                     exit(0)
             except KeyboardInterrupt:
                 pass
