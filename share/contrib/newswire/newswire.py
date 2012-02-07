@@ -20,6 +20,7 @@ the COMMAND constant.
 import os
 import subprocess
 import sys
+import time
 import urllib
 
 import feedparser
@@ -28,6 +29,13 @@ import feedparser
 HISTFILE = "~/.newswire"
 HISTSIZE = 100
 COMMAND = "ardj xmpp-send"
+
+
+def run(command):
+    p = subprocess.PIPE
+    pp = subprocess.Popen(command, stdout=p, stderr=p)
+    out, err = pp.communicate()
+    return out, err, pp.returncode
 
 
 def read_history():
@@ -66,7 +74,14 @@ def send_news(url, text):
     """Sends the news to the chat room."""
     message = u"%s: %s" % (text, short_url(url))
     command = COMMAND.split(" ") + [message.encode("utf-8")]
-    subprocess.Popen(command).wait()
+
+    for x in range(5):
+        out, err, code = run(command)
+        if code == 0:
+            return
+        time.sleep(5)
+
+    print "5 attempts to post a message to the chat room failed."
 
 
 def main(feed_url):
