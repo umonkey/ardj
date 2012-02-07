@@ -13,6 +13,7 @@
   <!ENTITY preroll_playlist SYSTEM "../src/docbook/preroll_playlist.xml">
   <!ENTITY speech SYSTEM "../src/docbook/speech.xml">
   <!ENTITY upload_sftp SYSTEM "../src/docbook/upload_sftp.xml">
+  <!ENTITY webapi SYSTEM "../src/docbook/webapi.xml">
 ]>
 <book lang="ru">
   <bookinfo>
@@ -383,9 +384,10 @@ sticky_labels: [rock, jazz, 8bit]</programlisting>
         <varlistentry>
           <term><option>strategy</option></term>
           <listitem>
-            <para>Единственное возможное значение этого — "fresh".  Оно включает альтернативный алгоритм выбора
-            композиций.  Этот алгоритм не учитывает голоса слушателей; он выбирает случайную из пяти композиций с
-            наименьшим количеством проигрываний.</para>
+            <para>Определяет алгоритм выбора случайной композиции.  Значение «fresh» включает алгоритм, не учитывающий
+            голоса слушателей: он выбирает случайную из пяти композиций с наименьшим количеством проигрываний.  Алгоритм
+            «oldest» всегда выбирает композицию, не звучавшую дольше всего (сортирует по дате последнего
+            проигрывания).</para>
           </listitem>
         </varlistentry>
       </variablelist>
@@ -511,6 +513,8 @@ sticky_labels: [rock, jazz, 8bit]</programlisting>
       </example>
     </section>
   </chapter>
+
+  &webapi;
 
   <appendix id="command-line">
     <title>Описание параметров командной строки</title>

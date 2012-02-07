@@ -24,7 +24,7 @@ def add_song(artist, title, mp3_link, tags):
     checked).  TODO: check duration and file size also."""
     track_id = ardj.database.fetchone('SELECT id FROM tracks WHERE artist = ? AND title = ?', (artist, title, ))
     if track_id is None:
-        logging.info('Downloading "%s" by %s' % (title, artist))
+        logging.info((u'Downloading "%s" by %s' % (title, artist)).encode("utf-8"))
         try:
             filename = ardj.util.fetch(mp3_link)
             ardj.add_file(str(filename), {'artist': artist, 'title': title, 'labels': tags, 'owner': 'podcaster'})
@@ -133,7 +133,7 @@ class Podcaster:
         added = 0
         for entry in entries:
             if entry['add_to_db']:
-                logging.info(u'[%u/%u] adding "%s" by %s' % (added + 1, len(entries), entry['title'], entry['author']))
+                logging.info((u'[%u/%u] adding "%s" by %s' % (added + 1, len(entries), entry['title'], entry['author'])).encode("utf-8"))
                 fn = ardj.util.fetch(entry['file'])
                 ardj.tracks.add_file(str(fn), add_labels=entry['tags'], quiet=True)
                 added += 1

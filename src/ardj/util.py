@@ -38,12 +38,6 @@ def run(command, quiet=False, stdin_data=None, grab_output=False, nice=True):
     if nice:
         command = ['nice', '-n15'] + command
 
-    if stdin_data is not None:
-        filename = mktemp(suffix='.txt')
-        open(str(filename), 'wb').write(stdin_data)
-        command.append('<')
-        command.append(str(filename))
-
     logging.debug('> ' + ' '.join(command))
     stdout = stderr = None
     if quiet:
@@ -53,9 +47,11 @@ def run(command, quiet=False, stdin_data=None, grab_output=False, nice=True):
         tmp_output = mktemp(suffix='.txt')
         stdout = open(str(tmp_output), 'wb')
 
-    response = subprocess.Popen(command, stdout=stdout, stderr=stderr).wait() == 0
+    _cmd = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=stdout, stderr=stderr)
+    out, err = _cmd.communicate(stdin_data)
+    response = _cmd.returncode == 0
     if grab_output:
-        response = file(str(tmp_output)).read()
+        response = out
     return response
 
 

@@ -6,6 +6,7 @@ Lets HTTP clients access the database.
 """
 
 import logging
+import os
 import sys
 import threading
 import time
@@ -14,6 +15,7 @@ import traceback
 import json
 import web
 
+import auth
 import database
 import scrobbler
 import settings
@@ -25,7 +27,23 @@ def send_json(f):
     """The @send_json decorator, encodes the return value in JSON."""
     def wrapper(*args, **kwargs):
         web.header("Content-Type", "text/plain; charset=UTF-8")
-        return json.dumps(f(*args, **kwargs), ensure_ascii=False, indent=True)
+        data = f(*args, **kwargs)
+
+        if web.ctx.env["PATH_INFO"].endswith(".js"):
+            var_name = "response"
+            callback_name = None
+
+            for part in web.ctx.env["QUERY_STRING"].split("&"):
+                if part.startswith("var="):
+                    var_name = part[4:]
+                elif part.startswith("callback="):
+                    callback_name = part[9:]
+
+            if callback_name is not None:
+                return "var %s = %s; %s(%s);" % (var_name, json.dumps(data), callback_name, var_name)
+            return "var %s = %s;" % (var_name, json.dumps(data))
+        else:
+            return json.dumps(data, ensure_ascii=False, indent=True)
     return wrapper
 
 
@@ -65,7 +83,7 @@ class ScrobblerThread(threading.Thread):
 
 class Controller:
     def __init__(self):
-        logging.debug("Request: %s" % web.ctx.path)
+        logging.debug("Request from %s: %s" % (web.ctx.environ["REMOTE_ADDR"], web.ctx.path))
 
     def __del__(self):
         logging.debug("Request finished, closing the transaction.")
@@ -97,25 +115,45 @@ class CommitController(Controller):
 
 
 class RocksController(Controller):
+    vote_value = 1
+
+    def GET(self):
+        url = "http://%s%s" % (web.ctx.env["HTTP_HOST"], web.ctx.env["PATH_INFO"])
+
+        return "This call requires a POST request and an auth token.  Example CLI use:\n\n" \
+            "curl -X POST -d \"track_id=123&token=hello\" " \
+            + url
+
     @send_json
     def POST(self):
         try:
-            args = web.input(sender=None, track_id=None)
+            args = web.input(track_id="", token=None)
+            logging.debug("Vote request: %s" % args)
 
-            track_id = args.track_id
-            if not track_id or track_id == "None":
+            sender = auth.get_id_by_token(args.token)
+            if sender is None:
+                raise web.forbidden("Bad token.")
+
+            if args.track_id.isdigit():
+                track_id = int(args.track_id)
+            else:
                 track_id = tracks.get_last_track_id()
 
-            weight = tracks.add_vote(track_id, args.sender, 1)
+            weight = tracks.add_vote(track_id, sender, self.vote_value)
             if weight is None:
-                message = 'No such track.'
-            else:
-                message = 'OK, current weight of track #%u is %.04f.' % (track_id, weight)
+                return {"status": "error", "message": "No such track."}
 
+            message = 'OK, current weight of track #%u is %.04f.' % (track_id, weight)
             return {"status": "ok", "message": message}
+        except web.Forbidden:
+            raise
         except Exception, e:
             logging.error("ERROR: %s\n%s" % (e, traceback.format_exc(e)))
             return {"status": "error", "message": str(e)}
+
+
+class SucksController(RocksController):
+    vote_value = -1
 
 
 class StatusController(Controller):
@@ -132,6 +170,46 @@ class StatusController(Controller):
         return track
 
 
+class InfoController(Controller):
+    @send_json
+    def GET(self):
+        track_id = web.input(id=None).id
+        if track_id is None:
+            return None
+
+        track = tracks.get_track_by_id(track_id)
+        if track is None:
+            return None
+
+        return track
+
+
+class AuthController(Controller):
+    def GET(self):
+        args = web.input(token=None)
+        if args.token is None:
+            return "Please specify a token or POST."
+        token = auth.confirm_token(args.token)
+        if token:
+            return "OK, tell this to your program: %s" % args.token
+        else:
+            return "Wrong token."
+
+    @send_json
+    def POST(self):
+        args = web.input(id=None, type=None)
+        token = auth.create_token(args.id, args.type)
+        return {"status": "ok", "message": "You'll soon receive a message with a confirmation link."}
+
+
+class IndexController(Controller):
+    def GET(self):
+        if not os.path.exists("static/index.html"):
+            raise web.forbidden("Forbidden.")
+        web.header("Content-Type", "text/html; charset=UTF-8")
+        return file("static/index.html", "rb").read()
+
+
 def serve_http(hostname, port):
     """Starts the HTTP web server at the specified socket."""
     sys.argv.insert(1, "%s:%s" % (hostname, port))
@@ -141,15 +219,22 @@ def serve_http(hostname, port):
     ScrobblerThread().start()
 
     web.application((
-        "/api/status\.json", StatusController,
-        "/track/next\.json", NextController,
-        "/track/rocks\.json", RocksController,
+        "/", IndexController,
+        "/api/auth(?:\.json)?", AuthController,
+        "/api/status\.js(?:on)?", StatusController,
+        "/api/track/info\.json", InfoController,
+        "/api/track/rocks\.json", RocksController,
+        "/api/track/sucks\.json", SucksController,
         "/commit\.json", CommitController,
+        "/track/next\.json", NextController,
+        "/track/info\.json", InfoController,
     )).run()
 
 
 def run_cli(args):
     """Starts the HTTP web server on the configured socket."""
+    root = settings.get("webapi_root", "share/web")
+    os.chdir(root)
     serve_http(*settings.get("webapi_socket", "127.0.0.1:8080").split(":", 1))
 
 

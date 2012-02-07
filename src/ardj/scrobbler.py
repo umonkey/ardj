@@ -69,7 +69,7 @@ class LastFM(object):
                 track=title.encode('utf-8'),
                 timestamp=str(ts), api_sig=True, sk=self.sk,
                 post=True)
-            logging.info(u'Sent to last.fm: %s -- %s' % (artist, title))
+            logging.info((u'Sent to last.fm: %s -- %s' % (artist, title)).encode("utf-8"))
             return True
 
     def is_enabled(self):
@@ -92,10 +92,10 @@ class LastFM(object):
                 sk=self.sk,
                 post=True)
             if 'error' in data:
-                logging.info(u'Could not love a track with last.fm: %s' % data['message'])
+                logging.info("Could not love a track with last.fm: %s" % data["message"].encode("utf-8"))
                 return False
             else:
-                logging.info(u'Sent to last.fm love for: %s -- %s' % (artist, title))
+                logging.info(("Sent to last.fm love for: %s -- %s" % (artist, title)).encode("utf-8"))
                 return True
 
     def get_events_for_artist(self, artist_name):
@@ -128,11 +128,49 @@ class LastFM(object):
         return [t["name"] for t in data]
 
     def get_track_info(self, artist_name, track_title):
-        logging.debug("Retrieving last.fm info for \"%s\" by %s" % (track_title.encode("utf-8"), artist_name.encode("utf-8")))
+        logging.debug((u"Retrieving last.fm info for \"%s\" by %s" % (track_title, artist_name)).encode("utf-8"))
         return self.call_signed(method="track.getInfo",
             artist=artist_name.encode("utf-8"),
             track=track_title.encode("utf-8"),
             autocorrect="1")
+
+    def get_track_info_ex(self, artist_name, track_title):
+        info = {"artist": artist_name, "title": track_title, "tags": [], "image": None, "download": None}
+
+        data = self.get_track_info(artist_name, track_title)
+        if "track" not in data:
+            return info
+        data = data["track"]
+
+        def listify(x):
+            if not isinstance(x, list):
+                x = [x]
+            return x
+
+        if "artist" in data:
+            info["artist"] = data["artist"]
+
+        if "name" in data:
+            info["title"] = data["name"]
+
+        if "album" in data and "image" in data["album"]:
+            image = listify(data["album"]["image"])
+            for img in image:
+                if img["size"] == "small":
+                    info["image"] = img["#text"]
+                    break
+
+        if "freedownload" in data:
+            info["download"] = data["freedownload"]
+
+        if "toptags" in data and "tag" in data["toptags"]:
+            for tag in listify(data["toptags"]["tag"]):
+                info["tags"].append(tag["name"])
+
+        info["tags"] += self.get_artist_tags(artist_name)
+        info["tags"] = list(set(info["tags"]))
+
+        return info
 
     def get_track_tags(self, artist_name, track_title):
         """Returns top tags for the specified track."""
@@ -290,7 +328,7 @@ class LibreFM(object):
             logging.error("Empty response from libre.fm")
             return False
         if data == 'OK':
-            logging.debug(u'Sent to libre.fm: %s -- %s' % (artist, title))
+            logging.debug((u'Sent to libre.fm: %s -- %s' % (artist, title)).encode("utf-8"))
             return True
         elif data == 'BADSESSION' and retry:
             logging.debug('Bad libre.fm session, renewing.')

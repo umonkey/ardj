@@ -139,7 +139,7 @@ class Playlist(dict):
         for playlist in cls.get_all():
             name = playlist.get('name')
             if name and playlist.match_track(track):
-                logging.debug('Track %u touches playlist "%s".' % (track_id, name))
+                logging.debug('Track %u touches playlist "%s".' % (track_id, name.encode("utf-8")))
                 rowcount = ardj.database.execute('UPDATE playlists SET last_played = ? WHERE name = ?', (ts, name, ))
                 if rowcount == 0:
                     ardj.database.execute('INSERT INTO playlists (name, last_played) VALUES (?, ?)', (name, ts, ))
@@ -181,10 +181,10 @@ def get_track_by_id(track_id):
     track_id -- identified the track to return.
     cur -- unused.
     """
-    rows = ardj.database.fetch("SELECT id, filename, artist, title, length, NULL, weight, count, last_played, real_weight FROM tracks WHERE id = ?", (track_id, ))
+    rows = ardj.database.fetch("SELECT id, filename, artist, title, length, NULL, weight, count, last_played, real_weight, image, download FROM tracks WHERE id = ?", (track_id, ))
     if rows:
         row = rows[0]
-        result = {'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'length': row[4], 'weight': row[6], 'count': row[7], 'last_played': row[8], 'real_weight': row[9]}
+        result = {'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'length': row[4], 'weight': row[6], 'count': row[7], 'last_played': row[8], 'real_weight': row[9], 'image': row[10], 'download': row[11]}
         result['labels'] = [row[0] for row in ardj.database.fetch('SELECT DISTINCT label FROM labels WHERE track_id = ? ORDER BY label', (track_id, ))]
         if result.get('filename'):
             result['filepath'] = get_real_track_path(result['filename'])
@@ -498,7 +498,7 @@ def gen_filename(suffix):
             return abs_filename, rel_filename
 
 
-def add_file(filename, add_labels=None, owner=None, quiet=False, artist=None, title=None):
+def add_file(filename, add_labels=None, owner=None, quiet=False, artist=None, title=None, dlink=None):
     """Adds the file to the database.
 
     Returns track id.
@@ -526,7 +526,7 @@ def add_file(filename, add_labels=None, owner=None, quiet=False, artist=None, ti
     if not ardj.util.copy_file(filename, abs_filename):
         raise Exception('Could not copy %s to %s' % (filename, abs_filename))
 
-    track_id = ardj.database.execute('INSERT INTO tracks (artist, title, filename, length, last_played, owner, weight, real_weight, count) VALUES (?, ?, ?, ?, ?, ?, 1, 1, 0)', (artist, title, rel_filename, duration, 0, owner or 'ardj', ))
+    track_id = ardj.database.execute('INSERT INTO tracks (artist, title, filename, length, last_played, owner, weight, real_weight, count, download) VALUES (?, ?, ?, ?, ?, ?, 1, 1, 0, ?)', (artist, title, rel_filename, duration, 0, owner or 'ardj', dlink, ))
     for label in labels:
         ardj.database.execute('INSERT INTO labels (track_id, label, email) VALUES (?, ?, ?)', (track_id, label, (owner or 'ardj').lower(), ))
     return track_id
@@ -549,7 +549,7 @@ def get_track_id_from_queue():
 
 
 def get_random_track_id_from_playlist(playlist, skip_artists):
-    sql = 'SELECT id, weight, artist, count FROM tracks WHERE weight > 0 AND artist IS NOT NULL AND filename IS NOT NULL'
+    sql = 'SELECT id, weight, artist, count, last_played FROM tracks WHERE weight > 0 AND artist IS NOT NULL AND filename IS NOT NULL'
     params = []
 
     labels = list(playlist.get('labels', [playlist.get('name', 'music')]))
@@ -667,10 +667,14 @@ def get_random_row(rows, strategy=None):
         return None
 
     if strategy == "fresh":
-        ID_COL, WEIGHT_COL, NAME_COL, COUNT_COL = 0, 1, 2, 3
-        rows.sort(key=lambda row: row[COUNT_COL])
+        rows.sort(key=lambda row: row[3])
         row = random.choice(rows[:5])
-        track_id = row[ID_COL]
+        track_id = row[0]
+
+    elif strategy == "oldest":
+        rows.sort(key=lambda row: row[4])
+        row = rows[0]
+        track_id = row[0]
 
     else:
         track_id = get_random_row_default(rows)
@@ -774,7 +778,7 @@ def get_next_track():
 
         return track
     except Exception, e:
-        logging.error("Could not get a track to play: %s\n%s" % (e, traceback.format_exc(e)))
+        logging.exception("Could not get a track to play: %s\n%s" % e, e)
         return None
 
 
@@ -801,7 +805,8 @@ def get_next_track_id(debug=False, update_stats=True):
 
     skip_artists = list(set([row[0] for row in ardj.database.fetch('SELECT artist FROM tracks WHERE artist IS NOT NULL AND last_played IS NOT NULL ORDER BY last_played DESC LIMIT ' + str(ardj.settings.get('dupes', 5)))]))
     if debug:
-        logging.debug(u'Artists to skip: %s' % u', '.join(skip_artists or ['none']) + u'.')
+        msg = u'Artists to skip: %s' % u', '.join(skip_artists or ['none']) + u'.'
+        logging.debug(msg.encode("utf-8"))
 
     track_id = get_track_id_from_queue()
     if track_id:
@@ -819,12 +824,12 @@ def get_next_track_id(debug=False, update_stats=True):
     if not track_id:
         for playlist in Playlist.get_active():
             if debug:
-                logging.debug('Looking for tracks in playlist "%s"' % playlist.get('name', 'unnamed'))
+                logging.debug('Looking for tracks in playlist "%s"' % playlist.get('name', 'unnamed').encode("utf-8"))
             labels = playlist.get('labels', [playlist.get('name', 'music')])
             track_id = get_random_track_id_from_playlist(playlist, skip_artists)
             if track_id is not None:
                 update_program_name(playlist.get("program"))
-                logging.debug('Picked track %u from playlist %s' % (track_id, playlist.get('name', 'unnamed')))
+                logging.debug('Picked track %u from playlist %s' % (track_id, playlist.get('name', 'unnamed').encode("utf-8")))
                 break
 
     if track_id:
@@ -865,14 +870,14 @@ def update_program_name(name):
         file(filename, "wb").write(name.encode("utf-8"))
 
         if ardj.settings.get("program_name_announce"):
-            logging.debug("Program name changed from \"%s\" to \"%s\", announcing to the chat room." % (current, name))
+            logging.debug("Program name changed from \"%s\" to \"%s\", announcing to the chat room." % (current.encode("utf-8"), name.encode("utf-8")))
             ardj.jabber.chat_say("Program \"%s\" started." % name)
         else:
-            logging.debug("Program name changed from \"%s\" to \"%s\"." % (current, name))
+            logging.debug("Program name changed from \"%s\" to \"%s\"." % (current.encode("utf-8"), name.encode("utf-8")))
 
         command = ardj.settings.getpath("program_name_handler")
         if os.path.exists(command):
-            logging.info(u"Running %s (%s)" % (command, name))
+            logging.info("Running %s (%s)" % (command.encode("utf-8"), name.encode("utf-8")))
             subprocess.Popen(command.split(" "), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 
@@ -1103,19 +1108,19 @@ def find_new_tracks(args, label='music', weight=1.5):
     for track in tracks:
         if is_verbose():
             print "Track:", track
-        logging.info(u'[%u/%u] fetching "%s" by %s' % (added + 1, len(tracks), track['title'], track['artist']))
+        logging.info((u'[%u/%u] fetching "%s" by %s' % (added + 1, len(tracks), track['title'], track['artist'])).encode("utf-8"))
         try:
             if track['artist'] not in artist_names:
                 artist_names.append(track['artist'])
             filename = ardj.util.fetch(str(track['url']), suffix=track.get('suffix'))
             if not is_dry_run():
                 add_file(str(filename), add_labels=track.get('tags', ['tagme', 'music']),
-                    artist=track["artist"], title=track["title"])
+                    artist=track["artist"], title=track["title"], dlink=track['url'])
             added += 1
         except KeyboardInterrupt:
             raise
         except Exception, e:
-            logging.error(u"Could not download \"%s\" by %s: %s" % (track['title'], track['artist'], e))
+            logging.error((u"Could not download \"%s\" by %s: %s" % (track['title'], track['artist'], e)).encode("utf-8"))
 
     if added:
         logging.info('Total catch: %u tracks.' % added)
@@ -1161,6 +1166,18 @@ def add_label_to_tracks_liked_by(label, jids, sender):
     return len(_ids)
 
 
+def _add_jamendo_meta(track):
+    """Updates metadata from Jamendo.  Currently only adds a download link
+    (when necessary), because other metadata that Jamendo provides is crappy
+    and unreliable."""
+    info = ardj.jamendo.get_track_info(track["artist"], track["title"])
+    if info is None:
+        return
+
+    if info.get("stream") and not track.get("download"):
+        track.set_download(info["stream"])
+
+
 def add_missing_lastfm_tags():
     cli = ardj.scrobbler.LastFM()
 
@@ -1172,14 +1189,15 @@ def add_missing_lastfm_tags():
         if skip_labels and set(labels) & skip_labels:
             continue
 
+        _add_jamendo_meta(track)
+
         try:
-            track_tags = cli.get_track_tags(track["artist"], track["title"])
-            artist_tags = cli.get_artist_tags(track["artist"])
+            info = cli.get_track_info_ex(track["artist"], track["title"])
         except ardj.scrobbler.Error, e:
             ardj.log.log_error(str(e), e)
             continue
 
-        lastfm_tags = set(list(track_tags + artist_tags))
+        lastfm_tags = info["tags"]
         if not lastfm_tags:
             continue
 
@@ -1187,6 +1205,13 @@ def add_missing_lastfm_tags():
             labels.append("lastfm:" + tag.replace(" ", "_"))
 
         track.set_labels(labels)
+        if info["image"]:
+            track.set_image(info["image"])
+        if info["download"]:
+            track.set_download(info["download"])
+
+        logging.debug("Updated track %u with: %s" % (track["id"], info))
+
         ardj.database.commit()
 
 
@@ -1198,7 +1223,7 @@ def do_idle_tasks(set_busy=None):
 
     artist_name, sender = req
 
-    logging.info(u'Looking for tracks by "%s", requested by %s' % (artist_name, sender))
+    logging.info((u'Looking for tracks by "%s", requested by %s' % (artist_name, sender)).encode("utf-8"))
 
     if set_busy is not None:
         set_busy()

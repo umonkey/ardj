@@ -14,6 +14,8 @@
  - Added a default response for commands echo, sql and show-news-from-jamendo (Jabber).
  - Added better logging for the skip command (Jabber).
  - Added a handler to retrieve current track info (WebAPI).
+ - Added authentication to certain web api calls.
+ - Added api/status.js (WebAPI).
  - Added nice -n15 to the downloaded music processor.
  - Removed old commands: hotline, icelog, listeners, mail (CLI).
  - Changed tags order in tags/show: subtags go last.

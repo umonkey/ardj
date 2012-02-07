@@ -97,7 +97,7 @@ share/shell-extensions/zsh/_ardj: src/ardj/cli.py
 	PYTHONPATH=src python bin/ardj --zsh > $@
 
 serve:
-	PYTHONPATH=$(pwd)/src ./bin/ardj serve
+	PYTHONPATH=src ./bin/ardj serve
 
 share/doc/man/ardj.1: src/docbook/man.xml
 	docbook2x-man src/docbook/man.xml

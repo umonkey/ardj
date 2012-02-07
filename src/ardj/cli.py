@@ -289,7 +289,7 @@ def cmd_fix_artist_names(*args):
     for name in names:
         new_name = cli.get_corrected_name(name)
         if new_name is not None and new_name != name:
-            logging.info(u"Correcting artist name \"%s\" to \"%s\"" % (name, new_name))
+            logging.info("Correcting artist name \"%s\" to \"%s\"" % (name.encode("utf-8"), new_name.encode("utf-8")))
             Track.rename_artist(name, new_name)
 
     commit()
@@ -429,7 +429,7 @@ def run(args):
         handler = find_handler(args[1])
         if handler is not None:
             try:
-                if handler(*args[2:]):
+                if handler(*args[2:]) in (None, True):
                     exit(0)
             except KeyboardInterrupt:
                 pass

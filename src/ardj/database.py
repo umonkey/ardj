@@ -82,13 +82,16 @@ class Model(dict):
         execute(sql, (self[self.key_name], ))
         self[self.key_name] = None
 
-    def put(self):
-        if self.get(self.key_name) is None:
-            return self._insert()
+    def put(self, force_insert=False):
+        if self.get(self.key_name) is None or force_insert:
+            return self._insert(force_insert)
         return self._update()
 
-    def _insert(self):
-        fields = [f for f in self.fields if f != self.key_name]
+    def _insert(self, with_key=False):
+        if with_key:
+            fields = self.fields
+        else:
+            fields = [f for f in self.fields if f != self.key_name]
         fields_sql = ", ".join(fields)
         params_sql = ", ".join(["?"] * len(fields))
 
@@ -100,7 +103,7 @@ class Model(dict):
 
     def _update(self):
         fields = [f for f in self.fields if f != self.key_name]
-        fields_sql = ", ".join(["%s = ?" for field in fields])
+        fields_sql = ", ".join(["%s = ?" % field for field in fields])
 
         sql = "UPDATE %s SET %s WHERE %s = ?" % (self.table_name, fields_sql, self.key_name)
         params = [self.get(field) for field in fields] + [self[self.key_name]]
@@ -158,7 +161,7 @@ class Track(Model):
 
     @classmethod
     def find_without_lastfm_tags(cls):
-        sql = "SELECT %s FROM %s WHERE weight > 0 AND id NOT IN (SELECT track_id FROM labels WHERE label LIKE 'lastfm:%%') ORDER BY id" % (cls._fields_sql(), cls.table_name)
+        sql = "SELECT %s FROM %s WHERE weight > 0 AND (id NOT IN (SELECT track_id FROM labels WHERE label LIKE 'lastfm:%%') OR `image` IS NULL OR `download` IS NULL) ORDER BY id" % (cls._fields_sql(), cls.table_name)
         return cls._fetch_rows(sql, ())
 
     def get_labels(self):
@@ -174,7 +177,13 @@ class Track(Model):
         for tag in list(set(labels)):
             execute("INSERT INTO labels (track_id, label, email) VALUES (?, ?, ?)", (self["id"], tag, "unknown", ))
 
-        logging.debug("New labels for track %u: %s" % (self["id"], labels))
+        logging.debug(("New labels for track %u: %s" % (self["id"], labels)).encode("utf-8"))
+
+    def set_image(self, url):
+        execute("UPDATE tracks SET image = ? WHERE id = ?", (url, self["id"], ))
+
+    def set_download(self, url):
+        execute("UPDATE tracks SET download = ? WHERE id = ?", (url, self["id"], ))
 
     @classmethod
     def get_average_length(cls):
@@ -191,6 +200,12 @@ class Queue(Model):
     table_name = "queue"
     fields = "id", "track_id", "owner"
     key_name = "id"
+
+
+class Token(Model):
+    table_name = "tokens"
+    fields = "token", "login", "login_type", "active"
+    key_name = "token"
 
 
 def get_init_statements(dbtype):
@@ -230,7 +245,7 @@ class database:
 
     def __del__(self):
         self.commit()
-        logging.debug(u'Database closed.')
+        logging.debug('Database closed.')
 
     @classmethod
     def get_instance(cls):
@@ -279,9 +294,9 @@ class database:
                 return cur.lastrowid
             else:
                 return cur.rowcount
-        except Exception, e:
-            logging.error("Failed SQL statement: %s, params: %s" % (sql, params))
-            raise e
+        except:
+            logging.exception("Failed SQL statement: %s, params: %s" % (sql.encode("utf-8"), params))
+            raise
         finally:
             cur.close()
 
@@ -313,7 +328,7 @@ class database:
                 sql = sql.replace(u'?', param, 1)
             else:
                 sql = sql.replace(u'?', u"'" + param + u"'", 1)
-        logging.debug(u'SQL: ' + sql)
+        logging.debug("SQL: " + sql.encode("utf-8"))
         return sql
 
     def purge(self):

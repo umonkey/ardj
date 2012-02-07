@@ -1,0 +1,19 @@
+<html>
+  <head>
+    <title>ardj</title>
+  </head>
+  <body>
+    <h1>Third-party app authentication</h1>
+
+    <p>To access the database on your behalf, an application can use a token.  Fill in the form below to get one.</p>
+
+    <form method="post" action="/api/auth.json">
+      <input type="text" name="id" placeholder="Your ID"/>
+      <select name="type">
+        <option value="jid">Jabber</option>
+        <option value="email">Email</option>
+      </select>
+      <button>Submit</button>
+    </form>
+  </body>
+</html>

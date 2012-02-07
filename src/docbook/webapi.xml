@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- vim: set ft=docbk: -->
+<chapter id="webapi">
+  <title>Web API</title>
+
+  <para>WebAPI позволяет сторонним приложениям общаться со станцией используя протоколы HTTP и JSON.  Результат всегда
+  возвращается в виде отформатированного JSON объекта, с отступами и юникодными символами.</para>
+
+  <para>При использовании расширения <filename>.js</filename> результат возвращается в виде готового фрагмента скрипта,
+  пригодного для включения в HTML-страницу.  По умолчанию значение записывается в переменную
+  <varname>response</varname>, другое название можно указать с помощью параметра <varname>var</varname>, а с помощью
+  параметра <varname>callback</varname> можно указать имя функции, которая должна быть выполнена после присвоения
+  переменной значения.  Пример:</para>
+
+  <example id="web-api-js">
+    <title>Использование JS-интерфейса WebAPI</title>
+    <programlisting>$ curl 'http://music.tmradio.net/api/status.js?var=foo&amp;callback=bar'
+var foo = {...}; bar(foo);</programlisting>
+  </example>
+
+  <section id="auth-json">
+    <title>api/auth.json</title>
+
+    <para>Используется для получения токена.  Запрос следует отправлять методом POST, идентификатор пользователя и его
+    тип (jid или email) указываются параметрами <varname>id</varname> и <varname>type</varname>.  Возвращает серверное
+    сообщение, пользователь получает дальнейшие инструкции через jabber или email.  Пример:</para>
+
+    <programlisting>$ curl -X POST -d 'id=alice@example.com&amp;type=email' 'http://music.tmradio.net/api/auth.json'
+{
+  "status": "ok", 
+  "message": "You'll soon receive a message with a confirmation link."
+}</programlisting>
+
+    <para>После этого пользователь получает ссылку для подтверждения токена, который сообщает программе.  С помощью
+    токена можно <link linkend="track-rocks-json">голосовать</link>.</para>
+  </section>
+
+  <section id="status-json">
+    <title>api/status.json</title>
+
+    <para>Возвращает информацию о проигрываемой на данный момент композиции.  Формат результата аналогичен <link
+    linkend="track-info-json">api/track/info.json</link>.  Пример:</para>
+
+    <programlisting>$ curl http://music.tmradio.net/api/track/info.json
+{
+  "real_weight": 1.8666666666666667, 
+  "last_played": 1326743103, 
+  "weight": 1.8666666666666667, 
+  "image": null, 
+  "labels": [ "news", "preroll-not-wanted", "special" ], 
+  "download": null, 
+  "id": 4598, 
+  "count": 5955, 
+  "filepath": "/radio/music/c/f/cf4970391cb99e64a3b317423d592562.ogg", 
+  "artist": "Эхо Москвы", 
+  "title": "Новости", 
+  "filename": "c/f/cf4970391cb99e64a3b317423d592562.ogg", 
+  "length": 97
+}</programlisting>
+  </section>
+
+  <section id="track-rocks-json">
+    <title>api/track/rocks.json</title>
+
+    <para>Записывает одобрение пользователем текущей композиции.  Для голосования за композицию, звучавшую ранее, её
+    идентификатор можно указать в параметре <varname>id</varname>.</para>
+
+    <para>Запросы нужно отправлять методом POST, указав полученный при аутентификации токен.  Пример:</para>
+
+    <programlisting>$ curl -X POST -d 'token=baadf00d&amp;track_id=123' http://music.tmradio.net/api/track/rocks.json
+{
+  "status": "ok", 
+  "message": "OK, current weight of track #123 is 2.9333."
+}</programlisting>
+  </section>
+
+  <section id="track-sucks-json">
+    <title>api/track/sucks.json</title>
+
+    <para>Записывает неодобрение пользователем текущей композиции.  Для голосования против композиции, звучавшей ранее,
+    её идентификатор можно указать в параметре <varname>id</varname>.</para>
+
+    <para>Запросы нужно отправлять методом POST, указав полученный при аутентификации токен.  Пример:</para>
+
+    <programlisting>$ curl -X POST -d 'token=baadf00d&amp;track_id=123' http://music.tmradio.net/api/track/sucks.json
+{
+  "status": "ok", 
+  "message": "OK, current weight of track #123 is 1.9333."
+}</programlisting>
+  </section>
+
+  <section id="track-info-json">
+    <title>api/track/info.json</title>
+
+    <para>Возвращает информацию о композиции идентификатор которой указан в параметре <varname>id</varname>. 
+    Пример:</para>
+
+    <programlisting>$ curl 'http://music.tmradio.net/track/info.json?id=6065'
+{
+ "real_weight": 1.0, 
+ "last_played": 1326743926, 
+ "weight": 1.1499999999999999, 
+ "image": "http://userserve-ak.last.fm/serve/64s/30245783.jpg", 
+ "labels": [ "calm", "female", "fresh", "music", "vocals", "source:jamendo.com" ], 
+ "download": null, 
+ "id": 6065, 
+ "count": 5, 
+ "filepath": "/radio/music/7/4/746fee45f4b312d28bba71b7cb2529fa.ogg", 
+ "artist": "KOOQLA", 
+ "title": "In my mind", 
+ "filename": "7/4/746fee45f4b312d28bba71b7cb2529fa.ogg", 
+ "length": 296
+}</programlisting>
+
+    <variablelist>
+      <title>Возможные свойства</title>
+
+      <varlistentry>
+        <term>id</term>
+        <listitem>
+          <para>Уникальный числовой идентификатор композиции.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>artist</term>
+        <listitem>
+          <para>Название исполнителя.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>title</term>
+        <listitem>
+          <para>Название композиции.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>weight</term>
+        <listitem>
+          <para>Текущий вес композиции.  Влияет на частоту проигрывания.  Изменяется при обращении к <link
+          linkend="track-rocks-json">api/track/rocks.json</link> и <link
+          linkend="track-sucks-json">api/track/sucks.json</link>.  Нулевой вес означает, что композиция была удалена из
+          ротации.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>real_weight</term>
+        <listitem>
+          <para>Реальный вес композиции, рассчитанный автоматически.  Текущий вес (<varname>weight</varname>) к нему
+          по-немногу смещается при каждом проигрывании композиции.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>count</term>
+        <listitem>
+          <para>Количество проигрываний композиции.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>length</term>
+        <listitem>
+          <para>Продолжительность композиции в секундах.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>last_played</term>
+        <listitem>
+          <para>UNIX-время последнего проигрывания композиции.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>labels</term>
+        <listitem>
+          <para>Метки композиции.  Используются для <link linkend="programming">включения в плейлисты</link>.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>image</term>
+        <listitem>
+          <para>URL иллюстрации к композиции.  Обычно ведёт на сервер LastFM; картинка обычно имеет размер 64×64, но
+          он может быть и другим (особенно если картинка с Jamendo).</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>download</term>
+        <listitem>
+          <para>URL для скачивания композиции.  Есть не всегда.  Когда есть, не всегда является ссылкой на чистый
+          MP3-файл, поэтому при сохранении лучше сформировать имя файла самостоятельно, на основе имени исполнителя и
+          композиции.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>last_played</term>
+        <listitem>
+          <para>UNIX-время последнего проигрывания композиции.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>filename</term>
+        <listitem>
+          <para>Относительное имя файла в файловом хранилище.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>filepath</term>
+        <listitem>
+          <para>Абсолютное имя файла в файловом хранилище.</para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+  </section>
+</chapter>

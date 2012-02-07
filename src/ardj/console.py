@@ -27,7 +27,7 @@ import ardj.util
 
 def is_user_admin(sender, safe=False):
     """Checks whether the user has special privileges."""
-    return sender in ardj.users.get_admins()
+    return ardj.users.resolve_alias(sender) in ardj.users.get_admins()
 
 
 def shortname(sender):
@@ -627,7 +627,7 @@ def process_command(text, sender=None, quiet=False):
         command, args = text, ''
     command = command_aliases.get(command.lower(), command.lower())
 
-    logging.debug("%s: %s" % (sender or "unknown sender", text))
+    logging.debug((u"%s: %s" % (sender or "unknown sender", text)).encode("utf-8"))
 
     sender = sender or 'console'
     is_admin = is_user_admin(sender)
