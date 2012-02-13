@@ -64,6 +64,8 @@ def search_twitter(term):
 
     try:
         data = json.loads(urllib2.urlopen(url).read().decode("utf-8"))
+    except urllib2.URLError, e:
+        return {}  # could not connect
     except urllib2.HTTPError, e:
         print >> sys.stderr, "Error searching for %s: %s" % (term.encode("utf-8"), e)
         return {}

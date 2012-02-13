@@ -17,6 +17,7 @@ LENGTH_LIMIT = 300
 
 def is_too_long(filename):
     len = mad.MadFile(filename).total_time() / 1000
+    print "Duration of %s is %u" % (filename, len)
     return len > LENGTH_LIMIT
 
 
@@ -34,18 +35,24 @@ def fetch_news(folder, target):
 
     files = glob.glob(os.path.join(folder, "*.mp3"))
     if not files:
+        if os.path.exists(target):
+            os.unlink(target)
+        print "No news."
         return
 
     last_file = sorted(files)[-1]
 
     if is_too_long(last_file):
+        if os.path.exists(target):
+            os.unlink(target)
+        print "Last file too long."
         return
 
     temp_file = last_file + ".ogg"
     file(temp_file, "wb").write(file(last_file, "rb").read())
 
-    subprocess.Popen(["sox", last_file, "-r", "44100", "-c", "2", temp_file]).wait()
-    subprocess.Popen(["vorbisgain", "-q", temp_file]).wait()
+    subprocess.Popen(["nice", "-n15", "sox", last_file, "-r", "44100", "-c", "2", temp_file]).wait()
+    subprocess.Popen(["nice", "-n15", "vorbisgain", "-q", temp_file]).wait()
 
     if os.path.exists(target):
         os.unlink(target)

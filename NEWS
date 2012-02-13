@@ -6,6 +6,8 @@
  - Fixed a bug in the MySQL database driver.
  - Fixed missing tags when downloading from Jamendo.
  - Fixed missing schedule update (cron).
+ - Fixed ISE handling in contrib/newswire url shortener.
+ - Fixed the SQL command (jabber).
  - Added history for twitter-fetcher (contrib).
  - Added an option to disable voting (config).
  - Added automatic promotion of most active voters to admins.
@@ -15,5 +17,6 @@
  - Added a handler to retrieve current track info (WebAPI).
  - Added authentication to certain web api calls.
  - Added api/status.js (WebAPI).
+ - Added nice -n15 to the downloaded music processor.
  - Removed old commands: hotline, icelog, listeners, mail (CLI).
  - Changed tags order in tags/show: subtags go last.
