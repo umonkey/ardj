@@ -139,7 +139,7 @@ def on_sql(args, sender):
         return 'SQL statements must end with a ;, for your own safety.'
 
     if not args.lower().startswith("select"):
-        return u"%u rows affected." % ardj.database.fetch(args)
+        return u"%u rows affected." % ardj.database.execute(args)
 
     rows = ardj.database.fetch(args)
     if not rows:
