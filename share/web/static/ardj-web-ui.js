@@ -116,6 +116,7 @@ ardj = {
 	queue_track: function () {
 		$.ajax({
 			url: $(this).attr("href"),
+			data: {token: ardj.get_token()},
 			dataType: "json",
 			success: ardj.queue_track_ok,
 			error: ardj.ajax_failure

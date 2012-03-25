@@ -16,6 +16,7 @@ import json
 import web
 
 import auth
+import console
 import database
 import scrobbler
 import settings
@@ -228,9 +229,12 @@ class SearchController(Controller):
 class QueueController(Controller):
     @send_json
     def GET(self):
-        args = web.input(track=None)
+        args = web.input(track=None, token=None)
+
         if args.track:
-            tracks.queue(int(args.track))
+            sender = auth.get_id_by_token(args.token)
+            console.on_queue("-s " + str(args.track), sender or "Anonymous Coward")
+
         return {"status": "ok"}
 
 
