@@ -8,6 +8,8 @@
  - Fixed missing schedule update (cron).
  - Fixed ISE handling in contrib/newswire url shortener.
  - Fixed the SQL command (jabber).
+ - Fixed some error logging.
+ - Fixed running from the source tree.
  - Added history for twitter-fetcher (contrib).
  - Added an option to disable voting (config).
  - Added automatic promotion of most active voters to admins.
@@ -18,5 +20,7 @@
  - Added authentication to certain web api calls.
  - Added api/status.js (WebAPI).
  - Added nice -n15 to the downloaded music processor.
+ - Added more methods to the Python track API.
+ - Added a way to share tracks without external URL info.
  - Removed old commands: hotline, icelog, listeners, mail (CLI).
  - Changed tags order in tags/show: subtags go last.
