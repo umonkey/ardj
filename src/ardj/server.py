@@ -210,13 +210,48 @@ class IndexController(Controller):
         return file("static/index.html", "rb").read()
 
 
+class SearchController(Controller):
+    @send_json
+    def GET(self):
+        args = web.input(query=None)
+
+        track_ids = tracks.find_ids(args.query)
+        track_info = [database.Track.get_by_id(id) for id in track_ids]
+
+        return {
+            "status": "ok",
+            "scope": "search",
+            "tracks": track_info,
+        }
+
+
+class QueueController(Controller):
+    @send_json
+    def GET(self):
+        args = web.input(track=None)
+        if args.track:
+            tracks.queue(int(args.track))
+        return {"status": "ok"}
+
+
+class RecentController(Controller):
+    @send_json
+    def GET(self):
+        return {
+            "status": "ok",
+            "scope": "recent",
+            "tracks": database.Track.find_recently_played(),
+        }
+
+
 def serve_http(hostname, port):
     """Starts the HTTP web server at the specified socket."""
     sys.argv.insert(1, "%s:%s" % (hostname, port))
 
     logging.info("Starting the ardj web service at http://%s:%s/" % (hostname, port))
 
-    ScrobblerThread().start()
+    if "--debug" not in sys.argv:
+        ScrobblerThread().start()
 
     web.application((
         "/", IndexController,
@@ -226,8 +261,11 @@ def serve_http(hostname, port):
         "/api/track/rocks\.json", RocksController,
         "/api/track/sucks\.json", SucksController,
         "/commit\.json", CommitController,
-        "/track/next\.json", NextController,
         "/track/info\.json", InfoController,
+        "/track/next\.json", NextController,
+        "/track/queue\.json", QueueController,
+        "/track/recent\.json", RecentController,
+        "/track/search\.json", SearchController,
     )).run()
 
 

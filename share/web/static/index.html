@@ -1,12 +1,57 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html>
   <head>
-    <title>ardj</title>
+    <title>Music Database</title>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+    <link rel="stylesheet" type="text/css" href="/static/screen.css"/>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico"/>
+    <script type="text/javascript" src="/static/jquery-1.7.2.min.js"></script>
+    <script type="text/javascript" src="/static/ardj-web-ui.js"></script>
   </head>
   <body>
-    <h1>It Works!</h1>
-    <p>This is all you can do now:</p>
-    <ul>
-      <li><a href="/static/auth.html">Authenticate a third-party app</a></li>
-    </ul>
+    <div id="wrapper">
+      <div class="part">
+        <h1>Music database</h1>
+
+        <p><a class="login" href="/static/auth.html">Log in</a></p>
+
+        <div id="loginform" style="display:none">
+          <form action="/api/auth.json" method="POST">
+            <input name="id" type="text" placeholder="Your ID"/>
+            <select name="type">
+              <option value="email">Email</option>
+              <option value="jid">Jabber</option>
+            </select>
+            <button>Log in</button>
+          </form>
+        </div>
+      </div>
+
+      <!--
+      <h1>It Works!</h1>
+      <p>This is all you can do now:</p>
+      <ul>
+        <li><a href="/static/auth.html">Authenticate a third-party app</a></li>
+      </ul>
+      -->
+
+      <div id="searchform">
+        <form action="/track/search.json">
+          <input name="query" type="text" spellcheck="false"/>
+          <button>Найти</button>
+          <p>Search query, e.g.: <span class='eg'>Josh Woodward</span></p>
+        </form>
+      </div>
+
+      <div class="part">
+        <div id="searchresult">
+          <p>Please wait while the track list is loading...</p>
+        </div>
+
+        <div id="footer">
+          <p>This website is powered by <a href="http://ardj.googlecode.com/" target="_blank">ardj</a>.</p>
+        </div>
+      </div>
+    </div>
   </body>
 </html>

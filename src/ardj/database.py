@@ -139,7 +139,7 @@ class DownloadRequest(Model):
 class Track(Model):
     """Stores information about a track."""
     table_name = "tracks"
-    fields = "id", "artist", "title", "filename", "length", "weight", "real_weight", "count", "last_played", "owner"
+    fields = "id", "artist", "title", "filename", "length", "weight", "real_weight", "count", "last_played", "owner", "image", "download"
     key_name = "id"
 
     @classmethod
@@ -158,6 +158,12 @@ class Track(Model):
     def find_active(cls):
         """Returns tracks which weren't deleted."""
         sql = "SELECT %s FROM %s WHERE `weight` > 0" % (cls._fields_sql(), cls.table_name)
+        return cls._fetch_rows(sql, ())
+
+    @classmethod
+    def find_recently_played(cls, count=50):
+        """Returns a list of recently played tracks."""
+        sql = "SELECT %s FROM %s ORDER BY `last_played` DESC LIMIT %u" % (cls._fields_sql(), cls.table_name, count)
         return cls._fetch_rows(sql, ())
 
     @classmethod
