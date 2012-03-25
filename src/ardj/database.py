@@ -149,6 +149,18 @@ class Track(Model):
         return cls._fetch_rows(sql, ())
 
     @classmethod
+    def find_by_url(cls, url):
+        """Returns all tracks with the specified download URL."""
+        sql = "SELECT %s FROM %s WHERE `download` = ?" % (cls._fields_sql(), cls.table_name)
+        return cls._fetch_rows(sql, (url, ))
+
+    @classmethod
+    def find_active(cls):
+        """Returns tracks which weren't deleted."""
+        sql = "SELECT %s FROM %s WHERE `weight` > 0" % (cls._fields_sql(), cls.table_name)
+        return cls._fetch_rows(sql, ())
+
+    @classmethod
     def get_artist_names(cls):
         """Returns all artist names."""
         return fetchcol("SELECT DISTINCT artist FROM %s" % self.table_name)
@@ -193,6 +205,13 @@ class Track(Model):
             s_prc += prc * qty
             s_qty += qty
         return int(s_prc / s_qty * 60 * 1.5)
+
+    def get_votes(self):
+        """Returns track votes."""
+        result = {}
+        for email, vote in fetch("SELECT email, vote FROM votes WHERE track_id = ? ORDER BY ts", (self["id"], )):
+            result[email] = vote
+        return result
 
 
 class Queue(Model):
