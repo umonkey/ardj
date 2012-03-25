@@ -778,7 +778,7 @@ def get_next_track():
 
         return track
     except Exception, e:
-        logging.exception("Could not get a track to play: %s\n%s" % e, e)
+        logging.exception("Could not get a track to play: %s" % e, e)
         return None
 
 
