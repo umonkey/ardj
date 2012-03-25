@@ -43,8 +43,9 @@ def cmd_db_purge(*args):
 
 def cmd_db_console(*args):
     """opens the database console"""
-    from ardj import database, util
-    util.run(["sqlite3", "-header", database.Open().filename])
+    from subprocess import Popen
+    from ardj import database
+    Popen(["sqlite3", "-header", database.Open().filename]).wait()
 
 
 def cmd_db_init(*args):

@@ -10,6 +10,7 @@
  - Fixed the SQL command (jabber).
  - Fixed some error logging.
  - Fixed running from the source tree.
+ - Fixed the database console.
  - Added history for twitter-fetcher (contrib).
  - Added an option to disable voting (config).
  - Added automatic promotion of most active voters to admins.
