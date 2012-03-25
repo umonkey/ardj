@@ -182,6 +182,12 @@ class Track(Model):
         sql = "SELECT %s FROM %s WHERE weight > 0 AND (id NOT IN (SELECT track_id FROM labels WHERE label LIKE 'lastfm:%%') OR `image` IS NULL OR `download` IS NULL) ORDER BY id" % (cls._fields_sql(), cls.table_name)
         return cls._fetch_rows(sql, ())
 
+    @classmethod
+    def find_tags(cls, min_count=5, cents=100):
+        sql = "SELECT label, COUNT(*) FROM labels WHERE track_id IN (SELECT id FROM tracks WHERE weight > 0) GROUP BY label ORDER BY label"
+        rows = [row for row in fetch(sql) if row[1] >= min_count and ":" not in row[0] and len(row[0]) > 1]
+        return rows
+
     def get_labels(self):
         if not self.get(self.key_name):
             return []

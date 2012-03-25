@@ -19,9 +19,10 @@ ardj = {
 			return false;
 		});
 
-		$("#searchform .eg").click(ardj.sample_search);
+		$(".eg").click(ardj.sample_search);
 
 		$(".login").click(ardj.show_login_form);
+		$(".tags").click(ardj.show_tags);
 
 		$("#loginform form").submit(ardj.submit_login_form);
 
@@ -57,6 +58,27 @@ ardj = {
 			}
 		});
 		return false;
+	},
+
+	show_tags: function () {
+		$.ajax({
+			url: "/api/tag/cloud.json",
+			dataType: "json",
+			success: ardj.render_tag_cloud
+		});
+		return false;
+	},
+
+	render_tag_cloud: function (data) {
+		var html = "<h2>Top tags:</h2><ul class='tagcloud'>";
+
+		data.tags.forEach(function (x) {
+			html += "<li><span>{0}</span> ({1})</li>".format(x);
+		});
+
+		$("#searchresult").html(html).find("span").click(function () {
+			$("#searchform input").val("@" + $(this).text()).focus();
+		});
 	},
 
 	/**

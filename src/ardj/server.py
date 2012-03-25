@@ -248,6 +248,13 @@ class RecentController(Controller):
         }
 
 
+class TagCloudController(Controller):
+    @send_json
+    def GET(self):
+        tags = database.Track.find_tags(cents=4)
+        return {"status": "ok", "tags": tags}
+
+
 def serve_http(hostname, port):
     """Starts the HTTP web server at the specified socket."""
     sys.argv.insert(1, "%s:%s" % (hostname, port))
@@ -261,6 +268,7 @@ def serve_http(hostname, port):
         "/", IndexController,
         "/api/auth(?:\.json)?", AuthController,
         "/api/status\.js(?:on)?", StatusController,
+        "/api/tag/cloud\.json", TagCloudController,
         "/api/track/info\.json", InfoController,
         "/api/track/rocks\.json", RocksController,
         "/api/track/sucks\.json", SucksController,
