@@ -136,6 +136,17 @@ class DownloadRequest(Model):
             return rows[0]
 
 
+class Vote(Model):
+    """Stores information about votes."""
+    table_name = "votes"
+    fields = "id", "track_id", "email", "vote", "ts"
+    key_name = "id"
+
+    def get_date(self):
+        """Returns a formatted date for this vote."""
+        return time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(self["ts"]))
+
+
 class Track(Model):
     """Stores information about a track."""
     table_name = "tracks"

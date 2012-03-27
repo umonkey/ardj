@@ -15,6 +15,7 @@ import logging
 import os
 import random
 import sys
+import time
 import traceback
 
 import ardj.log
@@ -56,6 +57,37 @@ def cmd_db_init(*args):
     install or upgrade ardj."""
     import database
     return database.cli_init(args)
+
+
+def cmd_dump_votes(prefix=None, *args):
+    """dumps votes statistics"""
+    from database import Vote
+
+    daily = {}
+    hourly = {}
+
+    for vote in Vote.find_all():
+        ts = time.gmtime(vote["ts"])
+
+        if prefix is not None:
+            if not time.strftime("%Y-%m-%d %H:%M:%S", ts).startswith(prefix):
+                continue
+
+        day = int(time.strftime("%w", ts)) or 7
+        daily[day] = daily.get(day, 0) + 1
+
+        hour = int(time.strftime("%H", ts))
+        hourly[hour] = hourly.get(hour, 0) + 1
+
+    def dump_votes(votes, prefix):
+        total = float(sum(votes.values()))
+        pc = lambda x: float(x) * 100 / total
+        for k, v in votes.items():
+            print "%s,%u,%.1f" % (prefix, k, pc(v))
+
+    dump_votes(daily, "D")
+    dump_votes(hourly, "H")
+
 
 
 def cmd_find_new_tracks(*args):
