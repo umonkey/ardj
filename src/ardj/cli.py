@@ -81,9 +81,8 @@ def cmd_dump_votes(prefix=None, *args):
 
     def dump_votes(votes, prefix):
         total = float(sum(votes.values()))
-        pc = lambda x: float(x) * 100 / total
         for k, v in votes.items():
-            print "%s,%u,%.1f" % (prefix, k, pc(v))
+            print "%s,%u,%u" % (prefix, k, int(v))
 
     dump_votes(daily, "D")
     dump_votes(hourly, "H")
