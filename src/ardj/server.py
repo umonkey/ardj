@@ -28,6 +28,7 @@ def send_json(f):
     """The @send_json decorator, encodes the return value in JSON."""
     def wrapper(*args, **kwargs):
         web.header("Content-Type", "text/plain; charset=UTF-8")
+        web.header("Access-Control-Allow-Origin", "*")
         data = f(*args, **kwargs)
 
         if web.ctx.env["PATH_INFO"].endswith(".js"):
