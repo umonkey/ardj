@@ -144,6 +144,8 @@ class RocksController(Controller):
             if weight is None:
                 return {"status": "error", "message": "No such track."}
 
+            database.commit()
+
             message = 'OK, current weight of track #%u is %.04f.' % (track_id, weight)
             return {"status": "ok", "message": message}
         except web.Forbidden:
@@ -234,6 +236,7 @@ class QueueController(Controller):
         if args.track:
             sender = auth.get_id_by_token(args.token)
             console.on_queue("-s " + str(args.track), sender or "Anonymous Coward")
+            database.commit()
 
         return {"status": "ok"}
 
@@ -255,6 +258,15 @@ class TagCloudController(Controller):
         return {"status": "ok", "tags": tags}
 
 
+def transaction_fix(handler):
+    """Завершение предыдущей транзакции перед обработкой каждого запроса, иначе
+    они все выполняются в рамках транзакции и не видят свежих данных."""
+    try:
+        return handler()
+    finally:
+        database.rollback()
+
+
 def serve_http(hostname, port):
     """Starts the HTTP web server at the specified socket."""
     sys.argv.insert(1, "%s:%s" % (hostname, port))
@@ -264,7 +276,7 @@ def serve_http(hostname, port):
     if "--debug" not in sys.argv:
         ScrobblerThread().start()
 
-    web.application((
+    app = web.application((
         "/", IndexController,
         "/api/auth(?:\.json)?", AuthController,
         "/api/status\.js(?:on)?", StatusController,
@@ -278,7 +290,9 @@ def serve_http(hostname, port):
         "/track/queue\.json", QueueController,
         "/track/recent\.json", RecentController,
         "/track/search\.json", SearchController,
-    )).run()
+    ))
+    app.add_processor(transaction_fix)
+    app.run()
 
 
 def run_cli(args):
