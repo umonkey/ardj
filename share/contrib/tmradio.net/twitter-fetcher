@@ -19,6 +19,8 @@ import urllib2
 
 CACHE_FILE = "/radio/data/twits.json"
 
+MAX_TAG_COUNT = 2
+
 ITEM_TEMPLATE = u"<li><a href='https://twitter.com/%(author)s' title='%(author)s' target='_blank'><img src='%(picture)s' alt='avatar'/></a><p class='text'>%(text)s</p><p class='date'><a href='https://twitter.com/%(author)s/status/%(id)s' class='twit' target='_blank'>%(date)s</a></p></li>"
 
 PAGE_TEMPLATE = u"""<html>
@@ -87,7 +89,8 @@ def search_twitter(term):
 def format_twits(twits):
     body = u""
     for _id, twit in sorted(twits.items(), key=lambda t: t[0], reverse=True):
-        body += ITEM_TEMPLATE % twit
+        if twit["text"].count("#") <= MAX_TAG_COUNT:
+            body += ITEM_TEMPLATE % twit
     return PAGE_TEMPLATE % body
 
 

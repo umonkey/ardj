@@ -26,5 +26,6 @@
  - Added a way to share tracks without external URL info.
  - Added a CLI command to dump daily/hourly vote stats.
  - Added CORS to Web API.
+ - Added spam protection to the twitter widget (contrib).
  - Removed old commands: hotline, icelog, listeners, mail (CLI).
  - Changed tags order in tags/show: subtags go last.
