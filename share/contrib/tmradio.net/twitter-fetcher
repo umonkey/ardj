@@ -12,12 +12,17 @@ import json
 import os
 import re
 import rfc822
+import socket
 import sys
 import time
 import urllib2
 
 
 CACHE_FILE = "/radio/data/twits.json"
+
+KILLFILE_IP = "/radio/data/twits-killfile-ip"
+
+ALLOWED_LANGUAGES = ("ru", "ua")
 
 MAX_TAG_COUNT = 2
 
@@ -37,6 +42,33 @@ PAGE_TEMPLATE = u"""<html>
 </ul>
 </body>
 </html>"""
+
+
+def has_spam(twit):
+    if twit["text"].count("#") > MAX_TAG_COUNT:
+        return True
+
+    if twit.get("language", "ru") not in ALLOWED_LANGUAGES:
+        return True
+
+    if "urls" in twit:
+        for url in twit["urls"]:
+            hostname = url.split("/")[2]
+            if is_host_forbidden(hostname):
+                return True
+
+
+def is_host_forbidden(hostname):
+    try:
+        addr = socket.gethostbyname(hostname)
+    except socket.gaierror:
+        return True
+
+    if not os.path.exists(KILLFILE_IP):
+        return False
+
+    kill = file(KILLFILE_IP, "r").read().strip().split("\n")
+    return addr in kill
 
 
 def format_text(text):
@@ -75,13 +107,21 @@ def search_twitter(term):
     result = {}
     for entry in data["results"]:
         ts = rfc822.parsedate(entry["created_at"])
-        result[entry["id"]] = {
+
+        tmp = {
             "id": entry["id"],
             "author": entry["from_user"],
             "date": time.strftime("%d.%m.%Y %H:%M", ts),
             "text": format_text(entry["text"]),
             "picture": entry["profile_image_url"],
+            "language": entry["iso_language_code"],
         }
+
+        if "entities" in entry:
+            if "urls" in entry["entities"]:
+                tmp["urls"] = [u["expanded_url"] for u in entry["entities"]["urls"]]
+
+        result[entry["id"]] = tmp
 
     return result
 
@@ -89,7 +129,7 @@ def search_twitter(term):
 def format_twits(twits):
     body = u""
     for _id, twit in sorted(twits.items(), key=lambda t: t[0], reverse=True):
-        if twit["text"].count("#") <= MAX_TAG_COUNT:
+        if not has_spam(twit):
             body += ITEM_TEMPLATE % twit
     return PAGE_TEMPLATE % body
 
