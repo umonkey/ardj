@@ -27,7 +27,6 @@ import log
 def send_json(f):
     """The @send_json decorator, encodes the return value in JSON."""
     def wrapper(*args, **kwargs):
-        web.header("Content-Type", "text/plain; charset=UTF-8")
         web.header("Access-Control-Allow-Origin", "*")
         data = f(*args, **kwargs)
 
@@ -41,10 +40,12 @@ def send_json(f):
                 elif part.startswith("callback="):
                     callback_name = part[9:]
 
+            web.header("Content-Type", "application/javascript; charset=UTF-8")
             if callback_name is not None:
                 return "var %s = %s; %s(%s);" % (var_name, json.dumps(data), callback_name, var_name)
             return "var %s = %s;" % (var_name, json.dumps(data))
         else:
+            web.header("Content-Type", "application/json; charset=UTF-8")
             return json.dumps(data, ensure_ascii=False, indent=True)
     return wrapper
 
