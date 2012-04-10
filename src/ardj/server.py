@@ -148,7 +148,12 @@ class RocksController(Controller):
             database.commit()
 
             message = 'OK, current weight of track #%u is %.04f.' % (track_id, weight)
-            return {"status": "ok", "message": message}
+            return {
+                "status": "ok",
+                "message": message,
+                "id": track_id,
+                "weight": weight,
+            }
         except web.Forbidden:
             raise
         except Exception, e:
