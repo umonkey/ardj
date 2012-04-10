@@ -76,7 +76,7 @@ def format_text(text):
     links = re.findall("((http|https|ftp)://[a-z0-9.-_]+)", text)
     if links is not None:
         for link, proto in links:
-            text = text.replace(link, u"<a href='%s' class='link' target='_blank'>%s</a>" % (link, link))
+            text = text.replace(link, u"<a href='%s' class='link' rel='nofollow' target='_blank'>%s</a>" % (link, link))
 
     # Links to profiles.
     text = re.sub("(@(\w+))", "<a href='https://twitter.com/\\2' target='_blank' class='name'>\\1</a>", text)
