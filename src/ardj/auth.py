@@ -11,7 +11,7 @@ def create_token(login, login_type):
         login = resolve_alias(login)
 
     tmp = tempfile.mktemp(suffix="", prefix="", dir="")
-    token = Token(token=tmp, login=login, login_type=login_type, active=0)
+    token = Token(token=tmp, login=login, login_type=login_type, active=1)
     token.put(force_insert=True)
 
     base_url = get_setting("web_api_root", "http://localhost:8080").rstrip("/")
