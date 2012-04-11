@@ -27,5 +27,6 @@
  - Added a CLI command to dump daily/hourly vote stats.
  - Added CORS to Web API.
  - Added spam protection to the twitter widget (contrib).
+ - Added image and download options to the set command.
  - Removed old commands: hotline, icelog, listeners, mail (CLI).
  - Changed tags order in tags/show: subtags go last.

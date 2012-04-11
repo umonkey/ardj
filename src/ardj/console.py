@@ -411,9 +411,9 @@ def on_tags(args, sender):
 def on_set(args, sender):
     parts = args.split(' ')
     if not args or len(parts) < 3 or parts[1] != 'to':
-        return 'Usage: set artist|title to value [for track_id]'
+        return 'Usage: set artist|title|image|download to value [for track_id]'
 
-    if parts[0] not in ('artist', 'title'):
+    if parts[0] not in ('artist', 'title', 'image', 'download'):
         return 'Unknown property: %s.' % parts[1]
 
     if len(parts) > 2 and parts[-2] == 'for':
