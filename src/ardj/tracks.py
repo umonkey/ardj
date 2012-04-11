@@ -741,7 +741,11 @@ def add_preroll(track_id, labels=None):
     Tracks that have a preroll-* never have a preroll.
     """
     # Skip if the track is a preroll.
-    if ardj.database.fetch("SELECT COUNT(*) FROM labels WHERE track_id = ? AND label LIKE 'preroll-%'", (track_id, ))[0]:
+    logging.debug("Looking for prerolls for track %u (labels=%s)" % (track_id, labels))
+
+    row = ardj.database.fetchone("SELECT COUNT(*) FROM labels WHERE track_id = ? AND label LIKE 'preroll-%'", (track_id, ))
+    if row and row[0]:
+        logging.debug("Track %u is a preroll itself." % track_id)
         return track_id
 
     if labels:
@@ -749,12 +753,15 @@ def add_preroll(track_id, labels=None):
     else:
         prerolls = get_prerolls_for_track(track_id)
 
+    logging.debug("Found %u prerolls." % len(prerolls))
+
     if track_id in prerolls:
         prerolls.remove(track_id)
 
     if prerolls:
         queue(track_id)
         track_id = prerolls[random.randrange(len(prerolls))]
+        logging.debug("Will play track %u (a preroll)." % track_id)
 
     return track_id
 
@@ -778,7 +785,7 @@ def get_next_track():
 
         return track
     except Exception, e:
-        logging.exception("Could not get a track to play: %s" % e, e)
+        logging.exception("Could not get a track to play: %s" % e)
         return None
 
 
