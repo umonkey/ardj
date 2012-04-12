@@ -68,7 +68,11 @@ def is_host_forbidden(hostname):
         return False
 
     kill = file(KILLFILE_IP, "r").read().strip().split("\n")
-    return addr in kill
+    for pattern in kill:
+        if addr == pattern or addr.startswith(pattern):
+            return True
+
+    return False
 
 
 def format_text(text):
