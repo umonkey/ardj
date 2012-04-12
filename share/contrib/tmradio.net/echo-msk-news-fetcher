@@ -21,7 +21,17 @@ def is_too_long(filename):
     return len > LENGTH_LIMIT
 
 
-def fetch_news(folder, target):
+def truncate(filename):
+    if os.path.exists(filename):
+        os.unlink(filename)
+        open(filename, "wb").close()
+
+
+def fetch_news(folder, target, track_id):
+    have_news = False
+
+    truncate(target)
+
     page = urllib2.urlopen(URL_SOURCE).read()
     for url in re.findall("http://.+\.mp3", page):
         if not url.endswith(".mp3"):
@@ -32,6 +42,10 @@ def fetch_news(folder, target):
             print "Downloading %s" % url
             data = urllib2.urlopen(url).read()
             file(episode_file, "wb").write(data)
+            have_news = True
+
+    if not have_news:
+        return
 
     files = glob.glob(os.path.join(folder, "*.mp3"))
     if not files:
@@ -58,14 +72,16 @@ def fetch_news(folder, target):
         os.unlink(target)
     shutil.move(temp_file, target)
 
+    subprocess.Popen(["ardj", "update-track-lengths", str(track_id)]).wait()
+
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        print >> sys.stderr, "Usage: %s cache_folder target_file" % sys.argv[0]
+    if len(sys.argv) != 4:
+        print >> sys.stderr, "Usage: %s cache_folder target_file track_id" % sys.argv[0]
         exit(1)
 
     if not sys.argv[2].endswith(".ogg"):
         print >> sys.stderr, "Target file must be OGG/Vorbis."
         exit(1)
 
-    fetch_news(sys.argv[1], sys.argv[2])
+    fetch_news(sys.argv[1], sys.argv[2], sys.argv[3])
