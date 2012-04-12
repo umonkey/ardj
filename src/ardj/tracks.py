@@ -972,12 +972,15 @@ def merge(id1, id2):
     update_real_track_weight(id1)
 
 
-def update_track_lengths():
+def update_track_lengths(only_ids=None):
     rows = ardj.database.fetch('SELECT id, filename, length '
-        'FROM tracks WHERE weight > 0 AND filename')
+        'FROM tracks WHERE weight > 0 AND filename IS NOT NULL')
 
     updates = []
     for id, filename, length in rows:
+        if only_ids is not None and id not in only_ids:
+            continue
+
         filepath = get_real_track_path(filename)
         if not os.path.exists(filepath):
             logging.warning("File %s is missing." % filepath)

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# encoding=utf-8
 
 """RSS to chat translator.
 
@@ -18,6 +19,8 @@ the COMMAND constant.
 """
 
 import os
+import random
+import re
 import subprocess
 import sys
 import time
@@ -29,6 +32,11 @@ import feedparser
 HISTFILE = "~/.newswire"
 HISTSIZE = 100
 COMMAND = "ardj xmpp-send"
+
+FUNNY_PATTERN = u"жирин|зюганов|путин|медведев|нургалиев|онищенко|блог|дума|президент|дипломат|губернатор"
+
+def is_funny(text):
+    return re.search(FUNNY_PATTERN, text, re.I|re.U) is not None
 
 
 def run(command):
@@ -73,6 +81,8 @@ def short_url(url):
 def send_news(url, text):
     """Sends the news to the chat room."""
     message = u"%s: %s" % (text, short_url(url))
+    if is_funny(text):
+        message += u" %s" % random.choice([":D", ";)", "o_O", ":("])
     command = COMMAND.split(" ") + [message.encode("utf-8")]
 
     for x in range(5):
