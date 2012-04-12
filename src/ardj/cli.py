@@ -254,8 +254,9 @@ def cmd_update_track_weights(*args):
 
 def cmd_update_track_lengths(*args):
     """update track lengths from files (maintenance)"""
-    from ardj import tracks
+    from ardj import database, tracks
     tracks.update_track_lengths()
+    database.commit()
 
 
 def cmd_xmpp_send(*args):
