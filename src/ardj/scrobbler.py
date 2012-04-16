@@ -21,6 +21,10 @@ class InvalidParameters(Error):
     pass
 
 
+class TrackNotFound(Error):
+    pass
+
+
 class LastFM(object):
     """The LastFM client."""
     ROOT = 'http://ws.audioscrobbler.com/2.0/'
@@ -172,6 +176,15 @@ class LastFM(object):
 
         return info
 
+    def is_artist(self, name):
+        try:
+            data = self.call_signed(method="artist.getInfo",
+                artist=name.encode("utf-8"))
+            return True
+        except Exception, e:
+            logging.error("Could not find artist: %s" % e)
+            return False
+
     def get_track_tags(self, artist_name, track_title):
         """Returns top tags for the specified track."""
         data = self.get_track_info(artist_name, track_title)
@@ -253,6 +266,8 @@ class LastFM(object):
             logging.error("Last.fm error %u: %s" % (response["error"], response["message"]))
             if response["error"] in (4, 9, 10, 13, 26):
                 raise BadAuth(response["message"])
+            if response["error"] == 6 and response["message"] == "Track not found":
+                raise TrackNotFound(response["message"])
             if response["error"] == 6:
                 raise InvalidParameters(response["message"])
             raise Error(response["message"])

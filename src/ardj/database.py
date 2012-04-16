@@ -26,6 +26,7 @@ import re
 import sys
 import time
 import traceback
+import urllib
 
 try:
     from sqlite3 import dbapi2 as sqlite
@@ -208,7 +209,9 @@ class Track(Model):
     def get_labels(self):
         if not self.get(self.key_name):
             return []
-        return fetchcol("SELECT label FROM labels WHERE track_id = ?", (self[self.key_name], ))
+        if "labels" not in self:
+            self["labels"] = fetchcol("SELECT label FROM labels WHERE track_id = ?", (self[self.key_name], ))
+        return self["labels"]
 
     def set_labels(self, labels):
         if type(labels) != list:
@@ -225,6 +228,18 @@ class Track(Model):
 
     def set_download(self, url):
         execute("UPDATE tracks SET download = ? WHERE id = ?", (url, self["id"], ))
+
+    def get_artist_url(self):
+        if "lastfm:noartist" in self.get_labels():
+            return None
+        q = lambda v: urllib.quote(v.encode("utf-8"))
+        return "http://www.last.fm/music/%s" % q(self["artist"])
+
+    def get_track_url(self):
+        if "lastfm:notfound" in self.get_labels():
+            return None
+        q = lambda v: urllib.quote(v.encode("utf-8"))
+        return "http://www.last.fm/music/%s/_/%s" % (q(self["artist"]), q(self["title"]))
 
     @classmethod
     def get_average_length(cls):

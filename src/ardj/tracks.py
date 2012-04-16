@@ -16,6 +16,7 @@ import subprocess
 import sys
 import time
 import traceback
+import urllib
 
 import ardj.database
 import ardj.jabber
@@ -159,8 +160,22 @@ class Track(dict):
     key_name = "id"
 
     def get_labels(self):
-        rows = ardj.database.fetch("SELECT label FROM labels WHERE track_id = ?", (self["id"], ))
-        return [row[0] for row in rows]
+        if "labels" not in self:
+            rows = ardj.database.fetch("SELECT label FROM labels WHERE track_id = ?", (self["id"], ))
+            self["labels"] = [row[0] for row in rows]
+        return self["labels"]
+
+    def get_artist_url(self):
+        if "lastfm:noartist" in self.get_labels():
+            return None
+        q = lambda v: urllib.quote(v.encode("utf-8"))
+        return "http://www.last.fm/music/%s" % q(self["artist"])
+
+    def get_track_url(self):
+        if "lastfm:notfound" in self.get_labels():
+            return None
+        q = lambda v: urllib.quote(v.encode("utf-8"))
+        return "http://www.last.fm/music/%s/_/%s" % (q(self["artist"]), q(self["title"]))
 
     @classmethod
     def get_by_id(cls, track_id):
@@ -187,14 +202,26 @@ def get_track_by_id(track_id):
     track_id -- identified the track to return.
     cur -- unused.
     """
-    rows = ardj.database.fetch("SELECT id, filename, artist, title, length, NULL, weight, count, last_played, real_weight, image, download FROM tracks WHERE id = ?", (track_id, ))
-    if rows:
-        row = rows[0]
-        result = {'id': row[0], 'filename': row[1], 'artist': row[2], 'title': row[3], 'length': row[4], 'weight': row[6], 'count': row[7], 'last_played': row[8], 'real_weight': row[9], 'image': row[10], 'download': row[11]}
-        result['labels'] = [row[0] for row in ardj.database.fetch('SELECT DISTINCT label FROM labels WHERE track_id = ? ORDER BY label', (track_id, ))]
-        if result.get('filename'):
-            result['filepath'] = get_real_track_path(result['filename'])
-        return result
+    track = Track.get_by_id(track_id)
+    if track is None:
+        return None
+
+    track["labels"] = track.get_labels()
+    if track.get('filename'):
+        track['filepath'] = get_real_track_path(track['filename'])
+
+    track["track_url"] = track.get_track_url()
+    track["artist_url"] = track.get_artist_url()
+
+    if sender is not None:
+        track["bookmark"] = "bm:%s" % sender in track["labels"]
+        track["vote"] = track.get_last_vote(sender)
+    else:
+        track["bookmark"] = False
+
+    track["labels"] = [l for l in track["labels"] if not l.startswith("bm:")]
+
+    return track
 
 
 def get_last_track_id():
@@ -1207,19 +1234,32 @@ def add_missing_lastfm_tags():
 
     skip_labels = set(ardj.settings.get_scrobbler_skip_labels())
 
-    for track in ardj.database.Track.find_without_lastfm_tags():
+    tracks = ardj.database.Track.find_without_lastfm_tags()
+    for track in sorted(tracks, key=lambda t: t["id"], reverse=True):
+        print "%u. %s -- %s" % (track["id"], track["artist"].encode("utf-8"), track["title"].encode("utf-8"))
+
         labels = track.get_labels()
 
         if skip_labels and set(labels) & skip_labels:
-            continue
+            info = {"tags": ["notfound", "noartist"]}
+            print "  implicit notfound, noartist"
+        else:
+            _add_jamendo_meta(track)
 
-        _add_jamendo_meta(track)
-
-        try:
-            info = cli.get_track_info_ex(track["artist"], track["title"])
-        except ardj.scrobbler.Error, e:
-            ardj.log.log_error(str(e), e)
-            continue
+            try:
+                info = cli.get_track_info_ex(track["artist"], track["title"])
+            except ardj.scrobbler.TrackNotFound:
+                print "  track not found"
+                info = {"tags": ["notfound"], "image": None, "download": None}
+                if not cli.is_artist(track["artist"]):
+                    info["tags"].append("noartist")
+                    print "  artist not found"
+            except ardj.scrobbler.Error, e:
+                ardj.log.log_error(str(e), e)
+                continue
+            except Exception, e:
+                ardj.log.log_error(str(e), e)
+                continue
 
         lastfm_tags = info["tags"]
         if not lastfm_tags:

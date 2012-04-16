@@ -15,6 +15,7 @@
  - Fixed prerolls.
  - Fixed sticky labels.
  - Fixed last.fm schedule updates.
+ - Fixed broken last.fm links.
  - Added history for twitter-fetcher (contrib).
  - Added an option to disable voting (config).
  - Added automatic promotion of most active voters to admins.

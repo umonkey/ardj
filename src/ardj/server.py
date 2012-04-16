@@ -254,8 +254,14 @@ class RecentController(Controller):
         return {
             "status": "ok",
             "scope": "recent",
-            "tracks": database.Track.find_recently_played(),
+            "tracks": list(self.get_tracks()),
         }
+
+    def get_tracks(self):
+        for track in database.Track.find_recently_played():
+            track["artist_url"] = track.get_artist_url()
+            track["track_url"] = track.get_track_url()
+            yield track
 
 
 class TagCloudController(Controller):
@@ -292,7 +298,7 @@ def serve_http(hostname, port):
         "/api/track/rocks\.json", RocksController,
         "/api/track/sucks\.json", SucksController,
         "/commit\.json", CommitController,
-        "/track/info\.json", InfoController,
+        "/track/info\.js(?:on)?", InfoController,
         "/track/next\.json", NextController,
         "/track/queue\.json", QueueController,
         "/track/recent\.json", RecentController,
