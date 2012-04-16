@@ -160,6 +160,12 @@ class Track(Model):
         return cls._fetch_rows(sql, ())
 
     @classmethod
+    def find_by_tag(cls, tag):
+        """Returns tracks that have a specific tag."""
+        sql = "SELECT %s FROM %s WHERE weight > 0 AND id IN (SELECT track_id FROM labels WHERE label = ?)" % (cls._fields_sql(), cls.table_name)
+        return cls._fetch_rows(sql, (tag, ))
+
+    @classmethod
     def find_by_url(cls, url):
         """Returns all tracks with the specified download URL."""
         sql = "SELECT %s FROM %s WHERE `download` = ?" % (cls._fields_sql(), cls.table_name)
