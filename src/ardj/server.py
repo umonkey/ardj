@@ -177,6 +177,7 @@ class StatusController(Controller):
         if track is None:
             return None
 
+        track["current_ts"] = int(time.time())
         return track
 
 

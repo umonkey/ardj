@@ -35,5 +35,6 @@
  - Added the "minutes" property to playlists.
  - Added a way to refresh length of certain tracks (CLI).
  - Added an API method to find tracks by tag.
+ - Added current_ts to status.json (WebAPI).
  - Removed old commands: hotline, icelog, listeners, mail (CLI).
  - Changed tags order in tags/show: subtags go last.
