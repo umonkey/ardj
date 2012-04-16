@@ -241,8 +241,9 @@ def cmd_twit_replies_speak(*args):
 
 def cmd_update_schedule(*args):
     """looks for events in the Last.fm database"""
-    from ardj import tout
+    from ardj import database, tout
     tout.update_schedule(refresh="--refresh" in args)
+    database.commit()
 
 
 def cmd_update_track_weights(*args):
