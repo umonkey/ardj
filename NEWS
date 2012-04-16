@@ -13,6 +13,7 @@
  - Fixed the database console.
  - Fixed lasting transactions in web UI.
  - Fixed prerolls.
+ - Fixed sticky labels.
  - Added history for twitter-fetcher (contrib).
  - Added an option to disable voting (config).
  - Added automatic promotion of most active voters to admins.

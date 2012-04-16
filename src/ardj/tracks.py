@@ -583,10 +583,10 @@ def get_random_track_id_from_playlist(playlist, skip_artists):
     ardj.database.Open().debug(sql, params)
     track_id = get_random_row(ardj.database.fetch(sql, tuple(params)), playlist.get("strategy", "default"))
 
-    update_sticky_label(track_id, playlist)
-
-    if playlist.get('preroll'):
-        track_id = add_preroll(track_id, playlist.get('preroll'))
+    if track_id is not None:
+        update_sticky_label(track_id, playlist)
+        if playlist.get('preroll'):
+            track_id = add_preroll(track_id, playlist.get('preroll'))
 
     return track_id
 
@@ -600,31 +600,36 @@ def update_sticky_label(track_id, playlist):
     # Save the new playlist name.  If it changed -- remove previous label.
     if last_playlist != playlist.get("name", "unnamed"):
         if last_sticky_label is not None:
-            logging.debug("Removing sticky label %s" % last_sticky_label.encode("utf-8"))
+            logging.debug("Sticky: playlist changed from %s to %s, dropping label %s." % (last_playlist, playlist["name"], last_sticky_label.encode("utf-8")))
             last_sticky_label = None
+
     last_playlist = playlist.get("name", "unnamed")
 
     # There is a sticky label already, nothing to do.
     if last_sticky_label is not None:
+        logging.debug("Sticky: continue using label %s" % last_sticky_label)
         return
 
     # This playlist has no sticky labels, nothing to do.
     if not playlist.get("sticky_labels"):
+        logging.debug("Sticky: playlist %s has no sticky_labels." % last_playlist)
         return
 
     # Find intersecting labels.
     track = Track.get_by_id(track_id)
     if track is None:
+        logging.debug("Sticky: track %s not found -- no labels to pick from." % track_id)
         return
 
     # No intersection, nothing to do.
     labels = list(set(track.get_labels()) & set(playlist["sticky_labels"]))
     if not labels:
+        logging.debug("Sticky: track %s and playlist %s don't interfere." % (track["id"], last_playlist))
         return
 
     # Store the new sticky label.
     last_sticky_label = random.choice(labels)
-    logging.debug("New sticky label: %s" % last_sticky_label.encode("utf-8"))
+    logging.debug("Sticky: new label: %s" % last_sticky_label.encode("utf-8"))
 
 
 def get_sticky_label(playlist):
@@ -633,11 +638,14 @@ def get_sticky_label(playlist):
 
     # Playlist changed, no labels.
     if playlist.get("name", "unnamed") != last_playlist:
+        logging.debug("Sticky: wrong playlist: %s, ignoring." % playlist.get("name"))
         return []
 
     if not last_sticky_label:
+        logging.debug("Sticky: no label, not adding filters.")
         return []
 
+    logging.debug("Sticky: forcing label %s" % last_sticky_label)
     return [u"+" + last_sticky_label]
 
 
