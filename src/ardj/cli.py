@@ -256,7 +256,8 @@ def cmd_update_track_weights(*args):
 def cmd_update_track_lengths(*args):
     """update track lengths from files (maintenance)"""
     from ardj import database, tracks
-    tracks.update_track_lengths()
+    ids = [int(n) for n in args if n.isdigit()]
+    tracks.update_track_lengths(ids)
     database.commit()
 
 
