@@ -102,12 +102,15 @@ class Playlist(dict):
         now_ts = time.mktime(now)
         now_day = int(time.strftime('%w', now))
         now_hour = int(time.strftime('%H', now))
+        now_minutes = int(time.strftime('%M', now))
 
         if 'delay' in self and self['delay'] * 60 + self['last_played'] >= now_ts:
             return False
         if 'hours' in self and now_hour not in self.get_hours():
             return False
         if 'days' in self and now_day not in self.get_days():
+            return False
+        if 'minutes' in self and now_minutes not in self.get_minutes():
             return False
         return True
 
@@ -116,6 +119,9 @@ class Playlist(dict):
 
     def get_hours(self):
         return ardj.util.expand(self['hours'])
+
+    def get_minutes(self):
+        return ardj.util.expand(self['minutes'])
 
     @classmethod
     def get_active(cls, timestamp=None):
