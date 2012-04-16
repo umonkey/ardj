@@ -48,7 +48,7 @@ def ices_get_next():
             last_good_file = last_track['filepath']
         return str(last_track['filepath'])
     except Exception, e:
-        logging.error('ices failed: %s\n%s' % (e, traceback.format_exc(e)))
+        ardj.log.log_error("ices failed: %s" % e, e)
         for _pattern in FAILURE_GLOB:
             fallback = glob.glob(_pattern)
             if fallback:

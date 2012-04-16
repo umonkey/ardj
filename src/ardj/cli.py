@@ -469,8 +469,8 @@ def run(args):
             except KeyboardInterrupt:
                 pass
             except Exception, e:
-                ardj.log.log_error('ERROR handling command %s: %s' % (args[1], e) + traceback.format_exc(e), e)
-                print "ERROR: %s\n%s" % (e, traceback.format_exc(e))
+                ardj.log.log_error('ERROR handling command %s: %s' % (args[1], e), e)
+                print "ERROR: %s" % e
             exit(1)
 
     cmd_help(*args)

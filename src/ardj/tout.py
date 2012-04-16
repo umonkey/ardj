@@ -75,7 +75,8 @@ def fetch_events(refresh=False):
 
     if os.path.exists(cache_fn):
         ttl = int(ardj.settings.get("event_schedule_cache_ttl", "43200"))
-        if time.time() - os.stat(cache_fn).st_mtime < ttl:
+        if time.time() - os.stat(cache_fn).st_mtime < ttl and not refresh:
+            logging.debug("Event schedule read from cache (%s, younger than %u sec)" % (cache_fn, ttl))
             return json.loads(open(cache_fn, 'rb').read())
 
     lastfm = ardj.scrobbler.LastFM().authorize()
@@ -117,13 +118,14 @@ def update_website(filename):
 
     output = 'var map_data = %s;' % json.dumps(data, indent=True)
     open(filename, 'wb').write(output)
-    logging.info('Wrote %s' % filename)
+    logging.info('Wrote event schedule to %s' % filename)
 
 
 def update_labels(artist_names):
     """Adds the concert-soon labels to appropriate tracks."""
     ardj.database.execute("DELETE FROM labels WHERE label = 'concert-soon'")
     for name in artist_names:
+        logging.debug("Tagging %s with concert-soon" % name.encode("utf-8"))
         ardj.database.execute('INSERT INTO labels (track_id, label, email) '
             'SELECT id, ?, ? FROM tracks WHERE artist = ?', (
             'concert-soon', 'ardj', name, ))
@@ -137,9 +139,9 @@ def update_schedule(refresh=False):
         print >> sys.stderr, "Last.fm error:", e
         return False
 
-    event_schedule_path = ardj.settings.get("event_schedule_path", ardj.settings.get("tout/website_js"))
+    event_schedule_path = ardj.settings.get("event_schedule_path")
     if not event_schedule_path:
-        logging.debug("No event_schedule_path, not updating the schedule.")
+        logging.warning("No event_schedule_path, not updating the schedule.")
         return False
 
     update_website(event_schedule_path)

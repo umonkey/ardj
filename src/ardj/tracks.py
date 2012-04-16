@@ -53,7 +53,7 @@ class Playlist(dict):
         return self
 
     def match_track(self, track):
-        if type(track) != dict:
+        if not isinstance(track, dict):
             raise TypeError
         if not self.match_labels(track.get('labels')):
             return False
@@ -156,7 +156,7 @@ class Track(dict):
     # TODO: move to ardj.database after sawing down StORM.
 
     table_name = "tracks"
-    fields = ("id", "owner", "filename", "artist", "title", "length", "weight", "count", "last_played", "real_weight")
+    fields = ("id", "owner", "filename", "artist", "title", "length", "weight", "count", "last_played", "real_weight", "image", "download")
     key_name = "id"
 
     def get_labels(self):
@@ -187,12 +187,16 @@ class Track(dict):
             return None
         return Track([(cls.fields[k], v) for k, v in enumerate(row)])
 
+    def get_last_vote(self, sender):
+        votes = ardj.database.fetchone("SELECT vote FROM votes WHERE track_id = ? AND email = ? ORDER BY id DESC", (self["id"], sender, ))
+        return votes[0] if votes else 0
+
 
 def get_real_track_path(filename):
     return os.path.join(ardj.settings.get_music_dir(), filename)
 
 
-def get_track_by_id(track_id):
+def get_track_by_id(track_id, sender=None):
     """Returns track description as a dictionary.
 
     If the track does not exist, returns None.  Extended properties,
@@ -362,7 +366,7 @@ def update_track(properties):
 
     If there's not fields to update, a message is written to the debug log.
     """
-    if type(properties) != dict:
+    if not isinstance(properties, dict):
         raise Exception('Track properties must be passed as a dictionary.')
     if 'id' not in properties:
         raise Exception('Track properties have no id.')
@@ -370,7 +374,7 @@ def update_track(properties):
     sql = []
     params = []
     for k in properties:
-        if k in ('filename', 'artist', 'title', 'length', 'weight', 'count', 'last_played', 'owner', 'real_weight'):
+        if k in ('filename', 'artist', 'title', 'length', 'weight', 'count', 'last_played', 'owner', 'real_weight', 'download', 'image'):
             sql.append(k + ' = ?')
             params.append(properties[k])
 
@@ -1269,9 +1273,9 @@ def add_missing_lastfm_tags():
             labels.append("lastfm:" + tag.replace(" ", "_"))
 
         track.set_labels(labels)
-        if info["image"]:
+        if info.get("image"):
             track.set_image(info["image"])
-        if info["download"]:
+        if info.get("download"):
             track.set_download(info["download"])
 
         logging.debug("Updated track %u with: %s" % (track["id"], info))

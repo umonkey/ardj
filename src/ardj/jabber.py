@@ -15,6 +15,7 @@ from ardj import xmpp
 
 import ardj.console
 import ardj.database
+import ardj.log
 import ardj.settings
 import ardj.tracks
 import ardj.util
@@ -109,7 +110,7 @@ class ardjbot(MyFileReceivingBot):
             self.send_pending_messages()
             ardj.tracks.do_idle_tasks(self.set_busy)
         except Exception, e:
-            logging.error("ERROR in jabber idle handlers: %s\n%s" % (e, traceback.format_exc(e)))
+            ardj.log.log_error("ERROR in jabber idle handlers: %s" % e, e)
 
         try:
             ardj.database.commit()
@@ -259,9 +260,7 @@ class ardjbot(MyFileReceivingBot):
                     return
                 rep = ardj.console.process_command(msg, mess.getFrom().getStripped())
             except Exception, e:
-                output = "ERROR: %s, MESSAGE: %s\n%s" % (e, mess.getBody().encode("utf-8"), traceback.format_exc(e))
-                for line in output.rstrip().split("\n"):
-                    logging.warning(line)
+                ardj.log.log_error("ERROR: %s, MESSAGE: %s" % (e, mess.getBody().encode("utf-8")), e)
                 rep = unicode(e)
             ardj.database.commit()
             if isinstance(rep, (str, unicode)):
@@ -303,7 +302,7 @@ class ardjbot(MyFileReceivingBot):
             if commit:
                 ardj.database.commit()
         except Exception, e:
-            logging.error("Could not send pending messages: %s\n%s" % (e, traceback.format_exc(e)))
+            ardj.log.log_error("Could not send pending messages: %s" % e, e)
 
     def run(self):
         return self.serve_forever(connect_callback=self.on_connected, disconnect_callback=self.on_disconnect)

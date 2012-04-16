@@ -106,7 +106,7 @@ class NextController(Controller):
             logging.debug("Returning track info: %s" % track)
             return track
         except Exception, e:
-            logging.error("Error handling a request: %s\n%s" % (e, traceback.format_exc(e)))
+            log.log_error(str(e), e)
             return {"status": "error", "message": str(e)}
 
 
@@ -158,7 +158,7 @@ class RocksController(Controller):
         except web.Forbidden:
             raise
         except Exception, e:
-            logging.error("ERROR: %s\n%s" % (e, traceback.format_exc(e)))
+            log.log_error(str(e), e)
             return {"status": "error", "message": str(e)}
 
 
@@ -184,11 +184,14 @@ class StatusController(Controller):
 class InfoController(Controller):
     @send_json
     def GET(self):
-        track_id = web.input(id=None).id
+        args = web.input(id=None, token=None)
+        sender = auth.get_id_by_token(args.token)
+
+        track_id = args.id
         if track_id is None:
             return None
 
-        track = tracks.get_track_by_id(track_id)
+        track = tracks.get_track_by_id(track_id, sender=sender)
         if track is None:
             return None
 
@@ -302,7 +305,7 @@ def serve_http(hostname, port):
         "/track/info\.js(?:on)?", InfoController,
         "/track/next\.json", NextController,
         "/track/queue\.json", QueueController,
-        "/track/recent\.json", RecentController,
+        "/track/recent\.js(?:on)?", RecentController,
         "/track/search\.json", SearchController,
     ))
     app.add_processor(transaction_fix)

@@ -12,6 +12,8 @@ import mutagen.mp3 as mp3
 import mutagen.easyid3 as easyid3
 from mutagen.apev2 import APEv2
 
+from ardj.log import log_error
+
 easyid3.EasyID3.RegisterTXXXKey('ardj', 'ardj')
 easyid3.EasyID3.RegisterTXXXKey('ql:ardj', 'QuodLibet::ardj')
 
@@ -128,4 +130,4 @@ def set(filename, tags):
                     t[k] = v
         t.save(filename)
     except Exception, e:
-        logging.error((u'Could not save tags to %s: %s' % (filename, e) + traceback.format_exc(e)).encode("utf-8"))
+        log_error("Could not save tags to %s: %s" % (filename, e), e)
