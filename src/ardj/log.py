@@ -32,7 +32,7 @@ def get_level():
     return logging.CRITICAL
 
 
-def install_syslog():
+def install_syslog(name):
     """Makes use of the syslog."""
     logger = logging.getLogger()
     logger.setLevel(get_level())
@@ -40,7 +40,7 @@ def install_syslog():
     device = ardj.settings.getpath("log_device", "/dev/log")
     syslog = logging.handlers.SysLogHandler(address=device)
 
-    format_string = ardj.settings.get("log_format_string", "ardj[%(process)d]: %(levelname)s %(message)s")
+    format_string = ardj.settings.get("log_format_string", name + "[%(process)d]: %(levelname)s %(message)s")
     formatter = logging.Formatter(format_string)
     syslog.setFormatter(formatter)
 
@@ -62,19 +62,22 @@ def install_file(filename):
 
     h = logging.handlers.RotatingFileHandler(filename, maxBytes=max_size, backupCount=max_count)
 
-    h.setFormatter(logging.Formatter('%(asctime)s - %(process)6d - %(levelname)s - %(message)s'))
+    h.setFormatter(logging.Formatter('%%(asctime)s - %s[%%(process)6d] - %%(levelname)s - %%(message)s' % name))
     h.setLevel(logging.DEBUG)
     logger.addHandler(h)
 
 
-def install():
+def install(name=None):
     """Configures logging according to the log setting."""
     target = ardj.settings.getpath("log", "syslog")
 
+    if name is None:
+        name = "ardj"
+
     if target == "syslog":
-        return install_syslog()
+        return install_syslog(name)
     else:
-        return install_file(target)
+        return install_file(target, name)
 
 
 def log_error(msg, e):

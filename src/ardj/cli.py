@@ -443,7 +443,10 @@ def run(args):
 
     Returns 1 (i.e., an error) if the handler returned either False or None,
     otherwise returns zero (clear)."""
-    ardj.log.install()
+    if "UPSTART_JOB" in os.environ:
+        ardj.log.install(os.environ["UPSTART_JOB"])
+    else:
+        ardj.log.install("ardj-cli")
 
     if "--zsh" in args:
         arguments = []

@@ -17,6 +17,7 @@
  - Fixed last.fm schedule updates.
  - Fixed broken last.fm links.
  - Fixed exception logging.
+ - Fixed database locks by failed WebAPI handlers.
  - Added history for twitter-fetcher (contrib).
  - Added an option to disable voting (config).
  - Added automatic promotion of most active voters to admins.
@@ -37,5 +38,6 @@
  - Added a way to refresh length of certain tracks (CLI).
  - Added an API method to find tracks by tag.
  - Added current_ts to status.json (WebAPI).
+ - Added upstart job name to syslog.
  - Removed old commands: hotline, icelog, listeners, mail (CLI).
  - Changed tags order in tags/show: subtags go last.
