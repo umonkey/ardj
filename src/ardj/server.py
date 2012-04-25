@@ -275,13 +275,22 @@ class TagCloudController(Controller):
         return {"status": "ok", "tags": tags}
 
 
-def transaction_fix(handler):
-    """Завершение предыдущей транзакции перед обработкой каждого запроса, иначе
-    они все выполняются в рамках транзакции и не видят свежих данных."""
-    try:
-        return handler()
-    finally:
-        database.rollback()
+class RaiseController(Controller):
+    def GET(self):
+        raise Exception("Hello, world!")
+
+
+class ExceptionHandlingMiddleWare(object):
+    """Завершение предыдущей транзакции после обработки каждого запроса, для
+    исключения блокировки базы данных."""
+    def __init__(self, app):
+        self.app = app
+
+    def __call__(self, environ, start_response):
+        try:
+            return self.app(environ, start_response)
+        finally:
+            database.rollback()
 
 
 def serve_http(hostname, port):
@@ -302,14 +311,14 @@ def serve_http(hostname, port):
         "/api/track/rocks\.json", RocksController,
         "/api/track/sucks\.json", SucksController,
         "/commit\.json", CommitController,
+        "/raise", RaiseController,
         "/track/info\.js(?:on)?", InfoController,
         "/track/next\.json", NextController,
         "/track/queue\.json", QueueController,
         "/track/recent\.js(?:on)?", RecentController,
         "/track/search\.json", SearchController,
     ))
-    app.add_processor(transaction_fix)
-    app.run()
+    app.run(ExceptionHandlingMiddleWare)
 
 
 def run_cli(args):
