@@ -10,12 +10,11 @@ ardj = {
 		$("#searchform input:first").focus();
 
 		$("#searchform form").submit(function () {
-			$.ajax({
-				url: $(this).attr("action"),
-				dataType: "json",
-				data: $(this).serialize(),
-				success: ardj.search_complete
-			});
+			if ($("#searchform form input")[0].value) {
+				ardj.search_scope();
+			} else {
+				ardj.recent_scope();
+			}
 			return false;
 		});
 
@@ -26,6 +25,20 @@ ardj = {
 
 		$("#loginform form").submit(ardj.submit_login_form);
 
+		ardj.recent_scope();		
+	},
+
+	search_scope: function() {
+		var searchForm = $("#searchform form");
+		$.ajax({
+				url: $(searchForm).attr("action"),
+				dataType: "json",
+				data: $(searchForm).serialize(),
+				success: ardj.search_complete
+		});
+	},
+
+	recent_scope: function() {
 		$.ajax({
 			url: "/track/recent.json",
 			dataType: "json",
@@ -90,10 +103,8 @@ ardj = {
 	 * информацию о дорожках.
 	 */
 	search_complete: function (data) {
-		var html = "", tpl;
-
+		var html = "";
 		var token = ardj.get_token();
-
 		if (data.scope == "search")
 			html += "<h2>Search results:</h2>";
 		else if (data.scope == "recent")
@@ -103,23 +114,7 @@ ardj = {
 			html += "<table><tbody>";
 
 			data.tracks.forEach(function (track) {
-				track.weight = track.weight.toFixed(2);
-				tpl = "<tr track-id='{id}'>";
-				tpl += "<td class='weight'>{weight}</td>";
-				tpl += "<td class='artist'><a href='http://www.last.fm/music/{artist}'>{artist}</a></td>";
-				tpl += "<td class='title'>{title}</td>";
-				if (token) {
-					tpl += "<td class='rocks icon'><a href='/api/track/rocks.json' title='This track rocks'><span>Rocks</span></a></td>"
-					tpl += "<td class='sucks icon'><a href='/api/track/sucks.json' title='This track sucks'><span>Sucks</span></a></td>"
-					tpl += "<td class='queue icon'><a href='/track/queue.json?track={id}' title='Queue this track'><span>Queue</span></a></td>";
-				}
-				if (track.download)
-					tpl += "<td class='download icon'><a href='{download}' title='Download this track'><span>Download</span></a></td>";
-				else
-					tpl += "<td class='download icon'></td>";
-				tpl += "</tr>";
-
-				html += tpl.format(track);
+				html += ardj.render_track({'track': track, 'token': token});
 			});
 
 			html += "</tbody></table>";
@@ -128,11 +123,47 @@ ardj = {
 		}
 
 		html = $("#searchresult").html(html);
+		ardj.update_events(html);
+		$("#searchform input:first").focus();
+	},
+
+	update_events: function(html) {
 		html.find("a").attr("target", "_blank");
 		html.find(".queue a").click(ardj.queue_track);
 		html.find(".rocks a, .sucks a").click(ardj.vote);
+	},
 
-		$("#searchform input:first").focus();
+	format_length: function(length) {
+		var min = parseInt(length/60);
+		var sec = parseInt(length - min*60);
+		var minStr = min + '';
+		var secStr = sec + '';
+		while(minStr.length < 2) minStr = "0" + minStr;
+		while(secStr.length < 2) secStr = "0" + secStr;
+		return "{min}:{sec}".format({'min': minStr, 'sec': secStr});
+	},
+
+	render_track: function(data) {
+		var track = data['track'];
+		var token = data['token'];
+		var tpl = "<tr track-id='{id}'>";
+		track.weight = track.weight.toFixed(2);
+		track['length'] = ardj.format_length(track['length']);
+		tpl += "<td class='weight' title='Count: {count}'>{weight}</td>";
+		tpl += "<td class='artist'><a href='http://www.last.fm/music/{artist}'>{artist}</a></td>";
+		tpl += "<td class='title' title='Track #{id}'>{title}</td>";
+		tpl += "<td class='length'>{length}</td>";
+		if (token) {
+			tpl += "<td class='rocks icon'><a href='/api/track/rocks.json' title='This track rocks'><span>Rocks</span></a></td>"
+			tpl += "<td class='sucks icon'><a href='/api/track/sucks.json' title='This track sucks'><span>Sucks</span></a></td>"
+			tpl += "<td class='queue icon'><a href='/track/queue.json?track={id}' title='Queue this track'><span>Queue</span></a></td>";
+		}
+		if (track.download)
+			tpl += "<td class='download icon'><a href='{download}' title='Download this track'><span>Download</span></a></td>";
+		else
+			tpl += "<td class='download icon'></td>";
+		tpl += "</tr>";
+		return tpl.format(track);
 	},
 
 	queue_track: function () {
@@ -146,6 +177,24 @@ ardj = {
 		return false;
 	},
 
+	update_track: function(track_id) {
+		var token = ardj.get_token();
+		$.ajax({
+			url: '/api/track/info.json',
+			data: {'id': track_id},
+			success: function(result) {
+				if (result !== 'null') {
+					var track = jQuery.parseJSON(result);
+					var track_elem = $('tr[track-id="' + track_id + '"]');
+					var new_html = ardj.render_track({'track': track, 'token': token});
+					track_elem.replaceWith(new_html);
+					ardj.update_events(track_elem);
+				}
+			},
+			error: ardj.ajax_failure
+		});		
+	},
+
 	vote: function () {
 		var track_id = $(this).parents("tr:first").attr("track-id");
 		$.ajax({
@@ -154,7 +203,7 @@ ardj = {
 			data: {track_id: track_id, token: ardj.get_token()},
 			dataType: "json",
 			success: function (data) {
-				alert("OK");
+				ardj.update_track(track_id);
 			},
 			error: ardj.ajax_failure
 		});

@@ -72,6 +72,9 @@ div.part {
 	cursor: pointer;
 }
 
+#searchresult {
+	margin: 0 auto;
+}
 
 #searchresult h2 {
 	margin: 20px 0 10px;
@@ -95,7 +98,7 @@ div.part {
 #searchresult a:hover {
 	text-decoration: underline;
 }
-#searchresult .weight {
+#searchresult .weight, .length {
 	color: gray;
 }
 #searchresult td.icon {
@@ -112,16 +115,16 @@ div.part {
 	background-position: top left;
 }
 #searchresult .download a {
-	background-image: url(/static/download.png);
+	background-image: url('download.png');
 }
 #searchresult .queue a {
-	background-image: url(/static/queue.png);
+	background-image: url('queue.png');
 }
 #searchresult .rocks a {
-	background-image: url(/static/rocks.png);
+	background-image: url('rocks.png');
 }
 #searchresult .sucks a {
-	background-image: url(/static/sucks.png);
+	background-image: url('sucks.png');
 }
 
 
