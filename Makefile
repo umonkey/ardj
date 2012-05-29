@@ -1,6 +1,7 @@
 VERSION=1.0.12
 TAR=ardj-${VERSION}.tar.gz
 DEB=ardj_${VERSION}-1_all.deb
+PYTHON=python
 
 build:
 	@echo "This is a Python package, you don't need to build it.  Available commands:"
@@ -16,7 +17,7 @@ build:
 test-units:
 	cp -f unittests/data/src/* unittests/data/
 	rm -f tests.log tests-ardj.log
-	PYTHONPATH=src ARDJ_SETTINGS=unittests/data/settings.yaml python unittests/all.py
+	PYTHONPATH=src ARDJ_SETTINGS=unittests/data/settings.yaml $(PYTHON) unittests/all.py
 	rm -f unittests/data/*.*
 
 test-syntax:
@@ -28,7 +29,7 @@ console:
 	PYTHONPATH=src ./bin/ardj console $(MAIL)
 
 install: share/doc/man/ardj.1.gz
-	VERSION=$(VERSION) python setup.py install --root=$(DESTDIR)
+	VERSION=$(VERSION) $(PYTHON) setup.py install --root=$(DESTDIR)
 	mkdir -p $(DESTDIR)/usr/bin
 	mv $(DESTDIR)/usr/local/bin/ardj $(DESTDIR)/usr/bin/ardj
 	rm -rf build
@@ -86,15 +87,21 @@ clean:
 cleandist: clean
 	rm -f ardj-* ardj_*
 
-bdist: clean
-	VERSION=$(VERSION) python setup.py bdist
+bdist: clean share/doc/man/ardj.1.gz
+	VERSION=$(VERSION) $(PYTHON) setup.py bdist
 	mv dist/*.tar.gz $(TAR)
 	rm -rf build dist
+
+sdist: clean share/doc/man/ardj.1.gz
+	VERSION=$(VERSION) $(PYTHON) setup.py sdist
+
+egg: clean share/doc/man/ardj.1.gz
+	VERSION=$(VERSION) $(PYTHON) setup.py bdist_egg
 
 zsh-completion: share/shell-extensions/zsh/_ardj
 
 share/shell-extensions/zsh/_ardj: src/ardj/cli.py
-	PYTHONPATH=src python bin/ardj --zsh > $@
+	PYTHONPATH=src $(PYTHON) bin/ardj --zsh > $@
 
 serve:
 	PYTHONPATH=src ./bin/ardj serve

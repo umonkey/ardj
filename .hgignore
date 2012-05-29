@@ -1,4 +1,5 @@
 syntax: regexp
 ^ardj[-_]
 doc/book.xml
+share/doc/man/ardj.1.gz
 \.pyc$
