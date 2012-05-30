@@ -1,0 +1,2 @@
+include NEWS README.txt TODO setup.py
+recursive-include bin share

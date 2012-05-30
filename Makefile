@@ -1,4 +1,4 @@
-VERSION=1.0.13
+VERSION=1.0.14
 TAR=ardj-${VERSION}.tar.gz
 DEB=ardj_${VERSION}-1_all.deb
 PYTHON=python
@@ -76,7 +76,12 @@ depends-debian:
 upload-ppa:
 	dput ardj ardj_$(VERSION)-*.changes
 
-release: package-debian
+release: doc release-pypi
+
+release-pypi:
+	$(PYTHON) setup.py sdist upload
+
+release-google:
 	googlecode_upload.py -s "ardj v${VERSION} (Source)" -p ardj -l Featured,Type-Source,OpSys-All ${TAR}
 	googlecode_upload.py -s "ardj v${VERSION} (Debian)" -p ardj -l Featured,Type-Source,OpSys-Debian ${DEB}
 
