@@ -43,14 +43,3 @@ CREATE TABLE IF NOT EXISTS download_queue (artist TEXT PRIMARY KEY, owner TEXT);
 
 -- токены аутентификации
 CREATE TABLE IF NOT EXISTS tokens (token TEXT PRIMARY KEY NOT NULL, login TEXT NOT NULL, login_type TEXT NOT NULL, active INTEGER NOT NULL DEFAULT 0);
-
--- View для подсчёта веса дорожек на основании кармы.
--- weight = max(0.1, 1 + sum(vote * weight))
-CREATE VIEW IF NOT EXISTS track_weights AS
-SELECT     v.track_id AS track_id,
-           COUNT(*) AS count,
-           MAX(0.1, 1 + SUM(v.vote * k.weight)) AS weight
-FROM       votes v
-INNER JOIN karma k
-           ON k.email = v.email
-GROUP BY   v.track_id;
