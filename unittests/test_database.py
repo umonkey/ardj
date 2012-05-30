@@ -1,5 +1,5 @@
 import os
-import unittest2 as unittest
+import unittest
 
 import ardj.database as db
 import ardj.tracks

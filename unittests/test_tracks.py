@@ -1,5 +1,5 @@
 import logging
-import unittest2 as unittest
+import unittest
 
 from ardj import database
 from ardj import tracks
