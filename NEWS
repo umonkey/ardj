@@ -1,3 +1,7 @@
+1.0.13
+
+ - Added to the PYPI repository.
+
 1.0.12
 
  - Fixed connection spinning in contrib/hotline.
@@ -39,6 +43,5 @@
  - Added an API method to find tracks by tag.
  - Added current_ts to status.json (WebAPI).
  - Added upstart job name to syslog.
- - Added to the PYPI repository.
  - Removed old commands: hotline, icelog, listeners, mail (CLI).
  - Changed tags order in tags/show: subtags go last.

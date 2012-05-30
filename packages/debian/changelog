@@ -1,3 +1,9 @@
+ardj (1.0.13) natty; urgency=low
+
+ * Added to PYPI.
+
+ -- Justin Forest <hex@umonkey.net>  Wed, 30 May 2012 18:27:00 +0400
+
 ardj (1.0.12-1) natty; urgency=low
 
  * Added support for sysvinit.
