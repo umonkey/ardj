@@ -47,7 +47,7 @@ def install_syslog(name):
     logger.addHandler(syslog)
 
 
-def install_file(filename):
+def install_file(filename, name):
     """Adds a custom formatter and a rotating file handler to the default
     logger."""
     folder = os.path.dirname(filename) or "."

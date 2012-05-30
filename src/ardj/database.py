@@ -280,6 +280,7 @@ def get_init_statements(dbtype):
     for path in paths:
         filename = os.path.join(path, dbtype + ".sql")
         if os.path.exists(filename):
+            logging.info("Initializing the database with %s" % filename)
             lines = file(filename, "rb").read().decode("utf-8").strip().split("\n")
             return [line for line in lines if line.strip() and not line.startswith("--")]
     return []
@@ -520,7 +521,11 @@ def init_sqlite(statements):
     db = Open()
     cur = db.cursor()
     for statement in statements:
-        cur.execute(statement)
+        try:
+            cur.execute(statement)
+        except:
+            logging.error("Init statement failed: %s" % statement)
+            raise
     db.commit()
 
 

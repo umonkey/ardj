@@ -88,7 +88,6 @@ def cmd_dump_votes(prefix=None, *args):
     dump_votes(hourly, "H")
 
 
-
 def cmd_find_new_tracks(*args):
     """adds new songs from Last.fm
 
