@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- vim: set ft=docbk: -->
+<chapter id="install">
+  <title>Установка</title>
+
+  <para>Предпочтительный способ установки ardj — через Python Package Index, с помощью утилиты <ulink
+  url="http://pip.openplans.org/"><command>pip</command></ulink>.  В большинстве современных UNIX-систем это делается
+  одной командой:</para>
+
+  <programlisting>sudo pip install ardj</programlisting>
+
+  <para>Если в вашей системе не установлена утилита <command>pip</command> — установите её.</para>
+
+  <para>Удаление ardj:</para>
+
+  <programlisting>sudo pip uninstall ardj</programlisting>
+
+  <para>Обновление до последней версии:</para>
+
+  <programlisting>sudo pip install --upgrade ardj</programlisting>
+</chapter>

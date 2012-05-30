@@ -1,4 +1,4 @@
-VERSION=1.0.16
+VERSION=1.0.17
 PYTHON=python
 
 help:
@@ -29,9 +29,11 @@ test-units:
 test-syntax:
 	pep8 -r --ignore=E501 --exclude=twitter.py,socks.py,jabberbot.py src/ardj/*.py unittests/*.py
 
-install: build
-	$(PYTHON) setup.py sdist
+install: sdist
 	sudo pip install dist/ardj-$(VERSION).tar.gz --upgrade
+
+sdist: build
+	$(PYTHON) setup.py sdist
 
 uninstall:
 	sudo pip uninstall ardj
@@ -42,15 +44,14 @@ install-hg-hooks:
 
 release: build release-pypi
 
-release-pypi:
-	$(PYTHON) setup.py sdist upload
+release-pypi: sdist
+	$(PYTHON) setup.py upload
 
-release-google: build
-	$(PYTHON) setup.py sdist
+release-google: sdist
 	googlecode_upload.py -s "ardj v${VERSION} (Source)" -p ardj -l Featured,Type-Source,OpSys-All dist/ardj-$(VERSION).tar.gz
 
 clean:
-	rm -rf doc/book.xml share/doc/man/ardj.1.gz tests.log tmp
+	rm -rf src/docbook/book.xml setup.py MANIFEST share/doc/man/ardj.1.gz tests.log tmp
 	find -regex '.*\.\(pyc\|rej\|orig\|zip\)$$' -delete
 	rm -f ardj-* ardj_*
 
@@ -75,14 +76,17 @@ share/doc/man/ardj.1.gz: share/doc/man/ardj.1
 
 man: share/doc/man/ardj.1.gz
 
-doc:
-	$(MAKE) -C doc VERSION=$(VERSION)
+doc: share/doc/html/index.html share/doc/html/single.html
 
-commit-doc: doc
-	rm doc/book.xml
-	hg add src/docbook
-	hg commit src/docbook doc -l src/docbook/commit.txt
-	hg push
+share/doc/html/index.html: src/docbook/book.xml
+	rm -f share/doc/html/*.html
+	xsltproc --param use.id.as.filename 1 --param chunker.output.encoding UTF-8 --stringparam html.stylesheet screen.css -o share/doc/html/ /usr/share/xml/docbook/stylesheet/docbook-xsl/html/chunk.xsl $<
+
+share/doc/html/single.html: src/docbook/book.xml
+	xsltproc --stringparam html.stylesheet screen.css -o $@ src/docbook/single-settings.xsl $<
+
+src/docbook/book.xml: src/docbook/book.xml.in src/docbook/*.xml Makefile
+	sed -e "s/@@VERSION@@/$(VERSION)/g" < $< | sed -e "s/@@DATE@@/`date +'%Y-%m-%d'`/g" > $@
 
 pre-commit: zsh-completion
 

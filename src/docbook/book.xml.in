@@ -1,19 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "/usr/share/xml/docbook/schema/dtd/4.4/docbookx.dtd" [
-  <!ENTITY admins SYSTEM "../src/docbook/admins.xml">
-  <!ENTITY ezstream_sox SYSTEM "../src/docbook/ezstream_sox.xml">
-  <!ENTITY install_debian SYSTEM "../src/docbook/install_debian.xml">
-  <!ENTITY install_prereq SYSTEM "../src/docbook/install_prereq.xml">
-  <!ENTITY install_ubuntu SYSTEM "../src/docbook/install_ubuntu.xml">
-  <!ENTITY jabber_download SYSTEM "../src/docbook/jabber_download.xml">
-  <!ENTITY jabber_play SYSTEM "../src/docbook/jabber_play.xml">
-  <!ENTITY jabber_restart SYSTEM "../src/docbook/jabber_restart.xml">
-  <!ENTITY jabber_tags SYSTEM "../src/docbook/jabber_tags.xml">
-  <!ENTITY preroll_labels SYSTEM "../src/docbook/preroll_labels.xml">
-  <!ENTITY preroll_playlist SYSTEM "../src/docbook/preroll_playlist.xml">
-  <!ENTITY speech SYSTEM "../src/docbook/speech.xml">
-  <!ENTITY upload_sftp SYSTEM "../src/docbook/upload_sftp.xml">
-  <!ENTITY webapi SYSTEM "../src/docbook/webapi.xml">
+  <!ENTITY admins SYSTEM "admins.xml">
+  <!ENTITY ezstream_sox SYSTEM "ezstream_sox.xml">
+  <!ENTITY install SYSTEM "install.xml">
+  <!ENTITY jabber_download SYSTEM "jabber_download.xml">
+  <!ENTITY jabber_play SYSTEM "jabber_play.xml">
+  <!ENTITY jabber_restart SYSTEM "jabber_restart.xml">
+  <!ENTITY jabber_tags SYSTEM "jabber_tags.xml">
+  <!ENTITY preroll_labels SYSTEM "preroll_labels.xml">
+  <!ENTITY preroll_playlist SYSTEM "preroll_playlist.xml">
+  <!ENTITY speech SYSTEM "speech.xml">
+  <!ENTITY upload_sftp SYSTEM "upload_sftp.xml">
+  <!ENTITY webapi SYSTEM "webapi.xml">
 ]>
 <book lang="ru">
   <bookinfo>
@@ -24,8 +22,8 @@
         <surname>Forest</surname>
       </author>
     </authorgroup>
-    <date>2011-10-25</date>
-    <releaseinfo>VERSION_NUMBER</releaseinfo>
+    <date>@@DATE@@</date>
+    <releaseinfo>@@VERSION@@</releaseinfo>
     <abstract>
       <para>Программный комплекс <application>ardj</application> предназначен для создания полностью автоматизированной
       интернет-радиостанции, управляемой пользователями, с минимальным адмнистрированием или вообще без него.</para>
@@ -37,6 +35,10 @@
 
       <para>Это руководство содержит всю информацию, необходимую для работы запуска радиостанции, основанной на ardj, и
       работы с ней.</para>
+
+      <para>Если при чтении этой документации у вас возникают вопросы, на которые она не отвечает, хотя должна, или если
+      что-то не работает — обращайтесь в баг-трекер по адресу <ulink
+      url="http://code.google.com/p/ardj/issues/list">ardj.googlecode.com</ulink>, все запросы обрабатываются.</para>
     </abstract>
   </bookinfo>
 
@@ -85,16 +87,7 @@
     </section>
   </chapter>
 
-  <chapter id="installing">
-    <title>Установка</title>
-
-    <para>В этом разделе описана установка и запуск радиостанции в типичной конфигурации.  Настройка дополнительных
-    функций описана в следующем разделе.</para>
-
-    &install_prereq;
-    &install_ubuntu;
-    &install_debian;
-  </chapter>
+  &install;
 
   <chapter id="settings">
     <title>Настройка</title>
@@ -115,12 +108,11 @@
       <programlisting>sudo apt-get install python-yaml python-mutagen \
   python-oauth python-feedparser python-httplib2
   python-webpy python-dnspython python-socksipy \
-  ices icecast2 python-simplejson</programlisting>
+  ices icecast2 python-simplejson python-pip</programlisting>
 
       <para>Затем нужно скачать и установить пакет ardj:</para>
 
-      <programlisting>wget http://ardj.googlecode.com/files/ardj-1.0-2011.08.12.0215.deb
-sudo dpkg -i ardj-1.0-2011.08.12.0215.deb</programlisting>
+      <programlisting>sudo pip install ardj</programlisting>
 
       <para>Теперь нужно скопировать из примеров конфигурационные файлы для ices0 и icecast2:</para>
 
@@ -342,7 +334,7 @@ sudo start ardj-ices</programlisting>
         <varlistentry>
           <term><option>sticky_labels</option></term>
           <listitem>
-            <para>Список меток, которые должны «прилипать» к плейлисту при обнаружении.  Если из плейлиста выбрана
+            <para>Список меток, которые должны «прилипать» к плейлисту при обнаружении.  Если из плейлиста выбрана
             композиция с однои из этих меток, она будет добавлена к значению свойства <option>labels</option> плейлиста
             в качестве обязательной и пробудет там до смены плейлиста.</para>
 
@@ -384,8 +376,8 @@ sticky_labels: [rock, jazz, 8bit]</programlisting>
         <varlistentry>
           <term><option>strategy</option></term>
           <listitem>
-            <para>Определяет алгоритм выбора случайной композиции.  Значение «fresh» включает алгоритм, не учитывающий
-            голоса слушателей: он выбирает случайную из пяти композиций с наименьшим количеством проигрываний.  Алгоритм
+            <para>Определяет алгоритм выбора случайной композиции.  Значение «fresh» включает алгоритм, не учитывающий
+            голоса слушателей: он выбирает случайную из пяти композиций с наименьшим количеством проигрываний.  Алгоритм
             «oldest» всегда выбирает композицию, не звучавшую дольше всего (сортирует по дате последнего
             проигрывания).</para>
           </listitem>
@@ -439,8 +431,8 @@ sticky_labels: [rock, jazz, 8bit]</programlisting>
       была выбрана в соответствие с его настройками.  Подмотка используется для акцентирования внимания на конкретных
       композициях (например, если у исполнителя скоро концерт).</para>
 
-      <para>Есть два способа настройки подмотки.  Они сводятся к определению меток, по которым выбирается случайный
-      файл, который и является подмоткой (подробности описаны в подразделах).  Оба метода используются всегда: сначала
+      <para>Есть два способа настройки подмотки.  Они сводятся к определению меток, по которым выбирается случайный
+      файл, который и является подмоткой (подробности описаны в подразделах).  Оба метода используются всегда: сначала
       собираются метки для плейлиста, затем
       - метки для текущей композиции, по ним выбирается случайная композиция, которая и является подмоткой.</para>
 
@@ -781,7 +773,7 @@ sticky_labels: [rock, jazz, 8bit]</programlisting>
       <varlistentry id="jabber-admins">
         <term><command>admins</command></term>
         <listitem>
-          <para>Выводит список администраторов.  Учитываются администраторы, указанные в конфигурационном файле, и
+          <para>Выводит список администраторов.  Учитываются администраторы, указанные в конфигурационном файле, и
           пользователи, наиболее активно голосовавшие (если эта функция включена).</para>
         </listitem>
       </varlistentry>
