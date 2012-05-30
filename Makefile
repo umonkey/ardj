@@ -1,4 +1,4 @@
-VERSION=1.0.15
+VERSION=1.0.16
 TAR=ardj-${VERSION}.tar.gz
 DEB=ardj_${VERSION}-1_all.deb
 PYTHON=python
@@ -76,7 +76,7 @@ depends-debian:
 upload-ppa:
 	dput ardj ardj_$(VERSION)-*.changes
 
-release: doc release-pypi
+release: doc man release-pypi
 
 release-pypi:
 	$(PYTHON) setup.py sdist upload
@@ -119,7 +119,7 @@ share/doc/man/ardj.1: src/docbook/man.xml
 share/doc/man/ardj.1.gz: share/doc/man/ardj.1
 	gzip -f9 < share/doc/man/ardj.1 > share/doc/man/ardj.1.gz
 
-man: share/doc/man/ardj.1
+man: share/doc/man/ardj.1.gz
 
 doc:
 	$(MAKE) -C doc VERSION=$(VERSION)
