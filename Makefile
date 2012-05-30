@@ -1,18 +1,24 @@
 VERSION=1.0.16
-TAR=ardj-${VERSION}.tar.gz
-DEB=ardj_${VERSION}-1_all.deb
 PYTHON=python
 
-build:
-	@echo "This is a Python package, you don't need to build it.  Available commands:"
+help:
+	@echo "make build                     -- prepare generated files"
 	@echo "make clean                     -- removes temporary files"
 	@echo "make doc                       -- build the docbook"
-	@echo "make install                   -- install using setup.py"
-	@echo "make install [DESTDIR=./tmp]   -- install ardj"
-	@echo "make install-hooks             -- prepare the development environment"
+	@echo "make install                   -- install ardj using pip"
+	@echo "make install-hg-hooks          -- prepare the development environment"
 	@echo "make package-ubuntu            -- create source and binary packages"
+	@echo "make release                   -- upload a new version to PYPI"
 	@echo "make test                      -- runs unit tests"
 	@echo "make test-syntax               -- runs PEP8 check"
+	@echo "make uninstall                 -- uninstall ardj using pip"
+
+build: test doc man setup.py
+
+setup.py: setup.py.in Makefile
+	sed -e "s/@@VERSION@@/$(VERSION)/g" < $< > $@
+
+test: test-syntax test-units
 
 test-units:
 	cp -f unittests/data/src/* unittests/data/
@@ -23,85 +29,33 @@ test-units:
 test-syntax:
 	pep8 -r --ignore=E501 --exclude=twitter.py,socks.py,jabberbot.py src/ardj/*.py unittests/*.py
 
-test: test-syntax test-units clean
+install: build
+	$(PYTHON) setup.py sdist
+	sudo pip install dist/ardj-$(VERSION).tar.gz --upgrade
 
-console:
-	PYTHONPATH=src ./bin/ardj console $(MAIL)
+uninstall:
+	sudo pip uninstall ardj
 
-install: share/doc/man/ardj.1.gz
-	VERSION=$(VERSION) $(PYTHON) setup.py install --root=$(DESTDIR)
-	mkdir -p $(DESTDIR)/usr/bin
-	mv $(DESTDIR)/usr/local/bin/ardj $(DESTDIR)/usr/bin/ardj
-	rm -rf build
-
-install-hooks:
+install-hg-hooks:
 	fgrep -q '[hooks]' .hg/hgrc || echo "\n[hooks]" >> .hg/hgrc
 	fgrep -q 'pretxncommit' .hg/hgrc || echo "pretxncommit = python:src/hooks/hooks.py:check_commit_message" >> .hg/hgrc
 
-uninstall:
-	cat install.log | xargs sudo rm -f
-
-purge:
-	sudo rm -rf /var/lib/ardj /var/log/ardj*
-
-tar: clean
-	rm -rf ardj-$(VERSION)
-	mkdir ardj-$(VERSION)
-	cp -R bin doc share src unittests packages/debian Makefile README.md TODO setup.py ardj-$(VERSION)/
-	tar cfz $(TAR) ardj-$(VERSION)
-	rm -rf ardj-$(VERSION)
-
-package-debian: tar
-	rm -rf tmp; mkdir -p tmp
-	cp $(TAR) tmp/ardj-$(VERSION).tar.gz
-	cp $(TAR) tmp/ardj_$(VERSION).orig.tar.gz
-	cp $(TAR) ardj_$(VERSION).orig.tar.gz
-	tar xfz ardj-$(VERSION).tar.gz --directory tmp
-	cd tmp/ardj-$(VERSION) && debuild -S
-	mv tmp/ardj_$(VERSION)[_-]* ./
-	rm -rf tmp
-
-deb: tar
-	rm -rf tmp; mkdir -p tmp
-	cp $(TAR) tmp/ardj-$(VERSION).tar.gz
-	cp $(TAR) tmp/ardj_$(VERSION).orig.tar.gz
-	tar xfz ardj-$(VERSION).tar.gz --directory tmp
-	cd tmp/ardj-$(VERSION) && debuild
-	mv tmp/ardj_$(VERSION)[_-]* ./
-	rm -rf tmp
-
-depends-debian:
-	sudo apt-get install devscripts
-
-upload-ppa:
-	dput ardj ardj_$(VERSION)-*.changes
-
-release: doc man release-pypi
+release: build release-pypi
 
 release-pypi:
 	$(PYTHON) setup.py sdist upload
 
-release-google:
-	googlecode_upload.py -s "ardj v${VERSION} (Source)" -p ardj -l Featured,Type-Source,OpSys-All ${TAR}
-	googlecode_upload.py -s "ardj v${VERSION} (Debian)" -p ardj -l Featured,Type-Source,OpSys-Debian ${DEB}
+release-google: build
+	$(PYTHON) setup.py sdist
+	googlecode_upload.py -s "ardj v${VERSION} (Source)" -p ardj -l Featured,Type-Source,OpSys-All dist/ardj-$(VERSION).tar.gz
 
 clean:
 	rm -rf doc/book.xml share/doc/man/ardj.1.gz tests.log tmp
 	find -regex '.*\.\(pyc\|rej\|orig\|zip\)$$' -delete
-
-cleandist: clean
 	rm -f ardj-* ardj_*
 
-bdist: clean share/doc/man/ardj.1.gz
-	VERSION=$(VERSION) $(PYTHON) setup.py bdist
-	mv dist/*.tar.gz $(TAR)
-	rm -rf build dist
-
-sdist: clean share/doc/man/ardj.1.gz
-	VERSION=$(VERSION) $(PYTHON) setup.py sdist
-
-egg: clean share/doc/man/ardj.1.gz
-	VERSION=$(VERSION) $(PYTHON) setup.py bdist_egg
+egg: build
+	$(PYTHON) setup.py bdist_egg
 
 zsh-completion: share/shell-extensions/zsh/_ardj
 
@@ -132,4 +86,4 @@ commit-doc: doc
 
 pre-commit: zsh-completion
 
-.PHONY: doc clean tar
+.PHONY: doc clean

@@ -1,8 +1,9 @@
-1.0.16
+1.0.17
 
 - Added missing man page
 - Added MANIFEST.in to setup.py
 - Added to the PYPI repository.
+- Removed useless parts of Makefile.
 
 
 1.0.12
