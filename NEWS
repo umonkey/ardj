@@ -1,5 +1,6 @@
 1.0.17
 
+- Fixed logging in ardj-ices.
 - Added missing man page
 - Added MANIFEST.in to setup.py
 - Added to the PYPI repository.

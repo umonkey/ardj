@@ -22,8 +22,8 @@ def ices_init():
     Function called to initialize your python environment.
     Should return 1 if ok, and 0 if something went wrong.
     """
-    ardj.log.install()
-    logging.info('ices/ardj: initializing.')
+    ardj.log.install("ardj-ices")
+    logging.info('Initializing.')
     return 1
 
 
@@ -32,7 +32,7 @@ def ices_shutdown():
     Function called to shutdown your python enviroment.
     Return 1 if ok, 0 if something went wrong.
     """
-    logging.info('ices/ardj: shutting down.')
+    logging.info('Shutting down.')
     return 1
 
 
