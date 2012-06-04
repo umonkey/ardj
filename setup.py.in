@@ -2,6 +2,7 @@
 # vim: set fileencoding=utf-8:
 
 from distutils.core import setup
+from distutils.command.install_data import install_data
 from glob import glob
 import os
 import sys
@@ -38,6 +39,22 @@ classifiers = [
     'Topic :: Internet',
     ]
 
+
+class my_install_data(install_data):
+    volatile = ("/etc/ardj.yaml", "/etc/ezstream.xml")
+
+    def copy_file(self, src, dst):
+        """Copies file src to directory dst, returns the resulting path and an
+        unknown integer.  This extension prevents overwriting existing files in
+        some folders."""
+        target = os.path.join(dst, os.path.basename(src))
+        if dst in self.volatile and os.path.exists(target):
+            res = target, 0
+        else:
+            res = install_data.copy_file(self, src, dst)
+        return res
+
+
 setup(
     author = 'Justin Forest',
     author_email = 'hex@umonkey.net',
@@ -51,6 +68,7 @@ setup(
     packages = [ 'ardj', 'ardj.xmpp' ],
     requires = [ 'yaml', 'mutagen', 'dns', 'socksipy', 'simplejson', 'oauth2' ],
     scripts = [ 'bin/ardj' ],
+    cmdclass = { 'install_data': my_install_data },
     url = 'http://ardj.googlecode.com/',
     version = '@@VERSION@@'
 )
