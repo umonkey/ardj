@@ -1,3 +1,10 @@
+1.0.18
+
+- Added post-install tasks to setup.py
+- Added built-in playlists that work out-of-the-box
+- Added support for setup.py --prefix
+
+
 1.0.17
 
 - Fixed logging in ardj-ices.

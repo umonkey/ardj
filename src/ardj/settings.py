@@ -14,6 +14,16 @@ CONFIG_FILES = ('~/.config/ardj/default.yaml', '/etc/ardj.yaml',
     '/usr/local/share/doc/ardj/examples/ardj.yaml')
 
 
+DEFAULT_PLAYLISTS = [{
+    "name": "jingles",
+    "labels": ["jingle"],
+    "delay": 15,
+}, {
+    "name": "music",
+    "labels": ["music"],
+}]
+
+
 class wrapper:
     """Wraps a dictionary for easier access."""
     def __init__(self, data, filename):
@@ -72,7 +82,8 @@ class wrapper:
     def get_playlists(self):
         filename = os.path.join(self.get_music_dir(), 'playlists.yaml')
         if not os.path.exists(filename):
-            return []
+            return DEFAULT_PLAYLISTS
+
         stat = os.stat(filename)
         if self.playlists_mtime is None or self.playlists_mtime < stat.st_mtime:
             logging.debug("Reloading playlists.")

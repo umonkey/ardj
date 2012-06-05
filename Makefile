@@ -17,6 +17,7 @@ build: test doc man setup.py
 
 setup.py: setup.py.in Makefile
 	sed -e "s/@@VERSION@@/$(VERSION)/g" < $< > $@
+	chmod a+x setup.py
 
 test: test-syntax test-units
 
@@ -30,7 +31,7 @@ test-syntax:
 	pep8 -r --ignore=E501 --exclude=twitter.py,socks.py,jabberbot.py src/ardj/*.py unittests/*.py
 
 install: sdist
-	sudo pip install dist/ardj-$(VERSION).tar.gz --upgrade
+	sudo pip install --upgrade dist/ardj-$(VERSION).tar.gz
 
 sdist: build
 	$(PYTHON) setup.py sdist
