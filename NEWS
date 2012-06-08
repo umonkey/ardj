@@ -1,5 +1,6 @@
 1.0.18
 
+- Fixed the jabber bot crashing when no chat room jid is set.
 - Added post-install tasks to setup.py
 - Added built-in playlists that work out-of-the-box
 - Added support for setup.py --prefix

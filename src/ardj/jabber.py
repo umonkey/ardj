@@ -221,7 +221,7 @@ class ardjbot(MyFileReceivingBot):
     def callback_presence(self, conn, presence):
         """Tracks chat room users."""
         jid = unicode(presence.getFrom())
-        chat_jid = self.get_chat_room_jid().split("/")[0]
+        chat_jid = (self.get_chat_room_jid() or "").split("/")[0]
         if chat_jid == jid.split("/")[0]:
             type_ = presence.getType()
             if type_ == "unavailable" and jid in self.chat_users:
