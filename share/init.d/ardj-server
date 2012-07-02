@@ -17,7 +17,7 @@ SCRIPTNAME=/etc/init.d/ardj-server
 
 # Support local installation using pip.
 for tmp in /usr/locla/bin/ardj /usr/bin/ardj; do
-    if -x $tmp; then
+    if [ -x $tmp ]; then
         DAEMON=$tmp
         break
     fi
