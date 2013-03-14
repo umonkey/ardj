@@ -1,0 +1,146 @@
+Описание процесса настройки радиостанции
+========================================
+
+Для работы радиостанции рекомендуется использовать OS Ubuntu или другую
+систему, в которой есть upstart или launchd — средство запуска и поддержания в
+рабочем состоянии служб.  В этом руководстве описаны действия для upstart; в
+системах, где используются другие менеджеры служб, их конфигурационные файлы
+будут отличаться, администратору придётся настраивать их самостоятельно.
+
+
+Создание пользователя
+---------------------
+
+Все скрипты радиостанции должны запускаться от имени отдельного пользователя,
+ограниченного в правах.  Создайте пользователя radio с домашней папкой
+/home/radio, без пароля, с доступом по SSH с аутентификацией по ключам.
+
+
+Установка ardj
+--------------
+
+В папку ~radio/ardj положите исходный код ardj, например, так:
+
+	$ cd ~radio/
+	$ hg clone http://code.umonkey.net/ardj/
+
+Установите дополнительные пакеты:
+
+	$ sudo apt-get install python-yaml python-webpy python-mutagen \
+		python-feedparser
+
+Создайте нужные папки:
+
+	$ mkdir -p ~radio/{music,music/incoming,logs}
+
+Установите конфигурационный файл из примеров и отредактируйте его:
+
+	$ mkdir -p ~radio/.config/ardj
+	$ cp ~radio/ardj/share/doc/examples/ardj.yaml ~radio/.config/ardj/default.yaml
+	$ editor ~radio/.config/ardj/default.yaml
+
+Все пути по умолчанию должны подходить.  Укажите параметры подключения к
+jabber, пароль для icecast2 (чтобы робот мог показывать количество слушателей,
+см. параметр icecast_stats_url), twitter.
+
+Инициализируйте базу данных:
+
+	$ ~radio/ardj/bin/ardj db-init
+
+Должен появиться файл ~radio/music/database.sqlite; загрузите в базу
+музыкальные файлы из примеров:
+
+	$ cp ~radio/ardj/share/audio/* ~radio/music/incoming/
+	$ ~radio/ardj/bin/ardj add-incoming-tracks
+
+Убедитесь, что всё получилось, запросив у робота файл для проигрывания:
+
+	$ ~/radio/ardj/bin/ardj print-next-track
+
+Добавьте службы ardj-server и ardj-jabber:
+
+	$ sudo cp ~radio/ardj/share/upstart/ardj-{server,jabber}.conf /etc/init/
+	$ sudo initctl reload-configuration
+
+Разрешите пользователям группы radio управлять этими службами, добавив в
+/etc/sudoers запись:
+
+	%radio ALL=(ALL) NOPASSWD: /usr/sbin/service ardj-server *, \
+		/usr/sbin/service ardj-jabber *
+
+
+Настройка icecast2
+------------------
+
+Icecast2 — это сервер вещания, мультиплексор.  Он принимает MP3 поток от ardj
+и раздаёт его всем желающим слушателям.  Он есть в репозитории пакетов
+большинства операционных систем.
+
+Установите icecast2 и настройте его, отредактировав файл
+/etc/icecast2/icecast.xml.  В частности, установите новый пароль (обычно по
+умолчанию используется "hackme" — сделайте массовую замену на что-нибудь,
+известное только вам).  Может также понадобиться редактирование файла
+/etc/default/icecast2 с заменой строки "ENABLE=false" на "ENABLE=true".
+
+После этого запустите icecast2:
+
+	$ sudo service icecast2 start
+
+Сервер должен запуститься.  Проверьте это:
+
+	$ ps xU icecast
+
+Теперь дайте пользователю radio доступ к конфигурационному файлу, чтобы
+администратор радио мог работать без участия администратора сервера.  Для
+этого надо добавить пользователя radio в группу icecast.
+
+Чтобы пользователи этой группы могли беспрепятственно перезапускать или
+поднимать по какой-либо причине упавший сервер, дайте им такую возможность,
+добавив запись в файл /etc/sudoers:
+
+	%icecast ALL=(ALL) NOPASSWD: /usr/sbin/service icecast2 *
+
+
+Настройка ezstream
+------------------
+
+Ezstream — программа, которая получает от ardj плейлист, читает указанные в
+нём файлы, создаёт MP3 поток и отправляет его в icecast2, для передачи всем
+слушателям.  Установите его и кодеки:
+
+	 $ sudo apt-get install ezstream sox mpg123 vorbis-tools lame
+
+Ezstream не имеет собственных конфигурационных файлов.  Нужно создать новый, с
+нуля.  Скопируйте файл ~/ardj/share/ezstream.xml в домашнюю папку пользователя
+radio и отредактируйте.  В частности, замените "hackme" на пароль для
+icecast2, и скорректируйте информацию о радиостанции — название, битрейт.
+
+Для автоматического запуска ezstream нужно установить скрипт для upstart.
+
+	$ sudo cp ~radio/ardj/share/upstart/ardj-ezstream.conf /etc/init/
+	$ sudo initctl reload-configuration
+
+Чтобы пользователи из группы radio могли при необходимости перезапускать
+ezstream, разрешите им делать это без пароля, добавив в /etc/sudoers (командой
+visudo) запись:
+
+	%radio ALL=(ALL) NOPASSWD: /usr/sbin/service ardj-server *, \
+		/usr/sbin/service ardj-jabber *, \
+		/usr/sbin/service ardj-ezstream *
+
+Ezstream готов к работе, можно его запустить.
+
+	$ sudo service ardj-ezstream start
+
+Вещание должно идти.  Попробуйте подключиться к потоку:
+
+	$ mplayer http://localhost:8000/music.mp3
+
+
+Обновление ПО
+-------------
+
+Обновление ardj выполняется с помощью mercurial:
+
+	$ cd ~radio/ardj
+	$ hg pull -u
