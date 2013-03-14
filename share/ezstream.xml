@@ -3,9 +3,9 @@
     <sourcepassword>hackme</sourcepassword>
     <format>MP3</format>
     <playlist_program>1</playlist_program>
-    <filename>/home/radio/bin/ardj-next-track</filename>
+    <filename>/home/radio/ardj/bin/ardj-next-track</filename>
 
-    <metadata_progname>/home/radio/bin/ezstream-meta</metadata_progname>
+    <metadata_progname>/home/radio/ardj/bin/ezstream-meta</metadata_progname>
     <metadata_format>"@t@" by @a@</metadata_format>
 
     <svrinfoname>My Stream</svrinfoname>
