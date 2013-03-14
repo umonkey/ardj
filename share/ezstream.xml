@@ -1,11 +1,11 @@
 <ezstream>
-    <url>http://localhost:8000/stream</url>
+    <url>http://localhost:8000/music.mp3</url>
     <sourcepassword>hackme</sourcepassword>
     <format>MP3</format>
     <playlist_program>1</playlist_program>
-    <filename>/usr/lib/ardj/ardj-next-track</filename>
+    <filename>/home/radio/bin/ardj-next-track</filename>
 
-    <metadata_progname>/usr/lib/ardj/ezstream-meta</metadata_progname>
+    <metadata_progname>/home/radio/bin/ezstream-meta</metadata_progname>
     <metadata_format>"@t@" by @a@</metadata_format>
 
     <svrinfoname>My Stream</svrinfoname>
@@ -24,17 +24,17 @@
             <match>.flac</match>
             <decode>flac -s -d --force-raw-format --sign=signed --endian=little -o - "@T@"</decode>
         </encdec>
-        <encdec>
-            <format>MP3</format>
-            <match>.mp3</match>
-            <decode>madplay -G -b 16 -R 44100 -S -o raw:- "@T@"</decode>
-            <encode>lame --preset cbr 128 -r -s 44.1 --bitwidth 16 - -</encode>
-        </encdec>
-        <encdec>
-            <format>VORBIS</format>
-            <match>.ogg</match>
-            <decode>oggdec -R -b 16 -e 0 -s 1 -o - "@T@"</decode>
-            <encode>oggenc -r -B 16 -C 2 -R 44100 --raw-endianness 0 -q 1.5 -t "@M@" -</encode>
-        </encdec>
+		<encdec>
+			<format>MP3</format>
+			<match>.mp3</match>
+			<decode>mpg123 --rva-radio --stereo --rate 44100 --stdout "@T@"</decode>
+			<encode>lame --preset cbr 128 -r -s 44.1 --bitwidth 16 - -</encode>
+		</encdec>
+		<encdec>
+			<format>VORBIS</format>
+			<match>.ogg</match>
+			<decode>sox --replay-gain track "@T@" -r 44100 -c 2 -t raw -e signed-integer -</decode>
+			<encode>oggenc -r -B 16 -C 2 -R 44100 --raw-endianness 0 -q 1.5 -t "@M@" -</encode>
+		</encdec>
     </reencode>
 </ezstream>
