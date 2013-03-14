@@ -396,11 +396,6 @@ def _send_skip(confkey, default, sig):
         raise Exception("Could not send a skip request.  Details can be found in the log file.")
 
 
-def skip_ices():
-    """Sends a signal to ices0."""
-    return _send_skip("ices_pid_file", "/var/run/ardj-ices.pid", signal.SIGUSR1)
-
-
 def skip_ezstream():
     """Sends a signal to ezstream."""
     return _send_skip("ezstream_pid_file", "/var/run/ezstream-ardj.pid", signal.SIGUSR1)
@@ -408,6 +403,5 @@ def skip_ezstream():
 
 def skip_current_track():
     """Sends a skip request to the appropriate source client."""
-    for fn in skip_ices, skip_ezstream:
-        if fn():
-            return True
+    if skip_ezstream():
+        return True

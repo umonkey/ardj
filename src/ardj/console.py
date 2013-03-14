@@ -57,33 +57,6 @@ def sorted_tags(tags):
     return sorted(tags, key=lambda l: (":" in l, l.lower()))
 
 
-def get_ices_pid():
-    pidfile = ardj.settings.get('ices_pid_file')
-    if not pidfile:
-        return None
-
-    if not os.path.exists(pidfile):
-        logging.warning('%s does not exist.' % pidfile)
-        return None
-
-    return int(file(pidfile, 'rb').read().strip())
-
-
-def signal_ices(sig):
-    ices_pid = get_ices_pid()
-    try:
-        if ices_pid:
-            os.kill(ices_pid, sig)
-            logging.debug('sent signal %s to process %s.' % (sig, ices_pid))
-        else:
-            ardj.util.run(['pkill', '-' + str(sig), 'ices'])
-            logging.debug('sent signal %s to ices using pkill (unsafe).' % sig)
-        return True
-    except Exception, e:
-        logging.warning('could not kill(%u) ices: %s' % (sig, e))
-        return False
-
-
 def on_delete(args, sender):
     if not args.isdigit():
         return 'Must specify a single numeric track id.'
@@ -563,8 +536,7 @@ command_map = (
     ('play', True, on_play, 'set a custom playlist for 60 minutes'),
     ('purge', True, on_purge, 'cleans up the database'),
     ('queue', False, on_queue, 'queues tracks for playing'),
-    ('reload', True, on_reload, 'asks ices to reconfigure'),
-    ('restart', True, on_restart, 'restarts the bot or ices'),
+    ('restart', True, on_restart, 'restarts the bot'),
     ('rocks', False, on_rocks, 'increases track weight'),
     ('say', True, on_say, 'sends a message to the chat room'),
     ('set', True, on_set, 'changes track properties'),

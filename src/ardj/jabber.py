@@ -59,7 +59,7 @@ class MyFileReceivingBot(FileBot):
     def process_incoming_file(self, sender, filename):
         logging.info('Received %s.' % filename)
         track_id = ardj.tracks.add_file(filename, labels=['incoming', 'incoming-jabber'], queue=True)
-        time.sleep(1)  # let ices read some data
+        time.sleep(1)  # let ezstream read some data
         return track_id
 
     def add_filename_suffix(self, filename):
