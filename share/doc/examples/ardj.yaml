@@ -1,12 +1,12 @@
 # This is where the music will be stored.  You MUST NOT put the music there
 # manually, see the incoming folder below.
-musicdir: /var/lib/ardj/music
+musicdir: /home/radio/music
 
 
 # This is the folder where you should put music that you want to add to the
 # database (will be moved to the internal location in few minutes).  This
 # folder is typically accessible over ftp or sftp.
-incoming_path: /var/lib/ardj/incoming
+incoming_path: /home/radio/music/incoming
 
 
 # Define labels that will be applied to all uploaded files.  This is typically
@@ -27,7 +27,7 @@ dupes: 0
 # specify the name of the file where the information should be written to.  The
 # file is updated when you run the 'ardj update-events' command, so you'll need
 # to add that to your crontab, too.
-#event_schedule_path: /tmp/ardj-events.json
+#event_schedule_path: /home/radio/tmp/ardj-events.json
 
 # By default event schedule contains artists that have tracks with the "music"
 # label.  You can set a different label here.
@@ -43,13 +43,13 @@ dupes: 0
 # program name.  Program name is the name of a playlist which has the non-empty
 # "program" property.  When a track is picked from such playlist, program name
 # is updated.  You can use this to display things on your web site, for example.
-#program_name_file: /tmp/current_ardj_program.txt
+#program_name_file: /home/radio/current_ardj_program.txt
 
 # Uncomment this to announce program changes to the chat room.
 #program_name_announce: true
 
 # If you want to run a script when program changes, specify its name here.
-#program_name_handler: /radio/bin/on-program-change
+#program_name_handler: /home/radio/bin/on-program-change
 
 
 # If you plan to use Jabber, uncomment this block and insert the correct values.
@@ -92,12 +92,8 @@ use_jabber_status: yes
 #icecast_stats_url: "http://admin:hackme@localhost:8000/admin/stats.xml"
 
 
-# Uncomment this if you are using ices as the source client, otherwise the skip
-# command won't work.
-#ices_pid_file: /var/run/ices.pid
-
 # Uncomment this if you are using ezstream as the source client.
-#ezstream_config: /etc/ardj/ezstream.xml
+ezstream_config: /home/radio/ezstream.xml
 
 
 # If you want to use speech synthesis, upload a random OGG/Vorbis track and
@@ -110,14 +106,14 @@ use_jabber_status: yes
 #enable_voting: no
 
 # This is where the messages will be logged.
-log: syslog
-#log_level: debug
-#log_format_string: "ardj[%(process)d]: %(levelname)s %(message)s"
+log: /home/radio/logs/ardj.log
+log_level: debug
+log_format_string: "ardj[%(process)d]: %(levelname)s %(message)s"
 
 
 # This is the database where the runtime data is stored.
 #
-database_path: /var/lib/ardj/database.sqlite
+database_path: /home/radio/music/database.sqlite
 
 
 # The socket that the database server listens to.  On a typical installation
@@ -128,4 +124,4 @@ database_path: /var/lib/ardj/database.sqlite
 
 
 # The root folder of your WebAPI site.  That's where the static files are.
-webapi_root: /var/lib/ardj/site
+webapi_root: /home/radio/ardj/share/web
