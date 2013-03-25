@@ -398,7 +398,7 @@ def _send_skip(confkey, default, sig):
 
 def skip_ezstream():
     """Sends a signal to ezstream."""
-    return _send_skip("ezstream_pid_file", "/var/run/ezstream-ardj.pid", signal.SIGUSR1)
+    return _send_skip("ezstream_pid_file", "/var/run/ezstream.pid", signal.SIGUSR1)
 
 
 def skip_current_track():

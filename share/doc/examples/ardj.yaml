@@ -94,6 +94,7 @@ use_jabber_status: yes
 
 # Uncomment this if you are using ezstream as the source client.
 ezstream_config: /home/radio/ezstream.xml
+#ezstream_pid_file: /var/run/ezstream.pid
 
 
 # If you want to use speech synthesis, upload a random OGG/Vorbis track and
