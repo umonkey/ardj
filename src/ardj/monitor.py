@@ -372,7 +372,7 @@ def get_threads():
         ["ezstream", "-c", get_config(config_dir, "ezstream.xml")],
         config_dir))
     threads.append(ProcessMonitor("web-server",
-        [sys.argv[0], "serve-web"],
+        [sys.argv[0], "start-web-server"],
         config_dir))
     threads.append(ProcessMonitor("scrobbler",
         [sys.argv[0], "start-scrobbler"],

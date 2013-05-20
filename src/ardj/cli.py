@@ -161,12 +161,6 @@ def cmd_serve(*args):
     return monitor.run_cli(args)
 
 
-def cmd_serve_web(*args):
-    """start the web server process"""
-    import server
-    return server.run_cli(args)
-
-
 def cmd_show_news_from_jamendo(*args):
     """show new tracks available at jamendo.com"""
     import jamendo
@@ -177,6 +171,12 @@ def cmd_start_scrobbler(*args):
     """starts the scrobbler process"""
     from ardj import scrobbler
     return scrobbler.run(*args)
+
+
+def cmd_start_web_server(*args):
+    """start the web server process"""
+    import server
+    return server.run_cli(args)
 
 
 def cmd_tags(*args):
