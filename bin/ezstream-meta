@@ -9,7 +9,14 @@ To let ezstream retrieve track metadata, install this script as follows:
     <metadata_format>@t@</metadata_format>
 """
 
+import os
 import sys
+
+# Support running from the source tree.
+my_name = os.path.realpath(__file__)
+if my_name.startswith(os.path.expanduser("~/")):
+    modules = os.path.join(os.path.dirname(os.path.dirname(my_name)), "src")
+    sys.path.insert(0, modules)
 
 from ardj.tracks import get_last_track
 
