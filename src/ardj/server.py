@@ -50,40 +50,6 @@ def send_json(f):
     return wrapper
 
 
-class ScrobblerThread(threading.Thread):
-    """The scrobbler thread.  Waits for new data in the playlog table and
-    submits it to Last.FM and Libre.FM."""
-    def __init__(self, *args, **kwargs):
-        self.lastfm = None
-        self.librefm = None
-        return threading.Thread.__init__(self, *args, **kwargs)
-
-    def run(self):
-        """The main worker."""
-        logging.info("Scrobbler thread started.")
-        while True:
-            try:
-                self.run_once()
-            except Exception, e:
-                log.log_error("Scrobbling failed: %s" % e, e)
-            time.sleep(60)
-
-    def run_once(self):
-        """Submits all pending tracks and returns."""
-        self.run_lastfm()
-        self.run_librefm()
-
-    def run_lastfm(self):
-        if self.lastfm is None:
-            self.lastfm = scrobbler.LastFM()
-        self.lastfm.process()
-
-    def run_librefm(self):
-        if self.librefm is None:
-            self.librefm = scrobbler.LibreFM()
-        self.librefm.process()
-
-
 class Controller:
     def __init__(self):
         logging.debug("Request from %s: %s" % (web.ctx.environ["REMOTE_ADDR"], web.ctx.path))
@@ -299,9 +265,6 @@ def serve_http(hostname, port):
     sys.argv.insert(1, "%s:%s" % (hostname, port))
 
     logging.info("Starting the ardj web service at http://%s:%s/" % (hostname, port))
-
-    if "--debug" not in sys.argv:
-        ScrobblerThread().start()
 
     app = web.application((
         "/", IndexController,

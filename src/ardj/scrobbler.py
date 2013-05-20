@@ -383,3 +383,17 @@ class LibreFM(object):
             return None
         tmp = hashlib.md5(self.password).hexdigest()
         return hashlib.md5(tmp + challenge).hexdigest()
+
+
+def run(*args):
+    """Starts the scrobbler process."""
+
+    lastfm = LastFM()
+    librefm = LibreFM()
+
+    logging.info("Scrobbler started.")
+
+    while True:
+        lastfm.process()
+        librefm.process()
+        time.sleep(60)

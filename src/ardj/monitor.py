@@ -374,6 +374,9 @@ def get_threads():
     threads.append(ProcessMonitor("web-server",
         [sys.argv[0], "serve-web"],
         config_dir))
+    threads.append(ProcessMonitor("scrobbler",
+        [sys.argv[0], "start-scrobbler"],
+        config_dir))
 
     return threads
 

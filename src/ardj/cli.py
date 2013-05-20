@@ -173,6 +173,12 @@ def cmd_show_news_from_jamendo(*args):
     return jamendo.print_new_tracks(args)
 
 
+def cmd_start_scrobbler(*args):
+    """starts the scrobbler process"""
+    from ardj import scrobbler
+    return scrobbler.run(*args)
+
+
 def cmd_tags(*args):
     """display tags from files"""
     if not args:
