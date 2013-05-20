@@ -156,7 +156,13 @@ def cmd_scan_replaygain(*args):
 
 
 def cmd_serve(*args):
-    """start the web server"""
+    """start all subprograms, run the radio"""
+    from ardj import monitor
+    return monitor.run_cli(args)
+
+
+def cmd_serve_web(*args):
+    """start the web server process"""
     import server
     return server.run_cli(args)
 

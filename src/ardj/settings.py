@@ -9,11 +9,6 @@ import sys
 import yaml
 
 
-CONFIG_FILES = ('~/.config/ardj/default.yaml', '/etc/ardj.yaml',
-    '/usr/local/etc/ardj.yaml', '/usr/share/doc/ardj/examples/ardj.yaml',
-    '/usr/local/share/doc/ardj/examples/ardj.yaml')
-
-
 DEFAULT_PLAYLISTS = [{
     "name": "jingles",
     "labels": ["jingle"],
@@ -111,14 +106,10 @@ def load_data():
     Options: ARDJ_SETTINGS envar, ~/.config/ardj/default.yaml, /etc/ardj.yaml.
     If none exist, an empty dicrionary returned.
     """
-    filenames = list(CONFIG_FILES)
-    if os.getenv("ARDJ_SETTINGS"):
-        filenames.insert(0, os.getenv("ARDJ_SETTINGS"))
-
-    for filename in filenames:
-        filename = os.path.expanduser(filename)
-        if os.path.exists(filename):
-            return yaml.load(open(filename, 'rb')), filename
+    config_dir = os.path.expanduser(os.getenv("ARDJ_CONFIG_DIR", "~/.ardj"))
+    filename = os.path.join(config_dir, "ardj.yaml")
+    if os.path.exists(filename):
+        return yaml.load(open(filename, 'rb')), filename
     return {}, None
 
 

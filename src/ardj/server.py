@@ -219,7 +219,8 @@ class AuthController(Controller):
 class IndexController(Controller):
     def GET(self):
         if not os.path.exists("static/index.html"):
-            raise web.forbidden("Forbidden.")
+            logging.warning("File static/index.html not found.")
+            return web.notfound()
         web.header("Content-Type", "text/html; charset=UTF-8")
         return file("static/index.html", "rb").read()
 
@@ -323,8 +324,19 @@ def serve_http(hostname, port):
 
 def run_cli(args):
     """Starts the HTTP web server on the configured socket."""
-    root = settings.get("webapi_root", "share/web")
-    os.chdir(root)
+    database.init_database()
+
+    root = settings.get("webapi_root")
+    if root is None or not os.path.exists(root):
+        my_path = os.path.realpath(__file__)
+        if my_path.startswith(os.path.expanduser("~/")):
+            logging.warning("Using built-in web interface.")
+            root = os.path.join(os.path.dirname(os.path.dirname(
+                os.path.dirname(my_path))), "share/web")
+        else:
+            print "Could not find web root folder."
+            sys.exit(1)
+        os.chdir(root)
     serve_http(*settings.get("webapi_socket", "127.0.0.1:8080").split(":", 1))
 
 
