@@ -188,9 +188,7 @@ def run_cli(args):
         for filepath in args:
             filename = ardj.util.shorten_file_path(filepath)
             try:
-                if update(filepath):
-                    print "File %s is OK" % filename
-                else:
+                if not update(filepath):
                     print "File %s STILL has no ReplayGain." % filename
             except Exception, e:
                 print "File %s could not be checked: %s" % (filename, e)
