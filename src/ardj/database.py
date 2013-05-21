@@ -189,8 +189,7 @@ class DownloadRequest(Model):
 class Vote(Model):
     """Stores information about votes."""
     table_name = "votes"
-    fields = "id", "track_id", "email", "vote", "ts"
-    key_name = "id"
+    fields = ("track_id", "email", "vote", "ts")
 
     def get_date(self):
         """Returns a formatted date for this vote."""
