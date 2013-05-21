@@ -1,9 +1,0 @@
-# Play a jingle every 15 minutes.
-- name: jingles
-  labels: [jingle]
-  delay: 15
-
-
-# Unless other rules apply, play everything with the "music" label.
-- name: music
-  labels: [music]
