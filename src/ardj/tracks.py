@@ -1313,3 +1313,34 @@ def do_idle_tasks(set_busy=None):
 
     ardj.database.execute(u"DELETE FROM download_queue WHERE artist = ?", (artist_name, ))
     ardj.database.commit()
+
+
+class MediaFolderScanner(object):
+    def run(self):
+        fs = self.find_files()
+        db = self.find_tracks()
+
+        for fn in fs:
+            if fn not in db:
+                t = ardj.database.Track.from_file(fn)
+                logging.info("New track: %s: \"%s\" by %s" % (t["id"], t["title"], t["artist"]))
+
+        ardj.database.commit()
+
+    def find_files(self):
+        found_files = []
+
+        root = ardj.settings.get_music_dir()
+        for folder, folders, files in os.walk(root):
+            for file in files:
+                ext = os.path.splitext(file)[1].lower()
+                if ext in (".mp3", ".ogg", ".oga", "flac"):
+                    found_files.append(os.path.join(folder, file)[len(root)+1:])
+
+        return found_files
+
+    def find_tracks(self):
+        result = {}
+        for track in ardj.database.Track.find_all():
+            result[track["filename"]] = track["id"]
+        return result

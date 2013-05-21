@@ -96,6 +96,13 @@ def cmd_find_new_tracks(*args):
     return tracks.find_new_tracks(args)
 
 
+def cmd_find_new_files(*args):
+    """looks for new files in the media folder"""
+    import tracks
+    tracks.MediaFolderScanner().run()
+    return True
+
+
 def cmd_jabber_child(*args):
     """run the jabber bot"""
     from ardj import jabber

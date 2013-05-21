@@ -37,6 +37,7 @@ except ImportError:
 
 import ardj.settings
 import ardj.scrobbler
+import ardj.tags
 import ardj.util
 
 
@@ -304,6 +305,27 @@ class Track(Model):
         for email, vote in fetch("SELECT email, vote FROM votes WHERE track_id = ? ORDER BY ts", (self["id"], )):
             result[email] = vote
         return result
+
+    @classmethod
+    def from_file(cls, filename, labels=None):
+        """Creates a new track from file, saves it.  If no labels were
+        specified, adds the default ones."""
+        filepath = os.path.join(ardj.settings.get_music_dir(), filename)
+        tags = ardj.tags.get(filepath)
+
+        t = cls(filename=filename.decode("utf-8"))
+        t["artist"] = tags.get("artist", "Unknown Artist")
+        t["title"] = tags.get("title", os.path.basename(filename).decode("utf-8"))
+        t["length"] = tags["length"]
+        t["weight"] = 1.0
+        t.put()
+
+        if labels is None:
+            labels = ardj.settings.get("incoming_labels")
+        if labels:
+            t.set_labels(labels)
+
+        return t
 
 
 class Queue(Model):
