@@ -246,7 +246,7 @@ class Track(Model):
 
     @classmethod
     def find_without_lastfm_tags(cls):
-        sql = "SELECT %s FROM %s WHERE weight > 0 AND (id NOT IN (SELECT track_id FROM labels WHERE label LIKE 'lastfm:%%') OR `image` IS NULL OR `download` IS NULL) ORDER BY id" % (cls._fields_sql(), cls.table_name)
+        sql = "SELECT %s FROM %s WHERE weight > 0 AND id NOT IN (SELECT track_id FROM labels WHERE label LIKE 'lastfm:%%') ORDER BY id" % (cls._fields_sql(), cls.table_name)
         return cls._fetch_rows(sql, ())
 
     @classmethod
