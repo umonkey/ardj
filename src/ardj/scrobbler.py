@@ -255,6 +255,8 @@ class LastFM(object):
         return True
 
     def call(self, post=False, api_sig=False, **kwargs):
+        if self.key is None:
+            raise BadAuth("Unable to call last.fm: no API key")
         kwargs['api_key'] = self.key
         if api_sig:
             kwargs['api_sig'] = self.get_call_signature(kwargs)
