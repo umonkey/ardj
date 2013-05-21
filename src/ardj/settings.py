@@ -100,13 +100,17 @@ class wrapper:
 wrapper_instance = None
 
 
+def get_config_dir():
+    return os.path.expanduser(os.getenv("ARDJ_CONFIG_DIR", "~/.ardj"))
+
+
 def load_data():
     """Returns the raw contents of the config file.
 
     Options: ARDJ_SETTINGS envar, ~/.config/ardj/default.yaml, /etc/ardj.yaml.
     If none exist, an empty dicrionary returned.
     """
-    config_dir = os.path.expanduser(os.getenv("ARDJ_CONFIG_DIR", "~/.ardj"))
+    config_dir = get_config_dir()
     filename = os.path.join(config_dir, "ardj.yaml")
     if os.path.exists(filename):
         return yaml.load(open(filename, 'rb')), filename

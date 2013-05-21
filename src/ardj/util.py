@@ -374,34 +374,16 @@ def shorten_urls(message):
     return u" ".join(output)
 
 
-def _send_skip(confkey, default, sig):
-    pidfile = settings.get(confkey, default)
-    if not pidfile:
-        logging.info("%s not set, can't send a skip request." % confkey)
-        return False
-
-    if not os.path.exists(pidfile):
-        logging.warning("File %s does not exist -- can't send a skip request." % pidfile)
-        return False
-
-    pid = file(pidfile, "rb").read().strip()
-    if not pid.isdigit():
-        raise Exception("File %s does not contain a process id." % pidfile)
-
-    try:
-        os.kill(int(pid), sig)
-        return True
-    except Exception, e:
-        logging.exception("Could not send a signal to ezstream: %s" % e)
-        raise Exception("Could not send a skip request.  Details can be found in the log file.")
-
-
-def skip_ezstream():
-    """Sends a signal to ezstream."""
-    return _send_skip("ezstream_pid_file", "/var/run/ezstream.pid", signal.SIGUSR1)
-
-
 def skip_current_track():
     """Sends a skip request to the appropriate source client."""
-    if skip_ezstream():
-        return True
+    pidfile = os.path.join(settings.get_config_dir(), "ezstream.pid")
+    if not os.path.exists(pidfile):
+        raise Exception("Could not skip track: ezstream not running (no pid file).")
+
+    try:
+        with open(pidfile, "rb") as f:
+            pid = int(f.read().strip())
+            os.kill(pid, signal.SIGUSR1)
+            return True
+    except Exception, e:
+        raise Exception("Could not skip track: %s" % e)

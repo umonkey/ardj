@@ -209,10 +209,6 @@ use_jabber_status: yes
 #icecast_stats_url: "http://admin:hackme@localhost:8000/admin/stats.xml"
 
 
-# Uncomment this if you are using ezstream as the source client.
-#ezstream_pid_file: %(ARDJ_CONFIG_DIR)s/ezstream.pid
-
-
 # If you want to use speech synthesis, upload a random OGG/Vorbis track and
 # specify its id here.  You can also specify a custom voice.
 #festival_track_id: 1234
