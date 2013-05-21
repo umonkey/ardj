@@ -104,19 +104,23 @@ def read(filename, update=True):
 
     if (peak is None or gain is None) and update:
         scanner = None
-        ext = os.path.splitext(str(filename).lower())[1]
+        ext = os.path.splitext(filename)[1].lower()
         if ext in ('.mp3'):
             scanner = ['mp3gain', '-q', '-s', 'i', str(filename)]
         elif ext in ('.ogg', '.oga'):
             scanner = ['vorbisgain', '-q', '-f', str(filename)]
         elif ext in ('.flac'):
             scanner = ['metaflac', '--add-replay-gain', str(filename)]
-        try:
-            # If the scan is successful, retry reading the tags but only once.
-            if scanner is not None and ardj.util.run(scanner, quiet=True):
-                peak, gain = read(str(filename), update=False)
-        except ardj.util.ProgramNotFound, e:
-            logging.warning(e)
+
+        if not scanner:
+            logging.warning("Don't know how to calculate ReplayGain for %s" % str(filename))
+            return (None, None)
+
+        status, out, err = ardj.util.run_ex(scanner, quiet=True)
+        if status == 0:
+            peak, gain = read(str(filename), update=False)
+        else:
+            raise Exception("ReplayGain scanner failed: %s" % out)
 
     return (peak, gain)
 
@@ -177,9 +181,17 @@ def run_cli(args):
             raise Exception('musicdir not set.')
         elif not os.path.exists(musicdir):
             raise Exception('Directory %s does not exist.' % musicdir)
-        rows = ardj.database.fetch('SELECT filename FROM tracks WHERE filename AND weight > 0')
-        args = [os.path.join(musicdir, row[0]) for row in rows]
+        rows = ardj.database.fetch('SELECT filename FROM tracks WHERE filename IS NOT NULL AND weight > 0 ORDER BY filename')
+        args = [os.path.join(musicdir, row[0].encode("utf-8")) for row in rows]
 
     if args:
-        for filename in args:
-            update(filename)
+        for filepath in args:
+            filename = ardj.util.shorten_file_path(filepath)
+            try:
+                if update(filepath):
+                    print "File %s is OK" % filename
+                else:
+                    print "File %s STILL has no ReplayGain." % filename
+            except Exception, e:
+                print "File %s could not be checked: %s" % (filename, e)
+                logging.exception("Error checking file %s: %s" % (filename, e))

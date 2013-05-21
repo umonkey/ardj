@@ -29,7 +29,7 @@ class ProgramNotFound(Exception):
     pass
 
 
-def run(command, quiet=False, stdin_data=None, grab_output=False, nice=True):
+def run_ex(command, quiet=False, stdin_data=None, grab_output=False, nice=True):
     command = [str(x) for x in command]
 
     if not os.path.exists(command[0]) and not is_command(command[0]):
@@ -49,7 +49,13 @@ def run(command, quiet=False, stdin_data=None, grab_output=False, nice=True):
 
     _cmd = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=stdout, stderr=stderr)
     out, err = _cmd.communicate(stdin_data)
-    response = _cmd.returncode == 0
+    return _cmd.returncode, out, err
+
+
+def run(*args, **kwargs):
+    status, out, err = run_ex(*args, **kwargs)
+
+    response = status == 0
     if grab_output:
         response = out
     return response
@@ -387,3 +393,11 @@ def skip_current_track():
             return True
     except Exception, e:
         raise Exception("Could not skip track: %s" % e)
+
+
+def shorten_file_path(filepath):
+    musicdir = settings.get_music_dir()
+    filepath = os.path.realpath(filepath)
+    if filepath.startswith(musicdir):
+        return filepath[len(musicdir)+1:]
+    return filepath

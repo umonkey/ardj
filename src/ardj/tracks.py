@@ -1240,8 +1240,6 @@ def add_missing_lastfm_tags():
 
     tracks = ardj.database.Track.find_without_lastfm_tags()
     for track in sorted(tracks, key=lambda t: t["id"], reverse=True):
-        print "%u. %s -- %s" % (track["id"], track["artist"].encode("utf-8"), track["title"].encode("utf-8"))
-
         labels = track.get_labels()
 
         if skip_labels and set(labels) & skip_labels:
@@ -1253,11 +1251,14 @@ def add_missing_lastfm_tags():
             try:
                 info = cli.get_track_info_ex(track["artist"], track["title"])
             except ardj.scrobbler.TrackNotFound:
-                print "  track not found"
+                # print "  track not found"
                 info = {"tags": ["notfound"], "image": None, "download": None}
                 if not cli.is_artist(track["artist"]):
                     info["tags"].append("noartist")
-                    print "  artist not found"
+                    # print "  artist not found"
+            except ardj.scrobbler.BadAuth, e:
+                ardj.log.log_error(str(e), e)
+                break
             except ardj.scrobbler.Error, e:
                 ardj.log.log_error(str(e), e)
                 continue
@@ -1266,8 +1267,14 @@ def add_missing_lastfm_tags():
                 continue
 
         lastfm_tags = info["tags"]
+
+        # Add a dummy tag to avoid scanning this track again.  To rescan,
+        # delete this tag and scan again periodically.
         if not lastfm_tags:
-            continue
+            lastfm_tags = ["none"]
+
+        print "%6u. %s -- %s" % (track["id"], track["artist"].encode("utf-8"), track["title"].encode("utf-8"))
+        print "        %s" % ", ".join(lastfm_tags)
 
         for tag in lastfm_tags:
             labels.append("lastfm:" + tag.replace(" ", "_"))
