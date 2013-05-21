@@ -442,7 +442,7 @@ def on_show(args, sender):
     result = u'«%s» by %s' % (track['title'], track['artist'])
     result += u'; id=%u weight=%.2f playcount=%u length=%s vote=%u last_played=%s. ' % (track['id'], track['weight'] or 0, track['count'] or 0, ardj.util.format_duration(int(track.get('length', 0))), ardj.tracks.get_vote(track['id'], sender), ardj.util.format_duration(track.get('last_played', 0), age=True))
     if track['labels']:
-        result += u'Labels: ' + u', '.join(sorted_tags(track['labels'])) + u'. '
+        result += u'Labels: ' + u', '.join(sorted_tags(list(set(track['labels'])))) + u'. '
     return result.strip()
 
 
