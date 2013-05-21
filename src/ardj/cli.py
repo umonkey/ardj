@@ -21,6 +21,11 @@ import traceback
 import ardj.log
 
 
+def is_running_from_source():
+    my_path = os.path.realpath(__file_)
+    return my_path.startswith(os.path.expanduser("~/"))
+
+
 def cmd_config(*args):
     """edit settings
 
@@ -211,14 +216,20 @@ def cmd_add_incoming_tracks(*args):
 
 def cmd_print_next_track(*args):
     """names a file to play next"""
-    from ardj.webapi import get_next_track
     try:
-        track = get_next_track()
+        from ardj import tracks, database
+        track = tracks.get_next_track()
         if track is not None:
-            print track["filepath"]
+            database.commit()
+            print track["filepath"].encode("utf-8")
             return
     except:
-        files = glob.glob("/usr/share/ardj/failure/*.ogg")
+        if is_running_from_source():
+            d = os.path.dirname
+            pattern = os.path.join(d(d(d(__file__))), "share/audio/*.ogg")
+        else:
+            pattern = "/usr/share/ardj/failure/*.ogg"
+        files = glob.glob(pattern)
         if files:
             print random.choice(files)
 

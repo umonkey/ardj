@@ -59,23 +59,6 @@ class Controller:
         database.commit()
 
 
-class NextController(Controller):
-    """Handles the /track/next.json request by returning a JSON description of
-    the track that should be played next.  Only responds to POST requests to
-    prevent accidential access."""
-    @send_json
-    def POST(self):
-        try:
-            track = tracks.get_next_track()
-            if track is None:
-                raise web.internalerror("No data.")
-            logging.debug("Returning track info: %s" % track)
-            return track
-        except Exception, e:
-            log.log_error(str(e), e)
-            return {"status": "error", "message": str(e)}
-
-
 class CommitController(Controller):
     @send_json
     def POST(self):
@@ -277,7 +260,6 @@ def serve_http(hostname, port):
         "/commit\.json", CommitController,
         "/raise", RaiseController,
         "/track/info\.js(?:on)?", InfoController,
-        "/track/next\.json", NextController,
         "/track/queue\.json", QueueController,
         "/track/recent\.js(?:on)?", RecentController,
         "/track/search\.json", SearchController,
