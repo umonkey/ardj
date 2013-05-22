@@ -622,11 +622,15 @@ def process_command(text, sender=None, quiet=False):
 
 
 def run_cli(args):
-    sender = 'console'
     if args:
         sender = args[0]
+    elif "@" in os.getenv("MAIL", ""):
+        sender = os.getenv("MAIL")
+    else:
+        sender = "console"
 
     print 'Starting the interactive jabber-like CLI, press ^D to quit.'
+    print 'You are identified ad "%s".' % sender
 
     histfile = os.path.expanduser('~/.ardj_history')
     if os.path.exists(histfile):
