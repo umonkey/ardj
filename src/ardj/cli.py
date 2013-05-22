@@ -108,25 +108,16 @@ def cmd_find_new_files(*args):
     return True
 
 
-def cmd_jabber_child(*args):
-    """run the jabber bot"""
-    from ardj import jabber
-    bot = jabber.Open(debug="--debug" in args)
-    if bot is None:
-        print "Not configured, try `ardj config'."
-        return False
-    bot.run()
-
-
 def cmd_jabber(*args):
-    """run the jabber bot with a process monitor"""
-    import subprocess
-    import time
-
+    """run the jabber bot"""
+    from ardj import jabber, settings
     while True:
-        subprocess.Popen([sys.argv[0], "jabber-child"]).wait()
-        print "Restarting in 5 seconds."
-        time.sleep(5)  # prevend spinlocking
+        bot = jabber.Open(debug="--debug" in args)
+        if bot is not None:
+            bot.run()
+        else:
+            time.sleep(10)
+        settings.load(refresh=True)
 
 
 def cmd_export_total_listeners(*args):

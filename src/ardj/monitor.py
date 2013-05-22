@@ -374,6 +374,9 @@ def get_threads():
     threads.append(ProcessMonitor("scrobbler",
         [sys.argv[0], "start-scrobbler"],
         config_dir))
+    threads.append(ProcessMonitor("jabber",
+        [sys.argv[0], "jabber"],
+        config_dir))
 
     return threads
 
