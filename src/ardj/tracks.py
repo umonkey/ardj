@@ -834,7 +834,7 @@ def get_next_track():
         return None
 
 
-def get_next_track_id(debug=False, update_stats=True):
+def get_next_track_id(update_stats=True):
     """Picks a track to play.
 
     The track is chosen from the active playlists. If nothing could be chosen,
@@ -854,6 +854,7 @@ def get_next_track_id(debug=False, update_stats=True):
     update_stats -- set to False to not update last_played.
     """
     want_preroll = True
+    debug = ardj.settings.get("debug_playlists") == "yes"
 
     skip_artists = list(set([row[0] for row in ardj.database.fetch('SELECT artist FROM tracks WHERE artist IS NOT NULL AND last_played IS NOT NULL ORDER BY last_played DESC LIMIT ' + str(ardj.settings.get('dupes', 5)))]))
     if debug:
