@@ -172,10 +172,11 @@ dupes: 0
 # If you plan to use Jabber, uncomment this block and insert the correct values.
 #jabber_id: "alice:secret@server.com"
 
-# Here you can specify jabber admins.
-#jabber_admins:
-#- alice@example.com
-#- bob@example.com
+# Here you can specify admin emails.  They have extra privileges when using
+# jabber or the CLI console (ardj console).
+jabber_admins:
+- %(MAIL)s
+- console
 
 # Pomote most active users to admins.  You can define how many users from the
 # top voters are promoted and how many days count.
