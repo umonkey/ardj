@@ -621,6 +621,14 @@ def process_command(text, sender=None, quiet=False):
     return options[0][1](args.strip(), sender=sender)
 
 
+def print_response(message):
+    has_color = "color" in os.getenv("TERM", "")
+    for line in message.rstrip().split("\n"):
+        if has_color:
+            line = "\033[92m" + line + "\033[m"
+        print line.encode("utf-8")
+
+
 def run_cli(args):
     if args:
         sender = args[0]
@@ -636,12 +644,17 @@ def run_cli(args):
     if os.path.exists(histfile):
         readline.read_history_file(histfile)
 
+    if is_user_admin(sender):
+        prompt = "ardj# "
+    else:
+        prompt = "ardj$ "
+
     while True:
         try:
-            text = raw_input('command: ')
+            text = raw_input(prompt)
             if text:
                 response = process_command(text.decode('utf-8'), sender, quiet=True)
-                print response.encode("utf-8")
+                print_response(response)
                 ardj.database.Open().commit()
         except EOFError:
             readline.write_history_file(histfile)
