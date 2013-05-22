@@ -75,13 +75,14 @@ class wrapper:
         return os.path.realpath(os.path.expanduser(self.get('musicdir', os.path.dirname(self.filename))))
 
     def get_playlists(self):
-        filename = os.path.join(self.get_music_dir(), 'playlists.yaml')
+        filename = os.path.join(get_config_dir(), 'playlist.yaml')
         if not os.path.exists(filename):
+            logging.warning("File %s not found, using built-in playlists." % filename)
             return DEFAULT_PLAYLISTS
 
         stat = os.stat(filename)
         if self.playlists_mtime is None or self.playlists_mtime < stat.st_mtime:
-            logging.debug("Reloading playlists.")
+            logging.info("Reloading playlists from %s." % filename)
             self.playlists_mtime = stat.st_mtime
             self.playlists_data = yaml.load(open(filename, 'r').read())
         return self.playlists_data
