@@ -1,3 +1,23 @@
+1.1.0
+
+- The new recommended way to run the server is from the source tree.
+- New child process monitor that controls all necessary subprocesses,
+  launched by `ardj serve'.  Default configuration files are created
+  on startup.
+- Files can now be manually added to the media library, then recorded
+  in the database by `ardj find-new-files'.
+- Removed webapi (a web layer that was previously used to query for
+  the next track to play).
+- Added a new subprocess for the scrobbler.
+- Fixed last.fm tag scanning.
+- Fixed ReplayGain scanning.
+- Fixed Debian and Ubuntu init scripts.
+- Updated ezstream codec parameters.
+- Fixed paths in example ezstream.xml.
+- Added a small step-by-step install guide.
+- Dumped ices in favor of ezstream.
+- Added support for $MAIL in `ardj console'.
+
 1.0.18
 
 - Fixed the jabber bot crashing when no chat room jid is set.
