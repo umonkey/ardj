@@ -600,7 +600,8 @@ def get_random_track_id_from_playlist(playlist, skip_artists):
         params.append(int(repeat_count))
 
     if skip_artists:
-        skip_artists = skip_artists[:int(playlist.get('history', '10'))]
+        skip_count = int(playlist.get("artist_delay", playlist.get("history", "10")))
+        skip_artists = skip_artists[:skip_count]
         if skip_artists:
             sql += ' AND artist NOT IN (%s)' % ', '.join(['?'] * len(skip_artists))
             params += skip_artists
