@@ -1004,7 +1004,7 @@ def merge(id1, id2):
     t2 = get_track_by_id(id2)
 
     for k in ('real_weight', 'last_played', 'weight'):
-        t1[k] = max(t1[k], t2[k])
+        t1[k] = max(t1[k] or 0, t2[k] or 0)
     if t2["count"]:
         t1['count'] += t2['count']
 
