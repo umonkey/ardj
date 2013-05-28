@@ -339,6 +339,12 @@ def on_voters(args, sender):
 
 
 def on_play(args, sender):
+    """Set tags to select music by, instead of defined playlists.
+
+    By default the specified tags will work for 30 minutes, unless
+    different duration is specified with --time=MINUTES.
+    
+    Example: play --time=3600 tagme"""
     if not args:
         current = ardj.tracks.get_urgent()
         if not current:
@@ -463,13 +469,13 @@ def on_status(args, sender):
 
 
 def on_merge(args, sender):
-    """Merges two tracks.  Usage: merge id1 id2.
+    """Merges two tracks.  Usage: merge dst_id src_id.
 
     Track 2 is deleted, labels, votes and playcounts are moved to track 1.
     """
     ids = args.split(' ')
     if len(ids) != 2 or not ids[0].isdigit() or not ids[1].isdigit():
-        return 'Usage: merge id1 id2'
+        return 'Usage: merge dst_id src_id'
     ardj.tracks.merge(int(ids[0]), int(ids[1]))
     return 'OK.'
 
