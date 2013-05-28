@@ -998,6 +998,8 @@ def update_karma():
 
 def merge(id1, id2):
     """Merges two tracks."""
+    id1, id2 = sorted([id1, id2])
+
     t1 = get_track_by_id(id1)
     t2 = get_track_by_id(id2)
 

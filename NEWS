@@ -19,6 +19,7 @@
 - Added support for $MAIL in `ardj console'.
 - Added colors to `ardj console'.
 - Added new cli command `dedup`: merges tracks with equal file names.
+- Newer tracks are now always merged into the older ones.
 
 1.0.18
 
