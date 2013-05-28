@@ -1322,12 +1322,15 @@ class MediaFolderScanner(object):
         fs = self.find_files()
         db = self.find_tracks()
 
+        count = 0
         for fn in fs:
             if fn not in db:
                 t = ardj.database.Track.from_file(fn)
                 logging.info("New track: %s: \"%s\" by %s" % (t["id"], t["title"], t["artist"]))
+                count += 1
 
         ardj.database.commit()
+        return count
 
     def find_files(self):
         found_files = []
@@ -1344,5 +1347,5 @@ class MediaFolderScanner(object):
     def find_tracks(self):
         result = {}
         for track in ardj.database.Track.find_all():
-            result[track["filename"]] = track["id"]
+            result[track["filename"].encode("utf-8")] = track["id"]
         return result
