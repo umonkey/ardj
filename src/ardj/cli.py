@@ -104,7 +104,8 @@ def cmd_find_new_tracks(*args):
 def cmd_find_new_files(*args):
     """looks for new files in the media folder"""
     import tracks
-    tracks.MediaFolderScanner().run()
+    count = tracks.MediaFolderScanner().run()
+    print "Found %u new files." % count
     return True
 
 
