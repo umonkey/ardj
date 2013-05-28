@@ -17,6 +17,7 @@
 - Added a small step-by-step install guide.
 - Dumped ices in favor of ezstream.
 - Added support for $MAIL in `ardj console'.
+- Added colors to `ardj console'.
 
 1.0.18
 
