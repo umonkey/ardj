@@ -1319,7 +1319,11 @@ def do_idle_tasks(set_busy=None):
 
 
 class MediaFolderScanner(object):
+    """Media folder scanner used for adding new tracks to the database."""
+
     def run(self):
+        """Scans the media folder and adds new tracks.  Tracks that were previously
+        deleted aren't added back again."""
         fs = self.find_files()
         db = self.find_tracks()
 
@@ -1347,7 +1351,7 @@ class MediaFolderScanner(object):
 
     def find_tracks(self):
         result = {}
-        for track in ardj.database.Track.find_all():
+        for track in ardj.database.Track.find_all(deleted=True):
             result[track["filename"].encode("utf-8")] = track["id"]
         return result
 
@@ -1358,7 +1362,7 @@ def dedup_by_filename(verbose=False):
 
     merge_count = 0
 
-    for track in ardj.database.Track.find_all():
+    for track in ardj.database.Track.find_all(deleted=False):
         if not track["weight"]:
             continue
 

@@ -204,9 +204,11 @@ class Track(Model):
     key_name = "id"
 
     @classmethod
-    def find_all(cls):
+    def find_all(cls, deleted=False):
         """Returns all tracks with positive weight."""
-        sql = "SELECT %s FROM %s WHERE weight > 0" % (cls._fields_sql(), cls.table_name)
+        sql = "SELECT %s FROM %s" % (cls._fields_sql(), cls.table_name)
+        if not deleted:
+            sql += " WHERE weight > 0"
         return cls._fetch_rows(sql, ())
 
     @classmethod
