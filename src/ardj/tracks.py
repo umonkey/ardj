@@ -1003,7 +1003,8 @@ def merge(id1, id2):
 
     for k in ('real_weight', 'last_played', 'weight'):
         t1[k] = max(t1[k], t2[k])
-    t1['count'] = t1['count'] + t2['count']
+    if t2["count"]:
+        t1['count'] += t2['count']
 
     t1['labels'] = list(set(t1['labels'] + t2['labels']))
 
@@ -1349,3 +1350,24 @@ class MediaFolderScanner(object):
         for track in ardj.database.Track.find_all():
             result[track["filename"].encode("utf-8")] = track["id"]
         return result
+
+
+def dedup_by_filename(verbose=False):
+    """Finds tracks that link to the same file and merges them, higher ID to lower."""
+    cache = {}
+
+    merge_count = 0
+
+    for track in ardj.database.Track.find_all():
+        if not track["weight"]:
+            continue
+
+        if track["filename"] in cache:
+            if verbose:
+                print "Duplicate: %u, %s" % (track["id"], track["filename"])
+            merge(cache[track["filename"]], track["id"])
+            merge_count += 1
+        else:
+            cache[track["filename"]] = track["id"]
+
+    return merge_count

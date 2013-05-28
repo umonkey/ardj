@@ -297,6 +297,17 @@ def cmd_xmpp_send(*args):
     commit()
 
 
+def cmd_dedup_tracks(*args):
+    """combines duplicate tracks"""
+    from ardj import tracks
+    from ardj.database import commit
+    count = tracks.dedup_by_filename(verbose=True)
+    if count:
+        print "Removed %u duplicate tracks." % count
+        commit()
+    else:
+        print "No duplicate tracks found."
+
 def cmd_download_artist_schedule(*args):
     """queues retrieving more tracks by the specified artists"""
     from ardj.database import DownloadRequest, commit
@@ -495,6 +506,7 @@ def run(args):
             except Exception, e:
                 ardj.log.log_error('ERROR handling command %s: %s' % (args[1], e), e)
                 print "ERROR: %s" % e
+                print traceback.format_exc(e)
             exit(1)
 
     cmd_help(*args)

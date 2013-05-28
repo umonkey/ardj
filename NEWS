@@ -18,6 +18,7 @@
 - Dumped ices in favor of ezstream.
 - Added support for $MAIL in `ardj console'.
 - Added colors to `ardj console'.
+- Added new cli command `dedup`: merges tracks with equal file names.
 
 1.0.18
 
