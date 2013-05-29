@@ -35,7 +35,7 @@ def shortname(sender):
 
 
 def filter_labels(labels):
-    return [l for l in labels if ':' not in l]
+    return sorted(list(set([l for l in labels if ':' not in l])))
 
 
 def format_track_list(tracks, header=None):
