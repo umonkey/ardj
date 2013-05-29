@@ -358,7 +358,7 @@ def on_play(args, sender):
 def on_tags(args, sender):
     """Shows or modifies tags.
 
-    tags add -remove [for track_id] -- manipulate tags
+    tags add -remove [for track_id[,track_id,...]] -- manipulate tags
     tags -- show the tag cloud.
     """
     if not args or args == '-a':
@@ -375,16 +375,22 @@ def on_tags(args, sender):
 
     parts = re.split("\s+", args)
     if len(parts) > 2 and parts[-2] == 'for':
-        if not parts[-1].isdigit():
-            return 'The last argument (track_id) must be an integer.'
-        track_id = int(parts[-1])
+        if not re.match("^\d+(,\d+)*$", parts[-1]):
+            return 'The last argument (track_id) must be a comma-separated list of integers.'
+        track_ids = [int(i) for i in parts[-1].split(",")]
         parts = parts[:-2]
     else:
-        track_id = ardj.tracks.get_last_track_id()
+        track_ids = [ardj.tracks.get_last_track_id()]
 
     labels = [l.strip(' ,@') for l in parts]
-    current = ardj.tracks.add_labels(track_id, labels, owner=sender) or ['none']
-    return u'New labels: %s.' % (u', '.join(sorted_tags(current)))
+
+    for track_id in track_ids:
+        current = ardj.tracks.add_labels(track_id, labels, owner=sender) or ['none']
+
+    if len(track_ids) == 1:
+        return u'New labels: %s.' % (u', '.join(sorted_tags(current)))
+    else:
+        return "Tags modified."
 
 
 def on_set(args, sender):
