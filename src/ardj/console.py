@@ -9,6 +9,7 @@ import logging
 import os
 import re
 import readline
+import shlex
 import signal
 import sys
 import traceback
@@ -373,16 +374,27 @@ def on_tags(args, sender):
     if not is_user_admin(sender):
         return 'Only admins can edit tags.'
 
-    parts = re.split("\s+", args)
+    parts = shlex.split(args)
+
     if len(parts) > 2 and parts[-2] == 'for':
         if not re.match("^\d+(,\d+)*$", parts[-1]):
             return 'The last argument (track_id) must be a comma-separated list of integers.'
         track_ids = [int(i) for i in parts[-1].split(",")]
         parts = parts[:-2]
+    elif "--artist=" in args:
+        new_parts = []
+        for part in parts:
+            if part.startswith("--artist="):
+                track_ids = ardj.tracks.find_by_artist(part[9:])
+            else:
+                new_parts.append(part)
+        parts = new_parts
     else:
         track_ids = [ardj.tracks.get_last_track_id()]
 
     labels = [l.strip(' ,@') for l in parts]
+    if not labels:
+        return "You forgot to specify which labels to add or remove."
 
     for track_id in track_ids:
         current = ardj.tracks.add_labels(track_id, labels, owner=sender) or ['none']

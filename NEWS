@@ -19,7 +19,7 @@
 - Added support for $MAIL in `ardj console'.
 - Added colors to `ardj console'.
 - Added new cli command `dedup`: merges tracks with equal file names.
-- Added new syntax to the `tags' command to process multiple tags.
+- Added new syntax to the `tags' command to process multiple tags and whole artists.
 - Newer tracks are now always merged into the older ones.
 - Fixed merging of tracks with not all fields filled (e.g., weight).
 

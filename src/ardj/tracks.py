@@ -1095,6 +1095,11 @@ def bookmark(track_ids, owner, remove=False):
             ardj.database.execute('INSERT INTO labels (track_id, label, email) VALUES (?, ?, ?)', (track_id, label, owner, ))
 
 
+def find_by_artist(artist_name):
+    rows = ardj.database.fetch('SELECT id FROM tracks WHERE artist = ? COLLATE unicode', (artist_name, ))
+    return [row[0] for row in rows]
+
+
 def find_by_title(title, artist_name=None):
     """Returns track ids by title."""
     if artist_name is None:
