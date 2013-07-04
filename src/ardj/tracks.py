@@ -187,6 +187,12 @@ class Track(dict):
             return None
         return Track([(cls.fields[k], v) for k, v in enumerate(row)])
 
+    @classmethod
+    def get_last(cls):
+        sql = "SELECT %s FROM %s ORDER BY last_played DESC LIMIT 1" % (", ".join(cls.fields), cls.table_name)
+        row = ardj.database.fetchone(sql)
+        return Track([(cls.fields[k], v) for k, v in enumerate(row)])
+
     def get_last_vote(self, sender):
         votes = ardj.database.fetchone("SELECT vote FROM votes WHERE track_id = ? AND email = ? ORDER BY id DESC", (self["id"], sender, ))
         return votes[0] if votes else 0
@@ -1328,18 +1334,25 @@ def do_idle_tasks(set_busy=None):
 class MediaFolderScanner(object):
     """Media folder scanner used for adding new tracks to the database."""
 
+    temp_label = "just_added"
+
     def run(self):
         """Scans the media folder and adds new tracks.  Tracks that were previously
         deleted aren't added back again."""
         fs = self.find_files()
         db = self.find_tracks()
 
+        ardj.database.Label.delete_by_name(self.temp_label)
+
         count = 0
         for fn in fs:
             if fn not in db:
-                t = ardj.database.Track.from_file(fn)
-                logging.info("New track: %s: \"%s\" by %s" % (t["id"], t["title"], t["artist"]))
-                count += 1
+                try:
+                    t = ardj.database.Track.from_file(fn)
+                    logging.info("New track: %s: \"%s\" by %s" % (t["id"], t["title"], t["artist"]))
+                    count += 1
+                except Exception, e:
+                    logging.exception(str(e))
 
         ardj.database.commit()
         return count

@@ -20,6 +20,7 @@ import ardj.database
 import ardj.jabber
 import ardj.listeners
 import ardj.settings
+import ardj.sound_menu
 import ardj.speech
 import ardj.tracks
 import ardj.users
@@ -402,7 +403,7 @@ def on_tags(args, sender):
     if len(track_ids) == 1:
         return u'New labels: %s.' % (u', '.join(sorted_tags(current)))
     else:
-        return "Tags modified."
+        return "Tags modified for %u tracks." % len(track_ids)
 
 
 def on_set(args, sender):
@@ -464,7 +465,11 @@ def on_show(args, sender):
         return 'Track %s not found.' % track_id
 
     result = u'«%s» by %s' % (track['title'], track['artist'])
-    result += u'; id=%u weight=%.2f playcount=%u length=%s vote=%u last_played=%s. ' % (track['id'], track['weight'] or 0, track['count'] or 0, ardj.util.format_duration(int(track.get('length', 0))), ardj.tracks.get_vote(track['id'], sender), ardj.util.format_duration(track.get('last_played', 0), age=True))
+    result += u'; id=%u weight=%.2f playcount=%u length=%s vote=%u' % (track['id'], track['weight'] or 0, track['count'] or 0, ardj.util.format_duration(int(track.get('length', 0))), ardj.tracks.get_vote(track['id'], sender))
+    if track.get("last_played"):
+        result += u" last_played=%s" % ardj.util.format_duration(track['last_played'], age=True)
+    result += ". "
+
     if track['labels']:
         result += u'Labels: ' + u', '.join(sorted_tags(list(set(track['labels'])))) + u'. '
     return result.strip()

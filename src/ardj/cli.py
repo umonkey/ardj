@@ -206,6 +206,13 @@ def cmd_add_incoming_tracks(*args):
     return True
 
 
+def cmd_print_current_track(*args):
+    """prints the currently playing track"""
+    from ardj import tracks
+    import json
+    print json.dumps(tracks.Track.get_last())
+
+
 def cmd_print_next_track(*args):
     """names a file to play next"""
     try:

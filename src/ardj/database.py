@@ -316,10 +316,13 @@ class Track(Model):
         tags = ardj.tags.get(filepath)
 
         t = cls(filename=filename.decode("utf-8"))
+        if "length" not in tags:
+            raise Exception("No length in %s" % filename)
         t["artist"] = tags.get("artist", "Unknown Artist")
         t["title"] = tags.get("title", os.path.basename(filename).decode("utf-8"))
         t["length"] = tags["length"]
         t["weight"] = 1.0
+        t["real_weight"] = 1.0
         t.put()
 
         if labels is None:
@@ -341,6 +344,15 @@ class Token(Model):
     table_name = "tokens"
     fields = "token", "login", "login_type", "active"
     key_name = "token"
+
+
+class Label(Model):
+    table_name = "labels"
+    fields = ("track_id", "email", "label")
+
+    @classmethod
+    def delete_by_name(cls, name):
+        execute("DELETE FROM `%s` WHERE `label` = ?" % cls.table_name, (name, ))
 
 
 class database:
