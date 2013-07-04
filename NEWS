@@ -1,3 +1,8 @@
+1.2.0 (in progress)
+
+- When running ardj locally, use notify-send when track changes.
+
+
 1.1.0
 
 - The new recommended way to run the server is from the source tree.

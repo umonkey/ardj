@@ -21,6 +21,19 @@ if my_name.startswith(os.path.expanduser("~/")):
 from ardj.tracks import get_last_track
 
 
+def notify(track):
+    try:
+        import gtk
+        import pynotify
+
+        pynotify.init("ardj")
+        n = pynotify.Notification(summary=track["artist"], message=track["title"])
+        n.set_icon_from_pixbuf(gtk.Label().render_icon(gtk.STOCK_CDROM, gtk.ICON_SIZE_LARGE_TOOLBAR))
+        n.show()
+    except ImportError:
+        pass
+
+
 try:
     if len(sys.argv) != 2:
         print "ardj is playing"
@@ -35,6 +48,7 @@ try:
         print track["artist"].encode("utf-8")
     elif sys.argv[1] == "title":
         print track["title"].encode("utf-8")
+        notify(track)
     else:
         print "unknown"
 except:
