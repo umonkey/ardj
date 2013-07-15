@@ -4,6 +4,7 @@
 from __future__ import print_function
 
 import os
+import shlex
 import subprocess
 import sys
 import time
@@ -254,6 +255,10 @@ webapi_root: %(ARDJ_CONFIG_DIR)s/website
 }
 
 
+def log_error(message):
+    print(message, file=sys.stderr)
+
+
 class ProcessMonitor(object):
     def __init__(self, name, command, config_dir):
         self.name = name
@@ -351,6 +356,16 @@ def get_config(config_dir, name):
     return path
 
 
+def get_config_option(name):
+    try:
+        from ardj import settings
+        return settings.get(name)
+    except Exception, e:
+        log_error("Error getting config option %s: %s" % (name, e))
+        log_error(traceback.format_exc(e))
+    return None
+
+
 def get_threads():
     threads = []
 
@@ -377,6 +392,12 @@ def get_threads():
     threads.append(ProcessMonitor("jabber",
         [sys.argv[0], "jabber"],
         config_dir))
+
+    player_cmd = get_config_option("bg_player")
+    if player_cmd is not None:
+        threads.append(ProcessMonitor(name="audio-player",
+            command=shlex.split(player_cmd),
+            config_dir=config_dir))
 
     return threads
 
