@@ -1,6 +1,8 @@
 1.2.0 (in progress)
 
 - When running ardj locally, use notify-send when track changes.
+- Can now run a background audio player with 'ardj serve`, good for
+  desktop usage.
 
 
 1.1.0
