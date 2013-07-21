@@ -675,7 +675,7 @@ def update_sticky_label(track_id, playlist):
 
         # This playlist has no sticky labels, nothing to do.
         if not playlist.get("sticky_labels"):
-            logging.debug("Sticky: playlist %s has no sticky_labels." % stick["playlist"])
+            logging.debug("Sticky: playlist %s has no sticky_labels." % sticky["playlist"])
             return
 
         # Find intersecting labels.
