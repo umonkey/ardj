@@ -663,14 +663,14 @@ def update_sticky_label(track_id, playlist):
         # Save the new playlist name.  If it changed -- remove previous label.
         if sticky["playlist"] != playlist.get("name", "unnamed"):
             if sticky["label"] is not None:
-                logging.debug("Sticky: playlist changed from %s to %s, dropping label %s." % (sticky["playlist"], playlist["name"], sticky["label"].encode("utf-8")))
+                logging.info("Playlist changed to %s, dropping sticky label." % playlist["name"])
                 sticky["label"] = None
 
         sticky["playlist"] = playlist.get("name", "unnamed")
 
         # There is a sticky label already, nothing to do.
         if sticky["label"]:
-            logging.debug("Sticky: continue using label %s" % sticky["label"].encode("utf-8"))
+            logging.info("Using sticky label %s" % sticky["label"].encode("utf-8"))
             return
 
         # This playlist has no sticky labels, nothing to do.
@@ -687,12 +687,12 @@ def update_sticky_label(track_id, playlist):
         # No intersection, nothing to do.
         labels = list(set(track.get_labels()) & set(playlist["sticky_labels"]))
         if not labels:
-            logging.debug("Sticky: track %s and playlist %s don't interfere." % (track["id"], sticky["playlist"]))
+            logging.debug("Sticky: track %u has no labels to stick to playlist %s." % (track["id"], sticky["playlist"]))
             return
 
         # Store the new sticky label.
         sticky["label"] = random.choice(labels)
-        logging.debug("Sticky: new label: %s" % sticky["label"].encode("utf-8"))
+        logging.info("New sticky label: %s" % sticky["label"].encode("utf-8"))
 
 
 def get_sticky_label(playlist):
@@ -907,7 +907,12 @@ def get_next_track_id(update_stats=True):
             track_id = get_random_track_id_from_playlist(playlist, skip_artists)
             if track_id is not None:
                 update_program_name(playlist.get("program"))
-                logging.debug('Picked track %u from playlist %s' % (track_id, playlist.get('name', 'unnamed').encode("utf-8")))
+                s = Sticky()
+
+                msg = 'Picked track %u from playlist "%s" using strategy "%s"' % (track_id, playlist.get('name', 'unnamed').encode("utf-8"), playlist.get("strategy", "default"))
+                if s["label"]:
+                    msg += " and sticky label \"%s\"" % s["label"]
+                logging.debug("%s." % msg)
                 break
 
     if track_id:
@@ -1383,14 +1388,15 @@ class MediaFolderScanner(object):
             for file in files:
                 ext = os.path.splitext(file)[1].lower()
                 if ext in (".mp3", ".ogg", ".oga", "flac"):
-                    found_files.append(os.path.join(folder, file)[len(root)+1:])
+                    found_files.append(os.path.join(folder, file)[len(root) + 1:])
 
         return found_files
 
     def find_tracks(self):
         result = {}
         for track in ardj.database.Track.find_all(deleted=True):
-            result[track["filename"].encode("utf-8")] = track["id"]
+            if track["filename"]:
+                result[track["filename"].encode("utf-8")] = track["id"]
         return result
 
 

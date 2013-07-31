@@ -40,22 +40,22 @@ CONFIG_EXAMPLES = {
         <port>8000</port>
     </listen-socket>
 
-	<mount>
-		<mount-name>/music.mp3</mount-name>
-		<password>hackme</password>
-	</mount>
+    <mount>
+        <mount-name>/music.mp3</mount-name>
+        <password>hackme</password>
+    </mount>
 
-	<mount>
-		<mount-name>/live.mp3</mount-name>
-		<password>hackme</password>
-		<fallback-mount>/music.mp3</fallback-mount>
-		<fallback-override>1</fallback-override>
-		<!--
+    <mount>
+        <mount-name>/live.mp3</mount-name>
+        <password>hackme</password>
+        <fallback-mount>/music.mp3</fallback-mount>
+        <fallback-override>1</fallback-override>
+        <!--
         <dump-file>%(HOME)s/.ardj/dump/last-live-stream.mp3</dump-file>
         <on-connect>%(HOME)s/.ardj/on-live-connected</on-connect>
         <on-disconnect>%(HOME)s/.ardj/on-live-disconnected</on-disconnect>
-		-->
-	</mount>
+        -->
+    </mount>
 
     <paths>
         <basedir>/usr/share/icecast2</basedir>
@@ -68,8 +68,8 @@ CONFIG_EXAMPLES = {
     <logging>
         <accesslog>icecast2-access.log</accesslog>
         <errorlog>icecast2-error.log</errorlog>
-      	<loglevel>3</loglevel>
-      	<logsize>10000</logsize>
+        <loglevel>3</loglevel>
+        <logsize>10000</logsize>
     </logging>
 </icecast>
 """,

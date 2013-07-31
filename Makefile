@@ -24,7 +24,7 @@ test: test-syntax test-units
 test-units:
 	cp -f unittests/data/src/* unittests/data/
 	rm -f tests.log tests-ardj.log
-	PYTHONPATH=src ARDJ_SETTINGS=unittests/data/settings.yaml $(PYTHON) unittests/all.py
+	PYTHONPATH=src ARDJ_SETTINGS=unittests/data/settings.yaml ARDJ_CONFIG_DIR=unittests/data $(PYTHON) unittests/all.py
 	rm -f unittests/data/*.*
 
 test-syntax:

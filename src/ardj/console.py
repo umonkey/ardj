@@ -345,7 +345,7 @@ def on_play(args, sender):
 
     By default the specified tags will work for 30 minutes, unless
     different duration is specified with --time=MINUTES.
-    
+
     Example: play --time=3600 tagme"""
     if not args:
         current = ardj.tracks.get_urgent()

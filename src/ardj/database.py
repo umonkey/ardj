@@ -55,38 +55,38 @@ SQL_INIT = [
     "CREATE TABLE IF NOT EXISTS queue (id INTEGER PRIMARY KEY, track_id INTEGER, owner TEXT);",
 
     # urgent (manual) playlist
-	"CREATE TABLE IF NOT EXISTS urgent_playlists (labels TEXT, expires INTEGER);",
-	"CREATE INDEX IF NOT EXISTS urgent_playlists_expires ON urgent_playlists (expires);",
+    "CREATE TABLE IF NOT EXISTS urgent_playlists (labels TEXT, expires INTEGER);",
+    "CREATE INDEX IF NOT EXISTS urgent_playlists_expires ON urgent_playlists (expires);",
 
     # labels
-	"CREATE TABLE IF NOT EXISTS labels (track_id INTEGER NOT NULL, email TEXT NOT NULL, label TEXT NOT NULL);",
-	"CREATE INDEX IF NOT EXISTS idx_labels_track_id ON labels (track_id);",
-	"CREATE INDEX IF NOT EXISTS idx_labels_email ON labels (email);",
-	"CREATE INDEX IF NOT EXISTS idx_labels_label ON labels (label);",
+    "CREATE TABLE IF NOT EXISTS labels (track_id INTEGER NOT NULL, email TEXT NOT NULL, label TEXT NOT NULL);",
+    "CREATE INDEX IF NOT EXISTS idx_labels_track_id ON labels (track_id);",
+    "CREATE INDEX IF NOT EXISTS idx_labels_email ON labels (email);",
+    "CREATE INDEX IF NOT EXISTS idx_labels_label ON labels (label);",
 
     # voting
-	"CREATE TABLE IF NOT EXISTS votes (track_id INTEGER NOT NULL, email TEXT NOT NULL, vote INTEGER, weight REAL, ts INTEGER);",
-	"CREATE INDEX IF NOT EXISTS idx_votes_track_id ON votes (track_id);",
-	"CREATE INDEX IF NOT EXISTS idx_votes_email ON votes (email);",
-	"CREATE INDEX IF NOT EXISTS idx_votes_ts ON votes (ts);",
+    "CREATE TABLE IF NOT EXISTS votes (track_id INTEGER NOT NULL, email TEXT NOT NULL, vote INTEGER, weight REAL, ts INTEGER);",
+    "CREATE INDEX IF NOT EXISTS idx_votes_track_id ON votes (track_id);",
+    "CREATE INDEX IF NOT EXISTS idx_votes_email ON votes (email);",
+    "CREATE INDEX IF NOT EXISTS idx_votes_ts ON votes (ts);",
 
     # karma
-	"CREATE TABLE IF NOT EXISTS karma (email TEXT, weight REAL);",
-	"CREATE INDEX IF NOT EXISTS idx_karma_email ON karma (email);",
+    "CREATE TABLE IF NOT EXISTS karma (email TEXT, weight REAL);",
+    "CREATE INDEX IF NOT EXISTS idx_karma_email ON karma (email);",
 
     # play log
-	"CREATE TABLE IF NOT EXISTS playlog (ts INTEGER NOT NULL, track_id INTEGER NOT NULL, listeners INTEGER NOT NULL, lastfm INTEGER NOT NULL DEFAULT 0, librefm INTEGER NOT NULL DEFAULT 0);",
-	"CREATE INDEX IF NOT EXISTS idx_playlog_ts ON playlog (ts);",
-	"CREATE INDEX IF NOT EXISTS idx_playlog_track_id ON playlog (track_id);",
+    "CREATE TABLE IF NOT EXISTS playlog (ts INTEGER NOT NULL, track_id INTEGER NOT NULL, listeners INTEGER NOT NULL, lastfm INTEGER NOT NULL DEFAULT 0, librefm INTEGER NOT NULL DEFAULT 0);",
+    "CREATE INDEX IF NOT EXISTS idx_playlog_ts ON playlog (ts);",
+    "CREATE INDEX IF NOT EXISTS idx_playlog_track_id ON playlog (track_id);",
 
     # chat messages
-	"CREATE TABLE IF NOT EXISTS jabber_messages (id INTEGER PRIMARY KEY, re TEXT, message TEXT);",
+    "CREATE TABLE IF NOT EXISTS jabber_messages (id INTEGER PRIMARY KEY, re TEXT, message TEXT);",
 
     # music downloads
-	"CREATE TABLE IF NOT EXISTS download_queue (artist TEXT PRIMARY KEY, owner TEXT);",
+    "CREATE TABLE IF NOT EXISTS download_queue (artist TEXT PRIMARY KEY, owner TEXT);",
 
     # web authentication
-	"CREATE TABLE IF NOT EXISTS tokens (token TEXT PRIMARY KEY NOT NULL, login TEXT NOT NULL, login_type TEXT NOT NULL, active INTEGER NOT NULL DEFAULT 0);",
+    "CREATE TABLE IF NOT EXISTS tokens (token TEXT PRIMARY KEY NOT NULL, login TEXT NOT NULL, login_type TEXT NOT NULL, active INTEGER NOT NULL DEFAULT 0);",
 ]
 
 

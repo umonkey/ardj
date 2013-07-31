@@ -5,7 +5,7 @@
 \\$2 \(la\\$1\(ra\\$3
 ..
 .if \n(.g .mso www.tmac
-.TH ardj 1 "26 October 2011" "" ardj
+.TH ardj 1 "31 July 2013" "" ardj
 .SH NAME
 ardj \- an internet radio playlist manager
 .SH SYNOPSIS
@@ -27,7 +27,7 @@ care.
 .PP
 \fBardj\fR uses an SQLite database to store the runtime data, a tiny web server to access
 it, an XMPP (Jabber) bot for runtime management and to interact with the audience, and a plugin which feeds
-\fBices\fR.\  The web server which is used as the database interface is built on
+\fBezstream\fR.\  The web server which is used as the database interface is built on
 web.py and requires zero configuration; it's main purpose is to prevent
 deadlocking the SQLite database by synchronizing multiple processes accessing it.
 .PP

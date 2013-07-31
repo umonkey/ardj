@@ -315,6 +315,7 @@ def cmd_dedup_tracks(*args):
     else:
         print "No duplicate tracks found."
 
+
 def cmd_download_artist_schedule(*args):
     """queues retrieving more tracks by the specified artists"""
     from ardj.database import DownloadRequest, commit

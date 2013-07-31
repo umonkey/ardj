@@ -111,8 +111,10 @@ def load_data():
     Options: ARDJ_SETTINGS envar, ~/.config/ardj/default.yaml, /etc/ardj.yaml.
     If none exist, an empty dicrionary returned.
     """
-    config_dir = get_config_dir()
-    filename = os.path.join(config_dir, "ardj.yaml")
+    filename = os.getenv("ARDJ_SETTINGS")
+    if not filename:
+        config_dir = get_config_dir()
+        filename = os.path.join(config_dir, "ardj.yaml")
     if os.path.exists(filename):
         return yaml.load(open(filename, 'rb')), filename
     return {}, None

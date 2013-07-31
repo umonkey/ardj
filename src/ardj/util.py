@@ -56,7 +56,7 @@ def run(*args, **kwargs):
     status, out, err = run_ex(*args, **kwargs)
 
     response = status == 0
-    if grab_output:
+    if kwargs.get("grab_output"):
         response = out
     return response
 
@@ -399,5 +399,5 @@ def shorten_file_path(filepath):
     musicdir = settings.get_music_dir()
     filepath = os.path.realpath(filepath)
     if filepath.startswith(musicdir):
-        return filepath[len(musicdir)+1:]
+        return filepath[len(musicdir) + 1:]
     return filepath
