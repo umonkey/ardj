@@ -167,11 +167,14 @@ class AuthController(Controller):
 
 class IndexController(Controller):
     def GET(self):
-        if not os.path.exists("static/index.html"):
-            logging.warning("File static/index.html not found.")
+        root = settings.get("webapi_root")
+        filename = os.path.join(root, "static", "index.html")
+        if not os.path.exists(filename):
+            logging.warning("File %s not found." % filename)
             return web.notfound()
         web.header("Content-Type", "text/html; charset=UTF-8")
-        return file("static/index.html", "rb").read()
+        with open(filename, "rb") as f:
+            return f.read()
 
 
 class SearchController(Controller):

@@ -4,6 +4,7 @@
 - Can now run a background audio player with 'ardj serve`, good for
   desktop usage.
 - Fixed broken tests.
+- Fixed handling of / by the built-in web server.
 
 
 1.1.0
