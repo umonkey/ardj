@@ -1,4 +1,4 @@
-VERSION=1.0.17
+VERSION=1.2.0
 PYTHON=python
 
 help:
@@ -77,13 +77,14 @@ share/doc/man/ardj.1.gz: share/doc/man/ardj.1
 
 man: share/doc/man/ardj.1.gz
 
-doc: share/doc/html/index.html share/doc/html/single.html
+doc: share/doc/html/index.html share/doc/html/ardj.html
+	if [ -d $(HOME)/src/sites/umonkey.net/input/ardj/doc ]; then cp share/doc/html/* $(HOME)/src/sites/umonkey.net/input/ardj/doc; fi
 
 share/doc/html/index.html: src/docbook/book.xml
 	rm -f share/doc/html/*.html
-	xsltproc --param use.id.as.filename 1 --param chunker.output.encoding UTF-8 --stringparam html.stylesheet screen.css -o share/doc/html/ /usr/share/xml/docbook/stylesheet/docbook-xsl/html/chunk.xsl $<
+	xsltproc --param use.id.as.filename 1 --stringparam html.stylesheet screen.css -o share/doc/html/ src/docbook/chunked-settings.xsl $<
 
-share/doc/html/single.html: src/docbook/book.xml
+share/doc/html/ardj.html: src/docbook/book.xml
 	xsltproc --stringparam html.stylesheet screen.css -o $@ src/docbook/single-settings.xsl $<
 
 src/docbook/book.xml: src/docbook/book.xml.in src/docbook/*.xml Makefile

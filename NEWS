@@ -1,14 +1,15 @@
-1.2.0 (in progress)
+1.2.0 (2013-09-30)
 
 - When running ardj locally, use notify-send when track changes.
-- Can now run a background audio player with 'ardj serve`, good for
-  desktop usage.
+- Can now run a background audio player with 'ardj serve`,
+  good for desktop usage.
 - Can now tag tracks by artist, example:
   tag -tagme rock loud --artist="Slick Idiot"
 - Can now tag tracks by file name, example:
   tag live --filename="%/KMFDM (Live)/%"
 - Fixed broken tests.
 - Fixed handling of / by the built-in web server.
+- Fixed errors in setup.py
 
 
 1.1.0
