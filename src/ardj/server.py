@@ -246,6 +246,39 @@ class ExceptionHandlingMiddleWare(object):
             database.rollback()
 
 
+class PlaylistController(Controller):
+    @send_json
+    def GET(self):
+        args = web.input(name="all", artist=None, tag=None)
+
+        playlist_name = args["name"]
+        if playlist_name == "bookmarks":
+            playlist_name = "bm:hex@umonkey.net"
+
+        artist_name = args["artist"]
+        if artist_name == "All artists":
+            artist_name = None
+
+        tag_name = args["tag"]
+        if tag_name == "All tags":
+            tag_name = None
+
+        print "Playlist query: %s" % dict(args)
+
+        result = {"artsits": [], "tags": [], "tracks": []}
+        result["artists"] = [a["name"] for a in database.Artist.query(playlist=playlist_name,
+            tag=tag_name)]
+        result["tags"] = database.Label.query_names(playlist=playlist_name,
+            artist=artist_name)
+
+        tracks = database.Track.query(playlist=playlist_name,
+            artist=artist_name, tag=tag_name)
+        result["tracks"] = [{"id": t["id"], "artist": t["artist"],
+            "title": t["title"]} for t in tracks]
+
+        return result
+
+
 def serve_http(hostname, port):
     """Starts the HTTP web server at the specified socket."""
     sys.argv.insert(1, "%s:%s" % (hostname, port))
@@ -260,6 +293,7 @@ def serve_http(hostname, port):
         "/api/track/info\.json", InfoController,
         "/api/track/rocks\.json", RocksController,
         "/api/track/sucks\.json", SucksController,
+        "/api/playlist\.json", PlaylistController,
         "/commit\.json", CommitController,
         "/raise", RaiseController,
         "/track/info\.js(?:on)?", InfoController,
@@ -284,7 +318,8 @@ def run_cli(args):
         else:
             print "Could not find web root folder."
             sys.exit(1)
-        os.chdir(root)
+    print "Web root is %s" % root
+    os.chdir(root)
     serve_http(*settings.get("webapi_socket", "127.0.0.1:8080").split(":", 1))
 
 

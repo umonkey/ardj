@@ -41,6 +41,8 @@ import ardj.tags
 import ardj.util
 
 
+RECENT_SECONDS = 2 * 3600
+
 SQL_INIT = [
     # playlists
     "CREATE TABLE IF NOT EXISTS playlists (id INTEGER PRIMARY KEY, name TEXT, last_played INTEGER);",
@@ -200,7 +202,7 @@ class Vote(Model):
 class Track(Model):
     """Stores information about a track."""
     table_name = "tracks"
-    fields = "id", "artist", "title", "filename", "length", "weight", "real_weight", "count", "last_played", "owner", "image", "download"
+    fields = ("id", "artist", "title", "filename", "length", "weight", "real_weight", "count", "last_played", "owner", "image", "download")
     key_name = "id"
 
     @classmethod
@@ -332,6 +334,43 @@ class Track(Model):
 
         return t
 
+    @classmethod
+    def find_all_playlists(cls, count):
+        sql = "SELECT %s FROM %s WHERE weight > 0 ORDER BY artist, title" % (cls._fields_sql(), cls.table_name)
+        params = []
+        return cls._fetch_rows(sql, params)
+
+    @classmethod
+    def query(cls, playlist=None, artist=None, tag=None, count=100):
+        sql = "SELECT %s FROM %s WHERE weight > 0" % (cls._fields_sql(), cls.table_name)
+        params = []
+        order = "artist, title"
+
+        if not playlist or playlist == "all":
+            pass
+        elif playlist == "never":
+            sql += " AND last_played IS NULL"
+        elif playlist == "recent":
+            ts = time.time() - RECENT_SECONDS
+            sql += " AND last_played > ?"
+            params.append(int(ts))
+            order = "last_played DESC"
+        else:
+            sql += " AND id IN (SELECT track_id FROM labels WHERE label = ?)"
+            params.append(playlist)
+
+        if artist and artist != "All artists":
+            sql += " AND artist = ?"
+            params.append(artist)
+
+        if tag and tag != "All tags":
+            sql += " AND id IN (SELECT track_id FROM labels WHERE label = ?)"
+            params.append(tag)
+
+        sql += " ORDER BY %s LIMIT %u" % (order, count)
+
+        return cls._fetch_rows(sql, params)
+
 
 class Queue(Model):
     """Stores information about a track to play out of regular order."""
@@ -353,6 +392,103 @@ class Label(Model):
     @classmethod
     def delete_by_name(cls, name):
         execute("DELETE FROM `%s` WHERE `label` = ?" % cls.table_name, (name, ))
+
+    @classmethod
+    def find_all_names(cls):
+        rows = fetch("SELECT DISTINCT label FROM labels WHERE track_id IN (SELECT id FROM tracks WHERE weight > 0) ORDER BY label")
+        return [r[0] for r in rows]
+
+    @classmethod
+    def find_never_played_names(cls):
+        rows = fetch("SELECT DISTINCT label FROM labels WHERE track_id IN (SELECT id FROM tracks WHERE weight > 0 AND last_played IS NULL) ORDER BY label")
+        return [r[0] for r in rows]
+
+    @classmethod
+    def find_recently_played_names(cls):
+        limit = time.time() - RECENT_SECONDS
+        rows = fetch("SELECT DISTINCT label FROM labels WHERE track_id IN (SELECT id FROM tracks WHERE weight > 0 AND last_played > ?) ORDER BY label", (limit, ))
+        return [r[0] for r in rows]
+
+    @classmethod
+    def find_crossing_names(cls, name):
+        rows = fetch("SELECT DISTINCT label FROM labels WHERE track_id IN (SELECT id FROM tracks INNER JOIN labels l ON l.track_id = tracks.id WHERE weight > 0 AND l.label = ?)", (name, ))
+        return [r[0] for r in rows]
+
+    @classmethod
+    def query_names(cls, playlist=None, artist=None):
+        sql = "SELECT DISTINCT label FROM labels WHERE 1"
+        params = []
+
+        if playlist == "all":
+            pass
+        elif playlist == "never":
+            sql += " AND track_id IN (SELECT id FROM tracks WHERE weight > 0 AND last_played IS NULL)"
+        elif playlist == "recent":
+            ts = time.time() - RECENT_SECONDS
+            sql += " AND track_id IN  (SELECT id FROM tracks WHERE weight > 0 AND last_played > ?)"
+            params.append(int(ts))
+        else:
+            sql += " AND track_id IN (SELECT id FROM tracks INNER JOIN labels l ON l.track_id = tracks.id WHERE weight > 0 AND l.label = ?)"
+            params.append(playlist)
+
+        if not artist or artist == "All artists":
+            pass
+        else:
+            sql += " AND track_id IN (SELECT id FROM tracks WHERE weight > 0 AND artist = ?)"
+            params.append(artist)
+
+        sql += " ORDER BY label"
+
+        return [r[0] for r in fetch(sql, params)]
+
+
+class Artist(Model):
+    """A virtual model without a table."""
+    fields = ("name", )
+
+    @classmethod
+    def query(cls, playlist=None, tag=None):
+        sql = "SELECT DISTINCT artist FROM tracks WHERE weight > 0"
+        params = []
+
+        if playlist == "all":
+            pass
+        elif playlist == "never":
+            sql += " AND last_played IS NULL"
+        elif playlist == "recent":
+            sql += " AND last_played >= ?"
+            params.append(time.time() - RECENT_SECONDS)
+        else:
+            sql += " AND id IN (SELECT track_id FROM labels WHERE label = ?)"
+            params.append(playlist)
+
+        if tag and tag != "All tags":
+            sql += " AND id IN (SELECT track_id FROM labels WHERE label = ?)"
+            params.append(tag)
+
+        sql += " ORDER BY artist"
+        return cls._fetch_rows(sql, params)
+
+    @classmethod
+    def query_all(cls):
+        sql = "SELECT DISTINCT artist FROM tracks WHERE weight > 0 ORDER BY artist"
+        return cls._fetch_rows(sql, ())
+
+    @classmethod
+    def find_unplayed(cls):
+        sql = "SELECT DISTINCT artist FROM tracks WHERE weight > 0 AND last_played IS NULL ORDER BY artist"
+        return cls._fetch_rows(sql, ())
+
+    @classmethod
+    def find_recent(cls):
+        limit = time.time() - RECENT_SECONDS
+        sql = "SELECT DISTINCT artist FROM tracks WHERE weight > 0 AND last_played > ? ORDER BY artist"
+        return cls._fetch_rows(sql, (limit, ))
+
+    @classmethod
+    def find_by_tag(cls, tag):
+        sql = "SELECT DISTINCT artist FROM tracks WHERE weight > 0 AND id IN (SELECT track_id FROM labels WHERE label = ?) ORDER BY artist"
+        return cls._fetch_rows(sql, (tag, ))
 
 
 class database:

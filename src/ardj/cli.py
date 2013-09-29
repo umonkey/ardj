@@ -112,13 +112,9 @@ def cmd_find_new_files(*args):
 def cmd_jabber(*args):
     """run the jabber bot"""
     from ardj import jabber, settings
-    while True:
-        bot = jabber.Open(debug="--debug" in args)
-        if bot is not None:
-            bot.run()
-        else:
-            time.sleep(10)
-        settings.load(refresh=True)
+    bot = jabber.Open(debug="--debug" in args)
+    if bot is not None:
+        bot.run()
 
 
 def cmd_export_total_listeners(*args):
@@ -265,6 +261,15 @@ def cmd_twit_replies_speak(*args):
     except twitter.ConfigError, e:
         print >> sys.stderr, e
         return False
+
+
+def cmd_update_database(*args):
+    """remove tracks with no files, add new ones"""
+    from ardj import database
+    from ardj import tracks
+    database.Open().purge()
+    tracks.purge()
+    database.commit()
 
 
 def cmd_update_schedule(*args):

@@ -426,6 +426,7 @@ def purge():
     # mark tracks that no longer have files
     for track_id, filename in ardj.database.fetch('SELECT id, filename FROM tracks WHERE weight > 0 AND filename IS NOT NULL'):
         abs_filename = os.path.join(music_dir, filename)
+        print abs_filename
         if not os.path.exists(abs_filename):
             logging.warning('Track %u vanished (%s), deleting.' % (track_id, filename))
             ardj.database.execute('UPDATE tracks SET weight = 0 WHERE id = ?', (track_id, ))
@@ -1126,6 +1127,11 @@ def bookmark(track_ids, owner, remove=False):
 
 def find_by_artist(artist_name):
     rows = ardj.database.fetch('SELECT id FROM tracks WHERE artist = ? COLLATE unicode', (artist_name, ))
+    return [row[0] for row in rows]
+
+
+def find_by_filename(pattern):
+    rows = ardj.database.fetch('SELECT id FROM tracks WHERE filename LIKE ? COLLATE unicode', (pattern, ))
     return [row[0] for row in rows]
 
 

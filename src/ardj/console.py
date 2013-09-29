@@ -361,6 +361,8 @@ def on_tags(args, sender):
     """Shows or modifies tags.
 
     tags add -remove [for track_id[,track_id,...]] -- manipulate tags
+    tags add -remove --artist=\"Some Artist\"
+    tags add -remove --filename=\"%some/path%\"
     tags -- show the tag cloud.
     """
     if not args or args == '-a':
@@ -382,6 +384,7 @@ def on_tags(args, sender):
             return 'The last argument (track_id) must be a comma-separated list of integers.'
         track_ids = [int(i) for i in parts[-1].split(",")]
         parts = parts[:-2]
+    
     elif "--artist=" in args:
         new_parts = []
         for part in parts:
@@ -390,6 +393,17 @@ def on_tags(args, sender):
             else:
                 new_parts.append(part)
         parts = new_parts
+
+    elif "--filename=" in args:
+        new_parts = []
+        for part in parts:
+            if part.startswith("--filename="):
+                pattern = part.split("=", 1)[1]
+                track_ids = ardj.tracks.find_by_filename(pattern)
+            else:
+                new_parts.append(part)
+        parts = new_parts
+
     else:
         track_ids = [ardj.tracks.get_last_track_id()]
 
