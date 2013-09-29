@@ -276,7 +276,6 @@ class ProcessMonitor(object):
         self.logfile = open(self.logname, "ab")
 
         self.p = None
-        self.log("> %s" % " ".join(self.command))
         self.run()
 
     def __del__(self):
@@ -295,6 +294,7 @@ class ProcessMonitor(object):
             stdout=self.logfile,
             stderr=self.logfile,
             env=env)
+        self.log("> %s" % " ".join(self.command))
 
         with open(self.pidfile, "wb") as f:
             f.write(str(self.p.pid) + "\n")
@@ -311,7 +311,7 @@ class ProcessMonitor(object):
         if self.p is not None:
             self.log("terminating.")
             try:
-                self.p.terminate()
+                self.p.kill()
             except Exception:
                 pass
 
@@ -319,7 +319,10 @@ class ProcessMonitor(object):
         ts = time.strftime("%H:%M:%S")
         if message:
             for line in message.rstrip().split("\n"):
-                print("%s [%s] %s" % (ts, self.name, line))
+                name = self.name
+                if self.p:
+                    name += "(%s)" % self.p.pid
+                print("%s [%s] %s" % (ts, name, line))
 
 
 def have_program(command):

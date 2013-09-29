@@ -2,6 +2,8 @@
 
 - Simpler error messages when there's no config file.
 - Better autoconfiguration.
+- Process monitor now prints pids.
+- Kill subprocesses on ^C with SIGKILL instead of SIGTERM.
 
 
 1.2.0 (2013-09-30)
