@@ -133,7 +133,7 @@ setup(
     classifiers = classifiers,
     data_files = data_files,
     description = 'An artificial DJ for you internet radio.',
-    long_description = 'An artificial DJ for your icecast2 based internet radio.  Consists of an ices python playlist module and a jabber bot which lets you control that radio.  Supports sending messages to twitter and other unnecessary stuff.',
+    long_description = 'An artificial DJ for your icecast2 based internet radio.  Consists of an ezstream python playlist module, a jabber bot which lets you control that radio, integrates with Last.fm and Twitter, can download music from Jamendo, etc.',
     license = 'GNU GPL',
     name = 'ardj',
     package_dir = { '': 'src' },
