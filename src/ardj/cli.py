@@ -22,7 +22,7 @@ import ardj.log
 
 
 def is_running_from_source():
-    my_path = os.path.realpath(__file_)
+    my_path = os.path.realpath(__file__)
     return my_path.startswith(os.path.expanduser("~/"))
 
 
@@ -216,21 +216,31 @@ def cmd_print_current_track(*args):
 def cmd_print_next_track(*args):
     """names a file to play next"""
     try:
-        from ardj import tracks, database
+        from ardj import tracks, database, settings
         track = tracks.get_next_track()
         if track is not None:
             database.commit()
             print track["filepath"].encode("utf-8")
             return
-    except:
-        if is_running_from_source():
-            d = os.path.dirname
-            pattern = os.path.join(d(d(d(__file__))), "share/audio/*.ogg")
-        else:
-            pattern = "/usr/share/ardj/failure/*.ogg"
-        files = glob.glob(pattern)
-        if files:
-            print random.choice(files)
+    except Exception, e:
+        print >> sys.stderr, "ERROR: %s" % e
+
+    count = tracks.count_available()
+    if not count:
+        music_dir = settings.get_music_dir()
+        print >> sys.stderr, "WARNING: there are NO tracks in the database.  Put some files in %s, then run 'ardj find-new-files'." % music_dir
+    else:
+        print >> sys.stderr, "WARNING: could not pick a track to play.  Details can be found in %s." % settings.getpath("log", "syslog")
+
+    if is_running_from_source():
+        d = os.path.dirname
+        pattern = os.path.join(d(d(d(__file__))), "share/audio/*.ogg")
+    else:
+        pattern = "/usr/share/ardj/failure/*.ogg"
+    files = glob.glob(pattern)
+    if files:
+        print >> sys.stderr, "WARNING: playing a pre-packaged file."
+        print random.choice(files)
 
 
 def cmd_twit(msg, *args):

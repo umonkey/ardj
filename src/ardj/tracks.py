@@ -1425,3 +1425,9 @@ def dedup_by_filename(verbose=False):
             cache[track["filename"]] = track["id"]
 
     return merge_count
+
+
+def count_available():
+    """Returns the number of tracks that are not deleted."""
+    count = ardj.database.fetch("SELECT COUNT(*) FROM tracks WHERE weight > 0")
+    return count[0][0]

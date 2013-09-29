@@ -1,9 +1,12 @@
-1.2.1
+1.2.1 (2013-09-30)
 
 - Simpler error messages when there's no config file.
 - Better autoconfiguration.
 - Process monitor now prints pids.
 - Kill subprocesses on ^C with SIGKILL instead of SIGTERM.
+- Fixed an error in ardj print-next-track, which made ezstream
+  crash instead of playing pre-packaged audio samples.
+- More messages to guide through the initial setup.
 
 
 1.2.0 (2013-09-30)

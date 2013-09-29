@@ -435,6 +435,13 @@ def print_welcome():
         else:
             print("Could not find stream URL in ezstream.xml :(", file=sys.stderr)
 
+    from ardj import tracks
+    count = tracks.count_available()
+    if not count:
+        from ardj import settings
+        music_dir = settings.get_music_dir()
+        log_error("WARNING: the music database is empty. Put some files in %s and run 'ardj find-new-files'." % music_dir)
+
 
 def run_cli(*args):
     check_required_programs()
