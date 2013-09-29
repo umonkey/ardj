@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "/usr/share/xml/docbook/schema/dtd/4.4/docbookx.dtd" [
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "/usr/share/yelp/dtd/docbookx.dtd" [
   <!ENTITY admins SYSTEM "admins.xml">
   <!ENTITY ezstream_sox SYSTEM "ezstream_sox.xml">
   <!ENTITY install SYSTEM "install.xml">
@@ -36,9 +36,7 @@
       <para>Это руководство содержит всю информацию, необходимую для работы запуска радиостанции, основанной на ardj, и
       работы с ней.</para>
 
-      <para>Если при чтении этой документации у вас возникают вопросы, на которые она не отвечает, хотя должна, или если
-      что-то не работает — обращайтесь в баг-трекер по адресу <ulink
-      url="http://code.google.com/p/ardj/issues/list">ardj.googlecode.com</ulink>, все запросы обрабатываются.</para>
+      <para>Если при чтении этой документации у вас возникают вопросы, на которые она не отвечает, хотя должна, или если что-то не работает — обращайтесь по адресу <email>hex@umonkey.net</email>.</para>
     </abstract>
   </bookinfo>
 
