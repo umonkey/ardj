@@ -102,7 +102,11 @@ wrapper_instance = None
 
 
 def get_config_dir():
-    return os.path.expanduser(os.getenv("ARDJ_CONFIG_DIR", "~/.ardj"))
+    config_dir = os.path.expanduser(os.getenv("ARDJ_CONFIG_DIR", "~/.ardj"))
+    if not os.path.exists(config_dir):
+        os.makedirs(config_dir)
+        print "Created folder %s." % config_dir
+    return config_dir
 
 
 def load_data():
@@ -153,11 +157,13 @@ def getpath2(key1, key2, default=None, fail=False):
 
 
 def edit_cli(args):
-    editor = os.getenv('EDITOR', 'editor')
-    filename = load().filename
-    if not filename:
-        raise Exception("Config file not found, create it first.")
-    os.system(editor + ' ' + load().filename)
+    """Opens the config file in the preferred editor.  Files are created when
+    necessary."""
+    from monitor import autocreate_configs
+    configs = autocreate_configs()
+
+    from ardj.util import edit_file
+    edit_file(configs["ardj.yaml"])
 
 
 def get_music_dir():

@@ -4,6 +4,7 @@
 from __future__ import print_function
 
 import os
+import re
 import shlex
 import subprocess
 import sys
@@ -116,7 +117,13 @@ CONFIG_EXAMPLES = {
 </ezstream>
 """,
 
-"ardj.yaml": """# This is where the music will be stored.  You MUST NOT put the music there
+"ardj.yaml": """# This is the main configuration file for ardj.
+# If you have questions even after reading the comments, try reading
+# the documentation at <http://umonkey.net/ardj/doc/>
+#
+# If something doesn't work, write to <hex@umonkey.net>.
+
+# This is where the music will be stored.  You MUST NOT put the music there
 # manually, see the incoming folder below.
 musicdir: %(ARDJ_CONFIG_DIR)s/music
 
@@ -335,7 +342,10 @@ def check_required_programs():
         sys.exit(1)
 
 
-def get_config(config_dir, name):
+def get_config(name):
+    from ardj import settings
+    config_dir = settings.get_config_dir()
+
     path = os.path.join(config_dir, name)
     if not os.path.exists(path):
         if name in CONFIG_EXAMPLES:
@@ -350,7 +360,7 @@ def get_config(config_dir, name):
             with open(path, "wb") as f:
                 f.write(data)
             os.chmod(path, 0640)
-            print("Created default %s." % path)
+            print("Created file %s with default contents." % path)
             return path
         raise Exception("Config file %s not found." % path)
     return path
@@ -366,22 +376,30 @@ def get_config_option(name):
     return None
 
 
+def autocreate_configs():
+    """Create missing config files and directories."""
+    data = {}
+    for filename in CONFIG_EXAMPLES.keys():
+        data[filename] = get_config(filename)
+    return data
+
+
 def get_threads():
     threads = []
 
-    config_dir = os.path.expanduser(os.getenv("ARDJ_CONFIG_DIR", "~/.ardj"))
-    if not os.path.isdir(config_dir):
-        raise Exception("config folder %s does not exist." % config_dir)
+    from ardj import settings
+    config_dir = settings.get_config_dir()
+
     os.putenv("ARDJ_CONFIG_DIR", config_dir)
 
-    get_config(config_dir, "ardj.yaml")
-    get_config(config_dir, "playlist.yaml")
+    get_config("ardj.yaml")
+    get_config("playlist.yaml")
 
     threads.append(ProcessMonitor("icecast2",
-        ["icecast2", "-c", get_config(config_dir, "icecast2.xml")],
+        ["icecast2", "-c", get_config("icecast2.xml")],
         config_dir))
     threads.append(ProcessMonitor("ezstream",
-        ["ezstream", "-c", get_config(config_dir, "ezstream.xml")],
+        ["ezstream", "-c", get_config("ezstream.xml")],
         config_dir))
     threads.append(ProcessMonitor("web-server",
         [sys.argv[0], "start-web-server"],
@@ -402,6 +420,19 @@ def get_threads():
     return threads
 
 
+def print_welcome():
+    """Prints the welcome message, which currently contains a link to the MP3
+    stream."""
+    config_name = get_config("ezstream.xml")
+
+    with open(config_name, "rb") as f:
+        matches = re.search("<url>(.+)</url>", f.read())
+        if matches:
+            print("You can listen to your stream at %s" % matches.group(1))
+        else:
+            print("Could not find stream URL in ezstream.xml :(", file=sys.stderr)
+
+
 def run_cli(*args):
     check_required_programs()
 
@@ -411,6 +442,8 @@ def run_cli(*args):
         print("Error: %s" % e, file=sys.stderr)
         print(traceback.format_exc(e), file=sys.stderr)
         sys.exit(1)
+
+    print_welcome()
 
     while True:
         for t in threads:

@@ -1,6 +1,7 @@
 1.2.1
 
 - Simpler error messages when there's no config file.
+- Better autoconfiguration.
 
 
 1.2.0 (2013-09-30)

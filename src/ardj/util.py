@@ -29,6 +29,11 @@ class ProgramNotFound(Exception):
     pass
 
 
+def edit_file(filename):
+    editor = os.getenv("EDITOR", "editor")
+    subprocess.Popen([editor, filename]).wait()
+
+
 def run_ex(command, quiet=False, stdin_data=None, grab_output=False, nice=True):
     command = [str(x) for x in command]
 

@@ -93,47 +93,17 @@
     <section id="quickstart">
       <title>Быстрый запуск</title>
 
-      <para>В этом разделе описывается последовательность действий по запуску радиостанции на примере операционной системы
-      Ubuntu Linux.  Действия для других операционных систем аналогичны, с поправкой на использование местного менеджера
-      пакетов и названий некоторых пакетов.  Предполагается, что пользователь умеет редактировать текстовые файлы.</para>
+      <para>Для быстрого запуска радиостанции достаточно загрузить исходный код (например, клонировав <ulink url="http://code.umonkey.net/ardj">репозиторий</ulink>) и выполнить команду:</para>
 
-      <para>Сначала нужно активировать репозитории <ulink
-      url="https://help.ubuntu.com/community/Repositories/CommandLine#Adding_the_Universe_and_Multiverse_Repositories">Universe,
-      Muiltiverse</ulink> и <ulink
-      url="https://help.ubuntu.com/community/Medibuntu#Adding_the_Repository">Medibuntu</ulink>.  Затем нужно установить
-      используемые системные пакеты:</para>
+      <programlisting>./bin/ardj config</programlisting>
 
-      <programlisting>sudo apt-get install python-yaml python-mutagen \
-  python-oauth python-feedparser python-httplib2
-  python-webpy python-dnspython python-socksipy \
-  ices icecast2 python-simplejson python-pip</programlisting>
+      <para>По этой команде будут созданы конфигурационные файлы, заполненные примерами, достаточными для запуска радиостанции в минимальной конфигурации.  Поддержку подкастов, выгрузку плей-листа в Last.fm, связь с конференцией Jabber и другие функции всё равно придётся настраивать вручную, но само вещание должно работать с автоматически созданными файлами.  Для запуска всех компонентов ardj используйте следующую команду:</para>
 
-      <para>Затем нужно скачать и установить пакет ardj:</para>
+      <programlisting>./bin/ardj server</programlisting>
 
-      <programlisting>sudo pip install ardj</programlisting>
+      <para>По этой команде будут запущены все компоненты ardj.  Если каких-то компонентов в системе недостаёт — будет выдано сообщение и процесс прервётся.  Если же все компоненты доступны — начнётся вещание встроенной музыки (в комплекте ПО есть несколько свободно распространяемых музыкальных файлов).  При аварийном завершении любого компонента (icecast, ezstream и т.п.), он будет автоматически перезапущен.</para>
 
-      <para>Теперь нужно скопировать из примеров конфигурационные файлы для ices0 и icecast2:</para>
-
-      <programlisting>sudo cp /usr/share/doc/ardj/examples/icecast.xml /etc/icecast2/
-sudo cp /usr/share/doc/ardj/examples/ices.conf /etc/</programlisting>
-
-      <para>В файле <filename>/etc/default/icecast2</filename> нужно заменить "ENABLE=false" на "ENABLE=true":</para>
-
-      <programlisting>sudo editor /etc/default/icecast2</programlisting>
-
-      <para>Теперь можно запустить все службы:</para>
-
-      <programlisting>sudo service icecast2 start
-sudo start ardj-server
-sudo start ardj-ices</programlisting>
-
-      <para>Готово.  Станция должна работать.  Чтобы убедиться в этом, подключитесь к основному потоку:</para>
-
-      <programlisting>mplayer http://127.0.0.1:8180/live.mp3</programlisting>
-
-      <para>После этого обычно в файлах <filename>icecast.xml</filename> и <filename>ices.conf</filename> меняют пароли
-      для подключения к вещанию, в файле <filename>/etc/ardj.yaml</filename> указать параметры доступа к джабберу и <link
-      linkend="last-fm">Last.fm</link>, и создают более сложные плейлисты.</para>
+      <para>Если всё прошло хорошо и основные компоненты самонастроились, будет выведен URL потока, по которому можно слушать вещание новой станции.  Процесс можно прервать и перезапустить в любой момент (рекомендуется это делать после редактирования конфигурационных файлов).  Если какой-то компонент постоянно перезапускается, следует посмотреть в лог ошибок, который есть в папке <filename>~/.ardj</filename> (например, <filename>~/.ardj/icecast2.log</filename>).</para>
     </section>
 
     &speech;
