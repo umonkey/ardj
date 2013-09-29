@@ -30,11 +30,9 @@ test-units:
 test-syntax:
 	pep8 -r --ignore=E501 --exclude=twitter.py,socks.py,jabberbot.py src/ardj/*.py unittests/*.py
 
-install: sdist
-	sudo pip install --upgrade dist/ardj-$(VERSION).tar.gz
-
-sdist: build
+install:
 	$(PYTHON) setup.py sdist
+	sudo pip install --upgrade dist/ardj-$(VERSION).tar.gz
 
 uninstall:
 	sudo pip uninstall ardj
@@ -43,10 +41,10 @@ install-hg-hooks:
 	fgrep -q '[hooks]' .hg/hgrc || echo "\n[hooks]" >> .hg/hgrc
 	fgrep -q 'pretxncommit' .hg/hgrc || echo "pretxncommit = python:src/hooks/hooks.py:check_commit_message" >> .hg/hgrc
 
-release: build release-pypi
+release: release-pypi
 
-release-pypi: sdist
-	$(PYTHON) setup.py upload
+release-pypi: build
+	$(PYTHON) setup.py sdist upload
 
 clean:
 	rm -rf src/docbook/book.xml setup.py MANIFEST share/doc/man/ardj.1.gz tests.log tmp

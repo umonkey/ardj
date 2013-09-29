@@ -384,7 +384,7 @@ def on_tags(args, sender):
             return 'The last argument (track_id) must be a comma-separated list of integers.'
         track_ids = [int(i) for i in parts[-1].split(",")]
         parts = parts[:-2]
-    
+
     elif "--artist=" in args:
         new_parts = []
         for part in parts:
