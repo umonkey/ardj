@@ -1,3 +1,8 @@
+1.2.1
+
+- Simpler error messages when there's no config file.
+
+
 1.2.0 (2013-09-30)
 
 - When running ardj locally, use notify-send when track changes.

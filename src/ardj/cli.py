@@ -31,7 +31,11 @@ def cmd_config(*args):
 
     Opens the currently used config file in your preferred text editor."""
     import settings
-    return settings.edit_cli(args)
+    try:
+        return settings.edit_cli(args)
+    except Exception, e:
+        print >> sys.stderr, e
+        sys.exit(1)
 
 
 def cmd_console(*args):
