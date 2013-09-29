@@ -1,6 +1,6 @@
 Format: http://dep.debian.net/deps/dep5
 Upstream-Name: ardj
-Source: <http://ardj.googlecode.com/>
+Source: <http://umonkey.net/ardj/>
 
 Files: *
 Copyright: <2010-2011> Justin Forest <hex@umonkey.net>

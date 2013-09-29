@@ -48,9 +48,6 @@ release: build release-pypi
 release-pypi: sdist
 	$(PYTHON) setup.py upload
 
-release-google: sdist
-	googlecode_upload.py -s "ardj v${VERSION} (Source)" -p ardj -l Featured,Type-Source,OpSys-All dist/ardj-$(VERSION).tar.gz
-
 clean:
 	rm -rf src/docbook/book.xml setup.py MANIFEST share/doc/man/ardj.1.gz tests.log tmp
 	find -regex '.*\.\(pyc\|rej\|orig\|zip\)$$' -delete

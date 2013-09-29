@@ -141,6 +141,6 @@ setup(
     requires = [ 'yaml', 'mutagen', 'dns', 'socksipy', 'simplejson', 'oauth2' ],
     scripts = [ 'bin/ardj', ],
     cmdclass = { 'install': my_install, 'install_data': my_install_data },
-    url = 'http://ardj.googlecode.com/',
+    url = 'http://umonkey.net/ardj/',
     version = '@@VERSION@@'
 )
