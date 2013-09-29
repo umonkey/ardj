@@ -23,14 +23,14 @@ data_files = [
     ('/etc/logrotate.d', glob_files('share/logrotate.d/*')),
     ('/etc/rsyslog.d', glob_files('share/rsyslog.d/*')),
     #('/etc/sudoers.d', glob_files('share/sudoers.d/*')),
-    ('usr/share/ardj/database', glob_files('share/database/*.sql')),
+    #('usr/share/ardj/database', glob_files('share/database/*.sql')),
     ('usr/share/ardj/failure', ['share/audio/stefano_mocini_leaving_you_failure_edit.ogg']),
     ('usr/share/ardj/samples', ['share/audio/cubic_undead.mp3', 'share/audio/successful_install.ogg']),
     ('usr/share/ardj/shell-extensions/zsh', ['share/shell-extensions/zsh/_ardj']),
     ('usr/share/doc/ardj', ('NEWS', 'README.txt', 'TODO')),
     ('usr/share/doc/ardj/examples', glob_files('share/doc/examples/*')),
-    ('usr/share/doc/ardj/html/', glob_files('docbook/chunked/*')),
-    #('usr/share/man/man1', ['share/doc/man/ardj.1.gz']),
+    ('usr/share/doc/ardj/html/', glob_files('share/doc/html/*')),
+    ('usr/share/man/man1', ['share/doc/man/ardj.1']),
     ('usr/lib/ardj', ['bin/ardj-next-track', 'bin/ezstream-meta']),
 ]
 
