@@ -364,8 +364,14 @@ def get_config(name):
                 f.write(data)
             os.chmod(path, 0640)
             print("Created file %s with default contents." % path)
-            return path
-        raise Exception("Config file %s not found." % path)
+        else:
+            raise Exception("Config file %s not found." % path)
+
+    try:
+        os.chmod(path, 0640)
+    except OSError, e:
+        log_error("Could not set permissions on %s: %s" % (path, e))
+
     return path
 
 

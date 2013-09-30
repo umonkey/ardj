@@ -44,7 +44,7 @@ install-hg-hooks:
 release: release-pypi
 
 release-pypi: build
-	$(PYTHON) setup.py sdist upload
+	$(PYTHON) setup.py sdist upload --sign
 
 clean:
 	rm -rf src/docbook/book.xml setup.py MANIFEST share/doc/man/ardj.1.gz tests.log tmp
