@@ -270,10 +270,16 @@ class ProcessMonitor(object):
     def __init__(self, name, command, config_dir):
         self.name = name
         self.command = command
+
+        self.pidfile = None
+        self.logname = None
+        self.logfile = None
+
         self.pidfile = os.path.join(config_dir, name + ".pid")
 
         self.logname = os.path.join(config_dir, name + ".log")
         self.logfile = open(self.logname, "ab")
+        os.fchmod(self.logfile.fileno(), 0640)
 
         self.p = None
         self.run()
@@ -282,7 +288,9 @@ class ProcessMonitor(object):
         if os.path.exists(self.pidfile):
             os.unlink(self.pidfile)
 
-        self.logfile.flush()
+        if self.logfile:
+            self.logfile.flush()
+
         if os.stat(self.logname).st_size == 0:
             os.unlink(self.logname)
 
@@ -298,6 +306,7 @@ class ProcessMonitor(object):
 
         with open(self.pidfile, "wb") as f:
             f.write(str(self.p.pid) + "\n")
+            os.fchmod(f.fileno(), 0640)
 
     def check(self):
         if self.p.returncode is None:
@@ -460,6 +469,7 @@ def run_cli(*args):
         sys.exit(1)
 
     print_welcome()
+    os.umask(044)
 
     while True:
         for t in threads:

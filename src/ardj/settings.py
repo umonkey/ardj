@@ -106,6 +106,12 @@ def get_config_dir():
     if not os.path.exists(config_dir):
         os.makedirs(config_dir)
         print "Created folder %s." % config_dir
+
+    try:
+        os.chmod(config_dir, 0750)
+    except OSError, e:
+        print >> sys.stderr, "Could not change permissions on %s: %s" % (config_dir, e)
+
     return config_dir
 
 
