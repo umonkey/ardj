@@ -19,3 +19,11 @@
 - Нет проверки на наличие python-mutagen.
 - При первом запуске скробблер (фоновый) жалуется на отсутствие таблицы tracks.
 - При find-new-files валится "no appropriate stream found" (tmradio).
+
+
+Сайт
+====
+
+- Документация в стиле скринкастов vimcasts
+  http://www.alexeyshmalko.com/2014/youcompleteme-ultimate-autocomplete-plugin-for-vim/
+  Также см. railscasts, http://railscasts.com/
