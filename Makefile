@@ -14,10 +14,20 @@ help:
 	@echo "make test-syntax               -- runs PEP8 check"
 	@echo "make uninstall                 -- uninstall ardj using pip"
 
+bdist: setup.py
+	$(PYTHON) setup.py bdist
+	rm -rf src/ardj.egg-info setup.py
+	ls -ldh dist/ardj-*.gz
+
 build: test doc man setup.py
 
 env:
 	virtualenv env
+
+sdist: setup.py
+	$(PYTHON) setup.py sdist
+	rm -rf src/ardj.egg-info setup.py
+	ls -ldh dist/ardj-*.gz
 
 setup.py: setup.py.in Makefile
 	sed -e "s/@@VERSION@@/$(VERSION)/g" < $< > $@
@@ -36,6 +46,7 @@ test-syntax:
 
 install:
 	$(PYTHON) setup.py sdist
+	rm -f setup.py
 	sudo pip install --upgrade dist/ardj-$(VERSION).tar.gz
 
 uninstall:
@@ -49,6 +60,7 @@ release: release-pypi
 
 release-pypi: build
 	$(PYTHON) setup.py sdist upload --sign
+	rm -f setup.py
 
 clean:
 	rm -rf src/docbook/book.xml setup.py MANIFEST share/doc/man/ardj.1.gz tests.log tmp
@@ -57,6 +69,7 @@ clean:
 
 egg: build
 	$(PYTHON) setup.py bdist_egg
+	rm -f setup.py
 
 zsh-completion: share/shell-extensions/zsh/_ardj
 

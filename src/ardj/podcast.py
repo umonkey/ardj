@@ -1,13 +1,21 @@
 # vim: set fileencoding=utf-8:
 
-import feedparser
 import glob
-import httplib2
 import logging
 import os
 import time
 import urllib
 import urlparse
+
+try:
+    import feedparser
+except ImportError:
+    pass
+
+try:
+    import httplib2
+except ImportError:
+    pass
 
 import ardj.database
 import ardj.replaygain

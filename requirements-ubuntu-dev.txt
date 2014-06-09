@@ -1,0 +1,4 @@
+xsltproc
+docbook-xsl
+docbook2x
+python-socksipy

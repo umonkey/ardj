@@ -20,7 +20,10 @@ import ardj.database
 import ardj.jabber
 import ardj.listeners
 import ardj.settings
-import ardj.sound_menu
+try:
+    import ardj.sound_menu
+except:
+    pass
 import ardj.speech
 import ardj.tracks
 import ardj.users

@@ -1,0 +1,39 @@
+Setting up periodic tasks
+=========================
+
+Copy <share/cron.d/ardj> to </etc/cron.d/>.
+
+
+Automatic startup with upstart
+==============================
+
+- Copy <share/upstart/*.conf> to </etc/init>.
+- Run sudo initctl reload-configuration.
+
+
+Automatic startup with SysVinit
+===============================
+
+- Copy <share/init.d/*> to </etc/init>.
+
+
+Rotate log files
+================
+
+Copy <share/logrotate.d/*> to </etc/logrotate.d/>.
+
+
+Log events to /var/log/ardj.log
+===============================
+
+- Copy <share/rsyslog.d/*> to </etc/rsyslog.d/>.
+- Restart rsyslog: sudo service rsyslog restart.
+
+
+Allow operators to restart ardj components
+==========================================
+
+- Copy <share/sudoers.d/ardj> to </etc/sudoers.d/>.
+- Run: sudo chmod 644 /etc/sudoers.d/ardj
+
+Now users from group `ardj' can start, stop and restart services ardj-* without password.

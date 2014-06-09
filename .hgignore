@@ -1,3 +1,10 @@
 syntax: regexp
 \.pyc$
 ^env/
+^test.*\.log$
+^(build|dist)/
+^setup\.py$
+
+^src/docbook/book\.xml$
+^share/doc/html$
+^share/doc/man/ardj\.1\.gz$
