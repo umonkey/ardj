@@ -9,7 +9,7 @@ class DatabaseTests(unittest.TestCase):
     tables = []
 
     def setUp(self):
-        db.cli_init([])
+        db.init_database()
 
     def tearDown(self):
         db.rollback()

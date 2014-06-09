@@ -51,9 +51,6 @@ class Run(unittest.TestCase):
 
         self.assertEquals('18:54 ago', ardj.util.format_duration(100, now=1234, age=True))
 
-    def test_md5(self):
-        self.assertEquals('3e6b69a3175e035b37e02ef35fc73e65', ardj.util.filemd5('unittests/data/src/silence.mp3'))
-
     def test_find_exe(self):
         self.assertTrue(ardj.util.is_command("python"))
         self.assertFalse(ardj.util.is_command("this should never exist"))

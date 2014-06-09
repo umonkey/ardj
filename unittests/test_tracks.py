@@ -7,7 +7,7 @@ from ardj import tracks
 
 class TrackSelectionTests(unittest.TestCase):
     def setUp(self):
-        database.cli_init()
+        database.init_database()
 
     def tearDown(self):
         database.execute("DELETE FROM tracks")

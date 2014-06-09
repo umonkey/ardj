@@ -1400,7 +1400,8 @@ def cmd_fix_length():
 def cmd_next():
     """Print file name to play next."""
     try:
-        import database, settings
+        import database
+        import settings
         track = get_next_track()
         if track is not None:
             database.commit()
