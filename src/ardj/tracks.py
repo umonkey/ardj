@@ -1374,7 +1374,7 @@ def count_available():
     return count[0][0]
 
 
-def cmd_update():
+def cmd_find():
     """Remove tracks with no files, add new ones"""
     import database
     database.Open().purge()
@@ -1382,18 +1382,18 @@ def cmd_update():
     database.commit()
 
 
-def cmd_shift_weight():
-    """Shift current weights to real weights"""
-    from database import commit
-    update_real_track_weights()
-    commit()
-
-
 def cmd_fix_length():
     """Update track lengths from files (if changed)"""
     from database import commit
     ids = [int(n) for n in args if n.isdigit()]
     update_track_lengths(ids)
+    commit()
+
+
+def cmd_shift_weight():
+    """Shift current weights to real weights"""
+    from database import commit
+    update_real_track_weights()
     commit()
 
 

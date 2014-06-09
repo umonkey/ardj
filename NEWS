@@ -1,4 +1,4 @@
-2014/06/09 (1.2.7)
+2014/06/09 (1.2.8)
 - Using VirtualEnv for local development and testing.
 - No longer installing system-wide config files (in /etc).
 - Fixed broken dependencies.

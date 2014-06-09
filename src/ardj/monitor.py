@@ -342,6 +342,77 @@ class ProcessMonitor(object):
                 print("%s [%s] %s" % (ts, name, line))
 
 
+class WebServerMonitor(ProcessMonitor):
+    @classmethod
+    def start(cls, threads, config_dir):
+        path = get_config_option("webapi_root")
+        if not path:
+            return
+
+        if not os.path.exists(path):
+            os.makedirs(path)
+
+        threads.append(cls(
+            "web-server",
+            [sys.argv[0], "web", "serve"],
+            config_dir))
+
+
+class ScrobblerMonitor(ProcessMonitor):
+    @classmethod
+    def start(cls, threads, config_dir):
+        if not get_config_option("last.fm"):
+            return
+
+        threads.append(cls(
+            "scrobbler",
+            [sys.argv[0], "scrobbler", "start"],
+            config_dir))
+
+
+class JabberMonitor(ProcessMonitor):
+    @classmethod
+    def start(cls, threads, config_dir):
+        if not get_config_option("jabber_id"):
+            return
+
+        threads.append(cls(
+            "jabber",
+            [sys.argv[0], "jabber", "run-bot"],
+            config_dir))
+
+
+class PlayerMonitor(ProcessMonitor):
+    @classmethod
+    def start(cls, threads, config_dir):
+        cmd = get_config_option("bg_player")
+        if not cmd:
+            return
+
+        threads.append(cls(
+            "audio-player",
+            shlex.split(cmd),
+            config_dir))
+
+
+class ServerMonitor(ProcessMonitor):
+    @classmethod
+    def start(cls, threads, config_dir):
+        threads.append(cls(
+            "icecast2",
+            ["icecast2", "-c", get_config("icecast2.xml")],
+            config_dir))
+
+
+class SourceMonitor(ProcessMonitor):
+    @classmethod
+    def start(cls, threads, config_dir):
+        threads.append(cls(
+            "ezstream",
+            ["ezstream", "-c", get_config("ezstream.xml")],
+            config_dir))
+
+
 def have_program(commands):
     for command in commands.split("|"):
         for path in os.getenv("PATH").split(os.pathsep):
@@ -427,29 +498,12 @@ def get_threads():
     get_config("ardj.yaml")
     get_config("playlist.yaml")
 
-    threads.append(ProcessMonitor("icecast2",
-        ["icecast2", "-c", get_config("icecast2.xml")],
-        config_dir))
-    threads.append(ProcessMonitor("ezstream",
-        ["ezstream", "-c", get_config("ezstream.xml")],
-        config_dir))
-    threads.append(ProcessMonitor("web-server",
-        [sys.argv[0], "web", "serve"],
-        config_dir))
-    if get_config_option("last.fm"):
-        threads.append(ProcessMonitor("scrobbler",
-            [sys.argv[0], "scrobbler", "start"],
-            config_dir))
-    if get_config_option("jabber_id"):
-        threads.append(ProcessMonitor("jabber",
-            [sys.argv[0], "jabber", "run-bot"],
-            config_dir))
-
-    player_cmd = get_config_option("bg_player")
-    if player_cmd is not None:
-        threads.append(ProcessMonitor(name="audio-player",
-            command=shlex.split(player_cmd),
-            config_dir=config_dir))
+    ServerMonitor.start(threads, config_dir)
+    SourceMonitor.start(threads, config_dir)
+    WebServerMonitor.start(threads, config_dir)
+    ScrobblerMonitor.start(threads, config_dir)
+    JabberMonitor.start(threads, config_dir)
+    PlayerMonitor.start(threads, config_dir)
 
     return threads
 
@@ -471,7 +525,7 @@ def print_welcome():
     if not count:
         from ardj import settings
         music_dir = settings.get_music_dir()
-        log_error("WARNING: the music database is empty. Put some files in %s and run 'ardj find-new-files'." % music_dir)
+        log_error("WARNING: the music database is empty. Put some files in %s and run 'ardj tracks find'." % music_dir)
 
 
 def cmd_run(*args):
