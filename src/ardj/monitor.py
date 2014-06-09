@@ -479,6 +479,9 @@ def cmd_run(*args):
     check_required_programs()
     #check_file_permissions()
 
+    from database import init_database
+    init_database()
+
     try:
         threads = get_threads()
     except Exception, e:
