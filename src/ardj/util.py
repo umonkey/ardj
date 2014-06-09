@@ -396,8 +396,8 @@ def shorten_file_path(filepath):
 
 
 def shared_file(name):
-    paths = ["/usr/share/ardj/samples",
-        "/usr/local/share/ardj/samples",
+    paths = ["/usr/share/ardj",
+        "/usr/local/share/ardj",
         "share"]
 
     tmp = os.getenv("VIRTUAL_ENV")
