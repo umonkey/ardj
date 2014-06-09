@@ -5,6 +5,7 @@ help:
 	@echo "make build                     -- prepare generated files"
 	@echo "make clean                     -- removes temporary files"
 	@echo "make doc                       -- build the docbook"
+	@echo "make env                       -- set up VirtualEnv"
 	@echo "make install                   -- install ardj using pip"
 	@echo "make install-hg-hooks          -- prepare the development environment"
 	@echo "make package-ubuntu            -- create source and binary packages"
@@ -14,6 +15,9 @@ help:
 	@echo "make uninstall                 -- uninstall ardj using pip"
 
 build: test doc man setup.py
+
+env:
+	virtualenv env
 
 setup.py: setup.py.in Makefile
 	sed -e "s/@@VERSION@@/$(VERSION)/g" < $< > $@
