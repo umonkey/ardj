@@ -436,12 +436,14 @@ def get_threads():
     threads.append(ProcessMonitor("web-server",
         [sys.argv[0], "web", "serve"],
         config_dir))
-    threads.append(ProcessMonitor("scrobbler",
-        [sys.argv[0], "scrobbler", "start"],
-        config_dir))
-    threads.append(ProcessMonitor("jabber",
-        [sys.argv[0], "jabber", "run-bot"],
-        config_dir))
+    if get_config_option("last.fm"):
+        threads.append(ProcessMonitor("scrobbler",
+            [sys.argv[0], "scrobbler", "start"],
+            config_dir))
+    if get_config_option("jabber_id"):
+        threads.append(ProcessMonitor("jabber",
+            [sys.argv[0], "jabber", "run-bot"],
+            config_dir))
 
     player_cmd = get_config_option("bg_player")
     if player_cmd is not None:
