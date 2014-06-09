@@ -568,7 +568,10 @@ def add_file(filename, add_labels=None, owner=None, quiet=False, artist=None, ti
     if add_labels and not labels:
         labels = add_labels
 
-    track_id = ardj.database.execute('INSERT INTO tracks (artist, title, filename, length, last_played, owner, weight, real_weight, count, download) VALUES (?, ?, ?, ?, ?, ?, 1, 1, 0, ?)', (artist, title, filename, duration, 0, owner or 'ardj', dlink, ))
+    rel_path = os.path.relpath(filename,
+        ardj.settings.get_music_dir())
+
+    track_id = ardj.database.execute('INSERT INTO tracks (artist, title, filename, length, last_played, owner, weight, real_weight, count, download) VALUES (?, ?, ?, ?, ?, ?, 1, 1, 0, ?)', (artist, title, rel_path, duration, 0, owner or 'ardj', dlink, ))
     for label in labels:
         ardj.database.execute('INSERT INTO labels (track_id, label, email) VALUES (?, ?, ?)', (track_id, label, (owner or 'ardj').lower(), ))
     return track_id
@@ -1374,11 +1377,15 @@ def count_available():
     return count[0][0]
 
 
-def cmd_find():
+def cmd_scan():
     """Remove tracks with no files, add new ones"""
     import database
     database.Open().purge()
     purge()
+
+    count = MediaFolderScanner().run()
+    print "Found %u new files." % count
+
     database.commit()
 
 
@@ -1419,9 +1426,29 @@ def cmd_next():
 
     from util import find_sample_music
     samples = find_sample_music()
-    if not samples:
-        print >> sys.stderr, "Could not find sample music."
-        sys.exit(1)
+    if samples:
+        print >> sys.stderr, "WARNING: playing a pre-packaged file."
+        print random.choice(samples)
 
-    print >> sys.stderr, "WARNING: playing a pre-packaged file."
-    print random.choice(samples)
+    else:
+        failure = shared_file("audio/stefano_mocini_leaving_you_failure_edit.ogg")
+        if failure:
+            print failure
+        else:
+            print >> sys.stderr, "Could not find sample music."
+            sys.exit(1)
+
+
+def cmd_export_csv():
+    """Export track info as CSV"""
+    from database import Track
+
+    print "id,filename,artist,title,weight,count"
+    for track in Track.find_all():
+        cells = [track["id"], track["filename"],
+            track["artist"] or "Unknown Artist",
+            track["title"] or "Untitled",
+            track["real_weight"] or "1.0",
+            track["count"] or "0"]
+        print ",".join([unicode(c).encode("utf-8")
+            for c in cells])

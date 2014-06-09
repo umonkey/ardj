@@ -395,22 +395,24 @@ def shorten_file_path(filepath):
     return filepath
 
 
+def shared_file(name):
+    paths = ["/usr/share/ardj/samples",
+        "/usr/local/share/ardj/samples",
+        "share"]
+
+    tmp = os.getenv("VIRTUAL_ENV")
+    if tmp:
+        paths.append(tmp)
+
+    for path in paths:
+        dst = os.path.join(path, name)
+        if os.path.exists(dst):
+            return dst
+
+
 def find_sample_music():
     """Returns files to pre-seed the media database with."""
-    import glob
-
-    paths = ["/usr/share/ardj/samples/*",
-        "/usr/local/share/ardj/samples/*",
-        "share/audio/cubic_undead.mp3",
-        "share/audio/successful_install.ogg"]
-
-    ve = os.getenv("VIRTUAL_ENV")
-    if ve:
-        paths.append(os.path.join(ve, "usr/share/ardj/samples/*"))
-
-    files = []
-    for pattern in paths:
-        for fn in glob.glob(pattern):
-            files.append(os.path.realpath(fn))
-
-    return list(set(files))
+    return [f for f in [
+        shared_file("share/audio/cubic_undead.mp3"),
+        shared_file("share/audio/successful_install.ogg"),
+    ] if f]

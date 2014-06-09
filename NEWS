@@ -1,4 +1,4 @@
-2014/06/09 (1.2.8)
+2014/06/09 (1.2.9)
 - Using VirtualEnv for local development and testing.
 - No longer installing system-wide config files (in /etc).
 - Fixed broken dependencies.
@@ -9,6 +9,8 @@
 - Added missing scripts to setup.py.
 - Fixed install paths in setup.py.
 - Only run scrobbler and jabber if configured.
+- New command: ardj tracks export-csv.
+- Support for built-in failure audio file.
 
 2013/09/30 (1.2.2)
 - Fix permissions on config files during component startup.
