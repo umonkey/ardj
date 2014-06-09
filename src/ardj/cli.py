@@ -197,15 +197,6 @@ def cmd_tags(*args):
                 print '  %s = %s' % (k, v)
 
 
-def cmd_add_incoming_tracks(*args):
-    """moves tracks from the incoming folder to the database"""
-    from ardj import tracks
-    files = tracks.find_incoming_files(delay=0, verbose=True)
-    success = tracks.add_incoming_files(files)
-    print "Added %u files to the database." % len(success)
-    return True
-
-
 def cmd_print_current_track(*args):
     """prints the currently playing track"""
     from ardj import tracks

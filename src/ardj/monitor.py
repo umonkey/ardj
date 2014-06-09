@@ -12,7 +12,7 @@ import time
 import traceback
 
 
-REQUIRED_PROGRAMS = ["icecast2", "ezstream", "mpg123", "lame", "sox", "oggenc"]
+REQUIRED_PROGRAMS = ["icecast2", "ezstream|ices0", "mpg123", "lame", "sox", "oggenc"]
 
 CONFIG_EXAMPLES = {
 "icecast2.xml": """<icecast>
@@ -123,20 +123,14 @@ CONFIG_EXAMPLES = {
 #
 # If something doesn't work, write to <hex@umonkey.net>.
 
-# This is where the music will be stored.  You MUST NOT put the music there
-# manually, see the incoming folder below.
+# This is where you put the music and jingles that ardj should play.
 musicdir: %(ARDJ_CONFIG_DIR)s/music
 
 
-# This is the folder where you should put music that you want to add to the
-# database (will be moved to the internal location in few minutes).  This
-# folder is typically accessible over ftp or sftp.
+# This is the folder where files uploaded via Jabber should be stored.
+# Should be within musicdir, otherwise files won't be visible until
+# operator handles them.
 incoming_path: %(ARDJ_CONFIG_DIR)s/music/incoming
-
-
-# Define labels that will be applied to all uploaded files.  This is typically
-# one label which lets you later find untagged tracks.
-incoming_labels: [music, tagme]
 
 
 # Specify how many recently played artists should be skipped when picking a
@@ -334,11 +328,12 @@ class ProcessMonitor(object):
                 print("%s [%s] %s" % (ts, name, line))
 
 
-def have_program(command):
-    for path in os.getenv("PATH").split(os.pathsep):
-        fn = os.path.join(path, command)
-        if os.path.exists(fn):
-            return True
+def have_program(commands):
+    for command in commands.split("|"):
+        for path in os.getenv("PATH").split(os.pathsep):
+            fn = os.path.join(path, command)
+            if os.path.exists(fn):
+                return True
     return False
 
 

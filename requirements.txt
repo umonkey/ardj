@@ -1,2 +1,3 @@
 mutagen
 PyYAML
+PyYAML

@@ -6,7 +6,6 @@ Contains functions that interact with the database in order to modify or query
 tracks.
 """
 
-import hashlib
 import json
 import logging
 import os
@@ -545,23 +544,6 @@ def get_track_votes(track_id):
     return results
 
 
-def gen_filename(suffix):
-    """Generates a local file name.
-
-    Returns a tuple (abs_filename, rel_filename).
-    """
-    musicdir = ardj.settings.get_music_dir()
-
-    while True:
-        m = hashlib.md5()
-        m.update(str(random.random()))
-        name = m.hexdigest() + suffix
-        rel_filename = os.path.join(name[0], name[1], name)
-        abs_filename = os.path.join(musicdir, rel_filename)
-        if not os.path.exists(abs_filename):
-            return abs_filename, rel_filename
-
-
 def add_file(filename, add_labels=None, owner=None, quiet=False, artist=None, title=None, dlink=None):
     """Adds the file to the database.
 
@@ -586,11 +568,7 @@ def add_file(filename, add_labels=None, owner=None, quiet=False, artist=None, ti
     if add_labels and not labels:
         labels = add_labels
 
-    abs_filename, rel_filename = gen_filename(os.path.splitext(filename)[1])
-    if not ardj.util.copy_file(filename, abs_filename):
-        raise Exception('Could not copy %s to %s' % (filename, abs_filename))
-
-    track_id = ardj.database.execute('INSERT INTO tracks (artist, title, filename, length, last_played, owner, weight, real_weight, count, download) VALUES (?, ?, ?, ?, ?, ?, 1, 1, 0, ?)', (artist, title, rel_filename, duration, 0, owner or 'ardj', dlink, ))
+    track_id = ardj.database.execute('INSERT INTO tracks (artist, title, filename, length, last_played, owner, weight, real_weight, count, download) VALUES (?, ?, ?, ?, ?, ?, 1, 1, 0, ?)', (artist, title, filename, duration, 0, owner or 'ardj', dlink, ))
     for label in labels:
         ardj.database.execute('INSERT INTO labels (track_id, label, email) VALUES (?, ?, ?)', (track_id, label, (owner or 'ardj').lower(), ))
     return track_id
@@ -1077,43 +1055,6 @@ def update_track_lengths(only_ids=None):
 
     for length, id in updates:
         ardj.database.execute('UPDATE tracks SET length = ? WHERE id = ?', (length, id, ))
-
-
-def find_incoming_files(delay=0, verbose=False):
-    """Returns a list of incoming file names.  Only files modified more than 60
-    seconds ago are reported.  If the database/incoming/path parameter is not
-    set, an empty list is returned."""
-    result = []
-
-    incoming = ardj.settings.getpath("incoming_path", ardj.settings.getpath('database/incoming/path'))
-    if verbose:
-        print "Looking for audio files in folder %s" % incoming
-
-    ts_limit = int(time.time()) - delay
-    if incoming:
-        for dir, dirs, files in os.walk(incoming):
-            if not os.access(dir, os.W_OK):
-                logging.warning("Folder %s is write protected. Can't delete files, won't add them." % dir)
-                continue  # not writable -- can't delete, skip it
-            for filename in files:
-                realname = os.path.join(dir, filename)
-                if os.stat(realname).st_mtime > ts_limit:
-                    return []  # still uploading
-                if os.path.splitext(filename.lower())[1] in ('.mp3', '.ogg'):
-                    result.append(realname)
-    return result
-
-
-def add_incoming_files(filenames):
-    """Adds files to the database."""
-    success = []
-    add_labels = ardj.settings.get("incoming_labels", ardj.settings.get("database/incoming/labels", ["tagme", "music"]))
-    for filename in filenames:
-        add_file(filename, add_labels)
-        ardj.database.commit()
-        os.unlink(filename)
-        success.append(os.path.basename(filename))
-    return success
 
 
 def bookmark(track_ids, owner, remove=False):

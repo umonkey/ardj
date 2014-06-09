@@ -1,15 +1,14 @@
 #!/usr/bin/env python
 
-import os
 import sys
 
-# Support running from the source tree.
-my_name = os.path.realpath(__file__)
-if my_name.startswith(os.path.expanduser("~/")):
-    modules = os.path.join(os.path.dirname(os.path.dirname(my_name)), "src")
-    sys.path.insert(0, modules)
-
-import ardj.cli
+from ardj.cli2 import *
 
 
-ardj.cli.run(list(sys.argv))
+def cmd_server(*args, **kwargs):
+    from ardj.monitor import run_cli
+    return run_cli(*args, **kwargs)
+
+
+if __name__ == "__main__":
+    cli_main(globals(), *sys.argv)

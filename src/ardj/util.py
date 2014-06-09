@@ -285,19 +285,6 @@ def format_duration(duration, age=False, now=None):
     return result
 
 
-def filemd5(filename):
-    """Returns the file contents' MD5 sum (in hex)."""
-    logging.debug('Calculating MD5 of %s' % filename)
-    m = hashlib.md5()
-    f = open(filename, 'rb')
-    while True:
-        block = f.read(1024 * 1024)
-        if not len(block):
-            break
-        m.update(block)
-    return m.hexdigest()
-
-
 def mask_sender(sender):
     if sender.startswith('+') and sender[1:].isdigit():
         sender = sender[:-7] + 'XXX' + sender[8:]

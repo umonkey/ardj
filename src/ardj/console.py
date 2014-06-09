@@ -135,21 +135,6 @@ def on_twit(args, sender):
         return "Could not twit: %s" % e
 
 
-def on_upload(args, sender):
-    """Finds files in the incoming folder and adds them to the database.  You
-    typically use this command after you upload the files using sftp to the
-    public folder.  Contact the administrator to find out the details."""
-    filenames = ardj.tracks.find_incoming_files()
-    if not filenames:
-        return "No files to import, upload some first."
-
-    success = ardj.tracks.add_incoming_files(filenames)
-    if not success:
-        return "Could not anything (bad or write-protected files)."
-
-    return u"%u new files added, see the \"news\" command." % len(success)
-
-
 def on_speak(args, sender):
     return ardj.speech.render_and_queue(args) or 'OK, please wait until the current song finishes playing.'
 
