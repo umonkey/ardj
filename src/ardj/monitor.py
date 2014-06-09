@@ -3,6 +3,7 @@
 
 from __future__ import print_function
 
+import logging
 import os
 import re
 import shlex
@@ -264,7 +265,11 @@ webapi_root: %(ARDJ_CONFIG_DIR)s/website
 
 
 def log_error(message):
-    print(message, file=sys.stderr)
+    logging.error(message)
+
+
+def log_warning(message):
+    logging.warning(message)
 
 
 class ProcessMonitor(object):
@@ -525,7 +530,7 @@ def print_welcome():
     if not count:
         from ardj import settings
         music_dir = settings.get_music_dir()
-        log_error("WARNING: the music database is empty. Put some files in %s and run 'ardj tracks scan'." % music_dir)
+        log_warning("The music database is empty. Put some files in %s and run 'ardj tracks scan'." % music_dir)
 
 
 def cmd_run(*args):

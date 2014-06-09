@@ -1415,19 +1415,19 @@ def cmd_next():
             print track["filepath"].encode("utf-8")
             return
     except Exception, e:
-        print >> sys.stderr, "ERROR: %s" % e
+        logging.error("ERROR: %s" % e)
 
     count = count_available()
     if not count:
         music_dir = settings.get_music_dir()
-        print >> sys.stderr, "WARNING: there are NO tracks in the database.  Put some files in %s, then run 'ardj tracks scan'." % music_dir
+        logging.warning("There are NO tracks in the database.  Put some files in %s, then run 'ardj tracks scan'." % music_dir)
     else:
-        print >> sys.stderr, "WARNING: could not pick a track to play.  Details can be found in %s." % settings.getpath("log", "syslog")
+        logging.warning("Could not pick a track to play.  Details can be found in %s." % settings.getpath("log", "syslog"))
 
     from util import find_sample_music, shared_file
     samples = find_sample_music()
     if samples:
-        print >> sys.stderr, "WARNING: playing a pre-packaged file."
+        logging.warning("Playing a pre-packaged file.")
         print random.choice(samples)
 
     else:
@@ -1435,7 +1435,7 @@ def cmd_next():
         if failure:
             print failure
         else:
-            print >> sys.stderr, "Could not find sample music."
+            logging.warning("Could not find sample music.")
             sys.exit(1)
 
 
