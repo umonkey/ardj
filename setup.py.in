@@ -48,7 +48,7 @@ setup(
     name = 'ardj',
     package_dir = {'': 'src'},
     packages = ['ardj', 'ardj.xmpp'],
-    install_requires = ['PyYAML', 'mutagen', 'pydns', 'oauth2'],
+    install_requires = ['PyYAML', 'mutagen', 'pydns', 'oauth2', 'web.py'],
     scripts = ['bin/ardj', 'bin/ardj-next-track', 'bin/ezstream-meta'],
     url = 'http://umonkey.net/ardj/',
     version = '@@VERSION@@'

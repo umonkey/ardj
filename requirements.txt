@@ -1,3 +1,6 @@
 mutagen
+mutagen
+oauth2
+pydns
 PyYAML
-PyYAML
+web.py
