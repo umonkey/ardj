@@ -314,9 +314,15 @@ class ProcessMonitor(object):
             self.p.poll()
         else:
             ok = " (bad)" if self.p.returncode else " (this seems OK)"
-            self.log("exited with status %d%s, restarting." \
-                % (self.p.returncode, ok))
+            self.log("exited with status %d%s, restarting; logs are in %s" \
+                % (self.p.returncode, ok, self.get_log_name()))
             self.run()
+
+    def get_log_name(self):
+        if self.name == "icecast2":
+            return "~/.ardj/icecast2-error.log"
+        else:
+            return "~/.ardj/%s.log" % self.name
 
     def stop(self):
         if self.p is not None:

@@ -1,9 +1,10 @@
-2014/06/09
+2014/06/09 (1.2.3)
 - Using VirtualEnv for local development and testing.
 - No longer installing system-wide config files (in /etc).
 - Fixed broken dependencies.
 - Removed manual handling of files uploaded via XMPP.
 - New, faster CLI.
+- Subprocess monitor names log files on child errors.
 
 2013/09/30 (1.2.2)
 - Fix permissions on config files during component startup.
