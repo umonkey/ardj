@@ -6,6 +6,14 @@ Last.fm and Jamendo, and more.
 Distributed under the GNU GPL.
 
 
+Links
+=====
+
+- Mercurial repo: <http://code.umonkey.net/ardj/summary>
+- PIP repo: <https://pypi.python.org/pypi/ardj>
+- Example running station: <http://tmradio.net/>
+
+
 Authors
 =======
 
