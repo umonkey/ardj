@@ -1,10 +1,7 @@
-1.2.2
-
+2013/09/30 (1.2.2)
 - Fix permissions on config files during component startup.
 
-
-1.2.1 (2013-09-30)
-
+2013/09/30 (1.2.1)
 - Simpler error messages when there's no config file.
 - Better autoconfiguration.
 - Process monitor now prints pids.
@@ -13,9 +10,7 @@
   crash instead of playing pre-packaged audio samples.
 - More messages to guide through the initial setup.
 
-
-1.2.0 (2013-09-30)
-
+2013/09/30 (1.2.0)
 - When running ardj locally, use notify-send when track changes.
 - Can now run a background audio player with 'ardj serve`,
   good for desktop usage.
@@ -27,9 +22,7 @@
 - Fixed handling of / by the built-in web server.
 - Fixed errors in setup.py
 
-
-1.1.0
-
+2013/05/23 (1.1.0)
 - The new recommended way to run the server is from the source tree.
 - New child process monitor that controls all necessary subprocesses,
   launched by `ardj serve'.  Default configuration files are created
@@ -53,26 +46,21 @@
 - Newer tracks are now always merged into the older ones.
 - Fixed merging of tracks with not all fields filled (e.g., weight).
 
-1.0.18
-
+2012/06/05 (1.0.18)
 - Fixed the jabber bot crashing when no chat room jid is set.
 - Fixed init scripts for ardj-jabber and ardj-server.
 - Added post-install tasks to setup.py
 - Added built-in playlists that work out-of-the-box
 - Added support for setup.py --prefix
 
-
-1.0.17
-
+2012/05/30 (1.0.17)
 - Fixed logging in ardj-ices.
 - Added missing man page
 - Added MANIFEST.in to setup.py
 - Added to the PYPI repository.
 - Removed useless parts of Makefile.
 
-
-1.0.12
-
+2011/12/04 (1.0.12)
  - Fixed connection spinning in contrib/hotline.
  - Fixed Unicode problems in ardj console (CLI).
  - Fixed the voters command in fresh install (Jabber).
