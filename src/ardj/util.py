@@ -413,6 +413,6 @@ def shared_file(name):
 def find_sample_music():
     """Returns files to pre-seed the media database with."""
     return [f for f in [
-        shared_file("share/audio/cubic_undead.mp3"),
-        shared_file("share/audio/successful_install.ogg"),
+        shared_file("audio/cubic_undead.mp3"),
+        shared_file("audio/successful_install.ogg"),
     ] if f]

@@ -525,7 +525,7 @@ def print_welcome():
     if not count:
         from ardj import settings
         music_dir = settings.get_music_dir()
-        log_error("WARNING: the music database is empty. Put some files in %s and run 'ardj tracks find'." % music_dir)
+        log_error("WARNING: the music database is empty. Put some files in %s and run 'ardj tracks scan'." % music_dir)
 
 
 def cmd_run(*args):
