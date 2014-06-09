@@ -14,6 +14,13 @@ import traceback
 
 REQUIRED_PROGRAMS = ["icecast2", "ezstream|ices0", "mpg123", "lame", "sox", "oggenc"]
 
+UBUNTU_REQUIREMENTS_MAP = {"icecast2": "icecast2",
+    "ezstream|ices0": "ezstream",
+    "mpg123": "mpg123",
+    "lame": "lame",
+    "sox": "sox",
+    "oggenc": "oggenc"}
+
 CONFIG_EXAMPLES = {
 "icecast2.xml": """<icecast>
     <limits>
@@ -306,8 +313,9 @@ class ProcessMonitor(object):
         if self.p.returncode is None:
             self.p.poll()
         else:
-            self.log("%s exited with status %d, restarting." \
-                % (self.command[0], self.p.returncode))
+            ok = " (bad)" if self.p.returncode else " (this seems OK)"
+            self.log("exited with status %d%s, restarting." \
+                % (self.p.returncode, ok))
             self.run()
 
     def stop(self):
@@ -346,6 +354,11 @@ def check_required_programs():
     if missing:
         print("Please install %s." % ", ".join(missing),
             file=sys.stderr)
+
+        if have_program("apt-get"):
+            print("Try this command: sudo apt-get install %s" % (
+                " ".join([UBUNTU_REQUIREMENTS_MAP[r] for r in missing])))
+
         sys.exit(1)
 
 
@@ -415,13 +428,13 @@ def get_threads():
         ["ezstream", "-c", get_config("ezstream.xml")],
         config_dir))
     threads.append(ProcessMonitor("web-server",
-        [sys.argv[0], "start-web-server"],
+        [sys.argv[0], "web", "serve"],
         config_dir))
     threads.append(ProcessMonitor("scrobbler",
-        [sys.argv[0], "start-scrobbler"],
+        [sys.argv[0], "scrobbler", "start"],
         config_dir))
     threads.append(ProcessMonitor("jabber",
-        [sys.argv[0], "jabber"],
+        [sys.argv[0], "jabber", "run-bot"],
         config_dir))
 
     player_cmd = get_config_option("bg_player")
@@ -453,8 +466,12 @@ def print_welcome():
         log_error("WARNING: the music database is empty. Put some files in %s and run 'ardj find-new-files'." % music_dir)
 
 
-def run_cli(*args):
+def cmd_run(*args):
+    """
+    Run all server components.
+    """
     check_required_programs()
+    #check_file_permissions()
 
     try:
         threads = get_threads()

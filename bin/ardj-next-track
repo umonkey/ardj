@@ -1,2 +1,2 @@
 #!/bin/sh
-exec ardj print-next-track
+exec ardj tracks next

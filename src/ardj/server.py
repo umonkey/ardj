@@ -304,7 +304,7 @@ def serve_http(hostname, port):
     app.run(ExceptionHandlingMiddleWare)
 
 
-def run_cli(args):
+def cmd_serve():
     """Starts the HTTP web server on the configured socket."""
     database.init_database()
 

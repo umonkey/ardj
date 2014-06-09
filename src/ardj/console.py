@@ -580,7 +580,6 @@ command_map = (
     ('sucks', False, on_sucks, 'decreases track weight'),
     ('tags', False, on_tags, 'see tag cloud, edit track tags (admins only)'),
     ('twit', True, on_twit, 'sends a message to Twitter'),
-    ('upload', False, on_upload, 'import files from the "incoming" folder'),
     ('voters', True, on_voters, 'shows all voters'),
     ('votes', True, on_votes, 'shows who voted for a track'),
 )

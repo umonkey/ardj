@@ -734,7 +734,72 @@ def init_database():
     db.commit()
 
 
-def cli_init(args=None):
-    """Initializes the database."""
+def cmd_console(*args):
+    """Open database console (sqlite3)"""
+    from subprocess import Popen
+    from ardj import database
     init_database()
-    return True
+    Popen(["sqlite3", "-header", database.Open().filename]).wait()
+
+
+def cmd_dedup_tracks():
+    """Merge duplicate tracks"""
+    from tracks import dedup_by_filename
+    count = dedup_by_filename(verbose=True)
+    if count:
+        print "Removed %u duplicate tracks." % count
+        commit()
+    else:
+        print "No duplicate tracks found."
+
+
+def cmd_init():
+    """
+    Initialize the database
+
+    Initializes the configured database by executing a set of preconfigured SQL
+    instructions.  This is non-destructive.  You should run this after you
+    empty the database.
+    """
+    init_database()
+
+
+def cmd_purge():
+    """Delete stale data"""
+    Open().purge()
+    commit()
+
+
+def cmd_stats():
+    """Show database statistics"""
+    tracks = Track.find_all()
+    count = len(tracks)
+    length = sum([t.get("length", 0) for t in tracks])
+    print "%u tracks, %.1f hours." % (count, length / 60 / 60)
+
+
+def cmd_vote_stats():
+    """Show vote statistics"""
+    daily = {}
+    hourly = {}
+
+    for vote in Vote.find_all():
+        ts = time.gmtime(vote["ts"])
+
+        if prefix is not None:
+            if not time.strftime("%Y-%m-%d %H:%M:%S", ts).startswith(prefix):
+                continue
+
+        day = int(time.strftime("%w", ts)) or 7
+        daily[day] = daily.get(day, 0) + 1
+
+        hour = int(time.strftime("%H", ts))
+        hourly[hour] = hourly.get(hour, 0) + 1
+
+    def dump_votes(votes, prefix):
+        total = float(sum(votes.values()))
+        for k, v in votes.items():
+            print "%s,%u,%u" % (prefix, k, int(v))
+
+    dump_votes(daily, "D")
+    dump_votes(hourly, "H")

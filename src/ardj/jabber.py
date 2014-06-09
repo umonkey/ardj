@@ -334,4 +334,12 @@ def chat_say(message, recipient=None):
     ardj.database.commit()
 
 
+def cmd_run_bot(*args, **kwargs):
+    """Run the jabber bot"""
+    debug = "--debug" in args
+    bot = Open(debug=debug)
+    if bot is not None:
+        bot.run()
+
+
 __all__ = ['Open', 'chat_say']

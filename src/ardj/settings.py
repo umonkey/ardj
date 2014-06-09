@@ -162,16 +162,6 @@ def getpath2(key1, key2, default=None, fail=False):
     return x.getpath(key1, x.getpath(key2, default, fail))
 
 
-def edit_cli(args):
-    """Opens the config file in the preferred editor.  Files are created when
-    necessary."""
-    from monitor import autocreate_configs
-    configs = autocreate_configs()
-
-    from ardj.util import edit_file
-    edit_file(configs["ardj.yaml"])
-
-
 def get_music_dir():
     return load().get_music_dir()
 

@@ -387,8 +387,8 @@ class LibreFM(object):
         return hashlib.md5(tmp + challenge).hexdigest()
 
 
-def run(*args):
-    """Starts the scrobbler process."""
+def cmd_start():
+    """Start the scrobbler process"""
 
     lastfm = LastFM()
     librefm = LibreFM()

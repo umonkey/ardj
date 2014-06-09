@@ -1,13 +1,74 @@
 #!/usr/bin/env python
 
+"""The main ardj CLI entry point."""
+
+__author__ = "Justin Forest <hex@umonkey.net>"
+
+
 import sys
 
-from ardj.cli2 import *
+from ardj.cli import *
+
+
+def cmd_config():
+    """
+    Edit config file
+
+    Creates default files when necessary.
+    """
+    from ardj.monitor import autocreate_configs
+    configs = autocreate_configs()
+
+    from ardj.util import edit_file
+    edit_file(configs["ardj.yaml"])
+
+
+def cmd_console(*args):
+    """Open command console"""
+    from ardj import console
+    return console.run_cli(args)
+
+
+def cmd_db(*args):
+    """Database related commands"""
+    import ardj.database
+    return cli_main(ardj.database, "ardj db", *args)
+
+
+def cmd_jabber(*args, **kwargs):
+    """Jabber commands"""
+    import ardj.jabber
+    return cli_main(ardj.jabber, "ardj jabber", *args, **kwargs)
+
+
+def cmd_old(*args):
+    """Access old CLI commands"""
+    from ardj import cli_old
+    cli_main(cli_old, "ardj old", *args)
+
+
+def cmd_scrobbler(*args):
+    """Last.fm interaction"""
+    from ardj import scrobbler
+    cli_main(scrobbler, "ardj scrobbler", *args)
 
 
 def cmd_server(*args, **kwargs):
-    from ardj.monitor import run_cli
-    return run_cli(*args, **kwargs)
+    """Run the whole server"""
+    from ardj import monitor
+    cli_main(monitor, "ardj server", *args)
+
+
+def cmd_tracks(*args):
+    """Work with tracks"""
+    from ardj import tracks
+    cli_main(tracks, "ardj tracks", *args)
+
+
+def cmd_web(*args):
+    """Built-in web server"""
+    from ardj import server
+    cli_main(server, "ardj server", *args)
 
 
 if __name__ == "__main__":

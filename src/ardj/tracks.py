@@ -1372,3 +1372,55 @@ def count_available():
     """Returns the number of tracks that are not deleted."""
     count = ardj.database.fetch("SELECT COUNT(*) FROM tracks WHERE weight > 0")
     return count[0][0]
+
+
+def cmd_update():
+    """Remove tracks with no files, add new ones"""
+    import database
+    database.Open().purge()
+    purge()
+    database.commit()
+
+
+def cmd_shift_weight():
+    """Shift current weights to real weights"""
+    from database import commit
+    update_real_track_weights()
+    commit()
+
+
+def cmd_fix_length():
+    """Update track lengths from files (if changed)"""
+    from database import commit
+    ids = [int(n) for n in args if n.isdigit()]
+    update_track_lengths(ids)
+    commit()
+
+
+def cmd_next():
+    """Print file name to play next."""
+    try:
+        import database, settings
+        track = get_next_track()
+        if track is not None:
+            database.commit()
+            print track["filepath"].encode("utf-8")
+            return
+    except Exception, e:
+        print >> sys.stderr, "ERROR: %s" % e
+
+    count = count_available()
+    if not count:
+        music_dir = settings.get_music_dir()
+        print >> sys.stderr, "WARNING: there are NO tracks in the database.  Put some files in %s, then run 'ardj find-new-files'." % music_dir
+    else:
+        print >> sys.stderr, "WARNING: could not pick a track to play.  Details can be found in %s." % settings.getpath("log", "syslog")
+
+    from util import find_sample_music
+    samples = find_sample_music()
+    if not samples:
+        print >> sys.stderr, "Could not find sample music."
+        sys.exit(1)
+
+    print >> sys.stderr, "WARNING: playing a pre-packaged file."
+    print random.choice(samples)
