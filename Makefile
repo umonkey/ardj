@@ -60,7 +60,7 @@ release: release-pypi
 
 release-pypi: build
 	$(PYTHON) setup.py sdist upload --sign
-	rm -f setup.py
+	rm -rf setup.py src/ardj.egg-info
 
 clean:
 	rm -rf src/docbook/book.xml setup.py MANIFEST share/doc/man/ardj.1.gz tests.log tmp
