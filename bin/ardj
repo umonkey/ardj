@@ -47,6 +47,12 @@ def cmd_old(*args):
     cli_main(cli_old, "ardj old", *args)
 
 
+def cmd_run(*args):
+    """Start broadcasting"""
+    from ardj import monitor
+    monitor.cmd_run(*args)
+
+
 def cmd_scrobbler(*args):
     """Last.fm interaction"""
     from ardj import scrobbler

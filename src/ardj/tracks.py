@@ -1377,6 +1377,48 @@ def count_available():
     return count[0][0]
 
 
+def get_track_to_play_next():
+    """
+    Describes track to play next
+
+    Queries the database, on failure returns a predefined track.
+    """
+
+    import database
+    import settings
+
+    music_dir = settings.get_music_dir()
+
+    try:
+        track = get_next_track()
+        if track is not None:
+            database.commit()
+            track["filepath"] = os.path.join(music_dir, track["filepath"])
+            return track
+    except Exception, e:
+        logging.error("ERROR: %s" % e)
+
+    count = count_available()
+    if not count:
+        logging.warning("There are NO tracks in the database.  Put some files in %s, then run 'ardj tracks scan'." % music_dir)
+    else:
+        logging.warning("Could not pick a track to play.  Details can be found in %s." % settings.getpath("log", "syslog"))
+
+    from util import find_sample_music, shared_file
+    samples = find_sample_music()
+    if samples:
+        logging.warning("Playing a pre-packaged file.")
+        sample = random.choice(samples)
+        return {"filepath": os.path.realpath(sample)}
+
+    else:
+        failure = shared_file("audio/stefano_mocini_leaving_you_failure_edit.ogg")
+        if failure:
+            return {"filepath": os.path.realpath(failure)}
+        else:
+            logging.warning("Could not find sample music.")
+
+
 def cmd_scan():
     """Remove tracks with no files, add new ones"""
     import database
@@ -1406,37 +1448,9 @@ def cmd_shift_weight():
 
 def cmd_next():
     """Print file name to play next."""
-    try:
-        import database
-        import settings
-        track = get_next_track()
-        if track is not None:
-            database.commit()
-            print track["filepath"].encode("utf-8")
-            return
-    except Exception, e:
-        logging.error("ERROR: %s" % e)
-
-    count = count_available()
-    if not count:
-        music_dir = settings.get_music_dir()
-        logging.warning("There are NO tracks in the database.  Put some files in %s, then run 'ardj tracks scan'." % music_dir)
-    else:
-        logging.warning("Could not pick a track to play.  Details can be found in %s." % settings.getpath("log", "syslog"))
-
-    from util import find_sample_music, shared_file
-    samples = find_sample_music()
-    if samples:
-        logging.warning("Playing a pre-packaged file.")
-        print random.choice(samples)
-
-    else:
-        failure = shared_file("audio/stefano_mocini_leaving_you_failure_edit.ogg")
-        if failure:
-            print failure
-        else:
-            logging.warning("Could not find sample music.")
-            sys.exit(1)
+    track = get_track_to_play_next()
+    if track:
+        print track
 
 
 def cmd_export_csv():

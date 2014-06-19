@@ -13,10 +13,10 @@ import time
 import traceback
 
 
-REQUIRED_PROGRAMS = ["icecast2", "ezstream|ices0", "mpg123", "lame", "sox", "oggenc"]
+REQUIRED_PROGRAMS = ["icecast2", "ezstream|ices", "mpg123", "lame", "sox", "oggenc"]
 
 UBUNTU_REQUIREMENTS_MAP = {"icecast2": "icecast2",
-    "ezstream|ices0": "ezstream",
+    "ezstream|ices": "ezstream",
     "mpg123": "mpg123",
     "lame": "lame",
     "sox": "sox",
@@ -260,6 +260,69 @@ webapi_root: %(ARDJ_CONFIG_DIR)s/website
 # Unless other rules apply, play everything with the "music" label.
 - name: music
   labels: [music]
+""",
+
+"ices.conf": """<?xml version="1.0"?>
+<ices:Configuration xmlns:ices="http://www.icecast.org/projects/ices">
+  <Playlist>
+    <Randomize>0</Randomize>
+    <Type>python</Type>
+    <Module>ardj_ices</Module>
+    <Crossfade>5</Crossfade>
+  </Playlist>
+
+  <Execution>
+    <Background>0</Background>
+    <Verbose>1</Verbose>
+    <BaseDirectory>/tmp</BaseDirectory>
+  </Execution>
+
+  <Stream>
+    <Server>
+      <!-- Hostname or ip of the icecast server you want to connect to -->
+      <Hostname>localhost</Hostname>
+      <!-- Port of the same -->
+      <Port>8000</Port>
+      <!-- Encoder password on the icecast server -->
+      <Password>hackme</Password>
+      <!-- Header protocol to use when communicating with the server.
+           Shoutcast servers need "icy", icecast 1.x needs "xaudiocast", and
+	   icecast 2.x needs "http". -->
+      <Protocol>http</Protocol>
+    </Server>
+
+    <!-- The name of the mountpoint on the icecast server -->
+    <Mountpoint>/music.mp3</Mountpoint>
+    <!-- The name of the dumpfile on the server for your stream. DO NOT set
+	 this unless you know what you're doing.
+    <Dumpfile>ices.dump</Dumpfile>
+    -->
+    <!-- The name of you stream, not the name of the song! -->
+    <Name>Default stream</Name>
+    <!-- Genre of your stream, be it rock or pop or whatever -->
+    <Genre>Default genre</Genre>
+    <!-- Longer description of your stream -->
+    <Description>Default description</Description>
+    <!-- URL to a page describing your stream -->
+    <URL>http://localhost/</URL>
+    <!-- 0 if you don't want the icecast server to publish your stream on
+	 the yp server, 1 if you do -->
+    <Public>0</Public>
+
+    <!-- Stream bitrate, used to specify bitrate if reencoding, otherwise
+	 just used for display on YP and on the server. Try to keep it
+	 accurate -->
+    <Bitrate>128</Bitrate>
+    <!-- If this is set to 1, and ices is compiled with liblame support,
+	 ices will reencode the stream on the fly to the stream bitrate. -->
+    <Reencode>0</Reencode>
+    <!-- Number of channels to reencode to, 1 for mono or 2 for stereo -->
+    <!-- Sampe rate to reencode to in Hz. Leave out for LAME's best choice
+    <Samplerate>44100</Samplerate>
+    -->
+    <Channels>2</Channels>
+  </Stream>
+</ices:Configuration>
 """
 }
 
@@ -410,12 +473,21 @@ class ServerMonitor(ProcessMonitor):
 
 
 class SourceMonitor(ProcessMonitor):
+    """Runs ices or ezstream"""
     @classmethod
     def start(cls, threads, config_dir):
-        threads.append(cls(
-            "ezstream",
-            ["ezstream", "-c", get_config("ezstream.xml")],
-            config_dir))
+        threads.append(cls.get_command(config_dir))
+
+    @classmethod
+    def get_command(cls, config_dir):
+        if have_program("ices"):
+            name = "ices"
+            args = ["ices", "-c", get_config("ices.conf")]
+        else:
+            name = "ezstream"
+            args = ["ezstream", "-c", get_config("ezstream.xml")]
+
+        return cls(name, args, config_dir)
 
 
 def have_program(commands):

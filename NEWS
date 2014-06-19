@@ -1,5 +1,6 @@
-2014/06/19 (1.2.13)
+2014/06/19 (1.2.14)
 - New command: ardj jabber probe.
+- Added back support for ices0, because of crossfade and ReplayGain.
 
 2014/06/09 (1.2.12)
 - Using VirtualEnv for local development and testing.
