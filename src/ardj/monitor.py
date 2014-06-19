@@ -287,14 +287,14 @@ webapi_root: %(ARDJ_CONFIG_DIR)s/website
       <Password>hackme</Password>
       <!-- Header protocol to use when communicating with the server.
            Shoutcast servers need "icy", icecast 1.x needs "xaudiocast", and
-	   icecast 2.x needs "http". -->
+       icecast 2.x needs "http". -->
       <Protocol>http</Protocol>
     </Server>
 
     <!-- The name of the mountpoint on the icecast server -->
     <Mountpoint>/music.mp3</Mountpoint>
     <!-- The name of the dumpfile on the server for your stream. DO NOT set
-	 this unless you know what you're doing.
+     this unless you know what you're doing.
     <Dumpfile>ices.dump</Dumpfile>
     -->
     <!-- The name of you stream, not the name of the song! -->
@@ -306,15 +306,15 @@ webapi_root: %(ARDJ_CONFIG_DIR)s/website
     <!-- URL to a page describing your stream -->
     <URL>http://localhost/</URL>
     <!-- 0 if you don't want the icecast server to publish your stream on
-	 the yp server, 1 if you do -->
+     the yp server, 1 if you do -->
     <Public>0</Public>
 
     <!-- Stream bitrate, used to specify bitrate if reencoding, otherwise
-	 just used for display on YP and on the server. Try to keep it
-	 accurate -->
+     just used for display on YP and on the server. Try to keep it
+     accurate -->
     <Bitrate>128</Bitrate>
     <!-- If this is set to 1, and ices is compiled with liblame support,
-	 ices will reencode the stream on the fly to the stream bitrate. -->
+     ices will reencode the stream on the fly to the stream bitrate. -->
     <Reencode>0</Reencode>
     <!-- Number of channels to reencode to, 1 for mono or 2 for stereo -->
     <!-- Sampe rate to reencode to in Hz. Leave out for LAME's best choice
