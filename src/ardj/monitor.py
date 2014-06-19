@@ -274,7 +274,7 @@ webapi_root: %(ARDJ_CONFIG_DIR)s/website
   <Execution>
     <Background>0</Background>
     <Verbose>1</Verbose>
-    <BaseDirectory>/tmp</BaseDirectory>
+    <BaseDirectory>%(ARDJ_CONFIG_DIR)s</BaseDirectory>
   </Execution>
 
   <Stream>
@@ -315,7 +315,7 @@ webapi_root: %(ARDJ_CONFIG_DIR)s/website
     <Bitrate>128</Bitrate>
     <!-- If this is set to 1, and ices is compiled with liblame support,
      ices will reencode the stream on the fly to the stream bitrate. -->
-    <Reencode>0</Reencode>
+    <Reencode>1</Reencode>
     <!-- Number of channels to reencode to, 1 for mono or 2 for stereo -->
     <!-- Sampe rate to reencode to in Hz. Leave out for LAME's best choice
     <Samplerate>44100</Samplerate>
