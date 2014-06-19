@@ -486,8 +486,13 @@ def on_status(args, sender):
     if not track:
         return 'Playing an unknown track.'
 
-    lcount = ardj.listeners.get_count()
-    message = u'«%s» by %s — #%u ♺%u ⚖%.2f Σ%u' % (track.get('title', 'untitled'), track.get('artist', 'unknown artist'), track['id'], track.get('count', 0), track.get('weight', 0), lcount)
+    lcount = ardj.listeners.get_count() or 0
+    title = track.get("title", "untitled")
+    artist = track.get("artist", "unknown artist")
+    count = track.get("count") or 0
+    weight = track.get("weight") or 0
+
+    message = u'«%s» by %s — #%u ♺%u ⚖%.2f Σ%u' % (title, artist, track['id'], count, weight, lcount)
     if 'labels' in track:
         message += u' @' + u' @'.join(filter_labels(track['labels']))
     return message

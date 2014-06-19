@@ -1,6 +1,13 @@
-2014/06/19 (1.2.14)
+2014/06/19 (1.2.15)
 - New command: ardj jabber probe.
 - Added back support for ices0, because of crossfade and ReplayGain.
+- Enable logging from within bin/ardj.
+- Better support for running from within the source tree.
+- Fixed the status command failing on new databases.
+- Replaced the incoming_labels setting with default_labels.
+- Added default_labels to default config.
+- Pick a totally random track from the database when all other
+  strategies fail (e.g., incorrect playlist file).
 
 2014/06/09 (1.2.12)
 - Using VirtualEnv for local development and testing.

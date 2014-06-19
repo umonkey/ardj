@@ -328,7 +328,7 @@ class Track(Model):
         t.put()
 
         if labels is None:
-            labels = ardj.settings.get("incoming_labels")
+            labels = ardj.settings.get("default_labels")
         if labels:
             t.set_labels(labels)
 

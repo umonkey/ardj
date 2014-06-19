@@ -5,7 +5,15 @@
 __author__ = "Justin Forest <hex@umonkey.net>"
 
 
+import os
 import sys
+
+_root = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+if os.path.exists(os.path.join(_root, "src/ardj")):
+    sys.path.insert(0, os.path.join(_root, "src"))
+
+import logging
+logging.getLogger().setLevel(logging.DEBUG)
 
 from ardj.cli import *
 

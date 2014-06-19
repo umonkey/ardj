@@ -150,6 +150,10 @@ incoming_path: %(ARDJ_CONFIG_DIR)s/music/incoming
 dupes: 0
 
 
+# Default labels for new files.
+default_labels: [music, tagme]
+
+
 # If you want to display a schedule of upcoming events on your web site,
 # specify the name of the file where the information should be written to.  The
 # file is updated when you run the 'ardj update-events' command, so you'll need
@@ -233,6 +237,9 @@ use_jabber_status: yes
 log: %(ARDJ_CONFIG_DIR)s/ardj.log
 log_level: debug
 log_format_string: "ardj[%%(process)d]: %%(levelname)s %%(message)s"
+
+# Comment out after the playlists are tuned and work well.
+debug_playlist: yes
 
 
 # This is the database where the runtime data is stored.

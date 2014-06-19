@@ -842,7 +842,8 @@ def get_next_track():
 
 
 def get_next_track_id(update_stats=True):
-    """Picks a track to play.
+    """
+    Picks a track to play.
 
     The track is chosen from the active playlists. If nothing could be chosen,
     a random track is picked regardless of the playlist (e.g., the track can be
@@ -896,6 +897,12 @@ def get_next_track_id(update_stats=True):
                     msg += " and sticky label \"%s\"" % s["label"]
                 logging.debug("%s." % msg)
                 break
+
+    if not track_id:
+        logging.debug("Falling back to just any random track from the database.")
+
+        rows = ardj.database.fetch("SELECT id, weight, artist, count, last_played FROM tracks WHERE weight > 0")
+        track_id = get_random_row(rows)
 
     if track_id:
         if want_preroll:
