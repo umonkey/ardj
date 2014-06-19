@@ -145,9 +145,11 @@ incoming_path: %(ARDJ_CONFIG_DIR)s/music/incoming
 # random track.  For example, if this is set to 5, then 5 most recently played
 # artists will be ignored.
 #
-# Caution: only enable this when you have enough music to play without
-# repeating, otherwise ardj will go into failure mode.
-dupes: 0
+# If ardj can't find new music to play, it will resort to playing a completely
+# random track.  So, setting this value too high doesn't break the stream, but
+# can effectively render some playlists empty, if they have less than specified
+# artists.
+dupes: 5
 
 
 # Default labels for new files.
