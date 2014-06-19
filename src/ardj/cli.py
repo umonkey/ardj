@@ -21,6 +21,10 @@ import os
 import sys
 
 
+class UsageError(RuntimeError):
+    pass
+
+
 def fail(msg):
     print >> sys.stderr, msg
     sys.exit(1)
@@ -121,10 +125,14 @@ def cli_main(gl, program, command=None, *argv):
     if func is None:
         fail("Unknown command: %s\n%s" % (command, format_usage(program, gl)))
 
-    if func(*argv) is False:
+    try:
+        if func(*argv) is False:
+            sys.exit(1)
+        else:
+            sys.exit(0)
+    except UsageError, e:
+        print >> sys.stderr, e
         sys.exit(1)
-    else:
-        sys.exit(0)
 
 
 __all__ = ["cli_main"]

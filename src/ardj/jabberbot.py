@@ -18,20 +18,19 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-
+import inspect
 import logging
 import os
 import re
 import sys
+import time
+import traceback
 
 try:
     import xmpp
 except ImportError:
     print >>sys.stderr, 'You need to install xmpppy from http://xmpppy.sf.net/.'
     sys.exit(-1)
-import inspect
-import logging
-import traceback
 
 """A simple jabber/xmpp bot framework"""
 
@@ -39,6 +38,7 @@ __author__ = 'Thomas Perl <thp@thpinfo.com>'
 __version__ = '0.10'
 __website__ = 'http://thpinfo.com/2007/python-jabberbot/'
 __license__ = 'GPLv3 or later'
+
 
 def botcmd(*args, **kwargs):
     """Decorator for bot command functions"""
@@ -526,37 +526,3 @@ class JabberBot(object):
             disconnect_callback()
 
         return self.__exitcode
-
-if __name__ == '__main__':
-    if len(sys.argv) < 3:
-        print >>sys.stderr, 'Usage: %s jid password' % os.path.basename(sys.argv[0])
-        sys.exit(1)
-
-    import time
-    class TestBot(JabberBot):
-        PING_TIMEOUT = 10
-
-        def __init__(self, *args, **kwargs):
-            self.lastping = time.time()
-            JabberBot.__init__(self, *args, **kwargs)
-
-        @botcmd
-        def die(self, mess, args):
-            self.quit()
-            return 'Ok, bye.'
-
-        @botcmd
-        def check(self, mess, args):
-            pass
-
-        def idle_proc(self):
-            if time.time() - self.lastping > 5:
-                self.lastping = time.time()
-                ping = xmpp.Protocol('iq',typ='get',payload=[xmpp.Node('ping',attrs={'xmlns':'urn:xmpp:ping'})])
-                res = self.conn.SendAndWaitForResponse(ping, 1)
-                print 'GOT:', res
-
-    bot = TestBot(sys.argv[1], sys.argv[2], res='debug/', debug=True)
-    bot.serve_forever()
-
-    print 'JabberBot exited.'

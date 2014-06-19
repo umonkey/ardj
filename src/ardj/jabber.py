@@ -320,6 +320,31 @@ class ardjbot(MyFileReceivingBot):
         logging.debug('on_disconnect called.')
 
 
+class TestBot(JabberBot):
+    """A client for connection testing"""
+    PING_TIMEOUT = 10
+
+    def __init__(self, *args, **kwargs):
+        self.lastping = time.time()
+        JabberBot.__init__(self, *args, **kwargs)
+
+    @botcmd
+    def die(self, mess, args):
+        self.quit()
+        return 'Ok, bye.'
+
+    @botcmd
+    def check(self, mess, args):
+        pass
+
+    def idle_proc(self):
+        if time.time() - self.lastping > 5:
+            self.lastping = time.time()
+            ping = xmpp.Protocol('iq',typ='get',payload=[xmpp.Node('ping',attrs={'xmlns':'urn:xmpp:ping'})])
+            res = self.conn.SendAndWaitForResponse(ping, 1)
+            print 'GOT:', res
+
+
 def Open(debug=False):
     """Returns a new bot instance."""
     if ardj.settings.get2("jabber_id", "jabber/login") is not None:
@@ -340,6 +365,20 @@ def cmd_run_bot(*args, **kwargs):
     bot = Open(debug=debug)
     if bot is not None:
         bot.run()
+
+
+def cmd_probe(jid=None, password=None, *args, **kwargs):
+    """Perform a test connection, args: jid, password."""
+    from cli import UsageError
+
+    if jid is None:
+        raise UsageError("Specify a JID.")
+
+    if password is None:
+        raise UsageError("Specify a password.")
+
+    bot = TestBot(jid, password, res="debug/", debug=True)
+    bot.serve_forever()
 
 
 __all__ = ['Open', 'chat_say']
