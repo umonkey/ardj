@@ -340,7 +340,8 @@ class TestBot(JabberBot):
     def idle_proc(self):
         if time.time() - self.lastping > 5:
             self.lastping = time.time()
-            ping = xmpp.Protocol('iq',typ='get',payload=[xmpp.Node('ping',attrs={'xmlns':'urn:xmpp:ping'})])
+            ping = xmpp.Protocol('iq', typ='get',
+                payload=[xmpp.Node('ping', attrs={'xmlns':'urn:xmpp:ping'})])
             res = self.conn.SendAndWaitForResponse(ping, 1)
             print 'GOT:', res
 
