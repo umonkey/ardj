@@ -57,7 +57,13 @@ def format_track_list(tracks, header=None):
         if track is None:
             message += u'-- pause --\n'
         else:
-            message += u'«%s» by %s — [%u] ⚖%.2f ♺%s' % (track.get('title', 'untitled'), track.get('artist', 'unknown artist'), track.get('id', 0), track.get('weight', 0), track.get('count', '?'))
+            message += u"«{title}» by {artist} — [{id}] ⚖{weight:2} ♺{count}".format(
+                id=track.get('id', 0),
+                artist=track.get('artist', 'unknown artist'),
+                title=track.get('title', 'untitled'),
+                weight=float(track.get('weight') or 0),
+                count=track.get('count') or 0,
+            )
             if 'labels' in track:
                 message += u' #' + u' #'.join(filter_labels(track['labels']))
             message += u'\n'
