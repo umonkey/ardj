@@ -4,6 +4,7 @@
 - Fixed track skipping with ices.
 - New CLI command: ardj skip.
 - Monitor now checks children every 1 second, not 5.
+- Fixed 'tags' output when there aren't any tags.
 
 2014/06/19 (1.2.15)
 - New command: ardj jabber probe.

@@ -374,6 +374,8 @@ def on_tags(args, sender):
             'WHERE t.weight > 0 GROUP BY label ORDER BY l.label')
         if args != '-a':
             data = [x for x in data if ':' not in x[0]]
+        if not data:
+            return "There are no tags at all. Tag some tracks first."
         output = u', '.join([u'%s (%u)' % (l, c) for l, c in data]) + u'.'
         return output
 
