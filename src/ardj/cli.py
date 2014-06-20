@@ -56,7 +56,7 @@ def strip_cmd(name):
 
 def format_doc(doc):
     lines = doc.strip().split("\n")
-    return lines[0].strip()
+    return lines[0].strip().rstrip(".")
 
 
 def format_usage(program, gl):

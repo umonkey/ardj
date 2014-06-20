@@ -103,9 +103,12 @@ def on_skip(args, sender):
     else:
         message = u"%s skipped an unknown track." % sender_name
 
-    if ardj.util.skip_current_track():
-        ardj.jabber.chat_say(message)
-        return 'Request sent.'
+    try:
+        if ardj.util.skip_current_track():
+            ardj.jabber.chat_say(message)
+            return 'Request sent.'
+    except Exception, e:
+        return str(e)
 
     return 'Could not send a skip request.  Details can be found in the log file.'
 

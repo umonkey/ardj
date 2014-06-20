@@ -372,19 +372,32 @@ def shorten_urls(message):
     return u" ".join(output)
 
 
-def skip_current_track():
-    """Sends a skip request to the appropriate source client."""
-    pidfile = os.path.join(settings.get_config_dir(), "ezstream.pid")
-    if not os.path.exists(pidfile):
-        raise Exception("Could not skip track: ezstream not running (no pid file).")
+def signal_by_pid_file(filename, sig):
+    """
+    Send a signal to a process listed in a pid file.
+
+    Returns True on success, False on failure.
+    """
+    path = os.path.join(settings.get_config_dir(), filename)
+    if not os.path.exists(path):
+        return False
 
     try:
-        with open(pidfile, "rb") as f:
+        with open(path, "rb") as f:
             pid = int(f.read().strip())
-            os.kill(pid, signal.SIGUSR1)
+            os.kill(pid, sig)
             return True
     except Exception, e:
-        raise Exception("Could not skip track: %s" % e)
+        logging.exception("Error skipping track.")
+        return False
+
+
+def skip_current_track():
+    """Sends a skip request to the appropriate source client."""
+    if not signal_by_pid_file("ezstream.pid", signal.SIGUSR1):
+        if not signal_by_pid_file("ices.pid", signal.SIGUSR1):
+            raise Exception("Could not skip track: no valid pid files.")
+    return True
 
 
 def shorten_file_path(filepath):

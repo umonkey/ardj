@@ -73,6 +73,12 @@ def cmd_server(*args, **kwargs):
     cli_main(monitor, "ardj server", *args)
 
 
+def cmd_skip(*args):
+    """Skip to next track."""
+    from ardj.console import on_skip
+    print on_skip([], "console")
+
+
 def cmd_tracks(*args):
     """Work with tracks"""
     from ardj import tracks
