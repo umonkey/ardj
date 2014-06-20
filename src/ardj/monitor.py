@@ -363,14 +363,17 @@ class ProcessMonitor(object):
         self.run()
 
     def __del__(self):
-        if os.path.exists(self.pidfile):
-            os.unlink(self.pidfile)
+        self.remove_pid_file()
 
         if self.logfile:
             self.logfile.flush()
 
         if os.stat(self.logname).st_size == 0:
             os.unlink(self.logname)
+
+    def remove_pid_file(self):
+        if os.path.exists(self.pidfile):
+            os.unlink(self.pidfile)
 
     def run(self):
         env = os.environ.copy()
@@ -393,6 +396,8 @@ class ProcessMonitor(object):
             ok = " (bad)" if self.p.returncode else " (this seems OK)"
             self.log("exited with status %d%s, restarting; logs are in %s" \
                 % (self.p.returncode, ok, self.get_log_name()))
+
+            self.remove_pid_file()
             self.run()
 
     def get_log_name(self):
@@ -643,7 +648,7 @@ def cmd_run(*args):
                 print(traceback.format_exc(e), file=sys.stderr)
 
         try:
-            time.sleep(5)
+            time.sleep(1)
         except KeyboardInterrupt:
             print("Interrupted.")
             for t in threads:
