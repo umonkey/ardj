@@ -55,6 +55,13 @@ def cmd_old(*args):
     cli_main(cli_old, "ardj old", *args)
 
 
+def cmd_reload(*args):
+    """Reload playlists (only for ices)"""
+    from signal import SIGHUP
+    from ardj.util import signal_by_pid_file
+    signal_by_pid_file("ices.pid", SIGHUP)
+
+
 def cmd_run(*args):
     """Start broadcasting"""
     from ardj import monitor
