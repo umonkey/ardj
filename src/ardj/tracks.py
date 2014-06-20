@@ -315,7 +315,7 @@ def find_ids(pattern, sender=None, limit=None):
         elif arg.isdigit():
             if search_ids is not None:
                 search_ids.append(arg)
-        elif arg.startswith('@'):
+        elif arg.startswith('#'):
             search_labels.append(arg[1:])
             search_ids = None
         else:

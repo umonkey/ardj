@@ -40,6 +40,12 @@ def shortname(sender):
 
 
 def filter_labels(labels):
+    """
+    Returns only visible labels.
+
+    Some labels contain a colon, like bookmarks (bm:alice@example.com), these
+    labels should not be public.
+    """
     return sorted(list(set([l for l in labels if ':' not in l])))
 
 
@@ -51,9 +57,9 @@ def format_track_list(tracks, header=None):
         if track is None:
             message += u'-- pause --\n'
         else:
-            message += u'«%s» by %s — #%u ⚖%.2f ♺%s' % (track.get('title', 'untitled'), track.get('artist', 'unknown artist'), track.get('id', 0), track.get('weight', 0), track.get('count', '?'))
+            message += u'«%s» by %s — [%u] ⚖%.2f ♺%s' % (track.get('title', 'untitled'), track.get('artist', 'unknown artist'), track.get('id', 0), track.get('weight', 0), track.get('count', '?'))
             if 'labels' in track:
-                message += u' @' + u' @'.join(filter_labels(track['labels']))
+                message += u' #' + u' #'.join(filter_labels(track['labels']))
             message += u'\n'
     return message
 
@@ -492,9 +498,9 @@ def on_status(args, sender):
     count = track.get("count") or 0
     weight = track.get("weight") or 0
 
-    message = u'«%s» by %s — #%u ♺%u ⚖%.2f Σ%u' % (title, artist, track['id'], count, weight, lcount)
+    message = u'«%s» by %s — [%u] ♺%u ⚖%.2f Σ%u' % (title, artist, track['id'], count, weight, lcount)
     if 'labels' in track:
-        message += u' @' + u' @'.join(filter_labels(track['labels']))
+        message += u' #' + u' #'.join(filter_labels(track['labels']))
     return message
 
 
