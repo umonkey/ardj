@@ -645,7 +645,7 @@ def update_sticky_label(track_id, playlist):
         # Save the new playlist name.  If it changed -- remove previous label.
         if sticky["playlist"] != playlist.get("name", "unnamed"):
             if sticky["label"] is not None:
-                logging.info("Playlist changed to %s, dropping sticky label." % playlist["name"])
+                logging.info("Playlist changed to %s, dropping sticky label \"%s\"." % (playlist["name"], sticky["label"]))
                 sticky["label"] = None
 
         sticky["playlist"] = playlist.get("name", "unnamed")
@@ -678,15 +678,17 @@ def update_sticky_label(track_id, playlist):
 
 
 def get_sticky_label(playlist):
-    """Returns sticky labels that apply to this playlist."""
+    """
+    Returns sticky labels that apply to this playlist.
+    """
     with Sticky() as sticky:
-        # Playlist changed, no labels.
+        # Playlist changed, ignore previously used sticky labels.
         if playlist.get("name", "unnamed") != sticky["playlist"]:
-            logging.debug("Sticky: wrong playlist: %s, ignoring." % playlist.get("name"))
+            if sticky["label"]:
+                logging.debug("Sticky: playlist changed to %s, forgetting old label %s." % (playlist.get("name"), sticky["label"]))
             return []
 
         if not sticky["label"]:
-            logging.debug("Sticky: no label, not adding filters.")
             return []
 
         logging.debug("Sticky: forcing label %s" % sticky["label"])

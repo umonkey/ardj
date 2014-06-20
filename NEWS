@@ -1,3 +1,6 @@
+2014/06/20 (1.2.16)
+- Removed useless sticky label debug logging.
+
 2014/06/19 (1.2.15)
 - New command: ardj jabber probe.
 - Added back support for ices0, because of crossfade and ReplayGain.
