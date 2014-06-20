@@ -49,6 +49,12 @@ def cmd_jabber(*args, **kwargs):
     return cli_main(ardj.jabber, "ardj jabber", *args, **kwargs)
 
 
+def cmd_listeners(*args):
+    """Get listeners counts."""
+    from ardj import listeners
+    cli_main(listeners, "ardj listeners", *args)
+
+
 def cmd_old(*args):
     """Access old CLI commands"""
     from ardj import cli_old

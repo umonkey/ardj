@@ -13,7 +13,7 @@ import ardj.util
 
 def get_count():
     """Returns the number of active listeners."""
-    url = ardj.settings.get("icecast_stats_url")
+    url = ardj.settings.get("icecast_status_url")
     if not url:
         logging.debug('Unable to count listeners: icecast/stats/url not set.')
         return 0
@@ -23,15 +23,14 @@ def get_count():
         logging.error("Could not fetch listener count.")
         return 0
 
-    stats_re = re.compile(ardj.settings.get("icecast_stats_re", '<listeners>(\d+)</listeners>'))
-    m = stats_re.search(data)
-    if not m:
-        logging.warning('Could not find listener count in icecast2 stats.xml')
-        return 0
+    csv = re.findall(r"<pre>(.*)</pre>", data, re.M | re.S)
+    lines = csv[0].strip().split("\n")
+    for line in lines:
+        cells = line.split(",")
+        if cells[0] == "Global":
+            return int(cells[3])
 
-    count = int(m.group(1))
-    logging.debug("There are %u listeners." % count)
-    return count
+    return lines
 
 
 def format_data(sql, params, converters, header=None):
@@ -54,6 +53,11 @@ def get_yesterday_ts():
         today += 86400
     yesterday = today - 86400
     return yesterday, today
+
+
+def cmd_now():
+    """Print current listener count."""
+    print get_count()
 
 
 def cli_total():
