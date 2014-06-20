@@ -7,6 +7,7 @@
 - Fixed 'tags' output when there aren't any tags.
 - New CLI command: ardj reload.
 - Listener counter no longer needs admin access to icecast2.
+- Can now run ices from source tree without preparing PYTHONPATH.
 
 2014/06/19 (1.2.15)
 - New command: ardj jabber probe.

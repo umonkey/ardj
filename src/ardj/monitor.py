@@ -379,6 +379,9 @@ class ProcessMonitor(object):
         env = os.environ.copy()
         env["PATH"] += os.pathsep + os.path.dirname(sys.argv[0])
 
+        if "ardj_python_path" in os.environ:
+            env["PYTHONPATH"] = os.environ["ardj_python_path"]
+
         self.p = subprocess.Popen(self.command,
             stdout=self.logfile,
             stderr=self.logfile,

@@ -10,7 +10,9 @@ import sys
 
 _root = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 if os.path.exists(os.path.join(_root, "src/ardj")):
-    sys.path.insert(0, os.path.join(_root, "src"))
+    _path = os.path.join(_root, "src")
+    sys.path.insert(0, _path)
+    os.environ["ardj_python_path"] = _path
 
 import logging
 logging.getLogger().setLevel(logging.DEBUG)
