@@ -1,3 +1,6 @@
+2014/06/23 (1.2.20)
+- New CLI command: ardj replaygain scan.
+
 2014/06/20 (1.2.19)
 - Removed useless sticky label debug logging.
 - Changed label prefix from @ to a more convenient #.

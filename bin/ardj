@@ -70,6 +70,12 @@ def cmd_reload(*args):
     signal_by_pid_file("ices.pid", SIGHUP)
 
 
+def cmd_replaygain(*args):
+    """Calculate ReplayGain"""
+    from ardj import replaygain
+    cli_main(replaygain, "ardj replaygain", *args)
+
+
 def cmd_run(*args):
     """Start broadcasting"""
     from ardj import monitor

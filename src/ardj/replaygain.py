@@ -169,8 +169,8 @@ def purge(filename):
         pass
 
 
-def run_cli(args):
-    """Implements the "ardj rg" command."""
+def cmd_scan(*args):
+    """Add ReplayGain info to tracks that don't have it"""
     if not args:
         print "Files not specified (or use --all)."
         return False
