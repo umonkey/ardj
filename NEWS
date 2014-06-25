@@ -1,3 +1,7 @@
+2014/06/26 (1.2.21)
+- Revised WebAPI.
+- Built-in docs for WebAPI.
+
 2014/06/23 (1.2.20)
 - New CLI command: ardj replaygain scan.
 

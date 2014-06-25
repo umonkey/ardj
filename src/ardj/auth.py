@@ -15,7 +15,7 @@ def create_token(login, login_type):
     token.put(force_insert=True)
 
     base_url = get_setting("web_api_root", "http://localhost:8080").rstrip("/")
-    url = "%s/api/auth?token=%s" % (base_url, tmp)
+    url = "%s/auth?token=%s" % (base_url, tmp)
     message = "A third-party application is requesting access to your account. If that was you, follow this link:\n%s\n" % url
 
     if login_type == "jid":

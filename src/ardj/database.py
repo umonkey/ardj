@@ -264,7 +264,7 @@ class Track(Model):
             return []
         if "labels" not in self:
             self["labels"] = fetchcol("SELECT label FROM labels WHERE track_id = ?", (self[self.key_name], ))
-        return self["labels"]
+        return self["labels"] or []
 
     def set_labels(self, labels):
         if type(labels) != list:
