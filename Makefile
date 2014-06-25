@@ -1,4 +1,4 @@
-VERSION=1.2.21
+VERSION=1.2.22
 PYTHON=python
 
 help:

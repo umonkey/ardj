@@ -234,11 +234,14 @@ class AuthController(Controller):
     def GET(self):
         args = web.input(token=None)
         if args.token is None:
+            web.header("Content-Type", "text/plain; charset=utf-8")
             return "Please specify a token or POST."
         token = auth.confirm_token(args.token)
         if token:
+            web.header("Content-Type", "text/plain; charset=utf-8")
             return "OK, tell this to your program: %s" % args.token
         else:
+            web.header("Content-Type", "text/plain; charset=utf-8")
             return "Wrong token."
 
     @send_json
@@ -360,11 +363,13 @@ class RocksController(Controller):
     vote_value = 1
 
     def GET(self):
+        args = web.input(track_id="123", token="sEkReT")
         url = "http://%s%s" % (web.ctx.env["HTTP_HOST"], web.ctx.env["PATH_INFO"])
 
-        return "This call requires a POST request and an auth token.  Example CLI use:\n\n" \
-            "curl -X POST -d \"track_id=123&token=hello\" " \
-            + url
+        web.header("Content-Type", "text/plain; charset=utf-8")
+        return u"This call requires a POST request and an auth token.  Example CLI use:\n\n" \
+            "curl -X POST -d \"track_id=%s&token=%s\" %s" \
+            % (args.track_id, args.token, url)
 
     @send_json
     def POST(self):
@@ -397,7 +402,7 @@ class RocksController(Controller):
         except web.Forbidden:
             raise
         except Exception, e:
-            log.log_error(str(e), e)
+            log.log_exception(str(e), e)
             return {"status": "error", "message": str(e)}
 
 
