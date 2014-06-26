@@ -2,6 +2,7 @@
 - Revised WebAPI.
 - Built-in docs for WebAPI.
 - New web API method: track/update.json.
+- New CLI command: ardj web tokens (lists active tokens).
 
 2014/06/23 (1.2.20)
 - New CLI command: ardj replaygain scan.
