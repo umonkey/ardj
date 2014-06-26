@@ -1,6 +1,7 @@
-2014/06/26 (1.2.21)
+2014/06/26 (1.2.23)
 - Revised WebAPI.
 - Built-in docs for WebAPI.
+- New web API method: track/update.json.
 
 2014/06/23 (1.2.20)
 - New CLI command: ardj replaygain scan.

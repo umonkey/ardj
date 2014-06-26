@@ -172,6 +172,14 @@ var foo = {...}; bar(foo);</pre>
   "message": "OK, current weight of track #123 is 1.9333."
 }</pre>
 
+    <h2 id="update">track/update.json</h2>
+    <p>Изменяет информацию о песне.</p>
+    <p>Запросы нужно отправлять методом POST, указав полученный при <a href="#auth">аутентификации</a> токен.  Пример:</p>
+    <pre>$ curl -X POST -d 'token=baadf00d&amp;id=123&amp;artist=KMFDM&amp;title=Money&amp;tag=electronic&amp;tag=music' http://music.tmradio.net/track/update.json
+{
+  "success": true
+}</pre>
+
     <h2 id="info">track/info.json</h2>
     <p>Возвращает информацию о композиции идентификатор которой указан в параметре <code>id</code>.  Пример:</p>
     <pre>$ curl 'http://music.tmradio.net/track/info.json?id=6065'
@@ -193,6 +201,10 @@ var foo = {...}; bar(foo);</pre>
  </body>
 </html>
 """
+
+
+def log_debug(msg, *args, **kwargs):
+    return logging.debug(msg.format(*args, **kwargs))
 
 
 def send_json(f):
@@ -447,6 +459,46 @@ class TagCloudController(Controller):
         return {"status": "ok", "tags": dict(tags)}
 
 
+class UpdateTrackController(Controller):
+    @send_json
+    def POST(self):
+        args = web.input(
+            token=None,
+            id=None,
+            title=None,
+            artist=None,
+            tag=[])
+
+        sender = auth.get_id_by_token(args.token)
+        if sender is None:
+            return {"success": False,
+                "error": "bad token"}
+
+        track = database.Track.get_by_id(int(args.id))
+        if track is None:
+            return {"success": False,
+                "error": "track not found"}
+
+        if args.artist:
+            track["artist"] = args.artist
+            log_debug("{0} set artist for track {1} to {2}",
+                sender, args.id, args.artist)
+        if args.title:
+            track["title"] = args.title
+            log_debug("{0} set title for track {1} to {2}",
+                sender, args.id, args.title)
+        track.put()
+
+        if args.tag:
+            track.set_labels(args.tag)
+            log_debug("{0} set labels for track {1} to {2}",
+                sender, args.id, ", ".join(args.tag))
+
+        database.commit()
+
+        return {"success": True}
+
+
 class ExceptionHandlingMiddleWare(object):
     """Завершение предыдущей транзакции после обработки каждого запроса, для
     исключения блокировки базы данных."""
@@ -481,6 +533,7 @@ def serve_http(hostname, port):
         "/track/rocks\.json", RocksController,
         "/track/search\.json", SearchController,
         "/track/sucks\.json", SucksController,
+        "/track/update\.json", UpdateTrackController,
     ))
     app.run(ExceptionHandlingMiddleWare)
 
@@ -511,4 +564,11 @@ def cmd_serve():
     serve_http(*settings.get("webapi_socket", "127.0.0.1:8080").split(":", 1))
 
 
-__all__ = ["cmd_serve"]  # hide unnecessary internals
+def cmd_tokens():
+    """List valid tokens."""
+    from ardj.auth import get_active_tokens
+    for t in get_active_tokens():
+        print "%s: %s" % (t["login"], t["token"])
+
+
+__all__ = ["cmd_serve", "cmd_tokens"]  # hide unnecessary internals
