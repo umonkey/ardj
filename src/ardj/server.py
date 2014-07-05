@@ -22,6 +22,8 @@ import scrobbler
 import settings
 import tracks
 import log
+from users import get_admins
+from util import skip_current_track
 
 
 HELP_PAGE = u"""<!doctype html>
@@ -98,23 +100,31 @@ var foo = {...}; bar(foo);</pre>
  ]
 }</pre>
 
+    <h2 id="status">skip</h2>
+    <p>Пропускает текущую композицию, если у пользователя есть необходимый уровень доступа.  Пример:</p>
+    <pre>$ curl -d token=XXXXX http://music.tmradio.net/skip
+{
+  "success": True
+}</pre>
+
     <h2 id="status">status.json</h2>
     <p>Возвращает информацию о проигрываемой на данный момент композиции.  Формат результата аналогичен <a href="#info">track/info.json</a>.  Пример:</p>
     <pre>$ curl http://music.tmradio.net/track/info.json
 {
-  "real_weight": 1.8666666666666667,
-  "last_played": 1326743103,
-  "weight": 1.8666666666666667,
+  "artist": "Эхо Москвы",
+  "count": 5955,
+  "download": null,
+  "filename": "echo-msk-news.ogg",
+  "filepath": "/home/radio/Music/echo-msk-news.ogg",
+  "id": 4598,
   "image": null,
   "labels": [ "news", "preroll-not-wanted", "special" ],
-  "download": null,
-  "id": 4598,
-  "count": 5955,
-  "filepath": "/home/radio/Music/echo-msk-news.ogg",
-  "artist": "Эхо Москвы",
-  "title": "Новости",
-  "filename": "echo-msk-news.ogg",
+  "last_played": 1326743103,
   "length": 97
+  "listeners": 17,
+  "real_weight": 1.8666666666666667,
+  "title": "Новости",
+  "weight": 1.8666666666666667,
 }</pre>
 
     <h2 id="cloud">tag/cloud.json</h2>
@@ -356,6 +366,26 @@ class RaiseController(Controller):
         raise Exception("Hello, world!")
 
 
+class SkipController(Controller):
+    @send_json
+    def POST(self):
+        args = web.input(token=None)
+
+        try:
+            sender = auth.get_id_by_token(args.token)
+            if sender is None:
+                raise web.forbidden("Bad token.")
+
+            if sender not in get_admins():
+                raise web.forbidden("admin access required to skip tracks")
+
+            skip_current_track()
+            return {"success": True}
+        except Exception, e:
+            return {"success": False,
+                "error": str(e)}
+
+
 class RecentController(Controller):
     @send_json
     def GET(self):
@@ -437,6 +467,8 @@ class SearchController(Controller):
 class StatusController(Controller):
     @send_json
     def GET(self):
+        from listeners import get_count
+
         track_id = tracks.get_last_track_id()
         if track_id is None:
             return None
@@ -446,6 +478,8 @@ class StatusController(Controller):
             return None
 
         track["current_ts"] = int(time.time())
+        track["listeners"] = get_count() or 0
+
         return track
 
 
@@ -526,6 +560,7 @@ def serve_http(hostname, port):
         "/auth(?:\.json)?", AuthController,
         "/playlist\.json", PlaylistController,
         "/raise", RaiseController,  # for testing, important.
+        "/skip", SkipController,
         "/status\.js(?:on)?", StatusController,
         "/tag/cloud\.json", TagCloudController,
         "/track/info\.js(?:on)?", InfoController,
