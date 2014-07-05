@@ -456,7 +456,8 @@ class SucksController(RocksController):
 class TagCloudController(Controller):
     @send_json
     def GET(self):
-        tags = database.Track.find_tags(cents=4)
+        tags = database.Track.find_tags(
+            cents=4, min_count=1)
         return {"status": "ok", "tags": dict(tags)}
 
 

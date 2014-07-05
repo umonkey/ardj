@@ -1,3 +1,6 @@
+2014/06/27 (1.2.24)
+- WebAPI reports all tags in the cloud, not 5+ tracks only.
+
 2014/06/26 (1.2.23)
 - Revised WebAPI.
 - Built-in docs for WebAPI.
