@@ -1,6 +1,8 @@
-2014/07/06 (1.2.25)
+2014/07/06 (1.2.26)
 - New WebAPI endpoint: /skip (POST).
 - Added listeners cound in status.json.
+- Fixed an error in the built-in manual.
+- Unified error handling and reporting.
 
 2014/06/27 (1.2.24)
 - WebAPI reports all tags in the cloud, not 5+ tracks only.

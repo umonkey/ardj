@@ -109,7 +109,7 @@ var foo = {...}; bar(foo);</pre>
 
     <h2 id="status">status.json</h2>
     <p>Возвращает информацию о проигрываемой на данный момент композиции.  Формат результата аналогичен <a href="#info">track/info.json</a>.  Пример:</p>
-    <pre>$ curl http://music.tmradio.net/track/info.json
+    <pre>$ curl http://music.tmradio.net/status.json
 {
   "artist": "Эхо Москвы",
   "count": 5955,
@@ -222,7 +222,14 @@ def send_json(f):
     """The @send_json decorator, encodes the return value in JSON."""
     def wrapper(*args, **kwargs):
         web.header("Access-Control-Allow-Origin", "*")
-        data = f(*args, **kwargs)
+        try:
+            data = f(*args, **kwargs)
+        except Exception, e:
+            data = {
+                "success": False,
+                "error": unicode(e),
+                "error_type": e.__class__.__name__,
+            }
 
         if web.ctx.env["PATH_INFO"].endswith(".js"):
             var_name = "response"
@@ -242,6 +249,10 @@ def send_json(f):
             web.header("Content-Type", "application/json; charset=UTF-8")
             return json.dumps(data, ensure_ascii=False, indent=True)
     return wrapper
+
+
+class UsageError(RuntimeError):
+    pass
 
 
 class Controller:
@@ -303,11 +314,11 @@ class InfoController(Controller):
 
         track_id = args.id
         if track_id is None:
-            return None
+            raise RuntimeError("track id not specified")
 
         track = tracks.get_track_by_id(track_id, sender=sender)
         if track is None:
-            return None
+            raise RuntimeError("track %s not found." % track_id)
 
         return track
 
@@ -350,14 +361,13 @@ class QueueController(Controller):
     def GET(self):
         args = web.input(track=None, token=None)
 
-        if args.track:
-            sender = auth.get_id_by_token(args.token)
-            console.on_queue("-s " + str(args.track), sender or "Anonymous Coward")
-            database.commit()
-            return {"success": True}
+        if not args.track:
+            raise UsageError("track id not specified (id)")
 
-        return {"success": False,
-            "error": "track id not specified"}
+        sender = auth.get_id_by_token(args.token)
+        console.on_queue("-s " + str(args.track), sender or "Anonymous Coward")
+        database.commit()
+        return {"success": True}
 
 
 class RaiseController(Controller):
@@ -507,13 +517,11 @@ class UpdateTrackController(Controller):
 
         sender = auth.get_id_by_token(args.token)
         if sender is None:
-            return {"success": False,
-                "error": "bad token"}
+            raise UsageError("bad token")
 
         track = database.Track.get_by_id(int(args.id))
         if track is None:
-            return {"success": False,
-                "error": "track not found"}
+            raise UsageError("track not found")
 
         if args.artist:
             track["artist"] = args.artist
