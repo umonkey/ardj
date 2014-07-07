@@ -121,13 +121,41 @@ def get(filename):
     return Wrapper(filename)
 
 
+def utf(s):
+    if isinstance(s, unicode):
+        s = s.encode("utf-8")
+    return str(s)
+
+
+def pack_ardj_tag(tags):
+    ardj = []
+
+    new = {}
+    for k, v in tags.items():
+        if k in ("artist", "title"):
+            new[k] = utf(v)
+
+        elif k == "labels":
+            v = ",".join([utf(l)
+                for l in v])
+            ardj.append("labels=%s" % utf(v))
+
+        else:
+            logging.info("Refusing to write tag <%s>." % k)
+
+    if ardj:
+        ardj.insert(0, "ardj=1")
+        new["ardj"] = ";".join(ardj)
+
+    return new
+
+
 def set(filename, tags):
     try:
         t = raw(filename)
-        for k, v in tags.items():
-            if k not in ('length', 'length', 'sample_rate', 'channels', 'mp3gain_minmax', 'replaygain_track_peak', 'replaygain_track_gain'):
-                if v is not None:
-                    t[k] = v
+        updates = pack_ardj_tag(tags)
+        for k, v in updates.items():
+            t[k] = v
         t.save(filename)
     except Exception, e:
         log_error("Could not save tags to %s: %s" % (filename, e), e)

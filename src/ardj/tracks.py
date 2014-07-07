@@ -32,6 +32,7 @@ import ardj.util
 from ardj import is_dry_run, is_verbose
 from ardj.database import Track as Track2
 from ardj.users import resolve_alias
+from ardj.log import log_info
 
 
 KARMA_TTL = 30.0
@@ -159,7 +160,7 @@ class Track(dict):
     def get_labels(self):
         if "labels" not in self:
             rows = ardj.database.fetch("SELECT label FROM labels WHERE track_id = ?", (self["id"], ))
-            self["labels"] = [row[0] for row in rows]
+            self["labels"] = sorted(list(set([row[0] for row in rows])))
         return self["labels"]
 
     def get_artist_url(self):
@@ -193,6 +194,57 @@ class Track(dict):
     def get_last_vote(self, sender):
         votes = ardj.database.fetchone("SELECT vote FROM votes WHERE track_id = ? AND email = ? ORDER BY id DESC", (self["id"], sender, ))
         return votes[0] if votes else 0
+
+    def refresh_tags(self, filepath):
+        tags = ardj.tags.get(filepath)
+
+        write = False
+
+        duration = tags.get("length", 0)
+        if duration != self["length"]:
+            log_info(u"Updating track {0} duration to {1}.",
+                self["id"], duration)
+            self["duration"] = duration
+            write = True
+
+        artist = tags.get("artist", "Unknown Artist")
+        if artist != self["artist"]:
+            log_info(u"Updating track {0} artist to {1}.",
+                self["id"], artist)
+            self["artist"] = artist
+            write = True
+
+        title = tags.get("title", "Untitled")
+        if title != self["title"]:
+            log_info(u"Updating track {0} title to {1}.",
+                self["id"], title)
+            self["title"] = title
+            write = True
+
+        if write:
+            ardj.database.execute("UPDATE tracks SET artist = ?, title = ?, length = ? WHERE id = ?", (artist, title, duration, self["id"]))
+
+    def write_tags(self):
+        tags = ardj.tags.get(self.get_filepath())
+
+        new_tags = {}
+
+        if tags["artist"] != self["artist"]:
+            new_tags["artist"] = self["artist"]
+
+        if tags["title"] != self["title"]:
+            new_tags["title"] = self["title"]
+
+        labels = self.get_labels()
+        if tags.get("labels") != labels:
+            new_tags["labels"] = labels
+
+        if new_tags:
+            log_info("Writing new tags to {0}.", self["filename"])
+            ardj.tags.set(self.get_filepath(), new_tags)
+
+    def get_filepath(self):
+        return get_real_track_path(self["filename"])
 
 
 class Sticky(dict):
@@ -378,7 +430,11 @@ def add_labels(track_id, labels, owner=None):
                 pass
             else:
                 ardj.database.execute('INSERT INTO labels (track_id, label, email) VALUES (?, ?, ?)', (track_id, label.lstrip('+'), owner or 'ardj', ))
-    return sorted(list(set([row[0] for row in ardj.database.fetch('SELECT label FROM labels WHERE track_id = ?', (track_id, ))])))
+
+    track = Track.get_by_id(int(track_id))
+    track.write_tags()
+
+    return track.get_labels()
 
 
 def update_track(properties):
@@ -413,6 +469,9 @@ def update_track(properties):
     if properties.get('labels'):
         add_labels(properties['id'], properties['labels'], owner=properties.get('owner'))
 
+    track = Track.get_by_id(int(properties["id"]))
+    track.write_tags()
+
 
 def purge():
     """Deletes tracks with zero weight.
@@ -425,7 +484,6 @@ def purge():
     # mark tracks that no longer have files
     for track_id, filename in ardj.database.fetch('SELECT id, filename FROM tracks WHERE weight > 0 AND filename IS NOT NULL'):
         abs_filename = os.path.join(music_dir, filename)
-        print abs_filename
         if not os.path.exists(abs_filename):
             logging.warning('Track %u vanished (%s), deleting.' % (track_id, filename))
             ardj.database.execute('UPDATE tracks SET weight = 0 WHERE id = ?', (track_id, ))
@@ -588,6 +646,8 @@ def get_track_id_from_queue():
         if not row[1]:
             return None
         track = get_track_by_id(row[1])
+        if track is None:
+            return None
         if not track.get('filename'):
             return None
         return row[1]
@@ -1401,8 +1461,10 @@ def get_track_to_play_next():
     try:
         track = get_next_track()
         if track is not None:
+            filepath = os.path.join(music_dir, track["filepath"])
+            track.refresh_tags(filepath)
             database.commit()
-            track["filepath"] = os.path.join(music_dir, track["filepath"])
+            track["filepath"] = filepath
             return track
     except Exception, e:
         logging.error("ERROR: %s" % e)

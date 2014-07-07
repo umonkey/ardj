@@ -33,14 +33,13 @@ class OGG(unittest.TestCase):
 
         t['artist'] = 'somebody'
         t['title'] = 'something'
-        t['ardj'] = 'ardj=1;yes=no;labels=one,two'
+        t['labels'] = ["one", "two"]
         ardj.tags.set(self.filename, t)
 
         t2 = ardj.tags.get(self.filename)
         self.assertEquals(3, t2['length'])
         self.assertEquals('somebody', t2['artist'])
         self.assertEquals('something', t2['title'])
-        self.assertEquals('no', t2['yes'])
         self.assertEquals(['one', 'two'], t2['labels'])
 
 

@@ -87,4 +87,11 @@ def log_error(msg, e):
         logging.error(line)
 
 
+def log_info(msg, *args, **kwargs):
+    msg = msg.format(*args, **kwargs)
+    if isinstance(msg, unicode):
+        msg = msg.encode("utf-8")
+    logging.info(msg)
+
+
 __all__ = ["install", "log_error"]
