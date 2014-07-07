@@ -258,6 +258,13 @@ database_path: %(ARDJ_CONFIG_DIR)s/ardj.sqlite
 
 # The root folder of your WebAPI site.  That's where the static files are.
 webapi_root: %(ARDJ_CONFIG_DIR)s/website
+
+
+# Here you can customize token verification emails, sent by WebAPI when
+# a user requests access.
+#TokenMailer_subject: "OMG! token"
+#TokenMailer_plain: "Your token [{token}] is ready. Open <{link}> to activate it."
+#TokenMailer_html: "<p>Your token [{token}] is ready. Open <{link}> to activate it.</p>"
 """,
 
 "playlist.yaml": """# Play a jingle every 15 minutes.

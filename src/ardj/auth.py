@@ -4,6 +4,7 @@ from database import Token, Message, commit
 from users import resolve_alias
 from util import run
 from settings import get as get_setting
+from mail import TokenMailer
 
 
 def create_token(login, login_type):
@@ -14,19 +15,9 @@ def create_token(login, login_type):
     token = Token(token=tmp, login=login, login_type=login_type, active=1)
     token.put(force_insert=True)
 
-    base_url = get_setting("web_api_root", "http://localhost:8080").rstrip("/")
-    url = "%s/auth?token=%s" % (base_url, tmp)
-    message = "A third-party application is requesting access to your account. If that was you, follow this link:\n%s\n" % url
-
-    if login_type == "jid":
-        msg = Message(re=login, message=message)
-        msg.put()
-    else:
-        run(["mail", "-s", "Your token", login], stdin_data=message)
+    TokenMailer(login, token["token"]).deliver()
 
     commit()
-
-    return url
 
 
 def confirm_token(token):

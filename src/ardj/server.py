@@ -281,7 +281,7 @@ class AuthController(Controller):
     @send_json
     def POST(self):
         args = web.input(id=None, type=None)
-        token = auth.create_token(args.id, args.type)
+        auth.create_token(args.id, args.type)
         return {"status": "ok", "message": "You'll soon receive a message with a confirmation link."}
 
 
