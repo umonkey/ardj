@@ -1,6 +1,8 @@
-2014/07/08 (1.2.29)
+2014/07/08 (1.2.31)
 - Fixed token generation.
 - Added an envar to debug email.
+- Fixed an error with unnamed playlists.
+- Fixed an error with logging unicode file names.
 
 2014/07/07 (1.2.28)
 - Added templates for token verification emails.

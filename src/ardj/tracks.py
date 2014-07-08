@@ -240,7 +240,7 @@ class Track(dict):
             new_tags["labels"] = labels
 
         if new_tags:
-            log_info("Writing new tags to {0}.", self["filename"])
+            log_info(u"Writing new tags to {0}.", self["filename"])
             ardj.tags.set(self.get_filepath(), new_tags)
 
     def get_filepath(self):

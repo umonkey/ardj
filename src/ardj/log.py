@@ -88,7 +88,11 @@ def log_error(msg, e):
 
 
 def log_info(msg, *args, **kwargs):
-    msg = msg.format(*args, **kwargs)
+    try:
+        msg = msg.format(*args, **kwargs)
+    except UnicodeEncodeError:
+        msg = unicode(msg).format(*args, **kwargs)
+
     if isinstance(msg, unicode):
         msg = msg.encode("utf-8")
     logging.info(msg)

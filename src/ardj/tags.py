@@ -158,4 +158,4 @@ def set(filename, tags):
             t[k] = v
         t.save(filename)
     except Exception, e:
-        log_error("Could not save tags to %s: %s" % (filename, e), e)
+        log_error(u"Could not save tags to %s: %s" % (filename, e), e)
