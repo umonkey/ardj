@@ -703,9 +703,10 @@ def update_sticky_label(track_id, playlist):
     random one is stored."""
     with Sticky() as sticky:
         # Save the new playlist name.  If it changed -- remove previous label.
-        if sticky["playlist"] != playlist.get("name", "unnamed"):
+        pl_name = playlist.get("name", "unnamed")
+        if sticky["playlist"] != pl_name:
             if sticky["label"] is not None:
-                logging.info("Playlist changed to %s, dropping sticky label \"%s\"." % (playlist["name"], sticky["label"]))
+                logging.info("Playlist changed to %s, dropping sticky label \"%s\"." % (pl_name, sticky["label"]))
                 sticky["label"] = None
 
         sticky["playlist"] = playlist.get("name", "unnamed")
