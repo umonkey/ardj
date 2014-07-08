@@ -1,4 +1,4 @@
-import tempfile
+# encoding=utf-8
 
 from database import Token, Message, commit
 from users import resolve_alias
@@ -7,17 +7,13 @@ from settings import get as get_setting
 from mail import TokenMailer
 
 
-def create_token(login, login_type):
+def create_token(login, login_type=None):
     if login_type == "jid":
-        login = resolve_alias(login)
-
-    tmp = tempfile.mktemp(suffix="", prefix="", dir="")
-    token = Token(token=tmp, login=login, login_type=login_type, active=1)
-    token.put(force_insert=True)
-
+        raise RuntimeError("Tokens can only be sent by email.")
+    token = Token.create(login)
     TokenMailer(login, token["token"]).deliver()
-
     commit()
+    return token
 
 
 def confirm_token(token):

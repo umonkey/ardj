@@ -22,6 +22,7 @@ This module contains the database related code.
 
 import logging
 import os
+import random
 import re
 import sys
 import time
@@ -383,6 +384,21 @@ class Token(Model):
     table_name = "tokens"
     fields = "token", "login", "login_type", "active"
     key_name = "token"
+
+    @classmethod
+    def create(cls, email, active=0):
+        while True:
+            tmp = random.randrange(111111, 999999)
+            rows = fetchone("SELECT 1 FROM tokens WHERE token = ?", (tmp, ))
+            if rows is not None:
+                continue
+
+            execute("INSERT INTO tokens (token, login, login_type, active) VALUES (?, ?, 'email', ?)", (tmp, email, active))
+
+            return cls(token=tmp,
+                login=email,
+                login_type="email",
+                active=active)
 
 
 class Label(Model):

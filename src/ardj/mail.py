@@ -1,6 +1,7 @@
 # encoding=utf-8
 
 import logging
+import os
 import subprocess
 
 from smtplib import SMTP
@@ -28,22 +29,28 @@ class Mailer(object):
         msg["To"] = self.get_recipient()
         msg["X-Mailer"] = "ardj/%s" % self.__class__.__name__
 
-        text = self.get_html_body()
-        if text is not None:
-            part = MIMEText(utf8(text), _subtype="html", _charset="utf-8")
+        html = self.get_html_body()
+        if html is not None:
+            part = MIMEText(utf8(html), _subtype="html", _charset="utf-8")
             msg.attach(part)
 
-        text = self.get_plain_body()
-        if text is not None:
-            part = MIMEText(utf8(text), _subtype="plain", _charset="utf-8")
+        plain = self.get_plain_body()
+        if plain is not None:
+            part = MIMEText(utf8(plain), _subtype="plain", _charset="utf-8")
             msg.attach(part)
 
         raw_msg = msg.as_string()
-        logging.debug(raw_msg)
 
-        p = subprocess.Popen(["sendmail", self.get_recipient()],
-            stdin=subprocess.PIPE)
-        p.communicate(raw_msg)
+        if os.getenv("ARDJ_DEBUG_MAIL") == "yes":
+            print raw_msg
+            if html:
+                print html
+            if plain:
+                print plain
+        else:
+            p = subprocess.Popen(["sendmail", self.get_recipient()],
+                stdin=subprocess.PIPE)
+            p.communicate(raw_msg)
 
     def get_subject(self):
         return "No subject"

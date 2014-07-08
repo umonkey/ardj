@@ -1,3 +1,7 @@
+2014/07/08 (1.2.29)
+- Fixed token generation.
+- Added an envar to debug email.
+
 2014/07/07 (1.2.28)
 - Added templates for token verification emails.
 - Refresh tags from file before playing.

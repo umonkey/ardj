@@ -594,6 +594,16 @@ def get_web_root():
     return root
 
 
+def cmd_create_token(email=None, *args):
+    """Create a new token for the specified email address."""
+    if email is None:
+        raise RuntimeError("Please specify email address.")
+
+    from auth import create_token
+    token = create_token(email, "email")
+    print "New token: %s (needs activation)." % token["token"]
+
+
 def cmd_serve():
     """Starts the HTTP web server on the configured socket."""
     database.init_database()
