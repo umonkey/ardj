@@ -365,7 +365,7 @@ def on_tags(args, sender):
 
     tags add -remove [for track_id[,track_id,...]] -- manipulate tags
     tags add -remove --artist=\"Some Artist\"
-    tags add -remove --filename=\"%some/path%\"
+    tags add -remove --filename=\"some/path%\"
     tags -- show the tag cloud.
     """
     if not args or args == '-a':
@@ -458,7 +458,7 @@ def on_dump(args, sender):
     if not args or not args.isdigit():
         return 'Usage: dump track_id'
 
-    track = ardj.tracks.get_track_by_id(int(args))
+    track = ardj.tracks.get_track_by_id(int(args), sender)
     if not track:
         return 'Track %s not found.' % args
 

@@ -1,3 +1,6 @@
+2014/07/15 (1.2.32)
+- Fixed bookmark status in `dump'.
+
 2014/07/08 (1.2.31)
 - Fixed token generation.
 - Added an envar to debug email.

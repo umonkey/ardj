@@ -192,7 +192,7 @@ class Track(dict):
         return Track([(cls.fields[k], v) for k, v in enumerate(row)])
 
     def get_last_vote(self, sender):
-        votes = ardj.database.fetchone("SELECT vote FROM votes WHERE track_id = ? AND email = ? ORDER BY id DESC", (self["id"], sender, ))
+        votes = ardj.database.fetchone("SELECT vote FROM votes WHERE track_id = ? AND email = ? ORDER BY track_id DESC", (self["id"], sender, ))
         return votes[0] if votes else 0
 
     def refresh_tags(self, filepath):
