@@ -1,4 +1,4 @@
-2014/07/15 (1.2.32)
+2014/07/15 (1.2.33)
 - Fixed bookmark status in `dump'.
 - Fixed tagging of untagged tracks.
 - Fixed exceptions when voting for tracks which never played.
