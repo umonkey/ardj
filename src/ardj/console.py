@@ -174,8 +174,12 @@ def on_rocks(args, sender):
     if args and not args.isdigit():
         return 'Usage: rocks [track_id]'
 
-    track_id = args and int(args) or ardj.tracks.get_last_track_id()
-    weight = ardj.tracks.add_vote(track_id, sender, 1)
+    try:
+        track_id = args and int(args) or ardj.tracks.get_last_track_id()
+        weight = ardj.tracks.add_vote(track_id, sender, 1)
+    except RuntimeError, e:
+        return str(e)
+
     if weight is None:
         return 'No such track.'
     return 'OK, current weight of track #%u is %.04f.' % (track_id, weight)
@@ -185,8 +189,12 @@ def on_sucks(args, sender):
     if args and not args.isdigit():
         return 'Usage: sucks [track_id]'
 
-    track_id = args and int(args) or ardj.tracks.get_last_track_id()
-    weight = ardj.tracks.add_vote(track_id, sender, -1)
+    try:
+        track_id = args and int(args) or ardj.tracks.get_last_track_id()
+        weight = ardj.tracks.add_vote(track_id, sender, -1)
+    except RuntimeError, e:
+        return str(e)
+
     if weight is None:
         return 'No such track.'
     return 'OK, current weight of track #%u is %.04f.' % (track_id, weight)

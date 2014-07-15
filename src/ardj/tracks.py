@@ -229,10 +229,10 @@ class Track(dict):
 
         new_tags = {}
 
-        if tags["artist"] != self["artist"]:
+        if tags.get("artist") != self["artist"]:
             new_tags["artist"] = self["artist"]
 
-        if tags["title"] != self["title"]:
+        if tags.get("title") != self["title"]:
             new_tags["title"] = self["title"]
 
         labels = self.get_labels()
@@ -568,9 +568,9 @@ def add_vote(track_id, email, vote, update_karma=False):
 
     last_played, current_weight = row
     if not last_played:
-        raise Exception('This track was never played.')
+        raise RuntimeError('This track was never played.')
     elif current_weight <= 0:
-        raise Exception("Can't vote for deleted tracks.")
+        raise RuntimeError("Can't vote for deleted tracks.")
 
     vote_count = ardj.database.fetchone("SELECT COUNT(*) FROM votes WHERE track_id = ? "
         "AND email = ? AND vote = ? AND ts >= ?", (track_id, email, vote,
