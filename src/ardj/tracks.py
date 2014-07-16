@@ -927,7 +927,12 @@ def get_next_track_id(update_stats=True):
     want_preroll = True
     debug = ardj.settings.get("debug_playlists") == "yes"
 
-    skip_artists = list(set([row[0] for row in ardj.database.fetch('SELECT artist FROM tracks WHERE artist IS NOT NULL AND last_played IS NOT NULL ORDER BY last_played DESC LIMIT ' + str(ardj.settings.get('dupes', 5)))]))
+    dupe_count = ardj.settings.get_int("dupes", 5)
+    if dupe_count:
+        skip_artists = list(set([row[0] for row in ardj.database.fetch('SELECT artist FROM tracks WHERE artist IS NOT NULL AND last_played IS NOT NULL ORDER BY last_played DESC LIMIT ' + str(dupe_count))]))
+    else:
+        skip_artists = []
+
     if debug:
         msg = u'Artists to skip: %s' % u', '.join(skip_artists or ['none']) + u'.'
         logging.debug(msg.encode("utf-8"))
