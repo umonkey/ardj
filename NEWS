@@ -1,5 +1,6 @@
 2014/07/16 (1.2.34)
 - Fixed setting dupes to 0.
+- Default dupes value is now 0.
 
 2014/07/15 (1.2.33)
 - Fixed bookmark status in `dump'.

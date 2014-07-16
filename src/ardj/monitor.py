@@ -149,7 +149,7 @@ incoming_path: %(ARDJ_CONFIG_DIR)s/music/incoming
 # random track.  So, setting this value too high doesn't break the stream, but
 # can effectively render some playlists empty, if they have less than specified
 # artists.
-dupes: 5
+dupes: 0
 
 
 # Default labels for new files.
