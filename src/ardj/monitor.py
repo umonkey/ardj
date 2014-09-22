@@ -633,6 +633,7 @@ def cmd_run(*args):
     """
     Run all server components.
     """
+    autocreate_configs()
     check_required_programs()
     #check_file_permissions()
 

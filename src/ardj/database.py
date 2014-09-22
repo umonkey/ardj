@@ -739,6 +739,7 @@ def execute(*args, **kwargs):
 
 
 def init_database():
+    logging.info("Checking database integrity...")
     db = Open()
     cur = db.cursor()
     for statement in SQL_INIT:
