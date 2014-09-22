@@ -1,3 +1,6 @@
+2014/09/22 (1.2.36)
+- Fixed wrong oggenc installation hint.
+
 2014/07/16 (1.2.34)
 - Fixed setting dupes to 0.
 - Default dupes value is now 0.

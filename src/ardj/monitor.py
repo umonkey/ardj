@@ -20,7 +20,7 @@ UBUNTU_REQUIREMENTS_MAP = {"icecast2": "icecast2",
     "mpg123": "mpg123",
     "lame": "lame",
     "sox": "sox",
-    "oggenc": "oggenc"}
+    "oggenc": "vorbis-tools"}
 
 CONFIG_EXAMPLES = {
 "icecast2.xml": """<icecast>
