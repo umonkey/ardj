@@ -1,3 +1,3 @@
-include NEWS README.txt TODO setup.py
+include NEWS README.md TODO setup.py
 recursive-include bin *
 recursive-include share *
