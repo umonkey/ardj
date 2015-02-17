@@ -43,6 +43,57 @@ class Forbidden(Exception):
     pass
 
 
+class SamplePlaylist(object):
+    """
+    Default playlist handler.
+
+    Used when the database is empty.
+    """
+    FILENAME = "~/.ardj-fallback-playlist.txt"
+
+    def pick_file(self):
+        playlist = self.load_playlist()
+        if not playlist:
+            return None
+
+        playlist.append(playlist.pop(0))  # shift
+        self.save_playlist(playlist)
+
+        return playlist[0]
+
+    def save_playlist(self, playlist):
+        with open(os.path.expanduser(self.FILENAME), "wb") as f:
+            f.write("\n".join(playlist))
+
+    def load_playlist(self):
+        playlist = self.load_saved_playlist()
+        playlist = self.add_default_tracks(playlist)
+        playlist = self.remove_missing_files(playlist)
+        return playlist
+
+    def load_saved_playlist(self):
+        fn = os.path.expanduser(self.FILENAME)
+        if not os.path.exists(fn):
+            return []
+
+        with open(fn, "rb") as f:
+            raw_names = f.read().strip().splitlines()
+            return filter(os.path.exists, raw_names)
+
+    def add_default_tracks(self, playlist):
+        from util import find_sample_music
+
+        for fn in find_sample_music():
+            fp = os.path.abspath(fn)
+            if fp not in playlist:
+                playlist.append(fp)
+
+        return playlist
+
+    def remove_missing_files(self, playlist):
+        return filter(os.path.exists, playlist)
+
+
 class Playlist(dict):
     def add_ts(self, stats):
         self['last_played'] = 0
@@ -881,6 +932,18 @@ def add_preroll(track_id, labels=None):
     return track_id
 
 
+def get_built_in_track():
+    """
+    Returns a built-in track to play.
+
+    Used when the database is empty.  Tracks are read from a special folder and
+    played in a loop.  The playlist is stored in a file named
+    ~/.ardj-fallback-playlist.txt
+    """
+    pl = SamplePlaylist()
+    return pl.pick_file()
+
+
 def get_next_track():
     try:
         track_id = get_next_track_id()
@@ -1481,19 +1544,12 @@ def get_track_to_play_next():
     else:
         logging.warning("Could not pick a track to play.  Details can be found in %s." % settings.getpath("log", "syslog"))
 
-    from util import find_sample_music, shared_file
-    samples = find_sample_music()
-    if samples:
+    sample = get_built_in_track()
+    if sample:
         logging.warning("Playing a pre-packaged file.")
-        sample = random.choice(samples)
         return {"filepath": os.path.realpath(sample)}
 
-    else:
-        failure = shared_file("audio/stefano_mocini_leaving_you_failure_edit.ogg")
-        if failure:
-            return {"filepath": os.path.realpath(failure)}
-        else:
-            logging.warning("Could not find sample music.")
+    logging.error("Could not find sample music.")
 
 
 def cmd_scan():
@@ -1527,7 +1583,7 @@ def cmd_next():
     """Print file name to play next."""
     track = get_track_to_play_next()
     if track:
-        print track
+        print track["filepath"]
 
 
 def cmd_export_csv():

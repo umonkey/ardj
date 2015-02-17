@@ -428,4 +428,5 @@ def find_sample_music():
     return [f for f in [
         shared_file("audio/cubic_undead.mp3"),
         shared_file("audio/successful_install.ogg"),
+        shared_file("audio/stefano_mocini_leaving_you_failure_edit.ogg"),
     ] if f]
