@@ -7,4 +7,6 @@ syntax: regexp
 
 ^src/docbook/book\.xml$
 ^share/doc/html$
+^share/doc/[^/]+\.html
+^share/doc/screen\.css$
 ^share/doc/man/ardj\.1\.gz$

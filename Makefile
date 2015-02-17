@@ -89,7 +89,12 @@ share/doc/man/ardj.1.gz: share/doc/man/ardj.1
 
 man: share/doc/man/ardj.1.gz
 
-doc: share/doc/html/index.html share/doc/html/ardj.html
+doc:
+	for fn in doc/*.md; do echo "Converting $$fn..."; pandoc -H doc/header.html -f markdown -t html --standalone $$fn -o share/doc/`basename $$fn .md`.html; done
+	@#for fn in doc/*.md; do echo "Converting $$fn..."; pandoc -H doc/header.html -f markdown -t html --standalone $$fn -o static/doc/`basename $$fn .md`.html; done
+	cp doc/screen.css share/doc/
+
+doc_old: share/doc/html/index.html share/doc/html/ardj.html
 	if [ -d $(HOME)/src/sites/umonkey.net/input/ardj/doc ]; then cp share/doc/html/* $(HOME)/src/sites/umonkey.net/input/ardj/doc; fi
 
 share/doc/html/index.html: src/docbook/book.xml
