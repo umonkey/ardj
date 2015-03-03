@@ -368,7 +368,10 @@ class Track(Model):
             sql += " AND id IN (SELECT track_id FROM labels WHERE label = ?)"
             params.append(tag)
 
-        sql += " ORDER BY %s LIMIT %u" % (order, count)
+        sql += " ORDER BY %s" % order
+
+        if count:
+            sql += " LIMIT %u" % count
 
         return cls._fetch_rows(sql, params)
 

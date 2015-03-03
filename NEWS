@@ -1,5 +1,6 @@
-2015/02/17
+2015/03/03
 - Added queue docs.
+- Removed limit on track count in playlist.json
 
 2014/09/22 (1.2.40)
 - Fixed wrong oggenc installation hint.

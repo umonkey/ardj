@@ -349,7 +349,7 @@ class PlaylistController(Controller):
             playlist=playlist_name, artist=artist_name)
 
         tracks = database.Track.query(
-            playlist=playlist_name, artist=artist_name, tag=tag_name)
+            playlist=playlist_name, artist=artist_name, tag=tag_name, count=None)
         result["tracks"] = [{"id": t["id"], "artist": t["artist"],
             "title": t["title"]} for t in tracks]
 
