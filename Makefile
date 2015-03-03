@@ -1,4 +1,4 @@
-VERSION=1.2.40
+VERSION=1.2.41
 PYTHON=python
 
 help:
@@ -42,7 +42,7 @@ test-units:
 	rm -f unittests/data/*.*
 
 test-syntax:
-	pep8 -r --ignore=E501 --exclude=twitter.py,socks.py,jabberbot.py src/ardj/*.py unittests/*.py
+	pep8 -r --ignore=E122,E124,E127,E128,E231,E501,E502 --exclude=twitter.py,socks.py,jabberbot.py src/ardj/*.py unittests/*.py
 
 install:
 	$(PYTHON) setup.py sdist
