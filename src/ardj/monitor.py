@@ -283,7 +283,7 @@ webapi_root: %(ARDJ_CONFIG_DIR)s/website
   <Playlist>
     <Randomize>0</Randomize>
     <Type>python</Type>
-    <Module>ardj_ices</Module>
+    <Module>ardj.ices</Module>
     <Crossfade>5</Crossfade>
   </Playlist>
 
