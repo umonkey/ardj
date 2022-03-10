@@ -9,6 +9,7 @@ To let ezstream retrieve track metadata, install this script as follows:
     <metadata_format>@t@</metadata_format>
 """
 
+from ardj.tracks import get_last_track
 import os
 import sys
 
@@ -18,8 +19,6 @@ if my_name.startswith(os.path.expanduser("~/")):
     modules = os.path.join(os.path.dirname(os.path.dirname(my_name)), "src")
     sys.path.insert(0, modules)
 
-from ardj.tracks import get_last_track
-
 
 def notify(track):
     try:
@@ -27,8 +26,13 @@ def notify(track):
         import pynotify
 
         pynotify.init("ardj")
-        n = pynotify.Notification(summary=track["artist"], message=track["title"])
-        n.set_icon_from_pixbuf(gtk.Label().render_icon(gtk.STOCK_CDROM, gtk.ICON_SIZE_LARGE_TOOLBAR))
+        n = pynotify.Notification(
+            summary=track["artist"],
+            message=track["title"])
+        n.set_icon_from_pixbuf(
+            gtk.Label().render_icon(
+                gtk.STOCK_CDROM,
+                gtk.ICON_SIZE_LARGE_TOOLBAR))
         n.show()
     except ImportError:
         pass
@@ -51,5 +55,5 @@ try:
         notify(track)
     else:
         print "unknown"
-except:
+except BaseException:
     print "error"

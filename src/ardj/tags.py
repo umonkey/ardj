@@ -45,7 +45,7 @@ def raw(filename):
 
     try:
         return handler(filename)
-    except:
+    except BaseException:
         return handler()
 
 
@@ -78,7 +78,7 @@ class Wrapper(dict):
 
     def read_vorbis(self):
         tags = mutagen.oggvorbis.Open(self.filename)
-        for k, v in tags.items():
+        for k, v in list(tags.items()):
             self[k] = v[0]
         self['length'] = int(tags.info.length)
         self['sample_rate'] = tags.info.sample_rate
@@ -86,14 +86,14 @@ class Wrapper(dict):
 
     def read_mp3(self):
         try:
-            for k, v in APEv2(self.filename).items():
+            for k, v in list(APEv2(self.filename).items()):
                 self[k.lower()] = str(v)
-        except:
+        except BaseException:
             pass
 
         try:
             tags = mp3.Open(self.filename)
-            for k, v in tags.items():
+            for k, v in list(tags.items()):
                 if k == 'TPE1':
                     k, v = 'artist', v.text[0]
                 elif k == 'TALB':
@@ -113,7 +113,7 @@ class Wrapper(dict):
                 self[k] = v
             self['length'] = int(tags.info.length)
             self['sample_rate'] = tags.info.sample_rate
-        except:
+        except BaseException:
             pass
 
 
@@ -122,7 +122,7 @@ def get(filename):
 
 
 def utf(s):
-    if isinstance(s, unicode):
+    if isinstance(s, str):
         s = s.encode("utf-8")
     return str(s)
 
@@ -131,13 +131,13 @@ def pack_ardj_tag(tags):
     ardj = []
 
     new = {}
-    for k, v in tags.items():
+    for k, v in list(tags.items()):
         if k in ("artist", "title"):
             new[k] = utf(v)
 
         elif k == "labels":
             v = ",".join([utf(l)
-                for l in v])
+                          for l in v])
             ardj.append("labels=%s" % utf(v))
 
         else:
@@ -154,8 +154,8 @@ def set(filename, tags):
     try:
         t = raw(filename)
         updates = pack_ardj_tag(tags)
-        for k, v in updates.items():
+        for k, v in list(updates.items()):
             t[k] = v
         t.save(filename)
-    except Exception, e:
-        log_error(u"Could not save tags to %s: %s" % (filename, e), e)
+    except Exception as e:
+        log_error("Could not save tags to %s: %s" % (filename, e), e)

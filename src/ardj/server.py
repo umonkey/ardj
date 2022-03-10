@@ -15,18 +15,18 @@ import traceback
 import json
 import web
 
-import auth
-import console
-import database
-import scrobbler
-import settings
-import tracks
-import log
-from users import get_admins
-from util import skip_current_track
+from . import auth
+from . import console
+from . import database
+from . import scrobbler
+from . import settings
+from . import tracks
+from . import log
+from .users import get_admins
+from .util import skip_current_track
 
 
-HELP_PAGE = u"""<!doctype html>
+HELP_PAGE = """<!doctype html>
 <html>
  <head>
   <title>ardj web api</title>
@@ -224,10 +224,10 @@ def send_json(f):
         web.header("Access-Control-Allow-Origin", "*")
         try:
             data = f(*args, **kwargs)
-        except Exception, e:
+        except Exception as e:
             data = {
                 "success": False,
-                "error": unicode(e),
+                "error": str(e),
                 "error_type": e.__class__.__name__,
             }
 
@@ -243,7 +243,8 @@ def send_json(f):
 
             web.header("Content-Type", "application/javascript; charset=UTF-8")
             if callback_name is not None:
-                return "var %s = %s; %s(%s);" % (var_name, json.dumps(data), callback_name, var_name)
+                return "var %s = %s; %s(%s);" % (
+                    var_name, json.dumps(data), callback_name, var_name)
             return "var %s = %s;" % (var_name, json.dumps(data))
         else:
             web.header("Content-Type", "application/json; charset=UTF-8")
@@ -257,7 +258,8 @@ class UsageError(RuntimeError):
 
 class Controller:
     def __init__(self):
-        logging.debug("Request from %s: %s" % (web.ctx.environ["REMOTE_ADDR"], web.ctx.path))
+        logging.debug("Request from %s: %s" %
+                      (web.ctx.environ["REMOTE_ADDR"], web.ctx.path))
 
     def __del__(self):
         logging.debug("Request finished, closing the transaction.")
@@ -282,11 +284,13 @@ class AuthController(Controller):
     def POST(self):
         args = web.input(id=None, type=None)
         auth.create_token(args.id, args.type)
-        return {"status": "ok", "message": "You'll soon receive a message with a confirmation link."}
+        return {"status": "ok",
+                "message": "You'll soon receive a message with a confirmation link."}
 
 
 class HelpController(Controller):
     """Implements the built-in web api help page."""
+
     def GET(self):
         web.header("Content-Type", "text/html; charset=utf-8")
         return HELP_PAGE % {
@@ -340,7 +344,7 @@ class PlaylistController(Controller):
         if tag_name == "All tags":
             tag_name = None
 
-        print "Playlist query: %s" % dict(args)
+        print("Playlist query: %s" % dict(args))
 
         result = {"artsits": [], "tags": [], "tracks": []}
         result["artists"] = [a["name"] for a in database.Artist.query(
@@ -351,7 +355,7 @@ class PlaylistController(Controller):
         tracks = database.Track.query(
             playlist=playlist_name, artist=artist_name, tag=tag_name, count=None)
         result["tracks"] = [{"id": t["id"], "artist": t["artist"],
-            "title": t["title"]} for t in tracks]
+                             "title": t["title"]} for t in tracks]
 
         return result
 
@@ -372,6 +376,7 @@ class QueueController(Controller):
 
 class RaiseController(Controller):
     """Выброс исключения (для тестирования обработки исключений)."""
+
     def GET(self):
         raise Exception("Hello, world!")
 
@@ -391,9 +396,9 @@ class SkipController(Controller):
 
             skip_current_track()
             return {"success": True}
-        except Exception, e:
+        except Exception as e:
             return {"success": False,
-                "error": str(e)}
+                    "error": str(e)}
 
 
 class RecentController(Controller):
@@ -417,10 +422,11 @@ class RocksController(Controller):
 
     def GET(self):
         args = web.input(track_id="123", token="sEkReT")
-        url = "http://%s%s" % (web.ctx.env["HTTP_HOST"], web.ctx.env["PATH_INFO"])
+        url = "http://%s%s" % (web.ctx.env["HTTP_HOST"],
+                               web.ctx.env["PATH_INFO"])
 
         web.header("Content-Type", "text/plain; charset=utf-8")
-        return u"This call requires a POST request and an auth token.  Example CLI use:\n\n" \
+        return "This call requires a POST request and an auth token.  Example CLI use:\n\n" \
             "curl -X POST -d \"track_id=%s&token=%s\" %s" \
             % (args.track_id, args.token, url)
 
@@ -445,7 +451,8 @@ class RocksController(Controller):
 
             database.commit()
 
-            message = 'OK, current weight of track #%u is %.04f.' % (track_id, weight)
+            message = 'OK, current weight of track #%u is %.04f.' % (
+                track_id, weight)
             return {
                 "status": "ok",
                 "message": message,
@@ -454,7 +461,7 @@ class RocksController(Controller):
             }
         except web.Forbidden:
             raise
-        except Exception, e:
+        except Exception as e:
             log.log_exception(str(e), e)
             return {"status": "error", "message": str(e)}
 
@@ -477,7 +484,7 @@ class SearchController(Controller):
 class StatusController(Controller):
     @send_json
     def GET(self):
-        from listeners import get_count
+        from .listeners import get_count
 
         track_id = tracks.get_last_track_id()
         if track_id is None:
@@ -526,17 +533,17 @@ class UpdateTrackController(Controller):
         if args.artist:
             track["artist"] = args.artist
             log_debug("{0} set artist for track {1} to {2}",
-                sender, args.id, args.artist)
+                      sender, args.id, args.artist)
         if args.title:
             track["title"] = args.title
             log_debug("{0} set title for track {1} to {2}",
-                sender, args.id, args.title)
+                      sender, args.id, args.title)
         track.put()
 
         if args.tag:
             track.set_labels(args.tag)
             log_debug("{0} set labels for track {1} to {2}",
-                sender, args.id, ", ".join(args.tag))
+                      sender, args.id, ", ".join(args.tag))
 
         database.commit()
 
@@ -546,6 +553,7 @@ class UpdateTrackController(Controller):
 class ExceptionHandlingMiddleWare(object):
     """Завершение предыдущей транзакции после обработки каждого запроса, для
     исключения блокировки базы данных."""
+
     def __init__(self, app):
         self.app = app
 
@@ -560,25 +568,27 @@ def serve_http(hostname, port):
     """Starts the HTTP web server at the specified socket."""
     sys.argv.insert(1, "%s:%s" % (hostname, port))
 
-    logging.info("Starting the ardj web service at http://%s:%s/" % (hostname, port))
+    logging.info(
+        "Starting the ardj web service at http://%s:%s/" %
+        (hostname, port))
 
     app = web.application((
         "/", IndexController,
         "/help/?", HelpController,
-        "/auth(?:\.json)?", AuthController,
-        "/playlist\.json", PlaylistController,
+        "/auth(?:\\.json)?", AuthController,
+        "/playlist\\.json", PlaylistController,
         "/raise", RaiseController,  # for testing, important.
         "/skip", SkipController,
-        "/status\.js(?:on)?", StatusController,
-        "/tag/cloud\.json", TagCloudController,
-        "/track/info\.js(?:on)?", InfoController,
-        "/track/info\.json", InfoController,
-        "/track/queue\.json", QueueController,
-        "/track/recent\.js(?:on)?", RecentController,
-        "/track/rocks\.json", RocksController,
-        "/track/search\.json", SearchController,
-        "/track/sucks\.json", SucksController,
-        "/track/update\.json", UpdateTrackController,
+        "/status\\.js(?:on)?", StatusController,
+        "/tag/cloud\\.json", TagCloudController,
+        "/track/info\\.js(?:on)?", InfoController,
+        "/track/info\\.json", InfoController,
+        "/track/queue\\.json", QueueController,
+        "/track/recent\\.js(?:on)?", RecentController,
+        "/track/rocks\\.json", RocksController,
+        "/track/search\\.json", SearchController,
+        "/track/sucks\\.json", SucksController,
+        "/track/update\\.json", UpdateTrackController,
     ))
     app.run(ExceptionHandlingMiddleWare)
 
@@ -599,9 +609,9 @@ def cmd_create_token(email=None, *args):
     if email is None:
         raise RuntimeError("Please specify email address.")
 
-    from auth import create_token
+    from .auth import create_token
     token = create_token(email, "email")
-    print "New token: %s (needs activation)." % token["token"]
+    print("New token: %s (needs activation)." % token["token"])
 
 
 def cmd_serve():
@@ -623,7 +633,7 @@ def cmd_tokens():
     """List valid tokens."""
     from ardj.auth import get_active_tokens
     for t in get_active_tokens():
-        print "%s: %s" % (t["login"], t["token"])
+        print("%s: %s" % (t["login"], t["token"]))
 
 
 __all__ = ["cmd_serve", "cmd_tokens"]  # hide unnecessary internals

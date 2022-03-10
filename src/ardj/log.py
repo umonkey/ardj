@@ -40,7 +40,9 @@ def install_syslog(name):
     device = ardj.settings.getpath("log_device", "/dev/log")
     syslog = logging.handlers.SysLogHandler(address=device)
 
-    format_string = ardj.settings.get("log_format_string", name + "[%(process)d]: %(levelname)s %(message)s")
+    format_string = ardj.settings.get(
+        "log_format_string",
+        name + "[%(process)d]: %(levelname)s %(message)s")
     formatter = logging.Formatter(format_string)
     syslog.setFormatter(formatter)
 
@@ -60,9 +62,13 @@ def install_file(filename, name):
     logger = logging.getLogger()
     logger.setLevel(get_level())
 
-    h = logging.handlers.RotatingFileHandler(filename, maxBytes=max_size, backupCount=max_count)
+    h = logging.handlers.RotatingFileHandler(
+        filename, maxBytes=max_size, backupCount=max_count)
 
-    h.setFormatter(logging.Formatter('%%(asctime)s - %s[%%(process)6d] - %%(levelname)s - %%(message)s' % name))
+    h.setFormatter(
+        logging.Formatter(
+            '%%(asctime)s - %s[%%(process)6d] - %%(levelname)s - %%(message)s' %
+            name))
     h.setLevel(logging.DEBUG)
     logger.addHandler(h)
 
@@ -91,9 +97,9 @@ def log_info(msg, *args, **kwargs):
     try:
         msg = msg.format(*args, **kwargs)
     except UnicodeEncodeError:
-        msg = unicode(msg).format(*args, **kwargs)
+        msg = str(msg).format(*args, **kwargs)
 
-    if isinstance(msg, unicode):
+    if isinstance(msg, str):
         msg = msg.encode("utf-8")
     logging.info(msg)
 

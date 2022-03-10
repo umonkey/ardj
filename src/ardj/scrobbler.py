@@ -45,10 +45,10 @@ class LastFM(object):
 
         try:
             data = self.call(method='auth.getMobileSession',
-                username=self.login,
-                authToken=self.get_auth_token(),
-                api_sig=True)
-        except Exception, e:
+                             username=self.login,
+                             authToken=self.get_auth_token(),
+                             api_sig=True)
+        except Exception as e:
             logging.error("Last.fm authentication failure: %s" % e)
             data = None
         if not data:
@@ -69,77 +69,93 @@ class LastFM(object):
             return False
         if self.sk:
             data = self.call(method='track.scrobble',
-                artist=artist.encode('utf-8'),
-                track=title.encode('utf-8'),
-                timestamp=str(ts), api_sig=True, sk=self.sk,
-                post=True)
-            logging.info((u'Sent to last.fm: %s -- %s' % (artist, title)).encode("utf-8"))
+                             artist=artist.encode('utf-8'),
+                             track=title.encode('utf-8'),
+                             timestamp=str(ts), api_sig=True, sk=self.sk,
+                             post=True)
+            logging.info(
+                ('Sent to last.fm: %s -- %s' %
+                 (artist, title)).encode("utf-8"))
             return True
 
     def is_enabled(self):
-        return ardj.settings.get("last_fm_scrobble", ardj.settings.get("last.fm/scrobble", False))
+        return ardj.settings.get(
+            "last_fm_scrobble", ardj.settings.get("last.fm/scrobble", False))
 
     def now_playing(self, artist, title):
         """Tells LastFM what you're listening to."""
         if self.sk:
             self.call(method='track.UpdateNowPlaying',
-                artist=artist, title=title,
-                api_sig=True, sk=self.sk,
-                post=True)
+                      artist=artist, title=title,
+                      api_sig=True, sk=self.sk,
+                      post=True)
 
     def love(self, artist, title):
         if self.sk:
             data = self.call(method='track.love',
-                artist=artist.encode('utf-8'),
-                track=title.encode('utf-8'),
-                api_sig=True,
-                sk=self.sk,
-                post=True)
+                             artist=artist.encode('utf-8'),
+                             track=title.encode('utf-8'),
+                             api_sig=True,
+                             sk=self.sk,
+                             post=True)
             if 'error' in data:
-                logging.info("Could not love a track with last.fm: %s" % data["message"].encode("utf-8"))
+                logging.info(
+                    "Could not love a track with last.fm: %s" %
+                    data["message"].encode("utf-8"))
                 return False
             else:
-                logging.info(("Sent to last.fm love for: %s -- %s" % (artist, title)).encode("utf-8"))
+                logging.info(
+                    ("Sent to last.fm love for: %s -- %s" %
+                     (artist, title)).encode("utf-8"))
                 return True
 
     def get_events_for_artist(self, artist_name):
         """Lists upcoming events for an artist."""
         return self.call(method='artist.getEvents',
-            artist=artist_name.encode('utf-8'),
-            autocorrect='1')
+                         artist=artist_name.encode('utf-8'),
+                         autocorrect='1')
 
     def get_artist_info(self, artist_name):
-        logging.debug("Retrieving last.fm info for %s" % (artist_name.encode("utf-8")))
+        logging.debug(
+            "Retrieving last.fm info for %s" %
+            (artist_name.encode("utf-8")))
         return self.call_signed(method="artist.getInfo",
-            artist=artist_name.encode("utf-8"))
+                                artist=artist_name.encode("utf-8"))
 
     def get_artist_tags(self, artist_name):
         """Returns top tags for the specified artist."""
         data = self.get_artist_info(artist_name)
 
-        if "artist" not in data or type(data["artist"]) != dict:
+        if "artist" not in data or not isinstance(data["artist"], dict):
             return []
         data = data["artist"]
 
-        if "tags" not in data or type(data["tags"]) != dict:
+        if "tags" not in data or not isinstance(data["tags"], dict):
             return []
         data = data["tags"]
 
-        if "tag" not in data or type(data["tag"]) != list:
+        if "tag" not in data or not isinstance(data["tag"], list):
             return []
         data = data["tag"]
 
         return [t["name"] for t in data]
 
     def get_track_info(self, artist_name, track_title):
-        logging.debug((u"Retrieving last.fm info for \"%s\" by %s" % (track_title, artist_name)).encode("utf-8"))
+        logging.debug(
+            ("Retrieving last.fm info for \"%s\" by %s" %
+             (track_title, artist_name)).encode("utf-8"))
         return self.call_signed(method="track.getInfo",
-            artist=artist_name.encode("utf-8"),
-            track=track_title.encode("utf-8"),
-            autocorrect="1")
+                                artist=artist_name.encode("utf-8"),
+                                track=track_title.encode("utf-8"),
+                                autocorrect="1")
 
     def get_track_info_ex(self, artist_name, track_title):
-        info = {"artist": artist_name, "title": track_title, "tags": [], "image": None, "download": None}
+        info = {
+            "artist": artist_name,
+            "title": track_title,
+            "tags": [],
+            "image": None,
+            "download": None}
 
         data = self.get_track_info(artist_name, track_title)
         if "track" not in data:
@@ -179,9 +195,9 @@ class LastFM(object):
     def is_artist(self, name):
         try:
             data = self.call_signed(method="artist.getInfo",
-                artist=name.encode("utf-8"))
+                                    artist=name.encode("utf-8"))
             return True
-        except Exception, e:
+        except Exception as e:
             logging.error("Could not find artist: %s" % e)
             return False
 
@@ -194,7 +210,7 @@ class LastFM(object):
                 return []
             data = data[k]
 
-        if type(data) == dict:
+        if isinstance(data, dict):
             data = [data]
 
         return [t["name"] for t in data]
@@ -204,8 +220,8 @@ class LastFM(object):
 
         try:
             data = self.call(method='artist.getTopTracks',
-                artist=artist_name.encode('utf-8'),
-                limit=1000)
+                             artist=artist_name.encode('utf-8'),
+                             limit=1000)
         except InvalidParameters:
             return []
 
@@ -227,7 +243,7 @@ class LastFM(object):
 
     def get_corrected_name(self, artist_name):
         data = self.call(method='artist.getCorrection',
-            artist=artist_name.encode('utf-8'))
+                         artist=artist_name.encode('utf-8'))
         try:
             return data['corrections']['correction']['artist']['name']
         except KeyError:
@@ -238,7 +254,9 @@ class LastFM(object):
 
     def process(self):
         """Looks for stuff to scrobble in the playlog table."""
-        skip_labels = ardj.settings.get('last.fm/skip_labels', ardj.settings.get("last_fm_skip_labels"))
+        skip_labels = ardj.settings.get(
+            'last.fm/skip_labels',
+            ardj.settings.get("last_fm_skip_labels"))
         if skip_labels:
             in_sql = ', '.join(['?'] * len(skip_labels))
             sql = 'SELECT t.artist, t.title, p.ts FROM tracks t INNER JOIN playlog p ON p.track_id = t.id WHERE p.lastfm = 0 AND t.weight > 0 AND t.length > 60 AND t.id NOT IN (SELECT track_id FROM labels WHERE label IN (%s)) ORDER BY p.ts' % in_sql
@@ -250,7 +268,8 @@ class LastFM(object):
         for artist, title, ts in rows:
             if not self.scrobble(artist, title, ts):
                 return False
-            ardj.database.execute('UPDATE playlog SET lastfm = 1 WHERE ts = ?', (ts, ))
+            ardj.database.execute(
+                'UPDATE playlog SET lastfm = 1 WHERE ts = ?', (ts, ))
             ardj.database.commit()  # prevent hanging transactions
         return True
 
@@ -261,11 +280,14 @@ class LastFM(object):
         if api_sig:
             kwargs['api_sig'] = self.get_call_signature(kwargs)
         kwargs['format'] = 'json'
-        response = ardj.util.fetch_json(self.ROOT, args=kwargs, post=post, quiet=True, ret=True)
+        response = ardj.util.fetch_json(
+            self.ROOT, args=kwargs, post=post, quiet=True, ret=True)
         if response is None:
             raise Error("Empty response")
         if "error" in response:
-            logging.error("Last.fm error %u: %s" % (response["error"], response["message"]))
+            logging.error(
+                "Last.fm error %u: %s" %
+                (response["error"], response["message"]))
             if response["error"] in (4, 9, 10, 13, 26):
                 raise BadAuth(response["message"])
             if response["error"] == 6 and response["message"] == "Track not found":
@@ -283,7 +305,8 @@ class LastFM(object):
 
     def get_call_signature(self, args):
         skip_fields = "format", "callback"
-        parts = sorted([''.join(x) for x in args.items() if x[0] not in skip_fields])
+        parts = sorted([''.join(x)
+                       for x in list(args.items()) if x[0] not in skip_fields])
         return hashlib.md5(''.join(parts) + self.secret).hexdigest()
 
     def get_auth_token(self):
@@ -322,7 +345,9 @@ class LibreFM(object):
             else:
                 self.submit_url = parts[2].strip()
                 self.session_key = self.get_session_key(parts[1].strip())
-                logging.debug('Logged in to libre.fm, will submit to %s' % (self.submit_url, ))
+                logging.debug(
+                    'Logged in to libre.fm, will submit to %s' %
+                    (self.submit_url, ))
                 return True
 
     def scrobble(self, artist, title, ts=None, retry=True):
@@ -340,12 +365,18 @@ class LibreFM(object):
             't[0]': title.encode('utf-8'),
             'i[0]': time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(ts)),
         }
-        data = ardj.util.fetch(self.submit_url, args=args, post=True, ret=True).strip()
+        data = ardj.util.fetch(
+            self.submit_url,
+            args=args,
+            post=True,
+            ret=True).strip()
         if data is None:
             logging.error("Empty response from libre.fm")
             return False
         if data == 'OK':
-            logging.debug((u'Sent to libre.fm: %s -- %s' % (artist, title)).encode("utf-8"))
+            logging.debug(
+                ('Sent to libre.fm: %s -- %s' %
+                 (artist, title)).encode("utf-8"))
             return True
         elif data == 'BADSESSION' and retry:
             logging.debug('Bad libre.fm session, renewing.')
@@ -356,14 +387,17 @@ class LibreFM(object):
             return False
 
     def is_enabled(self):
-        return ardj.settings.get("libre_fm_scrobble", ardj.settings.get("libre.fm/scrobble", True))
+        return ardj.settings.get(
+            "libre_fm_scrobble", ardj.settings.get("libre.fm/scrobble", True))
 
     def process(self):
         """Looks for stuff to scrobble in the playlog table."""
         if not ardj.settings.get("libre_fm_scrobble"):
             return
 
-        skip_labels = ardj.settings.get("libre_fm_skip_labels", ardj.settings.get("last_fm_skip_labels"))
+        skip_labels = ardj.settings.get(
+            "libre_fm_skip_labels",
+            ardj.settings.get("last_fm_skip_labels"))
         if skip_labels:
             in_sql = ', '.join(['?'] * len(skip_labels))
             sql = 'SELECT t.artist, t.title, p.ts FROM tracks t INNER JOIN playlog p ON p.track_id = t.id WHERE p.librefm = 0 AND t.weight > 0 AND t.length > 60 AND t.id NOT IN (SELECT track_id FROM labels WHERE label IN (%s)) ORDER BY p.ts' % in_sql
@@ -375,7 +409,8 @@ class LibreFM(object):
         for artist, title, ts in rows:
             if not self.scrobble(artist, title, ts):
                 return False
-            ardj.database.execute('UPDATE playlog SET librefm = 1 WHERE ts = ?', (ts, ))
+            ardj.database.execute(
+                'UPDATE playlog SET librefm = 1 WHERE ts = ?', (ts, ))
             ardj.database.commit()  # prevent hanging transactions
         return True
 

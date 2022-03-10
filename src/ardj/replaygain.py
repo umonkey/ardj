@@ -52,7 +52,9 @@ def update(filename):
     peak, gain = read(filename)
     if peak is not None and gain is not None:
         return write(filename, peak, gain)
-    logging.warning('No replaygain for %s: peak=%s gain=%s' % (filename, peak, gain))
+    logging.warning(
+        'No replaygain for %s: peak=%s gain=%s' %
+        (filename, peak, gain))
     return False
 
 
@@ -61,7 +63,7 @@ def check(filename):
     try:
         tags = mutagen.File(filename)
 
-        if type(tags) != MP3:
+        if not isinstance(tags, MP3):
             return 'replaygain_track_peak' in tags and 'replaygain_track_gain' in tags
         if 'TXXX:replaygain_track_peak' not in tags or 'TXXX:replaygain_track_gain' not in tags:
             return False
@@ -69,7 +71,7 @@ def check(filename):
             return False
         tags = APEv2(filename)
         return 'replaygain_track_peak' in tags and 'replaygain_track_gain' in tags
-    except:
+    except BaseException:
         return False
 
 
@@ -86,12 +88,14 @@ def read(filename, update=True):
             if value.endswith(' dB'):
                 g = float(value[:-3])
             else:
-                logging.warning('Malformed track gain info: "%s" in %s' % (value, filename))
+                logging.warning(
+                    'Malformed track gain info: "%s" in %s' %
+                    (value, filename))
         return (p, g)
 
     try:
         peak, gain = parse_rg(mutagen.File(filename, easy=True))
-    except:
+    except BaseException:
         pass
 
     # Prefer the first value because RVA2 is more precise than
@@ -99,7 +103,7 @@ def read(filename, update=True):
     if peak is None or gain is None:
         try:
             peak, gain = parse_rg(APEv2(filename))
-        except:
+        except BaseException:
             pass
 
     if (peak is None or gain is None) and update:
@@ -113,7 +117,9 @@ def read(filename, update=True):
             scanner = ['metaflac', '--add-replay-gain', str(filename)]
 
         if not scanner:
-            logging.warning("Don't know how to calculate ReplayGain for %s" % str(filename))
+            logging.warning(
+                "Don't know how to calculate ReplayGain for %s" %
+                str(filename))
             return (None, None)
 
         status, out, err = ardj.util.run_ex(scanner, quiet=True)
@@ -133,16 +139,27 @@ def write(filename, peak, gain):
         raise Exception('gain is None')
     try:
         tags = mutagen.File(filename)
-        if type(tags) == MP3:
-            tags['TXXX:replaygain_track_peak'] = TXXX(encoding=0, desc=u'replaygain_track_peak', text=[u'%.6f' % peak])
-            tags['TXXX:replaygain_track_gain'] = TXXX(encoding=0, desc=u'replaygain_track_gain', text=[u'%.2f dB' % gain])
-            tags['RVA2:track'] = RVA2(desc=u'track', channel=1, peak=peak, gain=gain)
+        if isinstance(tags, MP3):
+            tags['TXXX:replaygain_track_peak'] = TXXX(
+                encoding=0,
+                desc='replaygain_track_peak',
+                text=[
+                    '%.6f' %
+                    peak])
+            tags['TXXX:replaygain_track_gain'] = TXXX(
+                encoding=0,
+                desc='replaygain_track_gain',
+                text=[
+                    '%.2f dB' %
+                    gain])
+            tags['RVA2:track'] = RVA2(
+                desc='track', channel=1, peak=peak, gain=gain)
             tags.save()
 
             # Additionally write APEv2 tags to MP3 files.
             try:
                 tags = APEv2(filename)
-            except:
+            except BaseException:
                 tags = APEv2()
             tags['replaygain_track_peak'] = '%.6f' % peak
             tags['replaygain_track_gain'] = '%.2f dB' % gain
@@ -152,7 +169,7 @@ def write(filename, peak, gain):
             tags['replaygain_track_gain'] = '%.2f dB' % gain
             tags.save(filename)
         return True
-    except:
+    except BaseException:
         pass
     return False
 
@@ -161,18 +178,18 @@ def purge(filename):
     """Removes known tags from the specified file."""
     try:
         mutagen.File(filename).delete()
-    except:
+    except BaseException:
         pass
     try:
         APEv2(filename).delete()
-    except:
+    except BaseException:
         pass
 
 
 def cmd_scan(*args):
     """Add ReplayGain info to tracks that don't have it"""
     if not args:
-        print "Files not specified (or use --all)."
+        print("Files not specified (or use --all).")
         return False
 
     if "--all" in args:
@@ -181,7 +198,8 @@ def cmd_scan(*args):
             raise Exception('musicdir not set.')
         elif not os.path.exists(musicdir):
             raise Exception('Directory %s does not exist.' % musicdir)
-        rows = ardj.database.fetch('SELECT filename FROM tracks WHERE filename IS NOT NULL AND weight > 0 ORDER BY filename')
+        rows = ardj.database.fetch(
+            'SELECT filename FROM tracks WHERE filename IS NOT NULL AND weight > 0 ORDER BY filename')
         args = [os.path.join(musicdir, row[0].encode("utf-8")) for row in rows]
 
     if args:
@@ -189,7 +207,7 @@ def cmd_scan(*args):
             filename = ardj.util.shorten_file_path(filepath)
             try:
                 if not update(filepath):
-                    print "File %s STILL has no ReplayGain." % filename
-            except Exception, e:
-                print "File %s could not be checked: %s" % (filename, e)
+                    print("File %s STILL has no ReplayGain." % filename)
+            except Exception as e:
+                print("File %s could not be checked: %s" % (filename, e))
                 logging.exception("Error checking file %s: %s" % (filename, e))

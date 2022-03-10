@@ -1,5 +1,3 @@
-# vim: set fileencoding=utf-8:
-
 import csv
 import logging
 import os
@@ -57,7 +55,7 @@ def get_yesterday_ts():
 
 def cmd_now():
     """Print current listener count."""
-    print get_count()
+    print(get_count())
 
 
 def cli_total():
@@ -66,8 +64,8 @@ def cli_total():
     params = []
     format_data(sql, params, [
         lambda d: time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(d)),
-        lambda x: unicode(x).encode('utf-8'),
-        lambda x: unicode(x).encode('utf-8'),
+        lambda x: str(x).encode('utf-8'),
+        lambda x: str(x).encode('utf-8'),
         str,
         str,
         lambda w: '%.02f' % w,
@@ -81,7 +79,7 @@ def cli_yesterday():
     format_data(sql, params, [
         lambda d: time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(d)),
         str,
-        lambda x: unicode(x).encode('utf-8'),
-        lambda x: unicode(x).encode('utf-8'),
+        lambda x: str(x).encode('utf-8'),
+        lambda x: str(x).encode('utf-8'),
         str,
     ], ['time', 'track_id', 'artist', 'title', 'listeners'])

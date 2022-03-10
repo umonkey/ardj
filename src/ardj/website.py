@@ -1,3 +1,7 @@
+"""
+Some internal website.
+"""
+
 import glob
 import os
 
@@ -11,19 +15,27 @@ def update(task_name=None):
     Goes to the directory, specified in website/root_dir, and runs make in it.
     If task_name is not specified, it's read from website/make_task, or
     "autoupdate" is used."""
-    dirname = ardj.settings.getpath('website/root_dir', '~/.config/ardj/website')
+    dirname = ardj.settings.getpath(
+        'website/root_dir',
+        '~/.config/ardj/website')
     if os.path.exists(dirname):
         if task_name is None:
             task_name = ardj.settings.get('website/make_task', 'autoupdate')
 
         return ardj.util.run(['make', '-C', dirname, task_name])
-    print 'Web site not updated: %s does not exist.' % dirname
+    print(f'Web site not updated: {dirname} does not exist.')
     return False
 
 
 def load_page(filename):
-    head, text = open(filename, 'rb').read().decode('utf-8').split('---\n', 1)
-    page = dict([[x.strip() for x in l.strip().split(':', 1)] for l in head.split('\n') if l.strip()])
+    """
+    Loads a markdown page from file.
+    """
+    with open(filename, 'rb') as src:
+        head, text = src.read().decode('utf-8').split('---\n', 1)
+
+    page = dict([[x.strip() for x in l.strip().split(':', 1)]
+                for l in head.split('\n') if l.strip()])
     page['text'] = text
     return page
 
@@ -52,16 +64,17 @@ def add_page(pattern, data):
         if parts[-2].isdigit():
             max_id = max(max_id, int(parts[-2]))
 
-    filename = os.path.join(root_dir, 'input', pattern).replace('*', str(max_id + 1))
+    filename = os.path.join(root_dir, 'input', pattern).replace(
+        '*', str(max_id + 1))
 
     dirname = os.path.dirname(filename)
     if not os.path.exists(dirname):
         os.makedirs(dirname)
 
     f = open(filename, 'wb')
-    for k, v in data.items():
+    for k, v in list(data.items()):
         if k != 'text':
-            line = u'%s: %s\n' % (k, v)
+            line = '%s: %s\n' % (k, v)
             f.write(line.encode('utf-8'))
     f.write('---\n' + data['text'].encode('utf-8'))
     f.close()

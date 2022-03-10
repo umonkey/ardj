@@ -53,9 +53,9 @@ def find_new_tracks(artist_names=None, verbose=False):
                 'tags': tags + ['source:jamendo.com'],
             })
             if verbose:
-                print u'- artist: %s' % track['artist_name']
-                print u'   title: %s' % track['name']
-                print u'     url: %s' % track['stream']
+                print('- artist: %s' % track['artist_name'])
+                print('   title: %s' % track['name'])
+                print('     url: %s' % track['stream'])
     return todo
 
 
@@ -66,6 +66,8 @@ def print_new_tracks(args):
         return
 
     if args:
-        print "Could not find anything new in Jamendo.  This probably means that Jamendo has no new music for %s." % args
+        print(
+            "Could not find anything new in Jamendo.  This probably means that Jamendo has no new music for %s." %
+            args)
     else:
-        print "Could not find anything new in Jamendo.  This probably means that Jamendo has no new music for the artists from your database."
+        print("Could not find anything new in Jamendo.  This probably means that Jamendo has no new music for the artists from your database.")

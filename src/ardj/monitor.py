@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # encoding=utf-8
 
-from __future__ import print_function
 
 import logging
 import os
@@ -13,17 +12,23 @@ import time
 import traceback
 
 
-REQUIRED_PROGRAMS = ["icecast2", "ezstream|ices", "mpg123", "lame", "sox", "oggenc"]
+REQUIRED_PROGRAMS = [
+    "icecast2",
+    "ezstream|ices",
+    "mpg123",
+    "lame",
+    "sox",
+    "oggenc"]
 
 UBUNTU_REQUIREMENTS_MAP = {"icecast2": "icecast2",
-    "ezstream|ices": "ezstream",
-    "mpg123": "mpg123",
-    "lame": "lame",
-    "sox": "sox",
-    "oggenc": "vorbis-tools"}
+                           "ezstream|ices": "ezstream",
+                           "mpg123": "mpg123",
+                           "lame": "lame",
+                           "sox": "sox",
+                           "oggenc": "vorbis-tools"}
 
 CONFIG_EXAMPLES = {
-"icecast2.xml": """<icecast>
+    "icecast2.xml": """<icecast>
     <limits>
         <clients>128</clients>
         <sources>3</sources>
@@ -83,7 +88,7 @@ CONFIG_EXAMPLES = {
 </icecast>
 """,
 
-"ezstream.xml": """<ezstream>
+    "ezstream.xml": """<ezstream>
     <url>http://localhost:8000/music.mp3</url>
     <sourcepassword>hackme</sourcepassword>
     <format>MP3</format>
@@ -125,7 +130,7 @@ CONFIG_EXAMPLES = {
 </ezstream>
 """,
 
-"ardj.yaml": """# This is the main configuration file for ardj.
+    "ardj.yaml": """# This is the main configuration file for ardj.
 # If you have questions even after reading the comments, try reading
 # the documentation at <http://umonkey.net/ardj/doc/>
 #
@@ -267,7 +272,7 @@ webapi_root: %(ARDJ_CONFIG_DIR)s/website
 #TokenMailer_html: "<p>Your token [{token}] is ready. Open <{link}> to activate it.</p>"
 """,
 
-"playlist.yaml": """# Play a jingle every 15 minutes.
+    "playlist.yaml": """# Play a jingle every 15 minutes.
 - name: jingles
   labels: [jingle]
   delay: 15
@@ -278,7 +283,7 @@ webapi_root: %(ARDJ_CONFIG_DIR)s/website
   labels: [music]
 """,
 
-"ices.conf": """<?xml version="1.0"?>
+    "ices.conf": """<?xml version="1.0"?>
 <ices:Configuration xmlns:ices="http://www.icecast.org/projects/ices">
   <Playlist>
     <Randomize>0</Randomize>
@@ -364,7 +369,7 @@ class ProcessMonitor(object):
 
         self.logname = os.path.join(config_dir, name + ".log")
         self.logfile = open(self.logname, "ab")
-        os.fchmod(self.logfile.fileno(), 0640)
+        os.fchmod(self.logfile.fileno(), 0o640)
 
         self.p = None
         self.run()
@@ -390,22 +395,22 @@ class ProcessMonitor(object):
             env["PYTHONPATH"] = os.environ["ardj_python_path"]
 
         self.p = subprocess.Popen(self.command,
-            stdout=self.logfile,
-            stderr=self.logfile,
-            env=env)
+                                  stdout=self.logfile,
+                                  stderr=self.logfile,
+                                  env=env)
         self.log("> %s" % " ".join(self.command))
 
         with open(self.pidfile, "wb") as f:
             f.write(str(self.p.pid) + "\n")
-            os.fchmod(f.fileno(), 0640)
+            os.fchmod(f.fileno(), 0o640)
 
     def check(self):
         if self.p.returncode is None:
             self.p.poll()
         else:
             ok = " (bad)" if self.p.returncode else " (this seems OK)"
-            self.log("exited with status %d%s, restarting; logs are in %s" \
-                % (self.p.returncode, ok, self.get_log_name()))
+            self.log("exited with status %d%s, restarting; logs are in %s"
+                     % (self.p.returncode, ok, self.get_log_name()))
 
             self.remove_pid_file()
             self.run()
@@ -531,7 +536,7 @@ def check_required_programs():
 
     if missing:
         print("Please install %s." % ", ".join(missing),
-            file=sys.stderr)
+              file=sys.stderr)
 
         if have_program("apt-get"):
             print("Try this command: sudo apt-get install %s" % (
@@ -553,18 +558,18 @@ def get_config(name):
             env["ARDJ_CONFIG_DIR"] = config_dir
             try:
                 data = CONFIG_EXAMPLES[name] % env
-            except Exception, e:
+            except Exception as e:
                 raise Exception("Unable to format %s: %s" % (name, e))
             with open(path, "wb") as f:
                 f.write(data)
-            os.chmod(path, 0640)
+            os.chmod(path, 0o640)
             print("Created file %s with default contents." % path)
         else:
             raise Exception("Config file %s not found." % path)
 
     try:
-        os.chmod(path, 0640)
-    except OSError, e:
+        os.chmod(path, 0o640)
+    except OSError as e:
         log_error("Could not set permissions on %s: %s" % (path, e))
 
     return path
@@ -574,7 +579,7 @@ def get_config_option(name):
     try:
         from ardj import settings
         return settings.get(name)
-    except Exception, e:
+    except Exception as e:
         log_error("Error getting config option %s: %s" % (name, e))
         log_error(traceback.format_exc(e))
     return None
@@ -583,7 +588,7 @@ def get_config_option(name):
 def autocreate_configs():
     """Create missing config files and directories."""
     data = {}
-    for filename in CONFIG_EXAMPLES.keys():
+    for filename in list(CONFIG_EXAMPLES.keys()):
         data[filename] = get_config(filename)
     return data
 
@@ -619,14 +624,17 @@ def print_welcome():
         if matches:
             print("You can listen to your stream at %s" % matches.group(1))
         else:
-            print("Could not find stream URL in ezstream.xml :(", file=sys.stderr)
+            print(
+                "Could not find stream URL in ezstream.xml :(", file=sys.stderr)
 
     from ardj import tracks
     count = tracks.count_available()
     if not count:
         from ardj import settings
         music_dir = settings.get_music_dir()
-        log_warning("The music database is empty. Put some files in %s and run 'ardj tracks scan'." % music_dir)
+        log_warning(
+            "The music database is empty. Put some files in %s and run 'ardj tracks scan'." %
+            music_dir)
 
 
 def cmd_run(*args):
@@ -635,26 +643,26 @@ def cmd_run(*args):
     """
     autocreate_configs()
     check_required_programs()
-    #check_file_permissions()
+    # check_file_permissions()
 
-    from database import init_database
+    from .database import init_database
     init_database()
 
     try:
         threads = get_threads()
-    except Exception, e:
+    except Exception as e:
         print("Error: %s" % e, file=sys.stderr)
         print(traceback.format_exc(e), file=sys.stderr)
         sys.exit(1)
 
     print_welcome()
-    os.umask(044)
+    os.umask(0o44)
 
     while True:
         for t in threads:
             try:
                 t.check()
-            except Exception, e:
+            except Exception as e:
                 print("Error: %s" % e, file=sys.stderr)
                 print(traceback.format_exc(e), file=sys.stderr)
 

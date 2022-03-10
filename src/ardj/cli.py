@@ -26,7 +26,7 @@ class UsageError(RuntimeError):
 
 
 def fail(msg):
-    print >> sys.stderr, msg
+    print(msg, file=sys.stderr)
     sys.exit(1)
 
 
@@ -34,7 +34,7 @@ def match_command(command, gl):
     prefix = "cmd_" + command.replace("-", "_")
 
     options = []
-    for k, v in gl.items():
+    for k, v in list(gl.items()):
         if k == command:
             return v
         elif k.startswith(prefix):
@@ -47,7 +47,9 @@ def match_command(command, gl):
         return None
 
     names = [k for k, v in options]
-    fail("Ambiguous command, please narrow your choice: %s." % ", ".join(names))
+    fail(
+        "Ambiguous command, please narrow your choice: %s." %
+        ", ".join(names))
 
 
 def strip_cmd(name):
@@ -67,8 +69,8 @@ def format_usage(program, gl):
         program = os.path.basename(program)
 
     funcs = [(strip_cmd(k), v)
-        for k, v in gl.items()
-        if k.startswith("cmd_")]
+             for k, v in list(gl.items())
+             if k.startswith("cmd_")]
     if not funcs:
         fail("This module provides no CLI commands.")
 
@@ -79,7 +81,7 @@ def format_usage(program, gl):
         if not v.__doc__:
             continue
         msg.append("%s %s %s  -- %s" % (prefix, program,
-            k.ljust(maxlen), format_doc(v.__doc__)))
+                                        k.ljust(maxlen), format_doc(v.__doc__)))
         prefix = " " * len(prefix)
 
     if not msg:
@@ -93,7 +95,7 @@ def convert_gl(gl):
         return gl
 
     return {k: getattr(gl, k)
-        for k in dir(gl)}
+            for k in dir(gl)}
 
 
 def parse_args(argv):
@@ -130,8 +132,8 @@ def cli_main(gl, program, command=None, *argv):
             sys.exit(1)
         else:
             sys.exit(0)
-    except UsageError, e:
-        print >> sys.stderr, e
+    except UsageError as e:
+        print(e, file=sys.stderr)
         sys.exit(1)
 
 

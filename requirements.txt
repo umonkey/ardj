@@ -1,6 +1,7 @@
-mutagen
+PyYAML
 mutagen
 oauth2
-pydns
-PyYAML
+py3dns
 web.py
+xmpppy
+wheel

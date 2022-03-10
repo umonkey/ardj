@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-### BEGIN LICENSE
+# BEGIN LICENSE
 # Copyright (C) 2011 Rick Spencer <rick.spencer@canonical.com>
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License version 3, as published
@@ -13,7 +13,7 @@
 #
 # You should have received a copy of the GNU General Public License along
 # with this program.  If not, see <http://www.gnu.org/licenses/>.
-### END LICENSE
+# END LICENSE
 
 """Contains SoundMenuControls, A class to make it easy to integrate with the Ubuntu Sound Menu.
 
@@ -147,9 +147,9 @@ class SoundMenuControls(dbus.service.Object):
             title = "Title Uknown"
 
         self.__meta_data = dbus.Dictionary({"xesam:album": album,
-                            "xesam:title": title,
-                            "xesam:artist": artists,
-                            }, "sv", variant_level=1)
+                                            "xesam:title": title,
+                                            "xesam:artist": artists,
+                                            }, "sv", variant_level=1)
 
     @dbus.service.method('org.mpris.MediaPlayer2')
     def Raise(self):
@@ -176,7 +176,8 @@ class SoundMenuControls(dbus.service.Object):
         raise NotImplementedError("""@dbus.service.method('org.mpris.MediaPlayer2') Raise
                                       is not implemented by this player.""")
 
-    @dbus.service.method(dbus.PROPERTIES_IFACE, in_signature='ss', out_signature='v')
+    @dbus.service.method(dbus.PROPERTIES_IFACE,
+                         in_signature='ss', out_signature='v')
     def Get(self, interface, prop):
         """Get
 
@@ -203,7 +204,8 @@ class SoundMenuControls(dbus.service.Object):
         my_prop = self.__getattribute__(prop)
         my_prop = value
 
-    @dbus.service.method(dbus.PROPERTIES_IFACE, in_signature='s', out_signature='a{sv}')
+    @dbus.service.method(dbus.PROPERTIES_IFACE,
+                         in_signature='s', out_signature='a{sv}')
     def GetAll(self, interface):
         """GetAll
 
@@ -339,7 +341,7 @@ class SoundMenuControls(dbus.service.Object):
         """
         self.__playback_status = "Playing"
         d = dbus.Dictionary({"PlaybackStatus": self.__playback_status, "Metadata": self.__meta_data},
-                                    "sv", variant_level=1)
+                            "sv", variant_level=1)
         self.PropertiesChanged("org.mpris.MediaPlayer2.Player", d, [])
 
     def signal_paused(self):
@@ -354,7 +356,7 @@ class SoundMenuControls(dbus.service.Object):
 
         self.__playback_status = "Paused"
         d = dbus.Dictionary({"PlaybackStatus": self.__playback_status},
-                                    "sv", variant_level=1)
+                            "sv", variant_level=1)
         self.PropertiesChanged("org.mpris.MediaPlayer2.Player", d, [])
 
     def _sound_menu_is_playing(self):

@@ -25,9 +25,13 @@ class MyFileReceivingBot(FileBot):
     def is_file_acceptable(self, sender, filename, filesize):
         if not self.check_access(sender):
             logging.warning('Refusing to accept files from %s.' % sender)
-            raise FileNotAcceptable('I\'m not allowed to receive files from you, sorry.')
-        if os.path.splitext(filename.lower())[1] not in ['.mp3', '.ogg', '.zip']:
-            raise FileNotAcceptable('I only accept MP3, OGG and ZIP files, which "%s" doesn\'t look like.' % os.path.basename(filename))
+            raise FileNotAcceptable(
+                'I\'m not allowed to receive files from you, sorry.')
+        if os.path.splitext(filename.lower())[1] not in [
+                '.mp3', '.ogg', '.zip']:
+            raise FileNotAcceptable(
+                'I only accept MP3, OGG and ZIP files, which "%s" doesn\'t look like.' %
+                os.path.basename(filename))
 
     def callback_file(self, sender, filename):
         tmpname = None
@@ -44,13 +48,15 @@ class MyFileReceivingBot(FileBot):
                             tmp = open(tmpname, 'wb')
                             tmp.write(zip.read(zipname))
                             tmp.close()
-                            ids.append(str(self.process_incoming_file(sender, tmpname)))
+                            ids.append(
+                                str(self.process_incoming_file(sender, tmpname)))
                             os.unlink(tmpname)
-                except zipfile.BadZipfile, e:
-                    return u'Your ZIP file is damaged.'
+                except zipfile.BadZipfile as e:
+                    return 'Your ZIP file is damaged.'
             else:
                 ids.append(str(self.process_incoming_file(sender, filename)))
-            return u'Your files were scheduled for playing, their ids are: %s. Use the \'news\' command to see more details about the files. Use the \'batch tags ...\' command to add tags to uploaded files (will only work once).' % u', '.join(ids)
+            return 'Your files were scheduled for playing, their ids are: %s. Use the \'news\' command to see more details about the files. Use the \'batch tags ...\' command to add tags to uploaded files (will only work once).' % ', '.join(
+                ids)
         finally:
             if tmpname is not None and os.path.exists(tmpname):
                 os.unlink(tmpname)
@@ -58,7 +64,12 @@ class MyFileReceivingBot(FileBot):
 
     def process_incoming_file(self, sender, filename):
         logging.info('Received %s.' % filename)
-        track_id = ardj.tracks.add_file(filename, labels=['incoming', 'incoming-jabber'], queue=True)
+        track_id = ardj.tracks.add_file(
+            filename,
+            labels=[
+                'incoming',
+                'incoming-jabber'],
+            queue=True)
         time.sleep(1)  # let ezstream read some data
         return track_id
 
@@ -71,7 +82,7 @@ class MyFileReceivingBot(FileBot):
         index = 1
         while os.path.exists(filename):
             parts = os.path.splitext(source)
-            filename = parts[0] + '_' + unicode(index) + parts[1]
+            filename = parts[0] + '_' + str(index) + parts[1]
             index += 1
         return filename
 
@@ -93,7 +104,13 @@ class ardjbot(MyFileReceivingBot):
         _conf = ardj.settings.get2("jabber_id", "jabber/login")
         self.login, password = self.split_login(_conf)
         resource = socket.gethostname() + '/' + str(os.getpid()) + '/'
-        super(ardjbot, self).__init__(self.login, password, res=resource, debug=debug)
+        super(
+            ardjbot,
+            self).__init__(
+            self.login,
+            password,
+            res=resource,
+            debug=debug)
 
     def split_login(self, uri):
         name, password = uri.split('@', 1)[0].split(':', 1)
@@ -109,12 +126,12 @@ class ardjbot(MyFileReceivingBot):
             self.__idle_ping()
             self.send_pending_messages()
             ardj.tracks.do_idle_tasks(self.set_busy)
-        except Exception, e:
+        except Exception as e:
             ardj.log.log_error("ERROR in jabber idle handlers: %s" % e, e)
 
         try:
             ardj.database.commit()
-        except Exception, e:
+        except Exception as e:
             logging.error("Could not commit changes: %s." % e)
 
         super(ardjbot, self).idle_proc()
@@ -139,15 +156,21 @@ class ardjbot(MyFileReceivingBot):
         if time.time() - self.lastping > self.PING_FREQUENCY:
             self.lastping = time.time()
             #logging.debug('Pinging the server.')
-            ping = xmpp.Protocol('iq', typ='get', payload=[xmpp.Node('ping', attrs={'xmlns':'urn:xmpp:ping'})])
+            ping = xmpp.Protocol(
+                'iq', typ='get', payload=[
+                    xmpp.Node(
+                        'ping', attrs={
+                            'xmlns': 'urn:xmpp:ping'})])
             try:
                 res = self.conn.SendAndWaitForResponse(ping, self.PING_TIMEOUT)
                 #logging.debug('Got response: ' + str(res))
                 if res is None:
                     logging.error('Terminating due to PING timeout.')
                     self.quit(1)
-            except IOError, e:
-                logging.error('Error pinging the server: %s, shutting down.' % e)
+            except IOError as e:
+                logging.error(
+                    'Error pinging the server: %s, shutting down.' %
+                    e)
                 self.quit(1)
 
     def on_connected(self):
@@ -156,8 +179,8 @@ class ardjbot(MyFileReceivingBot):
         if self.pidfile:
             try:
                 open(self.pidfile, 'w').write(str(os.getpid()))
-            except IOError, e:
-                logging.error(u'Could not write to %s: %s' % (self.pidfile, e))
+            except IOError as e:
+                logging.error('Could not write to %s: %s' % (self.pidfile, e))
         self.update_status()
         self.join_chat_room()
 
@@ -182,7 +205,8 @@ class ardjbot(MyFileReceivingBot):
         """Returns the JID of the chat room.  The reason for not reading this
         once and storing in the instance is that the configuration file can
         change any time."""
-        return ardj.settings.get("jabber_chat_room", ardj.settings.get("jabber/chat_room"))
+        return ardj.settings.get(
+            "jabber_chat_room", ardj.settings.get("jabber/chat_room"))
 
     def say_to_jid(self, jid, message, group=False):
         msg = self.build_message(message)
@@ -211,7 +235,7 @@ class ardjbot(MyFileReceivingBot):
                 message = ardj.console.process_command('status')
                 if message != self.status_message:
                     self.status_message = message
-        except Exception, e:
+        except Exception as e:
             self.status_message = 'Error updating status: %s' % e
         """ FIXME
         if ardj.settings.get2('use_jabber_tunes', 'jabber/tunes', True):
@@ -220,7 +244,7 @@ class ardjbot(MyFileReceivingBot):
 
     def callback_presence(self, conn, presence):
         """Tracks chat room users."""
-        jid = unicode(presence.getFrom())
+        jid = str(presence.getFrom())
         chat_jid = (self.get_chat_room_jid() or "").split("/")[0]
         if chat_jid == jid.split("/")[0]:
             type_ = presence.getType()
@@ -258,12 +282,15 @@ class ardjbot(MyFileReceivingBot):
                 msg = mess.getBody()
                 if not msg:
                     return
-                rep = ardj.console.process_command(msg, mess.getFrom().getStripped())
-            except Exception, e:
-                ardj.log.log_error("ERROR: %s, MESSAGE: %s" % (e, mess.getBody().encode("utf-8")), e)
-                rep = unicode(e)
+                rep = ardj.console.process_command(
+                    msg, mess.getFrom().getStripped())
+            except Exception as e:
+                ardj.log.log_error(
+                    "ERROR: %s, MESSAGE: %s" %
+                    (e, mess.getBody().encode("utf-8")), e)
+                rep = str(e)
             ardj.database.commit()
-            if isinstance(rep, (str, unicode)):
+            if isinstance(rep, str):
                 self.send_simple_reply(mess, rep.strip())
             self.send_pending_messages()
             self.status_type = self.AVAILABLE
@@ -280,9 +307,9 @@ class ardjbot(MyFileReceivingBot):
 
         sender = mess.getFrom().getStripped()
         if sender == chat_room_jid.split("/")[0]:
-            self.send_simple_reply(mess, u"You are sending me a private "
-                "message through a chat room.  I don't work this way.  Please "
-                "add me to your roster as %s and let's talk there." % self.login)
+            self.send_simple_reply(mess, "You are sending me a private "
+                                   "message through a chat room.  I don't work this way.  Please "
+                                   "add me to your roster as %s and let's talk there." % self.login)
             return True
 
         return False
@@ -301,11 +328,12 @@ class ardjbot(MyFileReceivingBot):
                 commit = True
             if commit:
                 ardj.database.commit()
-        except Exception, e:
+        except Exception as e:
             ardj.log.log_error("Could not send pending messages: %s" % e, e)
 
     def run(self):
-        return self.serve_forever(connect_callback=self.on_connected, disconnect_callback=self.on_disconnect)
+        return self.serve_forever(
+            connect_callback=self.on_connected, disconnect_callback=self.on_disconnect)
 
     def connect(self):
         """
@@ -341,9 +369,9 @@ class TestBot(JabberBot):
         if time.time() - self.lastping > 5:
             self.lastping = time.time()
             ping = xmpp.Protocol('iq', typ='get',
-                payload=[xmpp.Node('ping', attrs={'xmlns':'urn:xmpp:ping'})])
+                                 payload=[xmpp.Node('ping', attrs={'xmlns': 'urn:xmpp:ping'})])
             res = self.conn.SendAndWaitForResponse(ping, 1)
-            print 'GOT:', res
+            print('GOT:', res)
 
 
 def Open(debug=False):
@@ -356,7 +384,11 @@ def chat_say(message, recipient=None):
     """Adds a message to the chat room queue.  This is the only way for command
     handlers to notify chat users.  If the recipient is not specified, the
     message is sent to the chat room."""
-    ardj.database.execute("INSERT INTO jabber_messages (re, message) VALUES (?, ?)", (recipient, message, ))
+    ardj.database.execute(
+        "INSERT INTO jabber_messages (re, message) VALUES (?, ?)",
+        (recipient,
+         message,
+         ))
     ardj.database.commit()
 
 
@@ -370,7 +402,7 @@ def cmd_run_bot(*args, **kwargs):
 
 def cmd_probe(jid=None, password=None, *args, **kwargs):
     """Perform a test connection, args: jid, password."""
-    from cli import UsageError
+    from .cli import UsageError
 
     if jid is None:
         raise UsageError("Specify a JID.")

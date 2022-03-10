@@ -1,5 +1,9 @@
 # encoding=utf-8
 
+"""
+User retrieval functions.
+"""
+
 import time
 
 from ardj import database
@@ -9,8 +13,8 @@ from ardj import settings
 def get_voters():
     """Returns information on voters in tuples (email, count, weight)."""
     rows = database.fetch('SELECT v.email, COUNT(*) AS c, k.weight '
-        'FROM votes v LEFT JOIN karma k ON k.email = v.email '
-        'GROUP BY v.email ORDER BY c DESC, k.weight DESC, v.email')
+                          'FROM votes v LEFT JOIN karma k ON k.email = v.email '
+                          'GROUP BY v.email ORDER BY c DESC, k.weight DESC, v.email')
     return rows
 
 
@@ -19,9 +23,9 @@ def get_top_recent_voters(count=10, days=14):
     if not count:
         return []
     delta = int(time.time()) - days * 86400
-    emails = database.fetchcol("SELECT `email`, COUNT(*) AS `c` FROM `votes` "
-        "WHERE `ts` >= ? GROUP BY `email` ORDER BY `c` DESC "
-        "LIMIT %u" % count, (delta, ))
+    emails = database.fetchcol(f"SELECT `email`, COUNT(*) AS `c` FROM `votes` "
+                               f"WHERE `ts` >= ? GROUP BY `email` ORDER BY `c` DESC "
+                               f"LIMIT {count}", (delta, ))
     return emails
 
 
@@ -42,7 +46,7 @@ def get_aliases():
 
 def resolve_alias(jid):
     """Resolves an addres according to configured aliases."""
-    for main, other in get_aliases().items():
+    for main, other in list(get_aliases().items()):
         if jid in other:
             return main
     return jid
@@ -50,7 +54,8 @@ def resolve_alias(jid):
 
 def merge_aliased_votes():
     """Moves votes from aliases to real jids."""
-    for k, v in get_aliases().items():
-        for alias in v:
-            database.execute("UPDATE votes SET email = ? WHERE email = ?", (k, alias, ))
+    for src, dst in list(get_aliases().items()):
+        for alias in dst:
+            database.execute(
+                "UPDATE votes SET email = ? WHERE email = ?", (src, alias, ))
     database.commit()

@@ -27,13 +27,15 @@ import re
 import sys
 import time
 import traceback
-import urllib
+import urllib.request
+import urllib.parse
+import urllib.error
 
 try:
     from sqlite3 import dbapi2 as sqlite
     from sqlite3 import OperationalError
 except ImportError:
-    print >> sys.stderr, 'Please install pysqlite2.'
+    print('Please install pysqlite2.', file=sys.stderr)
     sys.exit(13)
 
 import ardj.settings
@@ -101,7 +103,8 @@ class Model(dict):
     @classmethod
     def get_by_id(cls, id):
         fields_sql = ", ".join(cls.fields)
-        sql = "SELECT %s FROM %s WHERE %s = ?" % (fields_sql, cls.table_name, cls.key_name)
+        sql = "SELECT %s FROM %s WHERE %s = ?" % (
+            fields_sql, cls.table_name, cls.key_name)
         row = fetchone(sql, (id, ))
         if row is not None:
             return cls._from_row(row)
@@ -149,7 +152,8 @@ class Model(dict):
         fields_sql = ", ".join(fields)
         params_sql = ", ".join(["?"] * len(fields))
 
-        sql = "INSERT INTO %s (%s) VALUES (%s)" % (self.table_name, fields_sql, params_sql)
+        sql = "INSERT INTO %s (%s) VALUES (%s)" % (
+            self.table_name, fields_sql, params_sql)
         params = [self.get(field) for field in fields]
 
         self[self.key_name] = execute(sql, params)
@@ -159,7 +163,8 @@ class Model(dict):
         fields = [f for f in self.fields if f != self.key_name]
         fields_sql = ", ".join(["%s = ?" % field for field in fields])
 
-        sql = "UPDATE %s SET %s WHERE %s = ?" % (self.table_name, fields_sql, self.key_name)
+        sql = "UPDATE %s SET %s WHERE %s = ?" % (
+            self.table_name, fields_sql, self.key_name)
         params = [self.get(field) for field in fields] + [self[self.key_name]]
 
         return execute(sql, params)
@@ -178,7 +183,8 @@ class DownloadRequest(Model):
 
     @classmethod
     def find_by_artist(cls, artist):
-        sql = "SELECT %s FROM %s WHERE artist = ?" % (cls._fields_sql(), cls.table_name)
+        sql = "SELECT %s FROM %s WHERE artist = ?" % (
+            cls._fields_sql(), cls.table_name)
         return cls._fetch_rows(sql, (artist, ))
 
     @classmethod
@@ -203,7 +209,19 @@ class Vote(Model):
 class Track(Model):
     """Stores information about a track."""
     table_name = "tracks"
-    fields = ("id", "artist", "title", "filename", "length", "weight", "real_weight", "count", "last_played", "owner", "image", "download")
+    fields = (
+        "id",
+        "artist",
+        "title",
+        "filename",
+        "length",
+        "weight",
+        "real_weight",
+        "count",
+        "last_played",
+        "owner",
+        "image",
+        "download")
     key_name = "id"
 
     @classmethod
@@ -217,25 +235,29 @@ class Track(Model):
     @classmethod
     def find_by_tag(cls, tag):
         """Returns tracks that have a specific tag."""
-        sql = "SELECT %s FROM %s WHERE weight > 0 AND id IN (SELECT track_id FROM labels WHERE label = ?)" % (cls._fields_sql(), cls.table_name)
+        sql = "SELECT %s FROM %s WHERE weight > 0 AND id IN (SELECT track_id FROM labels WHERE label = ?)" % (
+            cls._fields_sql(), cls.table_name)
         return cls._fetch_rows(sql, (tag, ))
 
     @classmethod
     def find_by_url(cls, url):
         """Returns all tracks with the specified download URL."""
-        sql = "SELECT %s FROM %s WHERE `download` = ?" % (cls._fields_sql(), cls.table_name)
+        sql = "SELECT %s FROM %s WHERE `download` = ?" % (
+            cls._fields_sql(), cls.table_name)
         return cls._fetch_rows(sql, (url, ))
 
     @classmethod
     def find_active(cls):
         """Returns tracks which weren't deleted."""
-        sql = "SELECT %s FROM %s WHERE `weight` > 0" % (cls._fields_sql(), cls.table_name)
+        sql = "SELECT %s FROM %s WHERE `weight` > 0" % (
+            cls._fields_sql(), cls.table_name)
         return cls._fetch_rows(sql, ())
 
     @classmethod
     def find_recently_played(cls, count=50):
         """Returns a list of recently played tracks."""
-        sql = "SELECT %s FROM %s ORDER BY `last_played` DESC LIMIT %u" % (cls._fields_sql(), cls.table_name, count)
+        sql = "SELECT %s FROM %s ORDER BY `last_played` DESC LIMIT %u" % (
+            cls._fields_sql(), cls.table_name, count)
         return cls._fetch_rows(sql, ())
 
     @classmethod
@@ -246,25 +268,30 @@ class Track(Model):
     @classmethod
     def rename_artist(cls, old_name, new_name):
         """Renames an artist."""
-        sql = "UPDATE %s SET artist = ? WHERE artist = ?" % (self.table_name, new_name, old_name)
+        sql = "UPDATE %s SET artist = ? WHERE artist = ?" % (
+            self.table_name, new_name, old_name)
         execute(sql, ())
 
     @classmethod
     def find_without_lastfm_tags(cls):
-        sql = "SELECT %s FROM %s WHERE weight > 0 AND id NOT IN (SELECT track_id FROM labels WHERE label LIKE 'lastfm:%%') ORDER BY id" % (cls._fields_sql(), cls.table_name)
+        sql = "SELECT %s FROM %s WHERE weight > 0 AND id NOT IN (SELECT track_id FROM labels WHERE label LIKE 'lastfm:%%') ORDER BY id" % (
+            cls._fields_sql(), cls.table_name)
         return cls._fetch_rows(sql, ())
 
     @classmethod
     def find_tags(cls, min_count=5, cents=100):
         sql = "SELECT label, COUNT(*) FROM labels WHERE track_id IN (SELECT id FROM tracks WHERE weight > 0) GROUP BY label ORDER BY label"
-        rows = [row for row in fetch(sql) if row[1] >= min_count and ":" not in row[0] and len(row[0]) > 1]
+        rows = [
+            row for row in fetch(sql) if row[1] >= min_count and ":" not in row[0] and len(
+                row[0]) > 1]
         return rows
 
     def get_labels(self):
         if not self.get(self.key_name):
             return []
         if "labels" not in self:
-            self["labels"] = fetchcol("SELECT label FROM labels WHERE track_id = ?", (self[self.key_name], ))
+            self["labels"] = fetchcol(
+                "SELECT label FROM labels WHERE track_id = ?", (self[self.key_name], ))
         return self["labels"] or []
 
     def set_labels(self, labels):
@@ -273,33 +300,46 @@ class Track(Model):
 
         execute("DELETE FROM labels WHERE track_id = ?", (self["id"], ))
         for tag in list(set(labels)):
-            execute("INSERT INTO labels (track_id, label, email) VALUES (?, ?, ?)", (self["id"], tag, "unknown", ))
+            execute(
+                "INSERT INTO labels (track_id, label, email) VALUES (?, ?, ?)",
+                (self["id"],
+                 tag,
+                 "unknown",
+                 ))
 
-        logging.debug(("New labels for track %u: %s" % (self["id"], labels)).encode("utf-8"))
+        logging.debug(
+            ("New labels for track %u: %s" %
+             (self["id"], labels)).encode("utf-8"))
 
     def set_image(self, url):
-        execute("UPDATE tracks SET image = ? WHERE id = ?", (url, self["id"], ))
+        execute("UPDATE tracks SET image = ? WHERE id = ?",
+                (url, self["id"], ))
 
     def set_download(self, url):
-        execute("UPDATE tracks SET download = ? WHERE id = ?", (url, self["id"], ))
+        execute("UPDATE tracks SET download = ? WHERE id = ?",
+                (url, self["id"], ))
 
     def get_artist_url(self):
         if "lastfm:noartist" in self.get_labels():
             return None
-        q = lambda v: urllib.quote(v.encode("utf-8"))
+
+        def q(v): return urllib.parse.quote(v.encode("utf-8"))
         return "http://www.last.fm/music/%s" % q(self["artist"])
 
     def get_track_url(self):
         if "lastfm:notfound" in self.get_labels():
             return None
-        q = lambda v: urllib.quote(v.encode("utf-8"))
-        return "http://www.last.fm/music/%s/_/%s" % (q(self["artist"]), q(self["title"]))
+
+        def q(v): return urllib.parse.quote(v.encode("utf-8"))
+        return "http://www.last.fm/music/%s/_/%s" % (
+            q(self["artist"]), q(self["title"]))
 
     @classmethod
     def get_average_length(cls):
         """Returns average track length in minutes."""
         s_prc = s_qty = 0.0
-        for prc, qty in fetch("SELECT ROUND(length / 60) AS r, COUNT(*) FROM tracks GROUP BY r"):
+        for prc, qty in fetch(
+                "SELECT ROUND(length / 60) AS r, COUNT(*) FROM tracks GROUP BY r"):
             s_prc += prc * qty
             s_qty += qty
         return int(s_prc / s_qty * 60 * 1.5)
@@ -307,7 +347,8 @@ class Track(Model):
     def get_votes(self):
         """Returns track votes."""
         result = {}
-        for email, vote in fetch("SELECT email, vote FROM votes WHERE track_id = ? ORDER BY ts", (self["id"], )):
+        for email, vote in fetch(
+                "SELECT email, vote FROM votes WHERE track_id = ? ORDER BY ts", (self["id"], )):
             result[email] = vote
         return result
 
@@ -322,7 +363,8 @@ class Track(Model):
         if "length" not in tags:
             raise Exception("No length in %s" % filename)
         t["artist"] = tags.get("artist", "Unknown Artist")
-        t["title"] = tags.get("title", os.path.basename(filename).decode("utf-8"))
+        t["title"] = tags.get(
+            "title", os.path.basename(filename).decode("utf-8"))
         t["length"] = tags["length"]
         t["weight"] = 1.0
         t["real_weight"] = 1.0
@@ -337,13 +379,15 @@ class Track(Model):
 
     @classmethod
     def find_all_playlists(cls, count):
-        sql = "SELECT %s FROM %s WHERE weight > 0 ORDER BY artist, title" % (cls._fields_sql(), cls.table_name)
+        sql = "SELECT %s FROM %s WHERE weight > 0 ORDER BY artist, title" % (
+            cls._fields_sql(), cls.table_name)
         params = []
         return cls._fetch_rows(sql, params)
 
     @classmethod
     def query(cls, playlist=None, artist=None, tag=None, count=100):
-        sql = "SELECT %s FROM %s WHERE weight > 0" % (cls._fields_sql(), cls.table_name)
+        sql = "SELECT %s FROM %s WHERE weight > 0" % (
+            cls._fields_sql(), cls.table_name)
         params = []
         order = "artist, title"
 
@@ -396,12 +440,16 @@ class Token(Model):
             if rows is not None:
                 continue
 
-            execute("INSERT INTO tokens (token, login, login_type, active) VALUES (?, ?, 'email', ?)", (tmp, email, active))
+            execute(
+                "INSERT INTO tokens (token, login, login_type, active) VALUES (?, ?, 'email', ?)",
+                (tmp,
+                 email,
+                 active))
 
             return cls(token=tmp,
-                login=email,
-                login_type="email",
-                active=active)
+                       login=email,
+                       login_type="email",
+                       active=active)
 
 
 class Label(Model):
@@ -410,27 +458,37 @@ class Label(Model):
 
     @classmethod
     def delete_by_name(cls, name):
-        execute("DELETE FROM `%s` WHERE `label` = ?" % cls.table_name, (name, ))
+        execute(
+            "DELETE FROM `%s` WHERE `label` = ?" %
+            cls.table_name, (name, ))
 
     @classmethod
     def find_all_names(cls):
-        rows = fetch("SELECT DISTINCT label FROM labels WHERE track_id IN (SELECT id FROM tracks WHERE weight > 0) ORDER BY label")
+        rows = fetch(
+            "SELECT DISTINCT label FROM labels WHERE track_id IN (SELECT id FROM tracks WHERE weight > 0) ORDER BY label")
         return [r[0] for r in rows]
 
     @classmethod
     def find_never_played_names(cls):
-        rows = fetch("SELECT DISTINCT label FROM labels WHERE track_id IN (SELECT id FROM tracks WHERE weight > 0 AND last_played IS NULL) ORDER BY label")
+        rows = fetch(
+            "SELECT DISTINCT label FROM labels WHERE track_id IN (SELECT id FROM tracks WHERE weight > 0 AND last_played IS NULL) ORDER BY label")
         return [r[0] for r in rows]
 
     @classmethod
     def find_recently_played_names(cls):
         limit = time.time() - RECENT_SECONDS
-        rows = fetch("SELECT DISTINCT label FROM labels WHERE track_id IN (SELECT id FROM tracks WHERE weight > 0 AND last_played > ?) ORDER BY label", (limit, ))
+        rows = fetch(
+            "SELECT DISTINCT label FROM labels WHERE track_id IN (SELECT id FROM tracks WHERE weight > 0 AND last_played > ?) ORDER BY label",
+            (limit,
+             ))
         return [r[0] for r in rows]
 
     @classmethod
     def find_crossing_names(cls, name):
-        rows = fetch("SELECT DISTINCT label FROM labels WHERE track_id IN (SELECT id FROM tracks INNER JOIN labels l ON l.track_id = tracks.id WHERE weight > 0 AND l.label = ?)", (name, ))
+        rows = fetch(
+            "SELECT DISTINCT label FROM labels WHERE track_id IN (SELECT id FROM tracks INNER JOIN labels l ON l.track_id = tracks.id WHERE weight > 0 AND l.label = ?)",
+            (name,
+             ))
         return [r[0] for r in rows]
 
     @classmethod
@@ -524,7 +582,7 @@ class database:
         isnew = not os.path.exists(self.filename)
         try:
             self.db = sqlite.connect(self.filename, check_same_thread=False)
-        except Exception, e:
+        except Exception as e:
             logging.error('Could not open database %s: %s' % (filename, e))
             raise
 
@@ -538,9 +596,11 @@ class database:
     @classmethod
     def get_instance(cls):
         if cls.instance is None:
-            filename = ardj.settings.getpath2("database_path", "database/local")
+            filename = ardj.settings.getpath2(
+                "database_path", "database/local")
             if filename is None:
-                raise Exception('This ardj instance does not have a local database (see the database_path config option).')
+                raise Exception(
+                    'This ardj instance does not have a local database (see the database_path config option).')
             cls.instance = cls(filename)
         return cls.instance
 
@@ -582,8 +642,10 @@ class database:
                 return cur.lastrowid
             else:
                 return cur.rowcount
-        except:
-            logging.exception("Failed SQL statement: %s, params: %s" % (sql.encode("utf-8"), params))
+        except BaseException:
+            logging.exception(
+                "Failed SQL statement: %s, params: %s" %
+                (sql.encode("utf-8"), params))
             raise
         finally:
             cur.close()
@@ -604,18 +666,20 @@ class database:
                 params.append(args[k])
         params.append(args['id'])
 
-        self.execute('UPDATE %s SET %s WHERE id = ?' % (table, ', '.join(sql)), tuple(params))
+        self.execute(
+            'UPDATE %s SET %s WHERE id = ?' %
+            (table, ', '.join(sql)), tuple(params))
 
     def debug(self, sql, params, quiet=False):
         """Logs the query in human readable form.
 
         Replaces question marks with parameter values (roughly)."""
         for param in params:
-            param = unicode(param)
+            param = str(param)
             if param.isdigit():
-                sql = sql.replace(u'?', param, 1)
+                sql = sql.replace('?', param, 1)
             else:
-                sql = sql.replace(u'?', u"'" + param + u"'", 1)
+                sql = sql.replace('?', "'" + param + "'", 1)
         logging.debug("SQL: " + sql.encode("utf-8"))
         return sql
 
@@ -627,13 +691,18 @@ class database:
         analyzed all tables (to optimize indexes) and vacuums the database.
         """
         old_size = os.stat(self.filename).st_size
-        self.execute('DELETE FROM queue WHERE track_id NOT IN (SELECT id FROM tracks)')
-        self.execute('DELETE FROM labels WHERE track_id NOT IN (SELECT id FROM tracks)')
-        self.execute('DELETE FROM votes WHERE track_id NOT IN (SELECT id FROM tracks)')
-        for table in ('playlists', 'tracks', 'queue', 'urgent_playlists', 'labels', 'karma'):
+        self.execute(
+            'DELETE FROM queue WHERE track_id NOT IN (SELECT id FROM tracks)')
+        self.execute(
+            'DELETE FROM labels WHERE track_id NOT IN (SELECT id FROM tracks)')
+        self.execute(
+            'DELETE FROM votes WHERE track_id NOT IN (SELECT id FROM tracks)')
+        for table in ('playlists', 'tracks', 'queue',
+                      'urgent_playlists', 'labels', 'karma'):
             self.execute('ANALYZE ' + table)
         self.execute('VACUUM')
-        logging.info('%u bytes saved after database purge.' % (os.stat(self.filename).st_size - old_size))
+        logging.info('%u bytes saved after database purge.' %
+                     (os.stat(self.filename).st_size - old_size))
 
     def mark_hitlist(self):
         """Marks best tracks with the "hitlist" label.
@@ -644,26 +713,47 @@ class database:
 
         self.execute('DELETE FROM labels WHERE label = ?', (set_label, ))
 
-        weight = fetchone('SELECT real_weight FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?) ORDER BY real_weight DESC LIMIT 19, 1', (check_label, ))
+        weight = fetchone(
+            'SELECT real_weight FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?) ORDER BY real_weight DESC LIMIT 19, 1',
+            (check_label,
+             ))
         if weight:
-            self.execute('INSERT INTO labels (track_id, label, email) SELECT id, ?, ? FROM tracks WHERE real_weight >= ? AND id IN (SELECT track_id FROM labels WHERE label = ?)', (set_label, 'ardj', weight[0], check_label, ))
+            self.execute(
+                'INSERT INTO labels (track_id, label, email) SELECT id, ?, ? FROM tracks WHERE real_weight >= ? AND id IN (SELECT track_id FROM labels WHERE label = ?)',
+                (set_label,
+                 'ardj',
+                 weight[0],
+                    check_label,
+                 ))
 
             lastfm = ardj.scrobbler.LastFM()
             lastfm.authorize()
 
-            for artist, title in self.fetch('SELECT t.artist, t.title FROM tracks t INNER JOIN labels l ON l.track_id = t.id WHERE l.label = ?', (set_label, )):
+            for artist, title in self.fetch(
+                    'SELECT t.artist, t.title FROM tracks t INNER JOIN labels l ON l.track_id = t.id WHERE l.label = ?', (set_label, )):
                 lastfm.love(artist, title)
 
     def mark_recent_music(self):
         """Marks last 100 tracks with "recent"."""
         self.execute('DELETE FROM labels WHERE label = ?', ('recent', ))
-        self.execute('INSERT INTO labels (track_id, label, email) SELECT id, ?, ? FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?) ORDER BY id DESC LIMIT 100', ('recent', 'ardj', 'music', ))
+        self.execute(
+            'INSERT INTO labels (track_id, label, email) SELECT id, ?, ? FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = ?) ORDER BY id DESC LIMIT 100',
+            ('recent',
+             'ardj',
+             'music',
+             ))
 
         self.execute('DELETE FROM labels WHERE label = ?', ('fresh', ))
-        self.execute('INSERT INTO labels (track_id, label, email) SELECT id, ?, ? FROM tracks WHERE count < 10 AND weight > 0 AND id IN (SELECT track_id FROM labels WHERE label = ?)', ('fresh', 'ardj', 'music', ))
+        self.execute(
+            'INSERT INTO labels (track_id, label, email) SELECT id, ?, ? FROM tracks WHERE count < 10 AND weight > 0 AND id IN (SELECT track_id FROM labels WHERE label = ?)',
+            ('fresh',
+             'ardj',
+             'music',
+             ))
 
-        count = self.execute("SELECT COUNT(*) FROM labels WHERE label = ?", ('fresh', ))
-        print 'Found %u fresh songs.' % count
+        count = self.execute(
+            "SELECT COUNT(*) FROM labels WHERE label = ?", ('fresh', ))
+        print('Found %u fresh songs.' % count)
 
     def mark_orphans(self, set_label='orphan', quiet=False):
         """Labels orphan tracks with "orphan".
@@ -679,28 +769,41 @@ class database:
         used_labels = list(set(used_labels))
 
         if not(used_labels):
-            logging.warning('Could not mark orphan tracks: no labels are used in playlists.yaml')
+            logging.warning(
+                'Could not mark orphan tracks: no labels are used in playlists.yaml')
             return False
 
         self.execute('DELETE FROM labels WHERE label = ?', (set_label, ))
 
-        sql = 'SELECT id, artist, title FROM tracks WHERE weight > 0 AND id NOT IN (SELECT track_id FROM labels WHERE label IN (%s)) ORDER BY artist, title' % ', '.join(['?'] * len(used_labels))
+        sql = 'SELECT id, artist, title FROM tracks WHERE weight > 0 AND id NOT IN (SELECT track_id FROM labels WHERE label IN (%s)) ORDER BY artist, title' % ', '.join([
+            '?'] * len(used_labels))
         rows = self.fetch(sql, used_labels)
 
         if rows:
             if not quiet:
-                print '%u orphan tracks found:' % len(rows)
+                print('%u orphan tracks found:' % len(rows))
             for row in rows:
                 if not quiet:
-                    print '%8u; %s -- %s' % (row[0], (row[1] or 'unknown').encode('utf-8'), (row[2] or 'unknown').encode('utf-8'))
-                self.execute('INSERT INTO labels (track_id, email, label) VALUES (?, ?, ?)', (int(row[0]), 'ardj', set_label))
+                    print(
+                        '%8u; %s -- %s' %
+                        (row[0],
+                         (row[1] or 'unknown').encode('utf-8'),
+                            (row[2] or 'unknown').encode('utf-8')))
+                self.execute(
+                    'INSERT INTO labels (track_id, email, label) VALUES (?, ?, ?)', (int(
+                        row[0]), 'ardj', set_label))
             return True
 
     def get_artist_names(self, label=None, weight=0):
         if label is None:
-            rows = self.fetch("SELECT DISTINCT artist FROM tracks WHERE weight > ?", (weight, ))
+            rows = self.fetch(
+                "SELECT DISTINCT artist FROM tracks WHERE weight > ?", (weight, ))
         else:
-            rows = self.fetch("SELECT DISTINCT artist FROM tracks WHERE weight > ? AND id IN (SELECT track_id FROM labels WHERE label = ?)", (weight, label, ))
+            rows = self.fetch(
+                "SELECT DISTINCT artist FROM tracks WHERE weight > ? AND id IN (SELECT track_id FROM labels WHERE label = ?)",
+                (weight,
+                 label,
+                 ))
         return [r[0] for r in rows]
 
 
@@ -748,7 +851,7 @@ def init_database():
     for statement in SQL_INIT:
         try:
             cur.execute(statement)
-        except:
+        except BaseException:
             logging.error("Init statement failed: %s" % statement)
             raise
     db.commit()
@@ -764,13 +867,13 @@ def cmd_console(*args):
 
 def cmd_dedup_tracks():
     """Merge duplicate tracks"""
-    from tracks import dedup_by_filename
+    from .tracks import dedup_by_filename
     count = dedup_by_filename(verbose=True)
     if count:
-        print "Removed %u duplicate tracks." % count
+        print("Removed %u duplicate tracks." % count)
         commit()
     else:
-        print "No duplicate tracks found."
+        print("No duplicate tracks found.")
 
 
 def cmd_init():
@@ -795,7 +898,7 @@ def cmd_stats():
     tracks = Track.find_all()
     count = len(tracks)
     length = sum([t.get("length", 0) for t in tracks])
-    print "%u tracks, %.1f hours." % (count, length / 60 / 60)
+    print("%u tracks, %.1f hours." % (count, length / 60 / 60))
 
 
 def cmd_vote_stats():
@@ -818,8 +921,8 @@ def cmd_vote_stats():
 
     def dump_votes(votes, prefix):
         total = float(sum(votes.values()))
-        for k, v in votes.items():
-            print "%s,%u,%u" % (prefix, k, int(v))
+        for k, v in list(votes.items()):
+            print("%s,%u,%u" % (prefix, k, int(v)))
 
     dump_votes(daily, "D")
     dump_votes(hourly, "H")

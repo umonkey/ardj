@@ -11,7 +11,7 @@ import hashlib
 import logging
 import os
 import socket
-import socks
+from . import socks
 import tempfile
 import time
 import traceback
@@ -31,7 +31,8 @@ class DiscoBot(JabberBot):
         init = not self.conn
         conn = super(DiscoBot, self).connect()
         if conn and init:
-            conn.RegisterHandler('iq', self.on_disco_info, ns=xmpp.NS_DISCO_INFO)
+            conn.RegisterHandler(
+                'iq', self.on_disco_info, ns=xmpp.NS_DISCO_INFO)
         return conn
 
     def on_disco_info(self, conn, mess):
@@ -68,7 +69,9 @@ class FileBot(DiscoBot):
         If anything is returned, it's sent back to file sender as a message,
         e.g.: "Thank you for this file."
         """
-        logging.info((u'Received file %s from %s.' % (filename, sender)).encode("utf-8"))
+        logging.info(
+            ('Received file %s from %s.' %
+             (filename, sender)).encode("utf-8"))
 
     #### You don't want to mess with the following code. ####
 
@@ -80,7 +83,8 @@ class FileBot(DiscoBot):
         conn = super(FileBot, self).connect()
         if conn and init:
             conn.RegisterHandler('iq', self.si_req_handler, ns=xmpp.NS_SI)
-            conn.RegisterHandler('iq', self.on_bytestream, ns=xmpp.NS_BYTESTREAM)
+            conn.RegisterHandler(
+                'iq', self.on_bytestream, ns=xmpp.NS_BYTESTREAM)
         return conn
 
     def si_req_handler(self, conn, mess):
@@ -89,23 +93,29 @@ class FileBot(DiscoBot):
         """
         try:
             si = mess.getTag('si')
-            logging.debug('Got Stream Initiation request #' + str(si.attrs['id']))
+            logging.debug('Got Stream Initiation request #' +
+                          str(si.attrs['id']))
             for field in si.getTag('feature').getTag('x').getTags('field'):
                 if field.attrs['var'] != 'stream-method':
-                    logging.debug('Ignoring unsupported field type: ' + field.attrs['var'])
+                    logging.debug(
+                        'Ignoring unsupported field type: ' +
+                        field.attrs['var'])
                 else:
                     for option in field.getTags('option'):
                         if option.getTagData('value') != xmpp.NS_BYTESTREAM:
-                            logging.debug('Ignoring unsupported stream type: ' + option.getTagData('value'))
+                            logging.debug(
+                                'Ignoring unsupported stream type: ' +
+                                option.getTagData('value'))
                         else:
                             transfer = {
-                                'from': unicode(mess.getFrom()),
-                                'to': unicode(mess.getTo()),
+                                'from': str(mess.getFrom()),
+                                'to': str(mess.getTo()),
                                 'name': si.getTagAttr('file', 'name'),
                                 'size': int(si.getTagAttr('file', 'size')),
                             }
                             try:
-                                self.is_file_acceptable(transfer['from'], transfer['name'], transfer['size'])
+                                self.is_file_acceptable(
+                                    transfer['from'], transfer['name'], transfer['size'])
                                 self.transfers[si.attrs['id']] = transfer
                                 reply = mess.buildReply('result')
                                 reply.addChild('si', namespace=xmpp.NS_SI) \
@@ -113,14 +123,16 @@ class FileBot(DiscoBot):
                                     .addChild('x', {'type': 'submit'}, namespace=xmpp.NS_DATA) \
                                     .addChild('field', {'var': 'stream-method'}) \
                                     .addChild('value', payload=[xmpp.NS_BYTESTREAM])
-                                logging.debug('File transfer table:\n' + str(self.transfers))
+                                logging.debug(
+                                    'File transfer table:\n' + str(self.transfers))
                                 conn.send(reply)
                                 raise xmpp.NodeProcessed
-                            except FileNotAcceptable, e:
+                            except FileNotAcceptable as e:
                                 reply = mess.buildReply('error')
                                 reply.addChild('error', {'type': 'cancel'})
                                 reply.addChild('forbidden')
-                                reply.addChild('text', payload=unicode(e), namespace=xmpp.NS_STANZAS)
+                                reply.addChild(
+                                    'text', payload=str(e), namespace=xmpp.NS_STANZAS)
                                 """Desired response:
                                 <iq to="to" type="error" id="id">
                                 <error code="403" type="cancel">
@@ -129,10 +141,11 @@ class FileBot(DiscoBot):
                                 </error>
                                 </iq>
                                 """
-            logging.debug('Could not negotiate Stream Initiation for some reason.')
-        except xmpp.NodeProcessed, e:
+            logging.debug(
+                'Could not negotiate Stream Initiation for some reason.')
+        except xmpp.NodeProcessed as e:
             raise e
-        except Exception, e:
+        except Exception as e:
             logging.error('Error negotiating file transfer: %s' % e)
             logging.error(traceback.format_exc(e))
 
@@ -142,35 +155,51 @@ class FileBot(DiscoBot):
         """
         logging.debug('Incoming streamhosts.')
         try:
-            sid = unicode(mess.getTagAttr('query', 'sid'))
+            sid = str(mess.getTagAttr('query', 'sid'))
             if sid not in self.transfers:
-                logging.debug('Ignoring streamhosts for unknown transfer: ' + sid)
+                logging.debug(
+                    'Ignoring streamhosts for unknown transfer: ' + sid)
             else:
                 transfer = self.transfers[sid]
-                logging.debug('Got streamhosts for transfer #%s: %s' % (sid, transfer))
+                logging.debug(
+                    'Got streamhosts for transfer #%s: %s' %
+                    (sid, transfer))
 
-                target_host = hashlib.sha1(sid + transfer['from'] + transfer['to']).hexdigest()
+                target_host = hashlib.sha1(
+                    sid + transfer['from'] + transfer['to']).hexdigest()
                 target_port = 0
 
                 for host in mess.getTag('query').getTags('streamhost'):
                     proxy_host = host.getAttr('host')
                     proxy_port = int(host.getAttr('port'))
 
-                    logging.debug('Connecting to %s:%u via %s:%u' % (target_host, target_port, proxy_host, proxy_port))
+                    logging.debug(
+                        'Connecting to %s:%u via %s:%u' %
+                        (target_host, target_port, proxy_host, proxy_port))
 
                     try:
                         s = socks.socksocket()
-                        s.setproxy(socks.PROXY_TYPE_SOCKS5, proxy_host, proxy_port)
+                        s.setproxy(
+                            socks.PROXY_TYPE_SOCKS5, proxy_host, proxy_port)
                         s.connect((target_host, target_port))
                         s.setblocking(0)
-                    except Exception, e:
-                        logging.warning('Could not connect to %s:%u: %s' % (proxy_host, proxy_port, e))
+                    except Exception as e:
+                        logging.warning(
+                            'Could not connect to %s:%u: %s' %
+                            (proxy_host, proxy_port, e))
                         continue
 
-                    logging.debug('Socket %s connected to %s:%s, retrieving %u bytes.' % (s, proxy_host, proxy_port, transfer['size']))
+                    logging.debug(
+                        'Socket %s connected to %s:%s, retrieving %u bytes.' %
+                        (s, proxy_host, proxy_port, transfer['size']))
 
-                    # Store the file in a temporary folder to maintain its basename.
-                    filename = os.path.join(tempfile.mkdtemp(prefix='jabberbot-'), os.path.basename(transfer['name']))
+                    # Store the file in a temporary folder to maintain its
+                    # basename.
+                    filename = os.path.join(
+                        tempfile.mkdtemp(
+                            prefix='jabberbot-'),
+                        os.path.basename(
+                            transfer['name']))
 
                     self.transfers[sid].update({
                         'socket': s,
@@ -182,7 +211,8 @@ class FileBot(DiscoBot):
 
                     # Tell the sender that we're ready to go.
                     reply = mess.buildReply('result')
-                    reply.getTag('query').addChild('streamhost-used', {'jid': host.getAttr('jid')})
+                    reply.getTag('query').addChild(
+                        'streamhost-used', {'jid': host.getAttr('jid')})
                     conn.send(reply)
 
                     raise xmpp.NodeProcessed
@@ -191,10 +221,12 @@ class FileBot(DiscoBot):
             # it MUST return a <not-acceptable/> error to the Requester.
             # http://xmpp.org/extensions/xep-0065.html
 
-        except xmpp.NodeProcessed, e:
+        except xmpp.NodeProcessed as e:
             raise e
-        except Exception, e:
-            logging.error('Error starting transfer: %s: %s' % (e.__class__.__name__, e))
+        except Exception as e:
+            logging.error(
+                'Error starting transfer: %s: %s' %
+                (e.__class__.__name__, e))
             logging.error(traceback.format_exc(e))
 
     def idle_proc(self):
@@ -205,14 +237,15 @@ class FileBot(DiscoBot):
         the temporary file is deleted.
         """
         super(FileBot, self).idle_proc()
-        for sid in self.transfers.keys():
+        for sid in list(self.transfers.keys()):
             if 'socket' in self.transfers[sid]:
                 transfer = self.transfers[sid]
                 got = 0
                 while True:
                     try:
-                        data = transfer['socket'].recv(8192, socket.MSG_DONTWAIT)
-                    except IOError, e:
+                        data = transfer['socket'].recv(
+                            8192, socket.MSG_DONTWAIT)
+                    except IOError as e:
                         break  # no data
                     if not data:
                         break
@@ -222,15 +255,19 @@ class FileBot(DiscoBot):
                 if got:
                     transfer['lastseen'] = int(time.time())
                     self.transfers[sid] = transfer
-                    logging.debug('Got %u bytes from socket %s, %u left.' % (got, transfer['socket'].fileno(), transfer['size'] - transfer['received']))
+                    logging.debug(
+                        'Got %u bytes from socket %s, %u left.' %
+                        (got, transfer['socket'].fileno(), transfer['size'] - transfer['received']))
                     if transfer['size'] == transfer['received']:
                         transfer['socket'].close()
                         transfer['file'].close()
                         del self.transfers[sid]
                         try:
-                            response = self.callback_file(transfer['from'], transfer['name'])
-                        except Exception, e:
-                            response = 'Could not process your file: %s: %s\n%s' % (e.__class__.__name__, e, traceback.format_exc(e))
+                            response = self.callback_file(
+                                transfer['from'], transfer['name'])
+                        except Exception as e:
+                            response = 'Could not process your file: %s: %s\n%s' % (
+                                e.__class__.__name__, e, traceback.format_exc(e))
                         if response is not None:
                             message = xmpp.protocol.Message(body=response)
                             message.setTo(transfer['from'])
@@ -241,10 +278,12 @@ class FileBot(DiscoBot):
                             os.unlink(transfer['name'])
                         try:
                             os.rmdir(basename(transfer['name']))
-                        except:
+                        except BaseException:
                             pass
                 elif transfer['lastseen'] + self.SOCKET_TIMEOUT < int(time.time()):
-                    logging.error('File %s from %s timed out.' % (transfer['name'], transfer['from']))
+                    logging.error(
+                        'File %s from %s timed out.' %
+                        (transfer['name'], transfer['from']))
                     self.on_file_aborted(transfer)
                     del self.transfers[sid]
 

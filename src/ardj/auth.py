@@ -1,10 +1,10 @@
 # encoding=utf-8
 
-from database import Token, Message, commit
-from users import resolve_alias
-from util import run
-from settings import get as get_setting
-from mail import TokenMailer
+from .database import Token, Message, commit
+from .users import resolve_alias
+from .util import run
+from .settings import get as get_setting
+from .mail import TokenMailer
 
 
 def create_token(login, login_type=None):
@@ -40,4 +40,4 @@ def get_id_by_token(token):
 def get_active_tokens():
     """Returns active tokens"""
     return [t for t in Token.find_all()
-        if t["active"]]
+            if t["active"]]

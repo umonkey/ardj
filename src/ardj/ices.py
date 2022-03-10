@@ -57,7 +57,8 @@ def ices_get_metadata():
     global last_track
     if last_track:
         if "artist" in last_track and "title" in last_track:
-            return ("\"%s\" by %s" % (last_track["title"], last_track["artist"])).encode("utf-8")
+            return ("\"%s\" by %s" %
+                    (last_track["title"], last_track["artist"])).encode("utf-8")
         return os.path.basename(last_track["filepath"])
     return "Unknown track"
 

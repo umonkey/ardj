@@ -1,5 +1,3 @@
-# vim: set fileencoding=utf-8:
-
 """Speech synthesizer.
 
 Uses festival to render text."""
@@ -21,18 +19,23 @@ def render_text_file(filename, artist=None, title=None):
 
     for exe in ("text2wave", "sox", "oggenc"):
         if not ardj.util.is_command(exe):
-            raise Exception("Speech synthesis is not available because the '%s' program is not installed." % exe)
+            raise Exception(
+                "Speech synthesis is not available because the '%s' program is not installed." %
+                exe)
 
     voice = ardj.settings.get('festival_voice', 'voice_msu_ru_nsh_clunits')
 
     output_wav = ardj.util.mktemp(suffix='.wav')
-    ardj.util.run(['text2wave', '-f', '44100', '-eval', '(' + voice + ')', filename, '-o', output_wav])
+    ardj.util.run(['text2wave', '-f', '44100', '-eval',
+                  '(' + voice + ')', filename, '-o', output_wav])
 
     resampled_wav = ardj.util.mktemp(suffix='.wav')
-    ardj.util.run(['sox', output_wav, '-r', '44100', '-c', '2', resampled_wav, 'pad', '2', '5'])
+    ardj.util.run(['sox', output_wav, '-r', '44100', '-c',
+                  '2', resampled_wav, 'pad', '2', '5'])
 
     output_ogg = ardj.util.mktemp(suffix='.ogg')
-    ardj.util.run(['oggenc', '-Q', '-q', '9', '-o', output_ogg, '-a', 'artist', resampled_wav])
+    ardj.util.run(['oggenc', '-Q', '-q', '9', '-o',
+                  output_ogg, '-a', 'artist', resampled_wav])
 
     ardj.util.run(['vorbisgain', '-q', output_ogg])
 
@@ -41,8 +44,10 @@ def render_text_file(filename, artist=None, title=None):
         return output_ogg, 0
 
     tags['comment'] = open(str(filename), 'rb').read().decode('utf-8')
-    tags['artist'] = artist or ardj.settings.get('speech/default_artist', 'Festival')
-    tags['title'] = title or ardj.settings.get('speech/default_title', 'Text message')
+    tags['artist'] = artist or ardj.settings.get(
+        'speech/default_artist', 'Festival')
+    tags['title'] = title or ardj.settings.get(
+        'speech/default_title', 'Text message')
     tags.save()
 
     return output_ogg, int(tags.info.length)
@@ -53,7 +58,7 @@ def render_text(text, artist=None, title=None, play=False):
 
     Writes text to a temporary file then renders it with render_text_file()."""
     filename = ardj.util.mktemp(suffix='.txt')
-    if type(text) == unicode:
+    if isinstance(text, str):
         text = text.encode('utf-8')
     open(str(filename), 'wb').write(text.strip())
     logging.info('Rendering text: %s' % text)
@@ -72,11 +77,14 @@ def render_and_queue(message):
     if not track_id:
         return "Эта функция отключена."
 
-    rows = len(ardj.database.fetch('SELECT 1 FROM queue WHERE track_id = ?', (track_id, )))
+    rows = len(
+        ardj.database.fetch(
+            'SELECT 1 FROM queue WHERE track_id = ?', (track_id, )))
     if rows:
         return 'All the circuits are busy.  Please retry in a few minutes.'
 
-    rows = ardj.database.fetch('SELECT filename FROM tracks WHERE id = ?', (track_id, ))
+    rows = ardj.database.fetch(
+        'SELECT filename FROM tracks WHERE id = ?', (track_id, ))
     if not len(rows):
         return 'Track %u not found.' % track_id
 
@@ -85,15 +93,21 @@ def render_and_queue(message):
         return 'Track %u is not OGG/Vorbis.' % track_id
 
     tmpname, duration = render_text(message)
-    ardj.util.move_file(tmpname, os.path.join(ardj.settings.get_music_dir(), filename))
-    ardj.database.execute('UPDATE tracks SET length = ? WHERE id = ?', (duration, track_id, ))
-    ardj.database.execute('INSERT INTO queue (track_id, owner) VALUES (?, ?)', (track_id, 'ardj', ))
+    ardj.util.move_file(
+        tmpname,
+        os.path.join(
+            ardj.settings.get_music_dir(),
+            filename))
+    ardj.database.execute(
+        'UPDATE tracks SET length = ? WHERE id = ?', (duration, track_id, ))
+    ardj.database.execute(
+        'INSERT INTO queue (track_id, owner) VALUES (?, ?)', (track_id, 'ardj', ))
 
 
 def render_text_cli(args):
     """Renders text to voice using festival and plays it."""
     if not args:
-        print 'Usage: ardj say message [artist [title]]'
+        print('Usage: ardj say message [artist [title]]')
         return 1
     args.append('Some Artist')
     args.append('Some Title')

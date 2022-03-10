@@ -14,7 +14,7 @@ from ardj import settings
 
 
 def utf8(s):
-    if isinstance(s, unicode):
+    if isinstance(s, str):
         s = s.encode("utf-8")
     else:
         s = str(s)
@@ -42,14 +42,14 @@ class Mailer(object):
         raw_msg = msg.as_string()
 
         if os.getenv("ARDJ_DEBUG_MAIL") == "yes":
-            print raw_msg
+            print(raw_msg)
             if html:
-                print html
+                print(html)
             if plain:
-                print plain
+                print(plain)
         else:
             p = subprocess.Popen(["sendmail", self.get_recipient()],
-                stdin=subprocess.PIPE)
+                                 stdin=subprocess.PIPE)
             p.communicate(raw_msg)
 
     def get_subject(self):
@@ -81,9 +81,9 @@ class Mailer(object):
 
 
 class TokenMailer(Mailer):
-    subject_template = u"Your token is ready"
+    subject_template = "Your token is ready"
 
-    plain_template = u"Please open this link to validate your token:\n\n{link}"
+    plain_template = "Please open this link to validate your token:\n\n{link}"
 
     def __init__(self, recipient, token):
         self.recipient = recipient
@@ -94,20 +94,22 @@ class TokenMailer(Mailer):
 
     def get_subject(self):
         return self.get_template_data("subject",
-            self.subject_template)
+                                      self.subject_template)
 
     def get_plain_body(self):
         return self.get_template_data("plain",
-            self.plain_template,
-            self.get_body_vars())
+                                      self.plain_template,
+                                      self.get_body_vars())
 
     def get_html_body(self):
         return self.get_template_data("html",
-            None,
-            self.get_body_vars())
+                                      None,
+                                      self.get_body_vars())
 
     def get_body_vars(self):
-        base_url = settings.get("web_api_root", "http://localhost:8080").rstrip("/")
+        base_url = settings.get(
+            "web_api_root",
+            "http://localhost:8080").rstrip("/")
         link = "%s/auth?token=%s" % (base_url, self.token)
 
         return {

@@ -14,6 +14,9 @@ help:
 	@echo "make test-syntax               -- runs PEP8 check"
 	@echo "make uninstall                 -- uninstall ardj using pip"
 
+autofix:
+	autopep8 --in-place --aggressive -r bin src
+
 bdist: setup.py
 	$(PYTHON) setup.py bdist
 	rm -rf src/ardj.egg-info setup.py
@@ -21,8 +24,17 @@ bdist: setup.py
 
 build: test doc man setup.py
 
+depends:
+	python3 -m pip install -r requirements.txt
+
+depends-dev:
+	python3 -m pip install pylint autopep8 --upgrade
+
 env:
 	virtualenv env
+
+lint:
+	pylint bin src
 
 sdist: setup.py
 	$(PYTHON) setup.py sdist
@@ -109,4 +121,4 @@ src/docbook/book.xml: src/docbook/book.xml.in src/docbook/*.xml Makefile
 
 pre-commit: zsh-completion
 
-.PHONY: doc clean
+.PHONY: clean doc depends

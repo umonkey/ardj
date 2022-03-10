@@ -21,6 +21,7 @@ DEFAULT_PLAYLISTS = [{
 
 class wrapper:
     """Wraps a dictionary for easier access."""
+
     def __init__(self, data, filename):
         """Initializes the instance without any checking."""
         self.data = data
@@ -72,12 +73,15 @@ class wrapper:
         """
         Returns full path to the music folder.
         """
-        return os.path.realpath(os.path.expanduser(self.get('musicdir', os.path.dirname(self.filename))))
+        return os.path.realpath(os.path.expanduser(
+            self.get('musicdir', os.path.dirname(self.filename))))
 
     def get_playlists(self):
         filename = os.path.join(get_config_dir(), 'playlist.yaml')
         if not os.path.exists(filename):
-            logging.warning("File %s not found, using built-in playlists." % filename)
+            logging.warning(
+                "File %s not found, using built-in playlists." %
+                filename)
             return DEFAULT_PLAYLISTS
 
         stat = os.stat(filename)
@@ -105,12 +109,14 @@ def get_config_dir():
     config_dir = os.path.expanduser(os.getenv("ARDJ_CONFIG_DIR", "~/.ardj"))
     if not os.path.exists(config_dir):
         os.makedirs(config_dir)
-        print "Created folder %s." % config_dir
+        print("Created folder %s." % config_dir)
 
     try:
-        os.chmod(config_dir, 0750)
-    except OSError, e:
-        print >> sys.stderr, "Could not change permissions on %s: %s" % (config_dir, e)
+        os.chmod(config_dir, 0o750)
+    except OSError as e:
+        print(
+            "Could not change permissions on %s: %s" %
+            (config_dir, e), file=sys.stderr)
 
     return config_dir
 
@@ -154,7 +160,7 @@ def get2(key1, key2, default=None, fail=False):
 
 def get_int(key, default):
     value = get(key, default)
-    if isinstance(value, (str, unicode)) and value.isdigit():
+    if isinstance(value, str) and value.isdigit():
         value = int(value)
 
     if isinstance(value, int):
@@ -179,4 +185,5 @@ def get_music_dir():
 
 def get_scrobbler_skip_labels():
     conf = load()
-    return conf.get("scrobbler_skip_labels", conf.get("last.fm/skip_labels", []))
+    return conf.get("scrobbler_skip_labels",
+                    conf.get("last.fm/skip_labels", []))

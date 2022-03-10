@@ -16,9 +16,13 @@ import subprocess
 import sys
 import tempfile
 import time
-import urllib
-import urllib2
-import urlparse
+import urllib.request
+import urllib.parse
+import urllib.error
+import urllib.request
+import urllib.error
+import urllib.parse
+import urllib.parse
 
 import ardj.replaygain
 from ardj import settings
@@ -34,11 +38,14 @@ def edit_file(filename):
     subprocess.Popen([editor, filename]).wait()
 
 
-def run_ex(command, quiet=False, stdin_data=None, grab_output=False, nice=True):
+def run_ex(command, quiet=False, stdin_data=None,
+           grab_output=False, nice=True):
     command = [str(x) for x in command]
 
     if not os.path.exists(command[0]) and not is_command(command[0]):
-        raise ProgramNotFound("Please install the %s program first." % command[0])
+        raise ProgramNotFound(
+            "Please install the %s program first." %
+            command[0])
 
     if nice:
         command = ['nice', '-n15'] + command
@@ -52,7 +59,11 @@ def run_ex(command, quiet=False, stdin_data=None, grab_output=False, nice=True):
         tmp_output = mktemp(suffix='.txt')
         stdout = open(str(tmp_output), 'wb')
 
-    _cmd = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=stdout, stderr=stderr)
+    _cmd = subprocess.Popen(
+        command,
+        stdin=subprocess.PIPE,
+        stdout=stdout,
+        stderr=stderr)
     out, err = _cmd.communicate(stdin_data)
     return _cmd.returncode, out, err
 
@@ -87,12 +98,13 @@ class mktemp:
 
     Be sure to convert the value to a string, otherwise most receivers will
     fail (got object while expected a string, or something)."""
+
     def __init__(self, suffix=''):
         """Creates a new file in the temporary folder using tempfile.mkstemp().
         Files have a fixed prefix "ardj_" and a custom suffix, none by
         default."""
         fd, self.filename = tempfile.mkstemp(prefix='ardj_', suffix=suffix)
-        os.chmod(self.filename, 0664)
+        os.chmod(self.filename, 0o664)
         os.close(fd)
 
     def __del__(self):
@@ -107,26 +119,27 @@ class mktemp:
 
     def __unicode__(self):
         """Returns the Unicode version of the name of the file (does not differ from str)."""
-        return unicode(self.filename)
+        return str(self.filename)
 
 
 def get_opener(url, user, password):
     """Returns an opener for the url.
 
     Builds a basic HTTP auth opener if necessary."""
-    opener = urllib2.urlopen
+    opener = urllib.request.urlopen
 
     if user or password:
-        pm = urllib2.HTTPPasswordMgrWithDefaultRealm()
+        pm = urllib.request.HTTPPasswordMgrWithDefaultRealm()
         pm.add_password(None, url, user, password)
 
-        ah = urllib2.HTTPBasicAuthHandler(pm)
-        opener = urllib2.build_opener(ah).open
+        ah = urllib.request.HTTPBasicAuthHandler(pm)
+        opener = urllib.request.build_opener(ah).open
 
     return opener
 
 
-def fetch(url, suffix=None, args=None, user=None, password=None, quiet=False, post=False, ret=False, retry=3):
+def fetch(url, suffix=None, args=None, user=None, password=None,
+          quiet=False, post=False, ret=False, retry=3):
     """Retrieves a file over HTTP.
 
     Arguments:
@@ -136,11 +149,11 @@ def fetch(url, suffix=None, args=None, user=None, password=None, quiet=False, po
     user, password -- enable HTTP basic auth
     ret -- True to return file contents instead of a temporary file
     """
-    if type(url) != str:
+    if not isinstance(url, str):
         raise TypeError("URL must be a string.")
 
     if args and not post:
-        url += '?' + urllib.urlencode(args)
+        url += '?' + urllib.parse.urlencode(args)
 
     url, user, password = parse_url_auth(url, user, password)
 
@@ -148,10 +161,12 @@ def fetch(url, suffix=None, args=None, user=None, password=None, quiet=False, po
     try:
         if post:
             logging.debug('Posting to %s' % url)
-            u = opener(urllib2.Request(url), urllib.urlencode(args))
+            u = opener(
+                urllib.request.Request(url),
+                urllib.parse.urlencode(args))
         else:
             logging.debug('Downloading %s' % url)
-            u = opener(urllib2.Request(url), None)
+            u = opener(urllib.request.Request(url), None)
         if ret:
             return u.read()
         if suffix is None:
@@ -160,20 +175,22 @@ def fetch(url, suffix=None, args=None, user=None, password=None, quiet=False, po
         out = open(str(filename), 'wb')
         out.write(u.read())
         out.close()
-        if os.path.splitext(str(filename).lower()) in ('.mp3', '.ogg', '.flac'):
+        if os.path.splitext(str(filename).lower()) in (
+                '.mp3', '.ogg', '.flac'):
             ardj.replaygain.update(str(filename))
         return filename
-    except Exception, e:
+    except Exception as e:
         if retry:
             logging.error('Could not fetch %s: %s (retrying)' % (url, e))
-            return fetch(url, suffix, args, user, password, quiet, post, ret, retry - 1)
+            return fetch(url, suffix, args, user, password,
+                         quiet, post, ret, retry - 1)
         logging.error('Could not fetch %s: %s' % (url, e))
         return None
 
 
 def parse_url_auth(url, user, password):
     """Extracts auth parameters from the url."""
-    up = urlparse.urlparse(url)
+    up = urllib.parse.urlparse(url)
 
     netloc = up.netloc
     if "@" in up.netloc:
@@ -199,7 +216,7 @@ def upload(source, target):
     if not os.path.exists(str(source)):
         raise Exception('Source file not found: %s' % source)
 
-    upath = urlparse.urlparse(str(target))
+    upath = urllib.parse.urlparse(str(target))
     if upath.scheme == 'sftp':
         run(['scp', '-q', str(source), str(target)[5:].lstrip('/')])
     else:
@@ -210,16 +227,18 @@ def upload_music(filenames):
     """Uploads music files."""
     target = settings.get('database/upload')
     if not target:
-        logging.warning('Could not upload %u music files: database/upload not set.' % len(filenames))
+        logging.warning(
+            'Could not upload %u music files: database/upload not set.' %
+            len(filenames))
         return False
 
-    if type(filenames) != list:
+    if not isinstance(filenames, list):
         raise TypeError('filenames must be a list.')
 
     batch = mktemp(suffix='.txt')
     f = open(str(batch), 'wb')
     for fn in filenames:
-        os.chmod(str(fn), 0664)
+        os.chmod(str(fn), 0o664)
         f.write('put %s\n' % str(fn).replace(' ', '\\ '))
     f.close()
 
@@ -253,7 +272,7 @@ def move_file(src, dst):
         os.makedirs(dirname)
     try:
         shutil.move(str(src), str(dst))
-    except OSError, e:
+    except OSError as e:
         if "Operation not permitted" not in str(e):
             raise e
 
@@ -299,9 +318,9 @@ def mask_sender(sender):
 
 
 def lower(s):
-    if type(s) == str:
+    if isinstance(s, str):
         s = s.decode('utf-8')
-    return s.lower().replace(u'ё', u'е')
+    return s.lower().replace('ё', 'е')
 
 
 def ucmp(a, b):
@@ -324,7 +343,7 @@ def shortlist(items, limit=3, glue='and'):
         del items[-1]
         return '%s %s %s' % (', '.join(items), glue, last)
 
-    return u', '.join(items[:limit]) + u' and %u more' % (len(items) - limit)
+    return ', '.join(items[:limit]) + ' and %u more' % (len(items) - limit)
 
 
 def expand(lst):
@@ -342,7 +361,7 @@ def expand(lst):
     for item in lst:
         if '-' in str(item):
             bounds = item.split('-')
-            result += range(int(bounds[0]), int(bounds[1]))
+            result += list(range(int(bounds[0]), int(bounds[1])))
         else:
             result.append(item)
     return result
@@ -357,7 +376,7 @@ def shorten_url(url):
         else:
             logging.debug("URL %s shortened to %s" % (url, new_url))
         return new_url
-    except Exception, e:
+    except Exception as e:
         logging.error("Could not shorten an URL: %s" % e)
         return url
 
@@ -365,11 +384,11 @@ def shorten_url(url):
 def shorten_urls(message):
     """Returns the message with all urls shortened."""
     output = []
-    for word in re.split("\s+", message):
+    for word in re.split("\\s+", message):
         if word.startswith("http://"):
             word = shorten_url(word)
         output.append(word)
-    return u" ".join(output)
+    return " ".join(output)
 
 
 def signal_by_pid_file(filename, sig):
@@ -387,7 +406,7 @@ def signal_by_pid_file(filename, sig):
             pid = int(f.read().strip())
             os.kill(pid, sig)
             return True
-    except Exception, e:
+    except Exception as e:
         logging.exception("Error skipping track.")
         return False
 
@@ -410,8 +429,8 @@ def shorten_file_path(filepath):
 
 def shared_file(name):
     paths = ["/usr/share/ardj",
-        "/usr/local/share/ardj",
-        "share"]
+             "/usr/local/share/ardj",
+             "share"]
 
     tmp = os.getenv("VIRTUAL_ENV")
     if tmp:

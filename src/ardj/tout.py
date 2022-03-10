@@ -18,8 +18,8 @@ def get_artist_names():
     weight = float(ardj.settings.get("event_schedule_label_weight", "1.0"))
 
     rows = ardj.database.fetch("SELECT DISTINCT artist "
-        "FROM tracks WHERE id IN (SELECT track_id FROM labels "
-        "WHERE label = ?) AND weight >= ?", (label, weight, ))
+                               "FROM tracks WHERE id IN (SELECT track_id FROM labels "
+                               "WHERE label = ?) AND weight >= ?", (label, weight, ))
     return sorted([row[0] for row in rows])
 
 
@@ -28,14 +28,18 @@ def fetch_artist_events(lastfm, artist_name):
     events = []
 
     try:
-        print 'Updating %s' % artist_name.encode('utf-8')
+        print('Updating %s' % artist_name.encode('utf-8'))
         data = lastfm.get_events_for_artist(artist_name)
         if not data:
-            logging.warning('Could not fetch events for %s.' % artist_name.encode("utf-8"))
+            logging.warning(
+                'Could not fetch events for %s.' %
+                artist_name.encode("utf-8"))
 
         if 'events' not in data:
-            logging.debug('Oops: %s had no "events" block -- no such artist?' % artist_name.encode('utf-8'))
-            print data
+            logging.debug(
+                'Oops: %s had no "events" block -- no such artist?' %
+                artist_name.encode('utf-8'))
+            print(data)
             return []
         data = data['events']
 
@@ -45,7 +49,8 @@ def fetch_artist_events(lastfm, artist_name):
             artist_name = data['@attr']['artist']
 
         if 'event' in data:
-            for event in (type(data['event']) == list) and data['event'] or [data['event']]:
+            for event in (type(data['event']) == list) and data['event'] or [
+                    data['event']]:
                 if event['cancelled'] != '0':
                     continue
                 events.append({
@@ -61,28 +66,36 @@ def fetch_artist_events(lastfm, artist_name):
                 })
     except ardj.scrobbler.BadAuth:
         raise
-    except ardj.scrobbler.Error, e:
-        logging.warning("Could not fetch events for %s: %s" % (artist_name.encode("utf-8"), e))
+    except ardj.scrobbler.Error as e:
+        logging.warning(
+            "Could not fetch events for %s: %s" %
+            (artist_name.encode("utf-8"), e))
         return []
-    except Exception, e:
-        logging.error('%s error fetching events for %s: %s' % (type(e).__name__, artist_name.encode('utf-8'), e))
+    except Exception as e:
+        logging.error('%s error fetching events for %s: %s' %
+                      (type(e).__name__, artist_name.encode('utf-8'), e))
     return events
 
 
 def fetch_events(refresh=False):
     """Returns events from LastFM.  Uses caching (12 hours by default)."""
-    cache_fn = ardj.settings.getpath("event_schedule_cache", "/tmp/ardj-events-cache.json")
+    cache_fn = ardj.settings.getpath(
+        "event_schedule_cache",
+        "/tmp/ardj-events-cache.json")
 
     if os.path.exists(cache_fn):
         ttl = int(ardj.settings.get("event_schedule_cache_ttl", "43200"))
         if time.time() - os.stat(cache_fn).st_mtime < ttl and not refresh:
-            logging.debug("Event schedule read from cache (%s, younger than %u sec)" % (cache_fn, ttl))
+            logging.debug(
+                "Event schedule read from cache (%s, younger than %u sec)" %
+                (cache_fn, ttl))
             return json.loads(open(cache_fn, 'rb').read())
 
     lastfm = ardj.scrobbler.LastFM().authorize()
 
     events = []
-    for artist_name in sorted(list(set([n.lower() for n in get_artist_names()]))):
+    for artist_name in sorted(
+            list(set([n.lower() for n in get_artist_names()]))):
         tmp = fetch_artist_events(lastfm, artist_name)
         if tmp is None:
             continue  # wtf ?!
@@ -107,7 +120,7 @@ def update_website(filename):
         if event['venue_location']['geo:long'] and event['venue_location']['geo:lat']:
             data['markers'].append({
                 'll': [float(event['venue_location']['geo:lat']), float(event['venue_location']['geo:long'])],
-                'html': u'<p><strong>%s</strong><br/>%s, %s<br/>%s</p><p class="more"><a href="%s" target="_blank">Подробности</a></p>' % (event['artist'], event['venue'], event['city'], '.'.join(reversed(event['startDate'].split('-'))), event['url']),
+                'html': '<p><strong>%s</strong><br/>%s, %s<br/>%s</p><p class="more"><a href="%s" target="_blank">Подробности</a></p>' % (event['artist'], event['venue'], event['city'], '.'.join(reversed(event['startDate'].split('-'))), event['url']),
             })
 
     if data["markers"]:
@@ -127,16 +140,16 @@ def update_labels(artist_names):
     for name in artist_names:
         logging.debug("Tagging %s with concert-soon" % name.encode("utf-8"))
         ardj.database.execute('INSERT INTO labels (track_id, label, email) '
-            'SELECT id, ?, ? FROM tracks WHERE artist = ?', (
-            'concert-soon', 'ardj', name, ))
+                              'SELECT id, ?, ? FROM tracks WHERE artist = ?', (
+                                  'concert-soon', 'ardj', name, ))
 
 
 def update_schedule(refresh=False):
     """Updates the event schedule."""
     try:
         fetch_events(refresh)
-    except ardj.scrobbler.Error, e:
-        print >> sys.stderr, "Last.fm error:", e
+    except ardj.scrobbler.Error as e:
+        print("Last.fm error:", e, file=sys.stderr)
         return False
 
     event_schedule_path = ardj.settings.get("event_schedule_path")

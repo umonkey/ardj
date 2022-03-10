@@ -30,15 +30,15 @@ def cmd_find_new_tracks(*args):
     """adds new songs from Last.fm
 
     See ardj.tracks.find_new_tracks() for details."""
-    import tracks
+    from . import tracks
     return tracks.find_new_tracks(args)
 
 
 def cmd_find_new_files(*args):
     """looks for new files in the media folder"""
-    import tracks
+    from . import tracks
     count = tracks.MediaFolderScanner().run()
-    print "Found %u new files." % count
+    print("Found %u new files." % count)
     return True
 
 
@@ -66,7 +66,7 @@ def cmd_map_listeners(*args):
     """updates the listeners map
 
     Updates the listener map.  See ardj.map.update_listeners() for details."""
-    import map
+    from . import map
     return map.update_listeners(args)
 
 
@@ -78,7 +78,7 @@ def cmd_merge_votes(*args):
 
 def cmd_say(*args):
     """renders text to voice using festival, then plays it"""
-    import speech
+    from . import speech
     return speech.render_text_cli(args)
 
 
@@ -96,38 +96,39 @@ def cmd_serve(*args):
 
 def cmd_show_news_from_jamendo(*args):
     """show new tracks available at jamendo.com"""
-    import jamendo
+    from . import jamendo
     return jamendo.print_new_tracks(args)
 
 
 def cmd_tags(*args):
     """display tags from files"""
     if not args:
-        print "Files not specified."
+        print("Files not specified.")
         return False
 
     from ardj import tags
     for fn in args:
         if os.path.exists(fn):
-            print "Tags in %s" % fn
-            for k, v in sorted(tags.get(arg).items(), key=lambda x: x[0]):
-                print '  %s = %s' % (k, v)
+            print("Tags in %s" % fn)
+            for k, v in sorted(list(tags.get(arg).items()),
+                               key=lambda x: x[0]):
+                print('  %s = %s' % (k, v))
 
 
 def cmd_print_current_track(*args):
     """prints the currently playing track"""
     from ardj import tracks
     import json
-    print json.dumps(tracks.Track.get_last())
+    print(json.dumps(tracks.Track.get_last()))
 
 
 def cmd_twit(msg, *args):
     """sends a message to twitter"""
     from ardj import twitter
     try:
-        print twitter.send_message(msg.decode("utf-8"))
-    except twitter.ConfigError, e:
-        print >> sys.stderr, e
+        print(twitter.send_message(msg.decode("utf-8")))
+    except twitter.ConfigError as e:
+        print(e, file=sys.stderr)
         return False
 
 
@@ -136,9 +137,9 @@ def cmd_twit_replies(*args):
     from ardj import twitter
     try:
         for (name, text) in reversed(twitter.get_replies()):
-            print '%s: %s' % (name, text)
-    except twitter.ConfigError, e:
-        print >> sys.stderr, e
+            print('%s: %s' % (name, text))
+    except twitter.ConfigError as e:
+        print(e, file=sys.stderr)
         return False
 
 
@@ -149,9 +150,15 @@ def cmd_twit_replies_speak(*args):
         replies = twitter.get_replies()
         if len(replies):
             nick, text = replies[0]
-            print twitter.speak_message(nick, text.split(' ', 1)[1], play=True)
-    except twitter.ConfigError, e:
-        print >> sys.stderr, e
+            print(
+                twitter.speak_message(
+                    nick,
+                    text.split(
+                        ' ',
+                        1)[1],
+                    play=True))
+    except twitter.ConfigError as e:
+        print(e, file=sys.stderr)
         return False
 
 
@@ -165,14 +172,14 @@ def cmd_update_schedule(*args):
 def cmd_xmpp_send(*args):
     """send a Jabber message"""
     if len(args) < 1:
-        print "Usage: ardj xmpp-send \"message text\" [recipient_jid]"
+        print("Usage: ardj xmpp-send \"message text\" [recipient_jid]")
         exit(1)
 
     recipient = None
     if len(args) > 1:
         recipient = args[1].decode("utf-8")
 
-    from database import Message, commit
+    from .database import Message, commit
     Message(message=args[0].decode("utf-8"), re=recipient).put()
     commit()
 
@@ -206,16 +213,18 @@ def cmd_fix_artist_names(*args):
 
     cli = LastFM().authorize()
     if cli is None:
-        print "Last.fm authentication failed."
+        print("Last.fm authentication failed.")
         return False
 
     names = Track.get_artist_names()
-    print "Correcting %u artists." % len(names)
+    print("Correcting %u artists." % len(names))
 
     for name in names:
         new_name = cli.get_corrected_name(name)
         if new_name is not None and new_name != name:
-            logging.info("Correcting artist name \"%s\" to \"%s\"" % (name.encode("utf-8"), new_name.encode("utf-8")))
+            logging.info(
+                "Correcting artist name \"%s\" to \"%s\"" %
+                (name.encode("utf-8"), new_name.encode("utf-8")))
             Track.rename_artist(name, new_name)
 
     commit()
@@ -229,7 +238,11 @@ def cmd_lastfm_track_tags(artist_name, track_title):
     from ardj.scrobbler import LastFM
 
     cli = LastFM()
-    print u", ".join(cli.get_track_tags(artist_name.decode("utf-8"), track_title.decode("utf-8")))
+    print(
+        ", ".join(
+            cli.get_track_tags(
+                artist_name.decode("utf-8"),
+                track_title.decode("utf-8"))))
 
 
 def cmd_lastfm_find_tags(*args):
@@ -247,10 +260,10 @@ def cmd_mark_hitlist(*args):
 
 def cmd_mark_liked_by(label, *jids):
     """applies a label to tracks liked by all specified jids"""
-    import database
-    import tracks
+    from . import database
+    from . import tracks
     count = tracks.add_label_to_tracks_liked_by(label, jids, "console")
-    print "Found %u tracks." % count
+    print("Found %u tracks." % count)
     database.Open().commit()
     return True
 
@@ -258,7 +271,7 @@ def cmd_mark_liked_by(label, *jids):
 def cmd_mark_long(*args):
     """marks long tracks with the "long" label"""
     from ardj.tracks import mark_long
-    print "Average length: %s, total long tracks: %u." % mark_long()
+    print("Average length: %s, total long tracks: %u." % mark_long())
 
 
 def cmd_mark_orphans(*args):
@@ -286,17 +299,22 @@ def cmd_help(*args):
     """shows this help screen"""
     commands = []
 
-    for k, v in globals().items():
+    for k, v in list(globals().items()):
         if k.startswith("cmd_"):
             command = k[4:].replace("_", "-")
-            commands.append((command, getattr(v, "__doc__", "").split("\n")[0].strip()))
+            commands.append(
+                (command,
+                 getattr(
+                     v,
+                     "__doc__",
+                     "").split("\n")[0].strip()))
 
     length = max([len(x[0]) for x in commands])
 
-    print "Usage: ardj command\nAvailable commands:"
+    print("Usage: ardj command\nAvailable commands:")
     fmt = '  %%-%us   %%s' % length
     for cmd, doc in sorted(commands):
-        print fmt % (cmd, doc)
+        print(fmt % (cmd, doc))
 
     return False
 
@@ -315,7 +333,7 @@ def find_handler(name):
         return commands[cmd_name]
 
     similar = []
-    for k, v in commands.items():
+    for k, v in list(commands.items()):
         if k.startswith(cmd_name):
             similar.append(v)
 
@@ -344,10 +362,13 @@ def run(args):
         for k, v in sorted(globals().items()):
             if k.startswith("cmd_"):
                 name = k[4:].replace("_", "-")
-                info = v.__doc__.split("\n")[0].replace("'", "\\`").replace("\"", "\\\"")
+                info = v.__doc__.split("\n")[0].replace(
+                    "'", "\\`").replace("\"", "\\\"")
                 arguments.append("%s\\:'%s'" % (name, info))
         lst = " ".join(arguments)
-        print "#compdef ardj\n# generated by ardj --zsh\n_arguments \"1:Select command:((%s))\"" % lst
+        print(
+            "#compdef ardj\n# generated by ardj --zsh\n_arguments \"1:Select command:((%s))\"" %
+            lst)
         exit(0)
 
     # Strip global modifiers.
@@ -362,10 +383,12 @@ def run(args):
                     exit(0)
             except KeyboardInterrupt:
                 pass
-            except Exception, e:
-                ardj.log.log_error('ERROR handling command %s: %s' % (args[1], e), e)
-                print "ERROR: %s" % e
-                print traceback.format_exc(e)
+            except Exception as e:
+                ardj.log.log_error(
+                    'ERROR handling command %s: %s' %
+                    (args[1], e), e)
+                print("ERROR: %s" % e)
+                print(traceback.format_exc(e))
             exit(1)
 
     cmd_help(*args)

@@ -2,6 +2,8 @@
 
 """The main ardj CLI entry point."""
 
+from ardj.cli import *
+import logging
 __author__ = "Justin Forest <hex@umonkey.net>"
 
 
@@ -14,10 +16,7 @@ if os.path.exists(os.path.join(_root, "src/ardj")):
     sys.path.insert(0, _path)
     os.environ["ardj_python_path"] = _path
 
-import logging
 logging.getLogger().setLevel(logging.DEBUG)
-
-from ardj.cli import *
 
 
 def cmd_config():
