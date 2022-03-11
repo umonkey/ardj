@@ -611,7 +611,7 @@ def on_help(args, sender):
             doc = handler.__doc__
             if not doc:
                 return 'No help on that command.'
-            return doc.replace('    ', '').strip()
+            return doc.decode('utf-8').replace('    ', '').strip()
     return 'What? No such command: %s, try "help".' % args
 
 
@@ -730,7 +730,7 @@ def print_response(message):
     for line in message.rstrip().split("\n"):
         if has_color:
             line = "\033[92m" + line + "\033[m"
-        print(line.encode("utf-8"))
+        print(line)
 
 
 def run_cli(args):
@@ -757,8 +757,7 @@ def run_cli(args):
         try:
             text = input(prompt)
             if text:
-                response = process_command(
-                    text.decode('utf-8'), sender, quiet=True)
+                response = process_command(text, sender, quiet=True)
                 print_response(response)
                 ardj.database.Open().commit()
         except EOFError:
@@ -766,4 +765,4 @@ def run_cli(args):
             print('\nBye.')
             return
         except Exception as e:
-            print(e, traceback.format_exc(e), file=sys.stderr)
+            print(e, traceback.format_exc(), file=sys.stderr)

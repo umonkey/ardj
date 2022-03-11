@@ -3,12 +3,15 @@ The main command line entry module.
 """
 
 import sys
+import ardj.console
 import ardj.server
 import ardj.scrobbler
 import ardj.tracks
 
 def main(prog, command=None, *argv):
-    if command == "jabber":
+    if command == "console":
+        ardj.console.run_cli([])
+    elif command == "jabber":
         ardj.jabber.cmd_run_bot()
     elif command == "next-track":
         ardj.tracks.cmd_next()
