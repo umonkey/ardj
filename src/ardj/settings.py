@@ -51,10 +51,8 @@ class wrapper:
         The value returned by get() is processed with os.path.expanduser()
         which makes the ~/ prefix available."""
         value = self.get(key, default, fail=fail)
-        if value:
+        if isinstance(value, str):
             value = os.path.expanduser(value)
-        if value is not None:
-            value = value.replace('{{CONFIG_DIR}}', os.getenv('ARDJ_CONFIG_DIR'))
 
         return value
 
@@ -114,13 +112,6 @@ def get_config_dir():
     if not os.path.exists(config_dir):
         os.makedirs(config_dir)
         print("Created folder %s." % config_dir)
-
-    try:
-        os.chmod(config_dir, 0o750)
-    except OSError as e:
-        print(
-            "Could not change permissions on %s: %s" %
-            (config_dir, e), file=sys.stderr)
 
     return config_dir
 

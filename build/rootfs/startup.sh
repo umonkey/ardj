@@ -11,15 +11,17 @@ fi
 
 if [ ! -f /app/data/ardj.yaml ]; then
     echo "Populating /app/data with pre-defined files."
-    mkdir -p /app/data
+    mkdir -m 0755 -p /app/data
     cp -Rnv /app/data.dist/* /app/data/
+
+    echo "Initializing the database..."
+    python3 -m ardj db-init
+
+    chown -R radio:radio /app/data
 fi
 
 chmod 640 /app/data/ezstream.xml
 chown radio:radio /app/data/*.*
-
-echo "Initializing the database..."
-python3 -m ardj db-init
 
 echo "Scanning the music folder..."
 python3 -m ardj scan

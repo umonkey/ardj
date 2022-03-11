@@ -675,13 +675,13 @@ def get_usage(sender):
     for name, is_privileged, handler, description in sorted(
             command_map, key=lambda c: c[0]):
         if not is_privileged:
-            message += '%s\t— %s\n' % (name, description)
+            message += '%-10s — %s\n' % (name, description)
     if is_admin:
         message += '\nPrivileged commands:\n'
         for name, is_privileged, handler, description in sorted(
                 command_map, key=lambda c: c[0]):
             if is_privileged:
-                message += '%s\t— %s\n' % (name, description)
+                message += '%-10s — %s\n' % (name, description)
     return message
 
 

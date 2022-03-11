@@ -5,13 +5,13 @@
 # If something doesn't work, write to <hex@umonkey.net>.
 
 # This is where you put the music and jingles that ardj should play.
-musicdir: "{{CONFIG_DIR}}/music"
+musicdir: "data/music"
 
 
 # This is the folder where files uploaded via Jabber should be stored.
 # Should be within musicdir, otherwise files won't be visible until
 # operator handles them.
-incoming_path: "{{CONFIG_DIR}}/music/incoming"
+incoming_path: "data/music/incoming"
 
 
 # Specify how many recently played artists should be skipped when picking a
@@ -33,7 +33,7 @@ default_labels: [music, tagme]
 # specify the name of the file where the information should be written to.  The
 # file is updated when you run the 'ardj update-events' command, so you'll need
 # to add that to your crontab, too.
-#event_schedule_path: "{{CONFIG_DIR}}/public/upcoming-events.json"
+#event_schedule_path: "data/public/upcoming-events.json"
 
 # By default event schedule contains artists that have tracks with the "music"
 # label.  You can set a different label here.
@@ -49,13 +49,13 @@ default_labels: [music, tagme]
 # program name.  Program name is the name of a playlist which has the non-empty
 # "program" property.  When a track is picked from such playlist, program name
 # is updated.  You can use this to display things on your web site, for example.
-#program_name_file: "{{CONFIG_DIR}}/public/current_ardj_program.txt"
+#program_name_file: "data/public/current_ardj_program.txt"
 
 # Uncomment this to announce program changes to the chat room.
 #program_name_announce: true
 
 # If you want to run a script when program changes, specify its name here.
-#program_name_handler: "{{CONFIG_DIR}}/on-program-change"
+#program_name_handler: "data/on-program-change"
 
 
 # If you plan to use Jabber, uncomment this block and insert the correct values.
@@ -109,7 +109,7 @@ icecast_stats_url: "http://localhost:8000/status2.xsl"
 #enable_voting: no
 
 # This is where the messages will be logged.
-log: "{{CONFIG_DIR}}/ardj.log"
+log: "data/ardj.log"
 log_level: debug
 log_format_string: "ardj[%%(process)d]: %%(levelname)s %%(message)s"
 
@@ -119,7 +119,7 @@ debug_playlist: yes
 
 # This is the database where the runtime data is stored.
 #
-database_path: "{{CONFIG_DIR}}/ardj.sqlite"
+database_path: "data/ardj.sqlite"
 
 
 # The socket that the database server listens to.  On a typical installation
@@ -130,7 +130,7 @@ database_path: "{{CONFIG_DIR}}/ardj.sqlite"
 
 
 # The root folder of your WebAPI site.  That's where the static files are.
-webapi_root: "{{CONFIG_DIR}}/../website"
+webapi_root: "website"
 
 
 # Here you can customize token verification emails, sent by WebAPI when

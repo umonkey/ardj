@@ -1,10 +1,7 @@
 <icecast>
-    <security>
-        <changeowner>
-            <user>radio</user>
-            <group>radio</group>
-        </changeowner>
-    </security>
+    <hostname>ardj.example.com</hostname>
+    <location>Earth, Satellite</location>
+    <admin>alice@example.com</admin>
 
     <limits>
         <clients>128</clients>

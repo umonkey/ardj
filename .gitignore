@@ -1,6 +1,7 @@
 *.bak
 *.log
 /.ardj-sticky.json
+/data
 /data.dist/.ardj*
 /data.dist/ardj.sqlite
 /env

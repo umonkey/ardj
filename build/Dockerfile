@@ -10,7 +10,7 @@ RUN apk add --no-cache build-base pkgconf libshout-dev libxml2-dev check-dev tag
 FROM alpine:3.15
 MAINTAINER hex@umonkey.net
 COPY --from=builder /usr/local/bin/ezstream /usr/bin/ezstream
-RUN apk add --no-cache python3 py3-pip py3-wheel supervisor flac mpg123 lame sox vorbis-tools icecast libshout taglib
+RUN apk add --no-cache python3 py3-pip py3-wheel supervisor flac mpg123 lame sox vorbis-tools icecast libshout taglib mailcap
 COPY requirements.txt /app/
 RUN pip3 install -r /app/requirements.txt \
  && rm -f requirements.txt \
