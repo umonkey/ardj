@@ -4,6 +4,7 @@ The main command line entry module.
 
 import sys
 import ardj.console
+import ardj.database
 import ardj.server
 import ardj.scrobbler
 import ardj.tracks
@@ -11,6 +12,8 @@ import ardj.tracks
 def main(prog, command=None, *argv):
     if command == "console":
         ardj.console.run_cli([])
+    elif command == "db-init":
+        ardj.database.cmd_init()
     elif command == "jabber":
         ardj.jabber.cmd_run_bot()
     elif command == "next-track":

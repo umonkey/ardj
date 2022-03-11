@@ -642,9 +642,7 @@ class database:
             else:
                 return cur.rowcount
         except BaseException:
-            logging.exception(
-                "Failed SQL statement: %s, params: %s" %
-                (sql.encode("utf-8"), params))
+            logging.exception(f"Failed SQL statement: {sql}, params: {params}")
             raise
         finally:
             cur.close()

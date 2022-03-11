@@ -1,7 +1,7 @@
+*.bak
+*.log
+/.ardj-sticky.json
+/data.dist/.ardj*
+/data.dist/ardj.sqlite
 /env
 __pycache__
-/.ardj-sticky.json
-/data/ardj.sqlite
-*.log
-*.bak
-/data/.ardj*

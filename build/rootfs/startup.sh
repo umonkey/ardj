@@ -18,6 +18,9 @@ fi
 chmod 640 /app/data/ezstream.xml
 chown radio:radio /app/data/*.*
 
+echo "Initializing the database..."
+python3 -m ardj db-init
+
 echo "Scanning the music folder..."
 python3 -m ardj scan
 
