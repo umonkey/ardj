@@ -599,8 +599,7 @@ class database:
             filename = ardj.settings.getpath2(
                 "database_path", "database/local")
             if filename is None:
-                raise Exception(
-                    'This ardj instance does not have a local database (see the database_path config option).')
+                raise Exception('Config option database/local not set.')
             cls.instance = cls(filename)
         return cls.instance
 
