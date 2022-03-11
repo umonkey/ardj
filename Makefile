@@ -1,6 +1,7 @@
 VERSION = 1.2.42
 PYTHON = python3
 DOCKER_IMAGE = ardj:latest
+DOCKER_TAGS = 1.2.42 1.2 1 latest
 
 help:
 	@echo "make build                     -- prepare generated files"
@@ -38,6 +39,13 @@ env:
 
 lint:
 	pylint bin src
+
+push:
+	for tag in $(DOCKER_TAGS); do \
+		docker tag "$(DOCKER_IMAGE)" "umonkey/ardj:$$tag" ; \
+		docker push "umonkey/ardj:$$tag" ; \
+		docker rmi "umonkey/ardj:$$tag" ; \
+	done
 
 sdist: setup.py
 	$(PYTHON) setup.py sdist

@@ -17,7 +17,7 @@ RUN pip3 install -r /app/requirements.txt \
  && rm -rf /root/.cache
 COPY bin /app/bin
 COPY src /app/src
-COPY data /app/data.dist
+COPY data.dist /app/data.dist
 COPY website /app/website
 COPY patches /app/patches
 COPY build/rootfs/ /
