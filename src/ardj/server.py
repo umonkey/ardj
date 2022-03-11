@@ -594,7 +594,7 @@ def serve_http(hostname, port):
 
 
 def get_web_root():
-    root = settings.get("webapi_root")
+    root = settings.getpath("webapi_root")
     if root is None or not os.path.exists(root):
         my_path = os.path.realpath(__file__)
         if my_path.startswith(os.path.expanduser("~/")):

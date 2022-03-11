@@ -38,7 +38,7 @@ from ardj.log import log_info
 
 
 KARMA_TTL = 30.0
-STICKY_LABEL_FILE_NAME = "~/.ardj-sticky.json"
+STICKY_LABEL_FILE_NAME = "data/.ardj-sticky.json"
 
 
 class Forbidden(Exception):
@@ -65,7 +65,8 @@ class SamplePlaylist(object):
 
     def save_playlist(self, playlist):
         with open(os.path.expanduser(self.FILENAME), "wb") as f:
-            f.write("\n".join(playlist))
+            body = "\n".join(playlist)
+            f.write(body.encode('utf-8'))
 
     def load_playlist(self):
         playlist = self.load_saved_playlist()
@@ -79,7 +80,7 @@ class SamplePlaylist(object):
             return []
 
         with open(fn, "rb") as f:
-            raw_names = f.read().strip().splitlines()
+            raw_names = f.read().decode('utf-8').strip().splitlines()
             return list(filter(os.path.exists, raw_names))
 
     def add_default_tracks(self, playlist):
@@ -339,7 +340,9 @@ class Sticky(dict):
         self.fn = os.path.expanduser(STICKY_LABEL_FILE_NAME)
         if os.path.exists(self.fn):
             with open(self.fn, "rb") as f:
-                self.update(json.loads(f.read()))
+                body = f.read().decode('utf-8')
+                if body:
+                    self.update(json.loads(body))
 
     def __enter__(self):
         return self
@@ -349,7 +352,8 @@ class Sticky(dict):
 
     def flush(self):
         with open(self.fn, "wb") as f:
-            f.write(json.dumps(dict(self)))
+            body = json.dumps(dict(self))
+            f.write(body.encode('utf-8'))
             logging.debug("Wrote %s" % self.fn)
 
     def __getitem__(self, k):

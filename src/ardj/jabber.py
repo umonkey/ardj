@@ -11,7 +11,7 @@ from xml.sax import saxutils
 
 from ardj.jabberbot import JabberBot, botcmd
 from ardj.filebot import FileBot, FileNotAcceptable
-from ardj import xmpp
+import xmpp
 
 import ardj.console
 import ardj.database

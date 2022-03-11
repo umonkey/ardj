@@ -1,5 +1,6 @@
-VERSION=1.2.42
-PYTHON=python
+VERSION = 1.2.42
+PYTHON = python3
+DOCKER_IMAGE = ardj:latest
 
 help:
 	@echo "make build                     -- prepare generated files"
@@ -22,7 +23,9 @@ bdist: setup.py
 	rm -rf src/ardj.egg-info setup.py
 	ls -ldh dist/ardj-*.gz
 
-build: test doc man setup.py
+build:
+	docker build --tag $(DOCKER_IMAGE) --file build/Dockerfile .
+	docker image prune -f
 
 depends:
 	python3 -m pip install -r requirements.txt
@@ -40,6 +43,9 @@ sdist: setup.py
 	$(PYTHON) setup.py sdist
 	rm -rf src/ardj.egg-info setup.py
 	ls -ldh dist/ardj-*.gz
+
+serve:
+	docker run --rm --name ardj -p 8000:8000 -v $(PWD)/data:/app/data -e UID=$(shell id -u) -e GID=$(shell id -g) $(DOCKER_IMAGE)
 
 setup.py: setup.py.in Makefile
 	sed -e "s/@@VERSION@@/$(VERSION)/g" < $< > $@
@@ -88,9 +94,6 @@ zsh-completion: share/shell-extensions/zsh/_ardj
 share/shell-extensions/zsh/_ardj: src/ardj/cli.py
 	PYTHONPATH=src $(PYTHON) bin/ardj --zsh > $@
 
-serve:
-	PYTHONPATH=src ./bin/ardj serve
-
 share/doc/man/ardj.1: src/docbook/man.xml
 	docbook2x-man src/docbook/man.xml
 	mkdir -p share/doc/man
@@ -121,4 +124,4 @@ src/docbook/book.xml: src/docbook/book.xml.in src/docbook/*.xml Makefile
 
 pre-commit: zsh-completion
 
-.PHONY: clean doc depends
+.PHONY: build clean doc depends

@@ -15,20 +15,20 @@ class DatabaseTests(unittest.TestCase):
         db.rollback()
 
     def test_filename(self):
-        self.assertEquals('unittests/data/database.sqlite', db.Open().filename)
+        self.assertEqual('unittests/data/database.sqlite', db.Open().filename)
 
     def test_queue(self):
         db.execute('INSERT INTO queue (track_id, owner) VALUES (?, ?)', (0, 'test', ))
-        self.assertEquals(1, db.fetchone('SELECT COUNT(*) FROM queue')[0], 'Failed to insert a record into queue.')
+        self.assertEqual(1, db.fetchone('SELECT COUNT(*) FROM queue')[0], 'Failed to insert a record into queue.')
 
     def test_update(self):
         db.execute('DELETE FROM queue')
         row = db.execute('INSERT INTO queue (track_id, owner) VALUES (?, ?)', (1, 'ardj', ))
-        self.assertEquals(row, 1)
+        self.assertEqual(row, 1)
 
         db.Open().update('queue', {'owner': 'test', 'id': row})
         tmp = db.fetchone('SELECT * FROM queue')
-        self.assertEquals(tmp, (1, 1, 'test'))
+        self.assertEqual(tmp, (1, 1, 'test'))
 
     def test_mark_recent(self):
         for idx in range(200):
@@ -40,8 +40,8 @@ class DatabaseTests(unittest.TestCase):
         new = db.fetchone("SELECT COUNT(*) FROM tracks WHERE id IN (SELECT track_id FROM labels WHERE label = 'recent')")[0]
         old = db.fetchone("SELECT COUNT(*) FROM tracks WHERE id NOT IN (SELECT track_id FROM labels WHERE label = 'recent')")[0]
 
-        self.assertEquals(200, new + old)
-        self.assertEquals(100, new)
+        self.assertEqual(200, new + old)
+        self.assertEqual(100, new)
 
     def test_stats(self):  # FIXME
         """
@@ -63,12 +63,12 @@ class DatabaseTests(unittest.TestCase):
             self.fail('database.mark_orphans() failed to find tracks.')
 
         rows = db.fetch('SELECT track_id FROM labels WHERE label = \'orphan\'')
-        self.assertEquals(1, len(rows), 'one track must have been labelled orphan, not %u' % len(rows))
-        self.assertEquals(t2, rows[0][0], 'wrong track labelled orphan')
+        self.assertEqual(1, len(rows), 'one track must have been labelled orphan, not %u' % len(rows))
+        self.assertEqual(t2, rows[0][0], 'wrong track labelled orphan')
 
     def test_debug(self):
         sql = db.Open().debug('SELECT ?, ?', (1, 2, ), quiet=True)
-        self.assertEquals('SELECT 1, 2', sql)
+        self.assertEqual('SELECT 1, 2', sql)
 
     def test_mark_liked_by(self):
         db.execute("DELETE FROM tracks")
@@ -84,7 +84,7 @@ class DatabaseTests(unittest.TestCase):
                 db.execute("INSERT INTO votes (track_id, email, vote) VALUES (?, ?, ?)", (track_id, jids[jid], 1, ))
 
         count = ardj.tracks.add_label_to_tracks_liked_by("tmp", jids[1:], "test")
-        self.assertEquals(2, count)
+        self.assertEqual(2, count)
 
         rows = db.fetchcol("SELECT track_id FROM labels WHERE label = ?", ("tmp", ))
-        self.assertEquals([1, 2], rows)
+        self.assertEqual([1, 2], rows)

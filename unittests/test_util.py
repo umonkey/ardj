@@ -45,11 +45,11 @@ class Run(unittest.TestCase):
         self.assertFalse(os.path.exists(dst))
 
     def test_format_duration(self):
-        self.assertEquals('00', ardj.util.format_duration(0))
-        self.assertEquals('1:00', ardj.util.format_duration(60))
-        self.assertEquals('1:00:00', ardj.util.format_duration(3600))
+        self.assertEqual('00', ardj.util.format_duration(0))
+        self.assertEqual('1:00', ardj.util.format_duration(60))
+        self.assertEqual('1:00:00', ardj.util.format_duration(3600))
 
-        self.assertEquals('18:54 ago', ardj.util.format_duration(100, now=1234, age=True))
+        self.assertEqual('18:54 ago', ardj.util.format_duration(100, now=1234, age=True))
 
     def test_find_exe(self):
         self.assertTrue(ardj.util.is_command("python"))

@@ -25,11 +25,11 @@ class OGG(unittest.TestCase):
 
     def runTest(self):
         t = ardj.tags.raw(self.filename)
-        self.assertEquals(self.classname, type(t).__name__)
-        self.assertEquals(0, len(t.items()))
+        self.assertEqual(self.classname, type(t).__name__)
+        self.assertEqual(0, len(list(t.items())))
 
         t = ardj.tags.get(self.filename)
-        self.assertEquals(3, t['length'])
+        self.assertEqual(3, t['length'])
 
         t['artist'] = 'somebody'
         t['title'] = 'something'
@@ -37,10 +37,10 @@ class OGG(unittest.TestCase):
         ardj.tags.set(self.filename, t)
 
         t2 = ardj.tags.get(self.filename)
-        self.assertEquals(3, t2['length'])
-        self.assertEquals('somebody', t2['artist'])
-        self.assertEquals('something', t2['title'])
-        self.assertEquals(['one', 'two'], t2['labels'])
+        self.assertEqual(3, t2['length'])
+        self.assertEqual('somebody', t2['artist'])
+        self.assertEqual('something', t2['title'])
+        self.assertEqual(['one', 'two'], t2['labels'])
 
 
 class MP3(OGG):

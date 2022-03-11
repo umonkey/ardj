@@ -53,6 +53,9 @@ class wrapper:
         value = self.get(key, default, fail=fail)
         if value:
             value = os.path.expanduser(value)
+        if value is not None:
+            value = value.replace('{{CONFIG_DIR}}', os.getenv('ARDJ_CONFIG_DIR'))
+
         return value
 
     def list(self):
@@ -74,7 +77,7 @@ class wrapper:
         Returns full path to the music folder.
         """
         return os.path.realpath(os.path.expanduser(
-            self.get('musicdir', os.path.dirname(self.filename))))
+            self.getpath('musicdir', os.path.dirname(self.filename))))
 
     def get_playlists(self):
         filename = os.path.join(get_config_dir(), 'playlist.yaml')
@@ -88,7 +91,8 @@ class wrapper:
         if self.playlists_mtime is None or self.playlists_mtime < stat.st_mtime:
             logging.info("Reloading playlists from %s." % filename)
             self.playlists_mtime = stat.st_mtime
-            self.playlists_data = yaml.load(open(filename, 'r').read())
+            with open(filename, 'r') as src:
+                self.playlists_data = yaml.safe_load(src.read())
         return self.playlists_data
 
     def __getitem__(self, key):
@@ -132,7 +136,8 @@ def load_data():
         config_dir = get_config_dir()
         filename = os.path.join(config_dir, "ardj.yaml")
     if os.path.exists(filename):
-        return yaml.load(open(filename, 'rb')), filename
+        with open(filename, 'rb') as src:
+            return yaml.safe_load(src.read()), filename
     return {}, None
 
 

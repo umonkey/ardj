@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding=utf-8
 
 """ardj metadata source for ezstream.
@@ -40,20 +40,20 @@ def notify(track):
 
 try:
     if len(sys.argv) != 2:
-        print "ardj is playing"
+        print("ardj is playing")
         exit(0)
 
     track = get_last_track()
     if track is None:
-        print "unknown track"
+        print("unknown track")
         exit(0)
 
     if sys.argv[1] == "artist":
-        print track["artist"].encode("utf-8")
+        print(track["artist"])
     elif sys.argv[1] == "title":
-        print track["title"].encode("utf-8")
+        print(track["title"])
         notify(track)
     else:
-        print "unknown"
+        print("unknown")
 except BaseException:
-    print "error"
+    print("error")

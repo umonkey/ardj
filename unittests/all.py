@@ -1,5 +1,4 @@
 import glob
-import imp
 import os
 import sys
 
@@ -13,7 +12,7 @@ def run_all_tests():
     loader.testMethodPrefix = "test_"
     suite = loader.discover(os.path.dirname(__file__))
 
-    print 'Logging to tests.log'
+    print('Logging to tests.log')
     sys.stdout = sys.stderr = open('tests.log', 'wb')
     log.install()
 

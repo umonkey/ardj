@@ -1,0 +1,40 @@
+<ezstream>
+    <url>http://localhost:8000/music.mp3</url>
+    <sourcepassword>hackme</sourcepassword>
+    <format>MP3</format>
+    <playlist_program>1</playlist_program>
+    <filename>/app/bin/ardj-next-track</filename>
+
+    <metadata_progname>/app/bin/ezstream-meta</metadata_progname>
+    <metadata_format>@t@ by @a@</metadata_format>
+
+    <svrinfoname>ARDJ based radio</svrinfoname>
+    <svrinfourl>http://umonkey.net/ardj/</svrinfourl>
+    <svrinfogenre>Music</svrinfogenre>
+    <svrinfodescription>This radio is powered by ardj.</svrinfodescription>
+    <svrinfobitrate>128</svrinfobitrate>
+    <svrinfochannels>2</svrinfochannels>
+    <svrinfosamplerate>44100</svrinfosamplerate>
+    <svrinfopublic>1</svrinfopublic>
+
+    <reencode>
+        <enable>1</enable>
+        <encdec>
+            <format>FLAC</format>
+            <match>.flac</match>
+            <decode>flac -s -d --force-raw-format --sign=signed --endian=little -o - @T@</decode>
+        </encdec>
+        <encdec>
+            <format>MP3</format>
+            <match>.mp3</match>
+            <decode>mpg123 --rva-radio --stereo --rate 44100 --stdout @T@</decode>
+            <encode>lame --preset cbr 128 -r -s 44.1 --bitwidth 16 - -</encode>
+        </encdec>
+        <encdec>
+            <format>VORBIS</format>
+            <match>.ogg</match>
+            <decode>sox --replay-gain track @T@ -r 44100 -c 2 -t raw -e signed-integer -</decode>
+            <encode>oggenc -r -B 16 -C 2 -R 44100 --raw-endianness 0 -q 1.5 -t @M@ -</encode>
+        </encdec>
+    </reencode>
+</ezstream>

@@ -1,0 +1,10 @@
+database:
+  local: unittests/data/database.sqlite
+
+log: tests-ardj.log
+log_level: debug
+
+live:
+  hosts:
+  - alice@example.com
+  - bob@example.com

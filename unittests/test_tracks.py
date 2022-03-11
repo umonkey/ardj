@@ -36,7 +36,7 @@ class TrackSelectionTests(unittest.TestCase):
         # Make sure 100 tracks follow this rule.
         for idx in range(100):
             new_label, track = self._pick_track(playlist, genres)
-            self.assertEquals(new_label, sticky_label)
+            self.assertEqual(new_label, sticky_label)
 
         # TODO: make sure the sticky label is reset when changing playlists.
 

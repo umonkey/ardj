@@ -1,2 +1,2 @@
 #!/bin/sh
-exec ardj tracks next
+exec python3 -m ardj next-track

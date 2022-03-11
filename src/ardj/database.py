@@ -359,12 +359,12 @@ class Track(Model):
         filepath = os.path.join(ardj.settings.get_music_dir(), filename)
         tags = ardj.tags.get(filepath)
 
-        t = cls(filename=filename.decode("utf-8"))
+        t = cls(filename=filename)
         if "length" not in tags:
             raise Exception("No length in %s" % filename)
         t["artist"] = tags.get("artist", "Unknown Artist")
         t["title"] = tags.get(
-            "title", os.path.basename(filename).decode("utf-8"))
+            "title", os.path.basename(filename))
         t["length"] = tags["length"]
         t["weight"] = 1.0
         t["real_weight"] = 1.0
@@ -680,7 +680,7 @@ class database:
                 sql = sql.replace('?', param, 1)
             else:
                 sql = sql.replace('?', "'" + param + "'", 1)
-        logging.debug("SQL: " + sql.encode("utf-8"))
+        logging.debug(f"SQL: {sql}")
         return sql
 
     def purge(self):
@@ -700,7 +700,6 @@ class database:
         for table in ('playlists', 'tracks', 'queue',
                       'urgent_playlists', 'labels', 'karma'):
             self.execute('ANALYZE ' + table)
-        self.execute('VACUUM')
         logging.info('%u bytes saved after database purge.' %
                      (os.stat(self.filename).st_size - old_size))
 
