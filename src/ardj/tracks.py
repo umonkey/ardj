@@ -203,7 +203,7 @@ class Playlist(dict):
             if name and playlist.match_track(track):
                 logging.debug(
                     'Track %u touches playlist "%s".' %
-                    (track_id, name.encode("utf-8")))
+                    (track_id, name))
                 rowcount = ardj.database.execute(
                     'UPDATE playlists SET last_played = ? WHERE name = ?', (ts, name, ))
                 if rowcount == 0:
@@ -872,7 +872,7 @@ def update_sticky_label(track_id, playlist):
         if sticky["label"]:
             logging.info(
                 "Using sticky label %s" %
-                sticky["label"].encode("utf-8"))
+                sticky["label"])
             return
 
         # This playlist has no sticky labels, nothing to do.
@@ -900,7 +900,7 @@ def update_sticky_label(track_id, playlist):
 
         # Store the new sticky label.
         sticky["label"] = random.choice(labels)
-        logging.info("New sticky label: %s" % sticky["label"].encode("utf-8"))
+        logging.info("New sticky label: %s" % sticky["label"])
 
 
 def get_sticky_label(playlist):
@@ -1133,7 +1133,7 @@ def get_next_track_id(update_stats=True):
 
     if debug:
         msg = 'Artists to skip: %s' % ', '.join(skip_artists or ['none']) + '.'
-        logging.debug(msg.encode("utf-8"))
+        logging.debug(msg)
 
     track_id = get_track_id_from_queue()
     if track_id:
@@ -1157,7 +1157,7 @@ def get_next_track_id(update_stats=True):
                 logging.debug(
                     'Looking for tracks in playlist "%s"' %
                     playlist.get(
-                        'name', 'unnamed').encode("utf-8"))
+                        'name', 'unnamed'))
             labels = playlist.get('labels', [playlist.get('name', 'music')])
             track_id = get_random_track_id_from_playlist(
                 playlist, skip_artists)
@@ -1166,7 +1166,7 @@ def get_next_track_id(update_stats=True):
                 s = Sticky()
 
                 msg = 'Picked track %u from playlist "%s" using strategy "%s"' % (track_id, playlist.get(
-                    'name', 'unnamed').encode("utf-8"), playlist.get("strategy", "default"))
+                    'name', 'unnamed'), playlist.get("strategy", "default"))
                 if s["label"]:
                     msg += " and sticky label \"%s\"" % s["label"]
                 logging.debug("%s." % msg)
@@ -1227,19 +1227,16 @@ def update_program_name(name):
         if ardj.settings.get("program_name_announce"):
             logging.debug(
                 "Program name changed from \"%s\" to \"%s\", announcing to the chat room." %
-                (current.encode("utf-8"), name.encode("utf-8")))
+                (current, name))
             ardj.jabber.chat_say("Program \"%s\" started." % name)
         else:
             logging.debug(
                 "Program name changed from \"%s\" to \"%s\"." %
-                (current.encode("utf-8"), name.encode("utf-8")))
+                (current, name))
 
         command = ardj.settings.getpath("program_name_handler")
         if os.path.exists(command):
-            logging.info(
-                "Running %s (%s)" %
-                (command.encode("utf-8"),
-                 name.encode("utf-8")))
+            logging.info("Running %s (%s)" % (command, name))
             subprocess.Popen(
                 command.split(" "),
                 stdout=subprocess.PIPE,
@@ -1492,7 +1489,7 @@ def find_new_tracks(args, label='music', weight=1.5):
               1,
               len(tracks),
                  track['title'],
-                 track['artist'])).encode("utf-8"))
+                 track['artist'])))
         try:
             if track['artist'] not in artist_names:
                 artist_names.append(track['artist'])
@@ -1505,9 +1502,7 @@ def find_new_tracks(args, label='music', weight=1.5):
         except KeyboardInterrupt:
             raise
         except Exception as e:
-            logging.error(
-                ("Could not download \"%s\" by %s: %s" %
-                 (track['title'], track['artist'], e)).encode("utf-8"))
+            logging.error(("Could not download \"%s\" by %s: %s" % (track['title'], track['artist'], e)))
 
     if added:
         logging.info('Total catch: %u tracks.' % added)
@@ -1618,11 +1613,7 @@ def add_missing_lastfm_tags():
         if not lastfm_tags:
             lastfm_tags = ["none"]
 
-        print(
-            "%6u. %s -- %s" %
-            (track["id"],
-             track["artist"].encode("utf-8"),
-                track["title"].encode("utf-8")))
+        print("%6u. %s -- %s" % (track["id"], track["artist"], track["title"]))
         print("        %s" % ", ".join(lastfm_tags))
 
         for tag in lastfm_tags:
@@ -1649,7 +1640,7 @@ def do_idle_tasks(set_busy=None):
     artist_name, sender = req
 
     logging.info(('Looking for tracks by "%s", requested by %s' %
-                 (artist_name, sender)).encode("utf-8"))
+                 (artist_name, sender)))
 
     if set_busy is not None:
         set_busy()
@@ -1677,6 +1668,8 @@ class MediaFolderScanner(object):
         deleted aren't added back again."""
         fs = self.find_files()
         db = self.find_tracks()
+
+        print(fs, db)
 
         ardj.database.Label.delete_by_name(self.temp_label)
 
@@ -1714,7 +1707,7 @@ class MediaFolderScanner(object):
         result = {}
         for track in ardj.database.Track.find_all(deleted=True):
             if track["filename"]:
-                result[track["filename"].encode("utf-8")] = track["id"]
+                result[track["filename"]] = track["id"]
         return result
 
 
@@ -1832,5 +1825,4 @@ def cmd_export_csv():
                  track["title"] or "Untitled",
                  track["real_weight"] or "1.0",
                  track["count"] or "0"]
-        print(",".join([str(c).encode("utf-8")
-                        for c in cells]))
+        print(",".join([str(c) for c in cells]))
