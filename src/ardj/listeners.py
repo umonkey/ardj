@@ -1,6 +1,9 @@
+"""
+Functions that retrieve listener stats.
+"""
+
 import csv
 import logging
-import os
 import re
 import sys
 import time
@@ -21,8 +24,8 @@ def get_count():
         logging.error("Could not fetch listener count.")
         return 0
 
-    csv = re.findall(r"<pre>(.*)</pre>", data, re.M | re.S)
-    lines = csv[0].strip().split("\n")
+    raw = re.findall(r"<pre>(.*)</pre>", data, re.M | re.S)
+    lines = raw[0].strip().split("\n")
     for line in lines:
         cells = line.split(",")
         if cells[0] == "Global":
@@ -32,20 +35,21 @@ def get_count():
 
 
 def format_data(sql, params, converters, header=None):
+    """Print query results as CSV."""
     data = ardj.database.fetch(sql, params)
-    f = csv.writer(sys.stdout)
+    dst = csv.writer(sys.stdout)
     if header:
-        f.writerow(header)
+        dst.writerow(header)
     for row in data:
         row = [converters[x](row[x]) for x in range(len(row))]
-        f.writerow(row)
+        dst.writerow(row)
 
 
 def get_yesterday_ts():
     """Returns timestamps for yesterday and today midights, according to local
     time zone."""
     now = int(time.time())
-    diff = time.daylight and time.altzone or time.timezone
+    diff = time.altzone if time.daylight else time.timezone
     today = now - (now % 86400) + diff
     if diff < 0:
         today += 86400
@@ -60,7 +64,13 @@ def cmd_now():
 
 def cli_total():
     """Prints overall statistics."""
-    sql = 'SELECT max(l.ts), t.artist, t.title, SUM(l.listeners) AS count, t.id, t.weight FROM tracks t INNER JOIN playlog l ON l.track_id = t.id WHERE weight > 0 GROUP BY t.artist, t.title ORDER BY artist COLLATE UNICODE, title COLLATE UNICODE'
+    sql = 'SELECT max(l.ts), t.artist, t.title, SUM(l.listeners) AS count, t.id, t.weight ' \
+        'FROM tracks t ' \
+        'INNER JOIN playlog l ON l.track_id = t.id ' \
+        'WHERE weight > 0 ' \
+        'GROUP BY t.artist, t.title ' \
+        'ORDER BY artist COLLATE UNICODE, title COLLATE UNICODE'
+
     params = []
     format_data(sql, params, [
         lambda d: time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(d)),

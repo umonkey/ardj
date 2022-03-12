@@ -1,3 +1,7 @@
+"""
+Hooks for the ices0 source.
+"""
+
 # encoding=utf-8
 
 import logging
@@ -7,9 +11,9 @@ from ardj.log import install as init_logging
 from ardj.tracks import get_track_to_play_next
 
 
-songnumber = -1
-last_track = None
-last_good_file = None
+SONG_NUMBER = -1
+LAST_TRACK = None
+LAST_GOOD_FILE = None
 
 
 def ices_init():
@@ -36,16 +40,16 @@ def ices_get_next():
     Function called to get the next filename to stream.
     Should return a string.
     """
-    global last_track, last_good_file
+    global LAST_TRACK, LAST_GOOD_FILE
 
-    last_track = get_track_to_play_next()
+    LAST_TRACK = get_track_to_play_next()
 
-    if last_track and os.path.exists(last_track["filepath"]):
-        last_good_file = last_track["filepath"].encode("utf-8")
-    elif last_good_file:
+    if LAST_TRACK and os.path.exists(LAST_TRACK["filepath"]):
+        LAST_GOOD_FILE = LAST_TRACK["filepath"].encode("utf-8")
+    elif LAST_GOOD_FILE:
         logging.warning("Replaying last good file due to an error.")
 
-    return last_good_file
+    return LAST_GOOD_FILE
 
 
 def ices_get_metadata():
@@ -54,12 +58,12 @@ def ices_get_metadata():
     as metadata (ie for title streaming) for the current song. You may
     return null to indicate that the file comment should be used.
     """
-    global last_track
-    if last_track:
-        if "artist" in last_track and "title" in last_track:
+    global LAST_TRACK
+    if LAST_TRACK:
+        if "artist" in LAST_TRACK and "title" in LAST_TRACK:
             return ("\"%s\" by %s" %
-                    (last_track["title"], last_track["artist"])).encode("utf-8")
-        return os.path.basename(last_track["filepath"])
+                    (LAST_TRACK["title"], LAST_TRACK["artist"])).encode("utf-8")
+        return os.path.basename(LAST_TRACK["filepath"])
     return "Unknown track"
 
 
@@ -69,6 +73,6 @@ def ices_get_lineno():
     the playlist in the cue file. If you don't care about this number
     don't use it.
     """
-    global songnumber
-    songnumber = songnumber + 1
-    return songnumber
+    global SONG_NUMBER
+    SONG_NUMBER = SONG_NUMBER + 1
+    return SONG_NUMBER

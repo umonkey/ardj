@@ -23,12 +23,13 @@ def get_level():
 
     if level == "debug":
         return logging.DEBUG
-    elif level == "info":
+    if level == "info":
         return logging.INFO
-    elif level == "warning":
+    if level == "warning":
         return logging.WARNING
-    elif level == "error":
+    if level == "error":
         return logging.ERROR
+
     return logging.CRITICAL
 
 
@@ -62,15 +63,15 @@ def install_file(filename, name):
     logger = logging.getLogger()
     logger.setLevel(get_level())
 
-    h = logging.handlers.RotatingFileHandler(
+    handler = logging.handlers.RotatingFileHandler(
         filename, maxBytes=max_size, backupCount=max_count)
 
-    h.setFormatter(
+    handler.setFormatter(
         logging.Formatter(
             '%%(asctime)s - %s[%%(process)6d] - %%(levelname)s - %%(message)s' %
             name))
-    h.setLevel(logging.DEBUG)
-    logger.addHandler(h)
+    handler.setLevel(logging.DEBUG)
+    logger.addHandler(handler)
 
 
 def install(name=None):
@@ -82,18 +83,18 @@ def install(name=None):
 
     if target == "syslog":
         return install_syslog(name)
-    else:
-        return install_file(target, name)
+    return install_file(target, name)
 
 
-def log_error(msg, e):
+def log_error(msg):
     """Logs an error message line by line (syslog friendly)."""
-    msg = msg.strip() + "\n" + traceback.format_exc(e)
+    msg = msg.strip() + "\n" + traceback.format_exc()
     for line in msg.strip().split("\n"):
         logging.error(line)
 
 
 def log_info(msg, *args, **kwargs):
+    """Log a string with the info level."""
     try:
         msg = msg.format(*args, **kwargs)
     except UnicodeEncodeError:
@@ -101,6 +102,7 @@ def log_info(msg, *args, **kwargs):
 
     if isinstance(msg, str):
         msg = msg.encode("utf-8")
+
     logging.info(msg)
 
 
