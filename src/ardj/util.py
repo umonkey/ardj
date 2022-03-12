@@ -318,8 +318,6 @@ def mask_sender(sender):
 
 
 def lower(s):
-    if isinstance(s, str):
-        s = s.decode('utf-8')
     return s.lower().replace('ё', 'е')
 
 
